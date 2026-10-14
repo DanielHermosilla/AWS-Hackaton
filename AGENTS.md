@@ -1,23 +1,5 @@
 # Guía de trabajo del proyecto
 
-## Regla obligatoria para comandos de shell
-
-CRITICAL: Always when you invoke any shell command pipe it through `distill` and tell exactly what you want to know.
-`distill` will summarize the response to save tokens.
-
-Examples:
-
-- `pytest 2>&1 | distill "did the tests pass? Report failures and their causes."`
-- `git diff 2>&1 | distill "what changed, and are any unrelated files included?"`
-- `git status --short --branch 2>&1 | distill "report the exact branch and every changed or untracked file."`
-
-THERE ARE ONLY TWO SCENARIOS WHEN YOU ARE ALLOWED TO NOT USE `distill`:
-
-- Do not use `distill` if exact uncompressed output is required.
-- Do not use `distill` if it would break an interactive/TUI workflow.
-
-Las respuestas del LLM de tuning del producto se tratan como datos: solo puede proponer parámetros estructurados y permitidos, nunca código o comandos para ejecutar. Esta regla se refiere al componente de tuning, no a las tareas de desarrollo ya autorizadas a los agentes del repositorio.
-
 ## 1. Propósito y fuentes de verdad
 
 Construimos un planificador de entregas para vehículos eléctricos para la hackatón AWS Breaking Barriers Chile 2026. El beneficiario del desafío es CASE, Centro de Aceleración Sostenible de Electromovilidad de la FCFM de la Universidad de Chile.
@@ -26,9 +8,9 @@ El producto debe permitir cargar una instancia o configurarla visualmente, const
 
 Antes de modificar un módulo, leer las fuentes pertinentes:
 
-1. `presentation.pptx`: reglas del desafío, objetivo, KPIs y rúbrica.
+1. `data/presentation.pptx`: reglas del desafío, objetivo, KPIs y rúbrica.
 2. **[`modelamiento.pdf`](modelamiento.pdf): formulación matemática elegida para implementar en Pyomo.** Su lectura es obligatoria para trabajar en modelo, solver, red o validador. Contiene parámetros, variables, dominios, restricciones (1)–(15) y objetivo lexicográfico (16).
-3. `README.es.md`: diccionario y advertencias de los históricos eVED. Conservarlo como diccionario; no reemplazarlo por el README del producto.
+3. `diccionario.md`: diccionario y advertencias de los históricos eVED. Conservarlo como diccionario; no reemplazarlo por el README del producto.
 4. `data/competition_routing_nodes.csv`, `data/evaluation_routing_nodes.csv` y encabezados de los históricos: formato efectivo de las entradas.
 5. `docs/model.md` y `docs/contracts.md`, cuando existan: correspondencia entre el PDF y la implementación, supuestos y contratos acordados. No sustituyen el modelo seleccionado.
 6. `output/pdf/modelo_ruteo_electrico.tex`, si existe localmente: fuente auxiliar que debe contrastarse con `modelamiento.pdf`; no asumir que está actualizada ni que existe en otro checkout.
@@ -104,7 +86,7 @@ Estructura objetivo:
 ```text
 AGENTS.md
 README.md                         # instalación, ejecución y demo del producto
-README.es.md                      # diccionario original de datos
+diccionario.md                      # diccionario original de datos
 presentation.pptx                 # enunciado original
 modelamiento.pdf                  # formulación matemática que se implementará
 pyproject.toml

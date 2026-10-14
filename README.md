@@ -15,7 +15,7 @@ El escenario del desafío considera dos Nissan Leaf 2013 con un 60 % de carga in
 Su objetivo es lexicográfico:
 
 $$
-\operatorname{lexmin}\left(-\sum_{i\in C}y_i,\ E_{\mathrm{total}}\right).
+\text{lexmin}\left(-\sum_{i\in C}y_i,\ E_{\mathrm{total}}\right).
 $$
 
 Primero se maximiza el número de entregas factibles. Después se minimiza el consumo neto efectivo de batería manteniendo ese cumplimiento. El tiempo de cómputo se mide como rendimiento del método.
