@@ -1,0 +1,37 @@
+/* Scenario layout integrated by Codex; Opus supplied its semantic HTML. */
+.home-scenario { background:#fff; border:1px solid #dde4ed; border-radius:17px; padding:26px; box-shadow:0 3px 9px #253b5109; min-width:0; }
+.home-scenario>header { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:9px 12px; align-items:center; }
+.home-scenario h2 { font-size:20px; font-weight:640; letter-spacing:-.45px; line-height:1.25; }
+.home-scenario>header>p:not(.scenario-tag) { grid-column:1/-1; color:#5a6d82; font-size:13px; line-height:1.5; }
+.scenario-tag { color:#526a86; background:#edf2f9; border:1px solid #e0e7f1; border-radius:20px; padding:5px 8px; font-size:10px; font-weight:550; white-space:nowrap; }
+.scenario-facts { display:grid; grid-template-columns:1fr .9fr 1.3fr; margin:24px 0 20px; padding:22px 0; border-block:1px solid #e7ecf2; }
+.scenario-facts>div { display:flex; flex-direction:column-reverse; gap:8px; min-width:0; padding-right:16px; }
+.scenario-facts>div+div { padding-left:20px; border-left:1px solid #e7ecf2; }
+.scenario-facts>div:last-child { padding-right:0; }
+.scenario-facts dt { color:#5a6c82; font-size:11px; line-height:1.45; }
+.scenario-facts dd { color:#233951; font-size:29px; letter-spacing:-.8px; font-weight:620; font-variant-numeric:tabular-nums; margin:0; line-height:1; }
+.scenario-note { font-size:11px; color:#5b6e85; line-height:1.65; max-width:48ch; margin:0 0 18px; }
+.home-primary { display:inline-flex; align-items:center; justify-content:center; gap:25px; padding:11px 15px; min-height:39px; color:#fff; background:#1664ec; border:1px solid #1664ec; border-radius:10px; font-size:12px; font-weight:550; }
+.home-primary>span { font-size:16px; line-height:1; }
+@media(hover:hover) and (pointer:fine) { .home-primary:hover { background:#0d51c9; border-color:#0d51c9; } }
+@media(max-width:760px) {
+  .home-scenario { padding:22px; }
+  .home-primary { width:100%; }
+  .scenario-note { max-width:none; }
+}
+@media(max-width:360px) {
+  .home-scenario { padding:20px; }
+  .home-scenario>header { grid-template-columns:1fr; gap:9px; }
+  .scenario-tag { grid-row:1; justify-self:start; }
+  .scenario-facts>div { padding-right:10px; }
+  .scenario-facts>div+div { padding-left:13px; }
+  .scenario-facts dd { font-size:27px; }
+}
+@media(prefers-contrast:more) {
+  .home-scenario { border-color:#61758b; box-shadow:none; }
+  .scenario-note,.scenario-facts dt { color:#354a61; }
+}
+@media(forced-colors:active) {
+  .home-scenario { background:Canvas; border-color:CanvasText; box-shadow:none; }
+  .home-primary { background:ButtonFace; color:LinkText; border-color:LinkText; }
+}

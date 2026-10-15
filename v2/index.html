@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <link rel="icon" href="./assets/brand/icons/favicon.ico" sizes="16x16 32x32 48x48">
+  <link rel="icon" href="./assets/brand/icons/favicon.svg" type="image/svg+xml" sizes="any">
+  <link rel="apple-touch-icon" href="./assets/brand/icons/apple-touch-icon.png" sizes="180x180">
+  <title>Inicio · ZMD Mobility</title>
+  <link rel="stylesheet" href="./shared/base.css">
+  <link rel="stylesheet" href="material.css">
+  <link rel="stylesheet" href="app.css?v=brand-v1">
+  <link rel="stylesheet" href="home.css">
+  <link rel="stylesheet" href="home-scenario.css">
+</head>
+<body class="page-home" data-page="home">
+  <div id="app-shell"></div>
+  <main id="home-main" tabindex="-1" aria-busy="true">
+    <div class="home-content">
+      <header class="home-heading">
+        <p class="eyebrow">Tu espacio de planificación</p>
+        <h1>Inicio</h1>
+        <p>Conoce el escenario y explora el reparto.</p>
+      </header>
+      <p id="home-loading" class="loading-note" role="status">Cargando escenario…</p>
+      <div class="home-grid">
+        <!-- Scenario card first supplied by Opus; integrated with live fixture bindings. -->
+        <section class="home-scenario" aria-labelledby="home-scenario-title">
+          <header>
+            <h2 id="home-scenario-title" data-source-text="title">Demostración</h2>
+            <p class="scenario-tag">Demostración</p>
+            <p id="home-location">—</p>
+          </header>
+          <dl class="scenario-facts">
+            <div><dt>Entregas</dt><dd id="home-deliveries">—</dd></div>
+            <div><dt>Vehículos</dt><dd id="home-vehicles">—</dd></div>
+            <div><dt>Estaciones registradas</dt><dd id="home-chargers">—</dd></div>
+          </dl>
+          <p class="scenario-note" id="home-scenario-note">Recorridos y batería de ejemplo, sin validar por el motor.</p>
+          <a class="home-primary" href="plan.html" aria-describedby="home-scenario-note">Explorar plan <span aria-hidden="true">→</span></a>
+        </section>
+        <section class="home-result" aria-labelledby="result-heading">
+          <span class="result-icon" id="result-icon"></span>
+          <p class="eyebrow">Resultado del motor</p>
+          <h2 id="result-heading">Aún sin resultados</h2>
+          <p>Todavía no hay una ejecución para revisar. Puedes recorrer el ejemplo de diseño.</p>
+          <div class="result-foot">Cobertura y energía pendientes de cálculo y validación.</div>
+        </section>
+      </div>
+      <section class="home-fleet" aria-labelledby="fleet-heading">
+        <div class="section-heading"><h2 id="fleet-heading">Flota del escenario</h2><span>Estado inicial</span></div>
+        <div class="home-vehicles" id="home-fleet-list"></div>
+      </section>
+      <footer class="home-footer" data-source-text="summary">Datos ilustrativos; validación del motor pendiente.</footer>
+    </div>
+  </main>
+  <noscript><p class="load-error">Esta demostración necesita JavaScript para cargar el escenario y sus controles.</p></noscript>
+  <script type="module" src="boot.js?v=home-v3"></script>
+</body>
+</html>

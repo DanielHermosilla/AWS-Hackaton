@@ -1,0 +1,85 @@
+/* Acceso — integrado con la estética de la webapp ZMD.
+   Reutiliza shared/base.css (Inter, #192330, azul #1664ec, .primary, dialog, topbar).
+   Solo añade lo propio de la pantalla de acceso. */
+
+.page-login{background:#f6f7f9;min-height:100vh;display:flex;flex-direction:column}
+
+/* topbar: usa .topbar/.zmd-brand ya definidos en app.css; aquí solo el alto cómodo */
+.page-login .topbar{display:flex;align-items:center;justify-content:space-between;
+  padding:0 24px;height:64px;background:#fff;border-bottom:1px solid #e6eaef}
+.page-login .zmd-brand__logo{height:30px;width:auto;display:block}
+.page-login .top-actions{display:flex;align-items:center;gap:12px}
+
+/* dos columnas */
+.login-main{flex:1;display:grid;grid-template-columns:1.1fr .9fr;max-width:1200px;width:100%;
+  margin:0 auto;padding:0 24px}
+.login-main:focus{outline:none}
+
+/* columna de marca */
+.login-aside{display:flex;flex-direction:column;justify-content:center;
+  padding:48px 56px 48px 0;border-right:1px solid #e6eaef}
+.login-aside .eyebrow{font-size:11px;font-weight:650;text-transform:uppercase;
+  letter-spacing:.12em;color:#697581}
+.login-aside h1{font-size:40px;line-height:1.1;letter-spacing:-1.2px;font-weight:700;
+  color:#192330;margin:16px 0 14px}
+.aside-lead{font-size:14px;color:#566574;line-height:1.7;max-width:420px}
+.login-points{list-style:none;padding:0;margin:30px 0 0;display:flex;flex-direction:column;gap:14px}
+.login-points li{display:flex;align-items:center;gap:12px;font-size:13px;color:#2b3744}
+.login-points .pt{width:26px;height:26px;border-radius:7px;flex-shrink:0;display:grid;place-items:center}
+.login-points .pt.base{background:#263849}
+.login-points .pt.charge{background:#fff;border:1.5px solid #62a58c}
+.login-points .pt.check{background:#1664ec}
+
+/* columna del formulario */
+.login-panel{display:flex;align-items:center;justify-content:center;padding:48px 0 48px 56px}
+.login-card{width:100%;max-width:380px;background:#fff;border:1px solid #e2e7ec;border-radius:14px;
+  padding:34px 30px;box-shadow:0 10px 40px #13294112}
+.login-card .eyebrow{font-size:11px;font-weight:650;text-transform:uppercase;
+  letter-spacing:.12em;color:#697581}
+.login-card h2{font-size:26px;letter-spacing:-.6px;font-weight:700;color:#192330;margin:10px 0 6px}
+.card-lead{font-size:13px;color:#697581;margin-bottom:26px;line-height:1.6}
+
+.field{margin-bottom:16px}
+.field label{display:block;font-size:12px;font-weight:600;color:#2b3744;margin-bottom:7px}
+.label-row{display:flex;align-items:center;justify-content:space-between}
+.field input[type=email],
+.field input[type=password]{width:100%;border:1px solid #dce1e7;border-radius:8px;background:#fff;
+  padding:11px 12px;font-size:14px;color:#192330;transition:border-color .15s,box-shadow .15s}
+.field input::placeholder{color:#9aa6b2}
+.field input:focus{outline:none;border-color:#1664ec;box-shadow:0 0 0 3px #1664ec22}
+.field input.invalid{border-color:#d2443b;box-shadow:0 0 0 3px #d2443b1f}
+.field-error{display:block;margin-top:6px;font-size:11px;color:#b23b33}
+
+.field-row{display:flex;align-items:center;justify-content:space-between;margin:2px 0 22px}
+.check{display:flex;align-items:center;gap:8px;font-size:12px;color:#566574}
+.check input{width:15px;height:15px;accent-color:#1664ec}
+.link-quiet{border:0;background:none;padding:0;font-size:12px;color:#1664ec;text-decoration:none}
+.link-quiet:hover{text-decoration:underline}
+
+/* botones a lo ancho (usa .primary de base.css) */
+.block{width:100%;display:flex;align-items:center;justify-content:center}
+#submit{padding:12px 14px;font-size:14px;font-weight:600}
+.secondary{background:#fff;border:1px solid #dce1e7;padding:11px 14px;font-weight:550}
+.secondary:hover{background:#f0f4f9}
+
+.form-note{margin-top:14px;font-size:12px;padding:9px 12px;border-radius:8px;line-height:1.5}
+.form-note.ok{background:#eaf2ff;color:#174ea6;border:1px solid #c3d9fb}
+.form-note.err{background:#fdeceb;color:#9c352d;border:1px solid #f3c9c5}
+
+.divider{display:flex;align-items:center;gap:12px;margin:20px 0;color:#9aa6b2;font-size:11px}
+.divider::before,.divider::after{content:"";flex:1;height:1px;background:#e6eaef}
+
+.demo-hint{margin-top:18px;font-size:11px;color:#8893a0;line-height:1.6;text-align:center}
+
+/* responsive */
+@media(max-width:860px){
+  .login-main{display:block;padding:28px 20px}
+  .login-aside{border-right:0;border-bottom:1px solid #e6eaef;padding:0 0 28px}
+  .login-aside h1{font-size:32px}
+  .login-panel{padding:28px 0 0}
+}
+@media(max-width:600px){
+  .page-login .topbar{padding:0 16px}
+  .login-aside h1{font-size:27px}
+  .login-card{padding:26px 20px}
+}

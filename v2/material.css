@@ -1,0 +1,164 @@
+/* Cristal materials over Esencial geometry. No sizing or layout overrides. */
+:root {
+  --text: #1d2938;
+  --secondary: #5a6777;
+  --line: #dde3eb;
+  --paper: #fff;
+  --sidebar: #f7f9fc;
+  --glass: rgb(255 255 255 / 88%);
+  --glass-edge: rgb(255 255 255 / 86%);
+  --glass-shadow: 0 4px 18px #1c344517, inset 0 1px 0 #fff;
+}
+
+body { color:var(--text); background:var(--paper); }
+.topbar { background:#fbfcfe; border-color:#dfe5ed; }
+.brand span { color:#596778; }
+.app-name { color:#566477; border-color:#dfe5ed; }
+.top-actions .icon-button { background:transparent; color:#526275; border-radius:50%; }
+.demo-tag { background:#edf1f7; color:#526274; border-radius:20px; box-shadow:inset 0 0 0 1px #e2e7ef; }
+.sidebar { background:var(--sidebar); border-color:#dbe2eb; }
+.scenario p { color:var(--secondary); }
+.file-tag { color:#58697d; background:#edf1f7; box-shadow:inset 0 0 0 1px #dbe2eb; }
+.location { color:#586a7e; }
+.pin-dot { background:#6a8fad; }
+
+.sidebar-tabs { background:#e9edf3; border-color:#dbe2eb; border-radius:12px; }
+.sidebar-tabs button { color:#58677a; border-radius:9px; }
+.sidebar-tabs button[aria-selected=true] {
+  color:#263c5b;
+  background:#fff;
+  box-shadow:0 1px 5px #26384b12, inset 0 0 0 1px #dce3ec;
+}
+.sidebar-tabs button span { color:#61738a; }
+.sidebar-content { scrollbar-color:#c3cdd9 transparent; }
+.vehicle-card {
+  background:#fff;
+  border-color:#dde4ed;
+  border-radius:17px;
+  box-shadow:0 3px 9px #253b5110;
+}
+.vehicle-card.active { border-color:var(--route); box-shadow:0 0 0 1px var(--route); }
+.vehicle-model { color:#647286; }
+.soc-row { color:#5c6a7c; }
+.soc-row strong { color:#283b54; }
+.battery-track { background:#e7edf4; }
+.battery-track span { background:var(--route); }
+.battery-track i { background:#728295; }
+.vehicle-stats { color:#5f6e82; }
+.vehicle-stats strong { color:#283b54; }
+.vehicle-stats span + span { border-color:#e3e8ee; }
+.route-button { color:var(--route); border-color:#e0e7f0; background:transparent; }
+.sidebar-foot { color:#596b7f; background:var(--sidebar); }
+.sidebar-foot svg { color:#64778e; }
+
+.map-summary {
+  background:#fff;
+  border-color:#e0e5eb;
+  border-radius:19px;
+  box-shadow:0 5px 23px #233c5012;
+}
+.map-summary>div+div { border-color:#e4e9ef; }
+.summary-icon { color:#5c7899; }
+.map-summary strong span { color:#607086; }
+.map-summary small { color:#5e6e82; }
+.map-tools button {
+  background:#fff;
+  color:#304761;
+  border-color:#d6dfe8;
+  border-radius:12px;
+  box-shadow:var(--glass-shadow);
+}
+.map-tools button[aria-pressed=true] { border-color:#c1dcca; color:#1d6846; background:#e3f2e9; }
+.legend { background:#fff; color:#526276; border-color:#dbe2e9; border-radius:12px; box-shadow:0 3px 16px #12314810; }
+.legend .route-note { color:#60758a; border-color:#e0e5ec; }
+.selection { background:#fff; border-radius:18px; border-color:#dce3ec; box-shadow:0 8px 28px #172b451d; }
+.selection p { color:#5c6d82; }
+.selection .detail-eyebrow { color:#586c80; }
+.selection .close { color:#5a6c82; background:#eef2f7; }
+.selection .stop-battery { color:#596c83; border-color:#e4e9ef; }
+.stop-battery strong { color:#203954; }
+.selection .charge-note { color:#226848; }
+.stop-row { border-color:#e4e9ef; }
+.stop-row.active { background:#e8f0fc; border-radius:9px; box-shadow:inset 0 0 0 1px #cbdcf4; }
+.stop-number { background:#edf2fa; }
+.stop-name { color:#2a3d57; }
+.stop-name small { color:#5f738c; }
+.stop-row>strong { color:#354f70; }
+.all-routes { color:#1b61c9; }
+.route-head small { color:#60748b; }
+dialog { background:#fff; border-radius:20px; }
+dialog p+p { margin-top:14px; }
+dialog::backdrop { background:#2537515c; }
+
+.map-region .maplibregl-ctrl-group {
+  background:#fff;
+  border-radius:13px!important;
+  box-shadow:var(--glass-shadow)!important;
+  overflow:hidden;
+}
+.map-region .maplibregl-ctrl-group button { background:transparent; }
+.map-region .maplibregl-ctrl-group button+button { border-color:#ced9e2; }
+
+@supports(backdrop-filter:blur(1px)) {
+  .map-tools button,.map-region .maplibregl-ctrl-group {
+    background:var(--glass);
+    border-color:var(--glass-edge);
+    backdrop-filter:blur(18px) saturate(1.3);
+    -webkit-backdrop-filter:blur(18px) saturate(1.3);
+  }
+  .map-tools button[aria-pressed=true] { background:#e3f2e9; border-color:#c1dcca; }
+}
+
+@media(hover:hover) and (pointer:fine) {
+  .map-tools button:hover:not(:disabled) { background:#eef3f7; }
+  .map-tools button[aria-pressed=true]:hover { background:#d8eddf; }
+  .route-button:hover:not(:disabled) { background:transparent; color:#164b96; }
+  .top-actions .icon-button:hover { background:#edf2f8; }
+  .sidebar-tabs button:not([aria-selected=true]):hover { background:#e2e9f2; }
+  .stop-row:hover:not(:disabled) { background:#edf3fb; }
+  .selection .close:hover { background:#e2e9f3; }
+}
+
+@media(prefers-reduced-transparency:reduce) {
+  .map-tools button,.map-region .maplibregl-ctrl-group {
+    background:#f9fbfd;
+    border-color:#c7d3df;
+    backdrop-filter:none;
+    -webkit-backdrop-filter:none;
+    box-shadow:0 2px 10px #233a4c10;
+  }
+  .map-tools button[aria-pressed=true] { background:#e3f2e9; border-color:#1d6846; }
+}
+@media(prefers-contrast:more) {
+  .map-tools button,.map-region .maplibregl-ctrl-group {
+    background:#fff;
+    border-color:#61758b;
+    backdrop-filter:none;
+    -webkit-backdrop-filter:none;
+    box-shadow:none;
+  }
+  .vehicle-card,.selection,.map-summary,.legend,.sidebar-tabs { border-color:#728196; box-shadow:none; }
+  .vehicle-model,.soc-row,.vehicle-stats,.map-summary small,.map-summary strong span,
+  .legend,.legend .route-note,.stop-name small,.selection p,.sidebar-foot,.route-head small { color:#354a61; }
+  .stop-row.active { box-shadow:inset 0 0 0 2px #1757b1; }
+  .zmd-pin.is-muted { opacity:.6!important; filter:none; }
+  .map-tools button[aria-pressed=true] { border-color:#1a6844; background:#e3f2e9; }
+}
+@media(forced-colors:active) {
+  body,.topbar,.sidebar,.sidebar-foot,.vehicle-card,.map-summary,.selection,.legend,
+  .map-tools button,.map-region .maplibregl-ctrl-group,.sidebar-tabs {
+    background:Canvas; color:CanvasText; backdrop-filter:none; -webkit-backdrop-filter:none;
+    box-shadow:none; border-color:CanvasText;
+  }
+  .sidebar-tabs button[aria-selected=true],.stop-row.active,.map-tools button[aria-pressed=true] {
+    forced-color-adjust:none; background:Highlight; color:HighlightText;
+  }
+  .sidebar-tabs button[aria-selected=true] span,.stop-row.active .stop-name,
+  .stop-row.active small,.stop-row.active strong { color:HighlightText; }
+  .vehicle-dot,.dot,.battery-track span { background:CanvasText; }
+  .map-summary strong span,.map-summary small,.vehicle-model,.vehicle-stats,.soc-row,.legend .route-note { color:CanvasText; }
+  .map-region .maplibregl-ctrl-group .maplibregl-ctrl-icon { background-image:none!important; display:grid; place-items:center; }
+  .map-region .maplibregl-ctrl-zoom-in .maplibregl-ctrl-icon:after { content:'+'; color:ButtonText; font-size:25px; }
+  .map-region .maplibregl-ctrl-zoom-out .maplibregl-ctrl-icon:after { content:'−'; color:ButtonText; font-size:25px; }
+  button:focus-visible,a:focus-visible { outline-color:Highlight; }
+}
