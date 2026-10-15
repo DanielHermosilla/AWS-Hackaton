@@ -143,7 +143,7 @@ def test_script_streams_raw_solver_output_and_propagates_exit_status(script, inp
     command = seen[0]
     assert "--tee" in command and "--show-llm-trace" in command
     assert command[command.index("--solver") + 1] == "scip-routes"
-    assert command[command.index("--llm-max-calls") + 1] == "1"
+    assert command[command.index("--llm-max-calls") + 1] == "4"
     assert (tmp_path / "output/run.log").read_text() == "SCIP node log\nexact raw line\n"
     assert "SCIP node log\nexact raw line\n" in capsys.readouterr().out
     manifest = json.loads((tmp_path / "output/run-config.json").read_text())

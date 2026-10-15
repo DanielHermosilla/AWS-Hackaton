@@ -18,13 +18,16 @@ from pyscipopt import SCIP_PARAMSETTING, SCIP_RESULT, Model, Pricer, quicksum
 
 from ev_routing.contracts import PhaseResult, ProblemInstance, SolverConfig, SolveResult
 from ev_routing.operations import arc_energy
-from ev_routing.route_policy import choose_route_policy
+from ev_routing.route_heuristics import InsertionRoutes
+from ev_routing.route_orchestrator import RouteOrchestrator
+from ev_routing.route_relaxation import energy_relaxation
 from ev_routing.route_resources import RouteOracle, assemble_solution, route_from_walk
+from ev_routing.scip_tuning import apply_parameters
 from ev_routing.search_policy import SearchConfig
 from ev_routing.validation import validate_solution
 
 
-def _configure(model, config, policy, log_directory=None, name="solve"):
+def _configure(model, config, policy, log_directory=None, name="solve", *, single_tour=False):
     model.hideOutput(not config.tee)
     model.setIntParam("parallel/maxnthreads", config.threads)
     model.setIntParam("lp/threads", config.threads)
@@ -35,6 +38,7 @@ def _configure(model, config, policy, log_directory=None, name="solve"):
         directory = Path(log_directory)
         directory.mkdir(parents=True, exist_ok=True)
         model.setLogfile(str(directory / f"{name}.scip.log"))
+    return apply_parameters(model, policy, single_tour=single_tour)
 
 
 def _valid(instance, solution):
@@ -131,7 +135,7 @@ def _tour_solve(instance, config, policy, deadline, best, log_directory=None):
     costs = {(a.from_node_id, a.to_node_id): arc_energy(a, instance.operations)
              for a in instance.arcs if a.from_node_id in nodes and a.to_node_id in nodes}
     model = Model("certified_directed_tour")
-    _configure(model, config, policy, log_directory, "energy")
+    native_changes = _configure(model, config, policy, log_directory, "energy", single_tour=True)
     x = {ij: model.addVar(vtype="B", obj=c, name=f"arc_{n}")
          for n, (ij, c) in enumerate(costs.items())}
     for node in nodes:
@@ -183,13 +187,15 @@ def _tour_solve(instance, config, policy, deadline, best, log_directory=None):
         "algorithm": "certified_single_tour_dfj", "binary_arc_variables": len(x),
         "subtour_rounds": rounds, "subtour_cuts": count, "movement_limit_used": None,
         "native_optimize_seconds": native_seconds,
+        "native_parameter_changes": native_changes,
     }
     model.freeProb()
     return best, _phase("energy", best, bound, termination, monotonic() - started), stat
 
 
 class RoutePricer(Pricer):
-    def __init__(self, instance, oracles, convex, links, cuts, columns, phase, deadline, policy):
+    def __init__(self, instance, oracles, convex, links, cuts, columns, phase, deadline, policy,
+                 heuristics=None):
         self.instance, self.oracles = instance, oracles
         self.convex, self.links, self.cuts, self.columns = convex, links, cuts, columns
         self.phase, self.deadline, self.policy = phase, deadline, policy
@@ -199,6 +205,11 @@ class RoutePricer(Pricer):
         self.calls = 0
         self.farkas_calls = 0
         self.max_columns_added_per_call = 0
+        self.heuristics = heuristics
+        self.heuristic_calls = 0
+        self.heuristic_columns = 0
+        self.heuristic_seconds = 0.0
+        self.exact_seconds = 0.0
 
     def pricerinit(self):
         self.convex = {k: self.model.getTransformedCons(c) for k, c in self.convex.items()}
@@ -210,6 +221,8 @@ class RoutePricer(Pricer):
         if key in self.keys:
             return False
         self.keys.add(key)
+        if route.vehicle_id != vehicle:
+            route = route.model_copy(update={"vehicle_id": vehicle})
         model = self.model
         var = model.addVar(
             name=f"route_{len(self.columns)}", vtype="C", lb=0,
@@ -255,14 +268,43 @@ class RoutePricer(Pricer):
 
         for vehicle, oracle in self.oracles.items():
             consider(vehicle, oracle.routes)
+        if self.heuristics is not None and self.policy.pricing_strategy == "heuristic_then_exact":
+            started = monotonic()
+            for vehicle in self.oracles:
+                if added >= self.policy.columns_per_round or monotonic() >= self.deadline:
+                    break
+                prizes = {
+                    node: links[vehicle, i] for i, node in enumerate(self.instance.customer_ids)
+                }
+                routes = self.heuristics.price(
+                    vehicle, prizes, cuts, int(self.phase == "energy" and not farkas),
+                    self.policy.pricing_heuristic_starts,
+                    min(self.deadline, started + self.policy.pricing_heuristic_seconds),
+                )
+                before = added
+                consider(vehicle, routes)
+                self.heuristic_columns += added - before
+                self.heuristic_calls += 1
+            self.heuristic_seconds += monotonic() - started
+        if added:
+            return {"result": SCIP_RESULT.SUCCESS}
         while added < self.policy.columns_per_round and not all(o.complete for o in self.oracles.values()):
             if monotonic() >= self.deadline:
                 self.incomplete = True
                 model.interruptSolve()
                 return {"result": SCIP_RESULT.SUCCESS if added else SCIP_RESULT.DIDNOTRUN}
+            expanded = set()
+            started = monotonic()
             for vehicle, oracle in self.oracles.items():
+                if id(oracle) in expanded:
+                    continue
+                expanded.add(id(oracle))
                 if not oracle.complete:
-                    consider(vehicle, oracle.advance())
+                    routes = oracle.advance()
+                    for other, same in self.oracles.items():
+                        if same is oracle:
+                            consider(other, routes)
+            self.exact_seconds += monotonic() - started
             if monotonic() >= self.deadline:
                 self.incomplete = not all(o.complete for o in self.oracles.values())
                 model.interruptSolve()
@@ -288,10 +330,13 @@ class RoutePricer(Pricer):
         return self._safe_price(True)
 
 
-def _master_phase(instance, config, policy, oracles, name, deadline, best, log_directory=None):
+def _master_phase(instance, config, policy, oracles, name, deadline, best, log_directory=None,
+                  heuristics=None, epoch=0, restricted=False):
     started = monotonic()
     model = Model(f"routes_{name}")
-    _configure(model, config, policy, log_directory, name)
+    native_changes = _configure(
+        model, config, policy, log_directory, f"{name}-{'pool' if restricted else 'exact'}-{epoch:02d}",
+    )
     model.setPresolve(SCIP_PARAMSETTING.OFF)
     model.setSeparating(SCIP_PARAMSETTING.OFF)
     model.setIntParam("propagating/rootredcost/freq", -1)
@@ -313,8 +358,13 @@ def _master_phase(instance, config, policy, oracles, name, deadline, best, log_d
             mask = sum(1 << i for i in triple)
             cuts.append((mask, model.addCons(quicksum([]) <= 1, modifiable=True)))
     columns = []
-    pricer = RoutePricer(instance, oracles, convex, links, cuts, columns, name, deadline, policy)
+    pricer = RoutePricer(instance, oracles, convex, links, cuts, columns, name, deadline, policy,
+                         heuristics)
     model.includePricer(pricer, "physical_routes", "Continuous-resource route pricing", delay=True)
+    if restricted:
+        model.deactivatePricer(pricer)
+    seed_accepted = None
+    prior_best = best
     if best is not None:
         seed = model.createSol()
         for route in best.routes:
@@ -324,7 +374,12 @@ def _master_phase(instance, config, policy, oracles, name, deadline, best, log_d
             model.setSolVal(seed, columns[-1][3], 1)
             for i, node in enumerate(instance.customer_ids):
                 model.setSolVal(seed, z[route.vehicle_id, i], int(node in served))
-        model.addSol(seed)
+        seed_accepted = bool(model.addSol(seed))
+    if heuristics is not None:
+        for route in list(heuristics.pool.values())[:policy.pricing_pool_limit]:
+            served = {i for step in route.steps for i in step.delivered_visit_ids}
+            mask = sum(1 << i for i, node in enumerate(instance.customer_ids) if node in served)
+            pricer.add(route.vehicle_id, mask, route, priced=False)
     model.setRealParam("limits/time", max(0.001, deadline - monotonic()))
     optimizing = monotonic()
     model.optimize()
@@ -332,7 +387,9 @@ def _master_phase(instance, config, policy, oracles, name, deadline, best, log_d
     termination = "error" if pricer.error else (
         "pricing_incomplete" if pricer.incomplete else str(model.getStatus())
     )
-    valid_bound = not pricer.incomplete
+    if restricted:
+        termination = "restricted_pool_heuristic"
+    valid_bound = not pricer.incomplete and not restricted
     bound = model.getDualbound()
     if abs(bound) >= model.infinity() or not valid_bound:
         bound = None
@@ -366,6 +423,9 @@ def _master_phase(instance, config, policy, oracles, name, deadline, best, log_d
         name, best, bound, termination, monotonic() - started,
         message=pricer.error or ("Pricing incompleto; solo cota analítica." if pricer.incomplete else ""),
     )
+    phase.warm_start = "submitted" if prior_best is not None else "not_requested"
+    if best is prior_best and best is not None:
+        phase.incumbent_source = "provided_incumbent"
     stat = {
         "name": name, "columns": len(columns), "subset_row_cuts": len(cuts),
         "pricing_calls": pricer.calls, "farkas_calls": pricer.farkas_calls,
@@ -375,8 +435,19 @@ def _master_phase(instance, config, policy, oracles, name, deadline, best, log_d
         "labels_expanded": {k: o.expanded for k, o in oracles.items()},
         "branch_nodes": model.getNNodes(), "movement_limit_used": None,
         "native_optimize_seconds": native_seconds,
-        "bound_source": "analytic" if pricer.incomplete else "SCIP_with_exact_pricing_or_analytic",
+        "epoch": epoch, "native_parameter_changes": native_changes,
+        "heuristic_pricing_calls": pricer.heuristic_calls,
+        "heuristic_pricing_columns": pricer.heuristic_columns,
+        "heuristic_pricing_seconds": pricer.heuristic_seconds,
+        "exact_pricing_seconds": pricer.exact_seconds,
+        "physical_oracles": len({id(o) for o in oracles.values()}),
+        "restricted_pool": restricted, "warm_start_accepted": seed_accepted,
+        "bound_source": "analytic" if pricer.incomplete or restricted else "SCIP_with_exact_pricing_or_analytic",
+        "queued_labels": {k: len(o.queue) for k, o in oracles.items()},
     }
+    if best is not None and heuristics is not None:
+        for route in best.routes:
+            heuristics.remember(route)
     model.freeProb()
     return best, phase, stat
 
@@ -399,11 +470,20 @@ def solve_routes(instance, config: SolverConfig, search_config=None, *, initial_
         "operations": instance.operations.model_dump(exclude={
             "customer_time_windows", "service_seconds_by_customer", "charging_power_kw_by_station",
         }),
-        "applicable_actions": ["subtour_batch_size", "branching"] if witness else
-        ["route_cuts", "columns_per_round", "max_subset_rows", "branching"],
+        "applicable_actions": ["subtour_batch_size", "branching", "heuristics",
+                               "presolve", "separation", "scip_parameters"] if witness else
+        ["initial_routes", "local_search", "stage_allocation", "route_cuts",
+         "pricing", "branching", "heuristics", "scip_parameters"],
     }
-    policy, tuning = choose_route_policy(search_config, profile, deadline, policy_provider)
+    controller = RouteOrchestrator(
+        search_config, profile, deadline, config.time_limit_seconds, policy_provider,
+    )
+    policy = controller.decide("before_search", {"phase": "planning"})
     phases, stats = [], []
+    heuristic_trace = []
+    relaxation = None
+    heuristic_incumbent = witness
+    first_full_seconds = monotonic() - started if best and len(best.served_visit_ids) == len(instance.customer_ids) else None
     if witness is not None:
         phases.append(_phase(
             "deliveries", best, float(len(instance.customer_ids)), "witness_and_cardinality_bound",
@@ -415,20 +495,144 @@ def solve_routes(instance, config: SolverConfig, search_config=None, *, initial_
         phases.append(phase)
         stats.append(stat)
     else:
-        oracles = {k: RouteOracle(instance, k) for k in instance.vehicle_ids}
+        construction = InsertionRoutes(instance)
+        construction.pool_limit = policy.pricing_pool_limit
+        seed_started = monotonic()
+        seed_deadline = min(deadline, seed_started + config.time_limit_seconds*policy.seed_time_fraction)
+        seed = construction.seed(policy.seed_strategy, policy.seed_starts, seed_deadline, config.seed)
+        if policy.seed_charging and monotonic() < seed_deadline:
+            charged = construction.charging_seed(policy.charging_seed_starts, seed_deadline)
+            if charged is not None and (seed is None or (
+                len(charged.served_visit_ids), -charged.net_energy_kwh
+            ) > (len(seed.served_visit_ids), -seed.net_energy_kwh)):
+                seed = charged
+        if seed is not None and (best is None or (
+            len(seed.served_visit_ids), -seed.net_energy_kwh
+        ) > (len(best.served_visit_ids), -best.net_energy_kwh)):
+            best = heuristic_incumbent = seed
+        if best and len(best.served_visit_ids) == len(instance.customer_ids):
+            first_full_seconds = monotonic() - started
+        policy = controller.decide("after_seed", {
+            "phase": "planning", "deliveries": len(best.served_visit_ids) if best else 0,
+            "energy_kwh": best.net_energy_kwh if best else None,
+            "seed_seconds": monotonic() - seed_started,
+            "delivery_optimum_proven": first_full_seconds is not None,
+            "seed_supported": construction.supported,
+            "heuristic_pool_columns": len(construction.pool),
+        })
+        improvement_deadline = min(
+            deadline, monotonic() + config.time_limit_seconds*policy.improvement_time_fraction,
+        )
+        improved = construction.improve(best, policy, improvement_deadline, config.seed)
+        if improved is not best:
+            best = heuristic_incumbent = improved
+        oracles, shared = {}, {}
+        for vehicle in instance.vehicle_ids:
+            key = tuple(sorted(instance.chargers_for(vehicle))) if policy.share_vehicle_oracles else vehicle
+            if key not in shared:
+                shared[key] = RouteOracle(
+                    instance, vehicle, search=policy.pricing_search, dominance=policy.dominance,
+                )
+            oracles[vehicle] = shared[key]
         for name in ("deliveries", "energy"):
             if name == "energy" and best is None:
                 break
-            phase_deadline = (monotonic() + 0.7 * max(0, deadline - monotonic())
+            if name == "deliveries" and best is not None and len(best.served_visit_ids) == len(instance.customer_ids):
+                first_full_seconds = first_full_seconds or monotonic() - started
+                phases.append(_phase(
+                    name, best, float(len(instance.customer_ids)), "witness_and_cardinality_bound",
+                    monotonic() - started,
+                ))
+                continue
+            phase_started = monotonic()
+            phase_deadline = (monotonic() + policy.deliveries_time_fraction * max(0, deadline - monotonic())
                               if name == "deliveries" else deadline)
-            best, phase, stat = _master_phase(
-                instance, config, policy, oracles, name, phase_deadline, best,
-                search_config.log_directory,
+            bound = float(len(instance.customer_ids)) if name == "deliveries" else (
+                0.0 if all(arc_energy(a, instance.operations) >= 0 for a in instance.arcs)
+                else len(instance.vehicle_ids)*(instance.parameters.initial_energy_kwh-instance.parameters.battery_capacity_kwh)
             )
+            if name == "energy":
+                relaxation = energy_relaxation(
+                    instance, config, policy,
+                    min(phase_deadline, monotonic()+config.time_limit_seconds*policy.bound_time_fraction),
+                    complete_service=len(best.served_visit_ids) == len(instance.customer_ids),
+                )
+                if relaxation["applicable"]:
+                    bound = max(bound, relaxation["bound_kwh"])
+                if relaxation.get("tour") is not None:
+                    repair_deadline = min(phase_deadline, monotonic()+policy.epoch_seconds*.1)
+                    candidates = [
+                        construction.split_tour(relaxation["tour"], repair_deadline),
+                    ]
+                    if policy.seed_charging:
+                        candidates.append(construction.charging_seed(
+                            1, repair_deadline, tours=[relaxation["tour"]],
+                        ))
+                    for candidate in candidates:
+                        if candidate is not None and candidate.net_energy_kwh < best.net_energy_kwh:
+                            best = heuristic_incumbent = candidate
+            epoch, termination, message = 0, "budget_exhausted", ""
+            while monotonic() < phase_deadline:
+                if best is not None and name == "energy" and abs(best.net_energy_kwh-bound) <= 1e-7:
+                    termination = "validated_route_and_relaxation_bound"
+                    break
+                for oracle in shared.values():
+                    oracle.search, oracle.dominance = policy.pricing_search, policy.dominance
+                construction.pool_limit = policy.pricing_pool_limit
+                before = (len(best.served_visit_ids), best.net_energy_kwh) if best else None
+                if best is not None and policy.restricted_master_seconds > 0:
+                    best, _, pool_stat = _master_phase(
+                        instance, config, policy, oracles, name,
+                        min(phase_deadline, monotonic()+policy.restricted_master_seconds),
+                        best, search_config.log_directory, construction, epoch, restricted=True,
+                    )
+                    stats.append(pool_stat)
+                if monotonic() >= phase_deadline:
+                    break
+                best, phase, stat = _master_phase(
+                    instance, config, policy, oracles, name,
+                    min(phase_deadline, monotonic()+policy.epoch_seconds), best,
+                    search_config.log_directory, construction, epoch,
+                )
+                stats.append(stat)
+                if phase.best_bound is not None:
+                    bound = min(bound, phase.best_bound) if name == "deliveries" else max(bound, phase.best_bound)
+                termination, message = phase.termination_condition, phase.message
+                epoch += 1
+                if phase.proven_optimal or phase.status in {"infeasible", "error"}:
+                    break
+                after = (len(best.served_visit_ids), best.net_energy_kwh) if best else None
+                if after == before:
+                    policy = controller.decide("search_stagnation", {
+                        "phase": name, "epoch": epoch, "deliveries": after[0] if after else 0,
+                        "energy_kwh": after[1] if after else None,
+                        "bound": bound, "columns": stat["columns"],
+                        "heuristic_columns": stat["heuristic_pricing_columns"],
+                        "exact_pricing_seconds": stat["exact_pricing_seconds"],
+                        "heuristic_pricing_seconds": stat["heuristic_pricing_seconds"],
+                        "labels_expanded": stat["labels_expanded"],
+                        "pricing_interrupted": stat["pricing_interrupted"],
+                    })
+                improved = construction.improve(
+                    best, policy, min(phase_deadline, monotonic()+policy.epoch_seconds*policy.improvement_time_fraction),
+                    config.seed+epoch,
+                )
+                if improved is not best:
+                    best = heuristic_incumbent = improved
+                if name == "deliveries" and best and len(best.served_visit_ids) == len(instance.customer_ids):
+                    first_full_seconds = first_full_seconds or monotonic()-started
+                    termination = "witness_and_cardinality_bound"
+                    break
+            if name == "energy" and relaxation and relaxation["applicable"] and termination == "pricing_incomplete":
+                message = "Pricing incompleto; cota válida de la relajación energética sin recursos."
+            phase = _phase(name, best, bound, termination, monotonic()-phase_started, message=message)
             phases.append(phase)
-            stats.append(stat)
             if phase.status in {"infeasible", "error"}:
                 break
+        heuristic_trace = construction.trace
+    tuning = controller.report()
+    from ev_routing.route_policy import _save_decision
+    _save_decision(search_config, tuning)
     optimal = len(phases) == 2 and all(p.proven_optimal for p in phases)
     return SolveResult(
         requested_solver=config.solver, used_solver="scip-routes",
@@ -436,7 +640,7 @@ def solve_routes(instance, config: SolverConfig, search_config=None, *, initial_
         phases=phases, solution=best, lexicographic_optimal=optimal,
         status="optimal" if optimal else "feasible" if best else phases[-1].status,
         solution_source=(
-            "initial_solution" if best is initial_solution else "heuristic" if best is witness
+            "initial_solution" if best is initial_solution else "heuristic" if best is heuristic_incumbent
             else "solver"
         ) if best else None,
         runtime_seconds=monotonic() - started,
@@ -445,5 +649,8 @@ def solve_routes(instance, config: SolverConfig, search_config=None, *, initial_
             "engine": "scip_routes_without_h", "movement_limit_used": None,
             "single_tour_certificate": certificate, "phases": stats,
             "controller": tuning, "configuration": search_config.model_dump(),
+            "first_full_delivery_seconds": first_full_seconds,
+            "heuristic_progress": heuristic_trace,
+            "energy_relaxation": relaxation,
         },
     )

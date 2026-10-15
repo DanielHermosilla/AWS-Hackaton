@@ -43,6 +43,9 @@ def parser() -> argparse.ArgumentParser:
     result.add_argument("--aws-region", default=os.getenv("AWS_DEFAULT_REGION", "us-east-1"))
     result.add_argument("--aws-profile", default=os.getenv("AWS_PROFILE", "hackathon"))
     result.add_argument("--llm-timeout-seconds", type=float, default=8)
+    result.add_argument("--llm-max-calls", type=int, default=4)
+    result.add_argument("--llm-max-output-tokens", type=int, default=2048)
+    result.add_argument("--llm-time-fraction", type=float, default=.25)
     return result
 
 
@@ -57,10 +60,12 @@ def run(args) -> int:
         threads=args.threads, seed=args.seed, tee=True,
     )
     search = SearchConfig(
-        policy=args.search_policy, max_llm_calls=1, show_llm_trace=True,
+        policy=args.search_policy, max_llm_calls=args.llm_max_calls, show_llm_trace=True,
+        llm_time_fraction=args.llm_time_fraction,
         bedrock=BedrockConfig(
             model_id=args.bedrock_model, region=args.aws_region,
             profile=args.aws_profile or None, timeout_seconds=args.llm_timeout_seconds,
+            max_output_tokens=args.llm_max_output_tokens,
         ),
     )
     simulating = args.simulate_customers is not None
@@ -137,7 +142,10 @@ def run(args) -> int:
         "--threads", str(config.threads), "--seed", str(config.seed),
         "--search-policy", search.policy,
         "--aws-region", search.bedrock.region, "--aws-profile", search.bedrock.profile or "",
-        "--llm-max-calls", "1", "--llm-timeout-seconds", str(search.bedrock.timeout_seconds),
+        "--llm-max-calls", str(search.max_llm_calls),
+        "--llm-timeout-seconds", str(search.bedrock.timeout_seconds),
+        "--llm-max-output-tokens", str(search.bedrock.max_output_tokens),
+        "--llm-time-fraction", str(search.llm_time_fraction),
         "--solver-log-directory", str(logs), "--output", str(output / "result.json"),
     ]
     if search.bedrock.model_id:

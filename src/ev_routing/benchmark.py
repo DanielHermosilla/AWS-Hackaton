@@ -60,8 +60,10 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--bedrock-model", default=os.getenv("BEDROCK_MODEL_ID"))
     parser.add_argument("--aws-region", default=os.getenv("AWS_DEFAULT_REGION", "us-east-1"))
     parser.add_argument("--aws-profile", default=os.getenv("AWS_PROFILE", "hackathon"))
-    parser.add_argument("--llm-max-calls", type=int, default=1)
+    parser.add_argument("--llm-max-calls", type=int, default=4)
     parser.add_argument("--llm-timeout-seconds", type=float, default=8)
+    parser.add_argument("--llm-max-output-tokens", type=int, default=2048)
+    parser.add_argument("--llm-time-fraction", type=float, default=.25)
     parser.add_argument("--decision-interval-seconds", type=float, default=15)
     parser.add_argument("--resume", action="store_true")
     return parser
@@ -127,8 +129,10 @@ def run_benchmark(args) -> int:
         bedrock=BedrockConfig(
             model_id=args.bedrock_model, region=args.aws_region,
             profile=args.aws_profile or None, timeout_seconds=args.llm_timeout_seconds,
+            max_output_tokens=args.llm_max_output_tokens,
         ),
         max_llm_calls=args.llm_max_calls,
+        llm_time_fraction=args.llm_time_fraction,
         decision_interval_seconds=args.decision_interval_seconds,
     )
     paths = {"instance": args.instance.resolve()}
@@ -238,6 +242,8 @@ def run_benchmark(args) -> int:
                 "--aws-region", args.aws_region, "--aws-profile", args.aws_profile,
                 "--llm-max-calls", str(args.llm_max_calls),
                 "--llm-timeout-seconds", str(args.llm_timeout_seconds),
+                "--llm-max-output-tokens", str(args.llm_max_output_tokens),
+                "--llm-time-fraction", str(args.llm_time_fraction),
                 "--decision-interval-seconds", str(args.decision_interval_seconds),
                 "--solver-log-directory", str(directory / "native"),
             ]

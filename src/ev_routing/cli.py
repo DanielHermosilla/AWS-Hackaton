@@ -111,12 +111,14 @@ def build_parser() -> argparse.ArgumentParser:
     run.add_argument("--bedrock-model", default=os.getenv("BEDROCK_MODEL_ID"))
     run.add_argument("--aws-region", default=os.getenv("AWS_DEFAULT_REGION", "us-east-1"))
     run.add_argument("--aws-profile", default=os.getenv("AWS_PROFILE", "hackathon"))
-    run.add_argument("--llm-max-calls", type=int, default=1)
+    run.add_argument("--llm-max-calls", type=int, default=4)
     run.add_argument("--llm-timeout-seconds", type=float, default=8)
+    run.add_argument("--llm-max-output-tokens", type=int, default=2048)
+    run.add_argument("--llm-time-fraction", type=float, default=.25)
     run.add_argument("--decision-interval-seconds", type=float, default=15)
     run.add_argument("--solver-log-directory", type=Path)
     run.add_argument("--show-llm-trace", action="store_true",
-                     help="Mostrar prompt y cambios de la decisión estratégica sin H")
+                     help="Mostrar decisiones y cambios del orquestador sin H")
     return parser
 
 
@@ -216,8 +218,10 @@ def _run(args: argparse.Namespace) -> int:
             bedrock=BedrockConfig(
                 model_id=args.bedrock_model, region=args.aws_region,
                 profile=args.aws_profile or None, timeout_seconds=args.llm_timeout_seconds,
+                max_output_tokens=args.llm_max_output_tokens,
             ),
             max_llm_calls=args.llm_max_calls,
+            llm_time_fraction=args.llm_time_fraction,
             decision_interval_seconds=args.decision_interval_seconds,
             log_directory=str(args.solver_log_directory) if args.solver_log_directory else None,
             show_llm_trace=args.show_llm_trace,

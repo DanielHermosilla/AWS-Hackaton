@@ -1,4 +1,4 @@
-"""Una decisión estratégica por ejecución; acciones implementadas y verificables."""
+"""Acciones verificables del orquestador; nunca modifica el problema físico."""
 
 from __future__ import annotations
 
@@ -10,12 +10,12 @@ from typing import Literal
 from pydantic import Field, StrictBool, StrictFloat, StrictInt, StrictStr
 
 from ev_routing.contracts import Contract
-from ev_routing.search_policy import SearchConfig
 from ev_routing.scip_tuning import parameter_catalog, validate_parameters
+from ev_routing.search_policy import SearchConfig
 
 
 class RoutePolicy(Contract):
-    route_cuts: Literal["none", "subset_row_triples"] = "subset_row_triples"
+    route_cuts: Literal["none", "subset_row_triples"] = "none"
     columns_per_round: int = Field(default=50, ge=1, le=500, strict=True)
     max_subset_rows: int = Field(default=100, ge=0, le=1000, strict=True)
     subtour_batch_size: int = Field(default=100, ge=1, le=1000, strict=True)
@@ -26,16 +26,34 @@ class RoutePolicy(Contract):
     scip_parameters: dict[str, StrictBool | StrictInt | StrictFloat | StrictStr] = Field(
         default_factory=dict, max_length=2500,
     )
-    seed_strategy: Literal["none", "cheapest_insertion", "regret_insertion"] = "cheapest_insertion"
-    seed_starts: int = Field(default=1, ge=1, le=32, strict=True)
-    pricing_strategy: Literal["exhaustive", "heuristic_then_exact"] = "exhaustive"
+    seed_strategy: Literal["none", "cheapest_insertion", "regret_insertion"] = "regret_insertion"
+    seed_starts: int = Field(default=8, ge=1, le=64, strict=True)
+    seed_charging: bool = True
+    charging_seed_starts: int = Field(default=6, ge=1, le=64, strict=True)
+    seed_time_fraction: float = Field(default=.06, ge=0, le=.3)
+    improvement_time_fraction: float = Field(default=.12, ge=0, le=.4)
+    local_search: list[Literal["two_opt", "relocate", "swap"]] = Field(
+        default_factory=lambda: ["two_opt", "relocate", "swap"], max_length=3,
+    )
+    local_search_passes: int = Field(default=20, ge=0, le=200, strict=True)
+    ruin_fraction: float = Field(default=.2, ge=.05, le=.7)
+    ruin_rounds: int = Field(default=40, ge=0, le=1000, strict=True)
+    deliveries_time_fraction: float = Field(default=.85, ge=.1, le=.95)
+    epoch_seconds: float = Field(default=12, ge=.05, le=300)
+    bound_strategy: Literal["none", "assignment", "tour_relaxation"] = "tour_relaxation"
+    bound_time_fraction: float = Field(default=.08, ge=0, le=.4)
+    share_vehicle_oracles: bool = True
+    pricing_strategy: Literal["exhaustive", "heuristic_then_exact"] = "heuristic_then_exact"
     pricing_search: Literal["breadth_first", "depth_first"] = "breadth_first"
     pricing_heuristic_starts: int = Field(default=4, ge=1, le=32, strict=True)
+    pricing_heuristic_seconds: float = Field(default=.15, ge=.001, le=5)
+    pricing_pool_limit: int = Field(default=2000, ge=50, le=20000, strict=True)
+    restricted_master_seconds: float = Field(default=.5, ge=0, le=30)
     dominance: Literal["convex", "vertices_only"] = "convex"
     rationale: str = Field(default="", max_length=1500)
 
 
-ROUTE_PROMPT = """Select a substantive, coherent search configuration before an H-free electric
+ROUTE_PROMPT = """You orchestrate the ENTIRE search for an H-free electric
 vehicle routing solve. Return ONLY a JSON object with VALUES allowed by the schema.
 Do not include introductory or concluding prose, comments, schema or markdown.
 Example: {"route_cuts":"subset_row_triples","columns_per_round":50,
@@ -63,10 +81,28 @@ pricing_search changes traversal order only; vertices_only uses conservative
 dominance and may retain extra labels. More subset-row cuts add work to pricing.
 The implementation enables these heuristics only for nonnegative untimed cases;
 all other resources, charging and revisits remain handled by exact pricing.
-Budget allocation is fixed by the caller, including heuristic and inference time.
-Do not change data, resources, formulation, objectives, budgets or proof criteria.
+Make substantive decisions about seed construction, multi-start diversity, local
+operators, ruin-and-repair, resource allocation BETWEEN stages, solver epochs,
+dual-guided pricing, shared physical oracles, cuts and native SCIP parameters.
+The global wall-time budget is fixed; stage fractions allocate that same budget.
+When all customers are served, cardinality proves the delivery objective and
+the remaining time should target energy. A weak incumbent calls for more primal
+construction; lack of columns calls for better pricing, not arbitrary branching.
+after_seed and search_stagnation provide measured feedback. You may revise your
+earlier plan. Return only fields you want to change; unspecified values persist.
+The schema and mutable_policy_fields shrink as stages finish. Do not retune
+completed seeding or a completed bound relaxation; those changes have no effect.
+restricted_master_seconds allocates a small finite-pool primal solve before exact
+pricing. Its native bound NEVER certifies the full route master.
+bound_strategy selects an energy lower-bound relaxation after complete service.
+That relaxation removes physical resources; only validated repaired tours become
+incumbents. presolve/separation presets apply to these finite arc relaxations,
+while native master presolve/separation stay locked for future columns.
+The exact oracle is always retained: heuristic failure cannot certify anything.
+pricing_pool_limit limits only the OPTIONAL heuristic pool, never exact labels.
+Do not change data, resources, formulation, objectives, total budgets or proof criteria.
 Do not output code. The solver, never the LLM, proves optimality or complete pricing.
-This is one strategic call shared by both lexicographic phases, not a pricing callback.
+Calls occur at explicit orchestration events outside SCIP callbacks, never per node.
 """
 
 

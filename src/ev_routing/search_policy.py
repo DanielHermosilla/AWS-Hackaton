@@ -43,9 +43,10 @@ class BedrockConfig(Contract):
 class SearchConfig(Contract):
     policy: Literal["standard", "deterministic", "adaptive"] = "standard"
     bedrock: BedrockConfig = Field(default_factory=BedrockConfig)
-    max_llm_calls: int = Field(default=1, ge=1, le=20, strict=True)
+    max_llm_calls: int = Field(default=4, ge=1, le=20, strict=True)
     decision_interval_seconds: float = Field(default=15, ge=0)
     min_pricing_calls_between_decisions: int = Field(default=10, ge=1, strict=True)
+    llm_time_fraction: float = Field(default=.25, gt=0, le=.5)
     # Ruta local de logs; no se transmite al LLM.
     log_directory: str | None = None
     show_llm_trace: bool = False

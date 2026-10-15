@@ -137,7 +137,8 @@ def test_master_integrality_with_fractional_pair_cover_and_subset_rows():
     result = check(instance, 3, 9, search_config=SearchConfig(
         policy="adaptive", bedrock={"model_id": "test", "timeout_seconds": .01},
     ), policy_provider=lambda _: {"policy": {"route_cuts": "none", "columns_per_round": 1}})
-    assert all(s["max_columns_added_per_call"] == 1 for s in result.search["phases"])
+    assert all(s["max_columns_added_per_call"] == 1
+               for s in result.search["phases"] if s["pricing_calls"])
 
 
 def test_final_reserve_can_make_even_inactive_vehicle_infeasible():

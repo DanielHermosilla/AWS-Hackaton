@@ -6,7 +6,6 @@ from functools import lru_cache
 
 from pyscipopt import SCIP_PARAMSETTING, Model
 
-
 LP_SEARCH = {
     "lp/initalgorithm", "lp/resolvealgorithm", "lp/pricing", "lp/scaling",
     "lp/presolving", "lp/colagelimit", "lp/rowagelimit", "lp/cleanupcols",
