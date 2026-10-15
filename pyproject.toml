@@ -19,7 +19,6 @@ ia = ["boto3==1.40.0"]
 
 [dependency-groups]
 arena = [
-    "pulp==4.0.1",
     "pyscipopt==6.3.0",
 ]
 bench = [

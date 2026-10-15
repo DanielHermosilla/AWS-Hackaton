@@ -26,8 +26,25 @@ Implementar todas las ideas y medir cuánto aporta cada una.
 | `exp/elev-usgs` | USGS 3DEP 10 m | Igual que la anterior |
 | `exp/elev-eved` | Elevación de eVED proyectada sobre los nodos OSM | Igual que la anterior |
 
+## Oleada 3: experimento controlado de la poda top-k (k-vecinos)
+
+Se corre después de las oleadas de IA y de elevación, en paralelo por su cuenta. Queda configurable y **apagado por defecto** hasta tener evidencia. Hoy `escala.k_vecinos: auto` activa k = 10 sobre 25 clientes, y ese umbral no tiene respaldo en datos. Puede correr en otra máquina.
+
+- **Pregunta:** ¿la poda empeora la energía frente a no podar (k = 0) con el mismo presupuesto total? ¿Desde cuántos clientes conviene?
+- **Subconjunto que da indicios fuertes** (en vez del factorial completo de 5×5×5×2×3 = 750 corridas):
+  - k ∈ {0, 10} como contraste principal, más k = 5 y k = 15 solo en 40 clientes.
+  - Clientes: {30, 40, 60, 100}; 3 semillas; 2 vehículos; 2 repeticiones.
+  - Total: ~64 corridas de ≤ 55 s, unos 60 min en serie o ~15 min con 4 procesos.
+- **Medida directa del daño, que no depende del tiempo:** en instancias de 20 a 30 clientes con óptimo demostrado (k = 0, gap 0), contar cuántos arcos de la solución óptima tienen un rango de vecino mayor que k.
+- **Referencia de calidad:** la mejor solución conocida con k = 0 y 600 s en el subconjunto de 40 y 60 clientes.
+- **Análisis:** diferencia pareada por instancia y semilla (k = 10 contra k = 0), con promedio, intervalo de confianza y conteo de victorias y derrotas.
+- **Cómputo:** cada corrida usa 1 núcleo (`solver.hilos: 1`) para poder paralelizar con procesos independientes, `uv run python -m experimentos.topk --worker i/N`. Necesita unos 2 GB de RAM por proceso (estimado; medirlo en la primera corrida). Se puede mover a otra máquina clonando `evrp-lab` y ejecutando `uv sync`. Los resultados se guardan en JSONL y se agregan al final.
+- **Decisión:** si k = 10 no gana de forma consistente, `k_vecinos` vuelve a 0 por defecto.
+
 ## Arena
 
+- El ejecutable de SCIP 9.2.4 quedó instalado en `externos/scip-9.2.4/bin` (fuera de git, solo para el proyecto). Pyomo lo detecta (`SolverFactory('scip')` → 9.2.4) si se agrega esa carpeta al PATH del subproceso. Hay que repetir `ev_routing` con **su** flujo de solver (SCIP) y con H = 30 o mayor, en vez de `appsi_highs` con H = 10.
+- Pulp se quitó del grupo `arena`. CBC se registra como no disponible.
 - Repetir `ev_routing` con su `movement_limit` por defecto (30) y con valores mayores. La primera corrida usó H=10.
 - Acordar con el autor de `ev_routing` los supuestos (en especial `max_snap_distance_m`; la arena usó 500 m) y recibir su JSON de escenario.
 - Exportar su modelo Pyomo a MPS para la competencia de solvers.
