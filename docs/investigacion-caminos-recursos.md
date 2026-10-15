@@ -4,12 +4,19 @@ Investigación del 15 de octubre de 2026. Rama:
 `codex/investigacion-caminos-recursos`. Base:
 `56cb75c711dbf118cecfc2b584cf7e36f00941a2`, de `modelamiento`.
 
-**Recomendación:** conservar Dijkstra para el escenario que satisface sus
-hipótesis y fortalecer el flujo general con **etiquetas de recursos continuos,
-perfiles de batería y generación de caminos durante el pricing**. Reutilizar
-`RouteOracle` y mantener nuestro maestro por rutas sin H en SCIP.
-Un pequeño catálogo de caminos alternativos sirve como heurística inicial;
-no acredita por sí solo optimalidad sobre todas las calles.
+**Recomendación revisada tras ampliar la comparación bibliográfica:** para
+nuestra red con pocos servicios, empezar por un **multigrafo de servicios
+precalculado con alternativas no dominadas y perfiles exactos de batería**.
+Reutilizar `RouteOracle` y mantener nuestro maestro por rutas sin H en SCIP.
+La generación de conexiones durante el pricing queda como alternativa a evaluar
+si el preprocesamiento resulta demasiado costoso. Conservar Dijkstra para el
+escenario que satisface sus hipótesis.
+
+Esta prioridad es una hipótesis de ingeniería que aún debe medirse. La literatura
+respalda tanto el multigrafo como el pricing vial; no acredita que nuestro diseño
+con búsquedas de conexiones anidadas en el pricing sea superior. Un catálogo
+limitado de candidatos es heurístico; solo una representación completa o una
+prueba adicional permite certificar el problema vial.
 
 Esta rama contiene investigación y reproducciones sintéticas. No implementa
 todavía ese cambio de producción. Los cambios locales que estaban pendientes
@@ -120,6 +127,8 @@ experimentales a este proyecto.
 | Dorfman, Kaplan, Tarjan y Zwick, 2023, [Optimal energetic paths for electric cars][dorfman] | Adapta Bellman–Ford y Dijkstra/A* a la transición de batería saturada, sin ciclos negativos | Caso energético con estado inicial dado; no resuelve por sí solo la flota con ventanas y recargas |
 | Baum, Sauer, Wagner y Zündorf, SEA 2017, [Consumption Profiles…][profiles] | Representa el consumo como función del SoC inicial y estudia perfiles y recargas parciales | El resultado energético no vuelve polinomial el problema con tiempo; su variante práctica acelerada renuncia formalmente a corrección |
 | Letchford, Nasiri y Oukil, 2014, [Pricing routines…][road-pricing] | Estudia precisamente la pérdida de alternativas coste-tiempo al reducir una red vial y propone pricing en la red original | Su modelo no incorpora nuestra saturación; la frontera completa puede exigir espacio exponencial |
+| Ben Ticha et al., 2019, [A branch-and-price algorithm…][road-comparison] | Compara los dos enfoques completos y encuentra ventaja del multigrafo, especialmente en redes reales con pocos clientes | No estudia nuestra batería; los tiempos publicados excluyen construir el multigrafo |
+| Yamín, Desaulniers y Mendoza, publicación online 2024 y volumen 2025, [The Electric Vehicle Routing and Overnight Charging Scheduling Problem on a Multigraph][ev-multigraph] | Emplea alternativas de tiempo y energía con branch-price-and-cut y ventanas en un problema de vehículos eléctricos | Incluye carga nocturna en depósito; su evidencia no demuestra compatibilidad automática con nuestra regeneración y recarga en ruta |
 | Desaulniers, Errico, Irnich y Schneider, 2016, [Exact Algorithms…][evrptw] | Branch-price-and-cut con etiquetas y funciones de extensión para ventanas y múltiples recargas parciales | Hay que derivar las extensiones para nuestra energía regenerativa, objetivo y convenciones temporales |
 | Baum et al., 2019, [Shortest Feasible Paths with Charging Stops…][charge] | CHArge integra tiempo de recorrido, factibilidad energética y paradas de carga | Minimiza tiempo de un viaje; aquí se mantiene la prioridad entregas y después energía |
 | Baum et al., 2020, [Modeling and Engineering Constrained Shortest Path Algorithms…][constrained] | Trata el compromiso tiempo-consumo con física de batería y métodos exactos y heurísticos | Su variante incluye elección de velocidad y excluye recargas; no copiar esas decisiones al problema actual |
@@ -129,6 +138,13 @@ La conclusión para este repositorio es una **inferencia de diseño** apoyada en
 estos trabajos y en los contraejemplos anteriores: usar perfiles y etiquetas,
 integrados con el pricing existente, en lugar de sustituir únicamente la llamada
 a Dijkstra.
+
+La comparación de [Ben Ticha et al.][road-comparison], especialmente secciones
+4.3.3–4.4, obliga a matizar la preferencia inicial por el pricing vial.
+Los autores señalan que el estudio de 2014 examinaba un pricing con menos
+recursos y altas densidades de clientes. Su comparación posterior favorece al
+multigrafo, aunque advierte que futuras implementaciones podrían cambiar el
+resultado. Es evidencia para priorizar un ensayo, no una garantía de velocidad.
 
 ## 4. Diseño recomendado
 
@@ -186,9 +202,21 @@ Ventanas fijas no equivalen a tráfico dependiente de la hora: incorporar este
 
 Para una pareja de servicios interesa una frontera de alternativas de
 **duración y transformación de batería**, no solamente `(tiempo, suma de kWh)`.
-Las conexiones pueden generarse cuando el pricing las necesita y almacenarse
-con sus testigos viales. Se conservan el maestro SCIP, los clientes, cargadores,
-recargas parciales y revisitas.
+Probaría primero su precomputación en un módulo independiente, con caché por
+red y configuración y testigos viales. El pricing consumiría ese multigrafo,
+sin repetir una búsqueda vial por cada etiqueta. Se conservan el maestro SCIP,
+los clientes, cargadores, recargas parciales y revisitas.
+
+La comparación entre conexiones debe cubrir los SoC iniciales relevantes, no
+solo el 60 % de la salida del depósito. La batería cambia durante la ruta y con
+las recargas. Comprobar la dominancia por perfiles es una exigencia adicional
+respecto de un multigrafo ordinario de costes y tiempos aditivos.
+
+Si la frontera o su tiempo de construcción crecen demasiado, evaluaría generar
+conexiones bajo demanda o explorar la red vial en un único pricing de recursos.
+Son dos implementaciones distintas: la evidencia sobre pricing vial no demuestra
+que anidar una búsqueda independiente por pareja dentro del pricing sea mejor.
+Antes de elegir mediría preparación, resolución y memoria conjuntamente.
 
 Entre dos eventos consecutivos no hay recarga ni servicio intermedio. Para
 tiempos constantes se puede resumir cada camino fijo mediante un perfil exacto
@@ -322,8 +350,10 @@ El siguiente experimento debería comparar sobre los mismos snapshots:
 
 1. Dijkstra actual, como control dentro de su dominio y como catálogo restringido
    en los ejemplos temporales.
-2. Catálogo heurístico de alternativas con perfiles.
+2. Multigrafo precalculado de alternativas con perfiles, registrando si se
+   completó la búsqueda o si quedó un catálogo heurístico.
 3. Pricing completo sobre calles/perfiles, con referencia exhaustiva pequeña.
+4. Generación bajo demanda, solo después de tener las dos referencias anteriores.
 
 Separar casos sin regeneración, solo regeneración, solo ventanas y ambos;
 incluir saturación, déficit antes de una bajada, recarga parcial, espera,
@@ -335,14 +365,17 @@ Reutilizar datos preparados y reservar `evaluation` para resolver, sin elegir
 configuraciones a partir de su desempeño.
 
 La decisión pendiente es el diseño de la interfaz de perfiles y su caché.
-La investigación sí permite escoger la dirección: **pricing con recursos,
-acelerado por perfiles exactos y cotas, con candidatos heurísticos como arranque**.
+La dirección prioritaria es **preprocesamiento modular de un multigrafo con
+perfiles y pricing con recursos sobre él**. El resultado del ensayo, incluyendo
+el coste de preprocesar, decidirá si conviene introducir generación bajo demanda.
 
 [scipy-dijkstra]: https://docs.scipy.org/doc/scipy/reference/generated/scipy.sparse.csgraph.dijkstra.html
 [scipy-johnson]: https://docs.scipy.org/doc/scipy/reference/generated/scipy.sparse.csgraph.johnson.html
 [dorfman]: https://arxiv.org/abs/2305.19015
 [profiles]: https://drops.dagstuhl.de/entities/document/10.4230/LIPIcs.SEA.2017.19
 [road-pricing]: https://www.lancaster.ac.uk/staff/letchfoa/articles/2014-pricing-time-windows.pdf
+[road-comparison]: https://pure.tue.nl/ws/files/126068122/Ticha_et_al_2019_Networks.pdf
+[ev-multigraph]: https://pubsonline.informs.org/doi/abs/10.1287/ijoc.2023.0404
 [evrptw]: https://pubsonline.informs.org/doi/10.1287/opre.2016.1535
 [charge]: https://arxiv.org/abs/1910.09812
 [constrained]: https://arxiv.org/abs/2011.10400
