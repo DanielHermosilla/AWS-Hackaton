@@ -137,12 +137,18 @@ def correr_ref(ref: str) -> Path:
     RESULTADOS.mkdir(parents=True, exist_ok=True)
     salida = RESULTADOS / f"{ref.replace('/', '_')}.jsonl"
     print(f"[{ref}] worktree={wt}")
+    import os
     import tempfile
+    # Ejecutamos el CÓDIGO del ref (su src/) con el intérprete YA sincronizado de esta
+    # rama (mismas dependencias pinneadas en todos los refs evrp): así cada ref ve sus
+    # propios módulos sin re-sincronizar un venv por worktree. data/ se resuelve relativo
+    # al cwd=wt. PYTHONPATH antepone el src del ref.
+    env = dict(os.environ)
+    env["PYTHONPATH"] = str(Path(wt) / "src") + os.pathsep + env.get("PYTHONPATH", "")
     with tempfile.TemporaryDirectory() as td:
-        cmd = ["uv", "run", "python", "-c", RUNNER,
-               json.dumps(ESCENARIOS), str(PRESUPUESTO_S), td]
+        cmd = [sys.executable, "-c", RUNNER, json.dumps(ESCENARIOS), str(PRESUPUESTO_S), td]
         t0 = time.perf_counter()
-        proc = subprocess.run(cmd, cwd=wt, capture_output=True, text=True)
+        proc = subprocess.run(cmd, cwd=wt, capture_output=True, text=True, env=env)
         wall = time.perf_counter() - t0
     if "___BENCH_JSON___" not in proc.stdout:
         print(proc.stdout[-2000:]); print(proc.stderr[-2000:], file=sys.stderr)

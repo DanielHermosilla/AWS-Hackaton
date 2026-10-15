@@ -14,6 +14,11 @@ import json
 import sys
 from pathlib import Path
 
+try:  # Windows: la consola suele ser cp1252 y la tabla usa Δ/·
+    sys.stdout.reconfigure(encoding="utf-8")
+except Exception:
+    pass
+
 RESULTADOS = Path(__file__).resolve().parent / "resultados"
 
 
