@@ -27,6 +27,20 @@ log = logging.getLogger(__name__)
 FACTIBLE = 2
 
 
+def _presupuesto_adaptativo(limite: float, n_clientes: int, columnas: int, esc: dict) -> float:
+    """Ajusta el presupuesto del MILP para acotar el tiempo TOTAL del pipeline.
+
+    `limite` ya es el presupuesto del MILP (el llamador puede haberle restado el
+    tiempo de red+heurística). Aquí solo imponemos un piso: para n_clientes grandes
+    el MILP con poda k-vecinos sí mejora el arranque, así que no recortamos por tamaño;
+    únicamente garantizamos un mínimo útil `min_s` (por defecto 10 s). Para instancias
+    pequeñas (<= `umbral_pequeno`, por defecto 25) se mantiene el presupuesto completo
+    para preservar el óptimo probado a 20 clientes.
+    """
+    min_s = float(esc.get("min_s", 10.0))
+    return max(min_s, limite)
+
+
 @dataclass(frozen=True)
 class Arco:
     i: str
@@ -95,6 +109,11 @@ class ModeloCompacto:
         if cfg_solver.get("hilos"):
             h.setOptionValue("threads", int(cfg_solver["hilos"]))
         h.setOptionValue("mip_rel_gap", float(cfg_solver.get("gap_relativo", 0.0)))
+        esc = cfg_solver.get("escala", {}) or {}
+        if esc.get("mip_heuristic_effort") is not None:
+            h.setOptionValue("mip_heuristic_effort", float(esc["mip_heuristic_effort"]))
+        if esc.get("presolve"):
+            h.setOptionValue("presolve", str(esc["presolve"]))
         self.inicial = inicial
         self.x: dict[tuple[int, Arco], highspy.highs_var] = {}
         self.b, self.u, self.y = {}, {}, {}
@@ -215,7 +234,11 @@ class ModeloCompacto:
         h, inst = self.h, self.inst
         t0 = time.perf_counter()
         limite = float(self.cfg.get("tiempo_limite_s", 60))
-        traza = {"formulacion": "compacta", "columnas": h.getNumCol(), "filas": h.getNumRow()}
+        esc = self.cfg.get("escala", {}) or {}
+        if esc.get("adaptativo"):
+            limite = _presupuesto_adaptativo(limite, len(inst.clientes), h.getNumCol(), esc)
+        traza = {"formulacion": "compacta", "columnas": h.getNumCol(), "filas": h.getNumRow(),
+                 "limite_s": round(limite, 2)}
         vec0 = self._vector_inicial(inicial) if inicial else None
         if todos_certificados:
             h.addConstr(self.Y == len(inst.clientes))

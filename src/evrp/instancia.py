@@ -194,5 +194,45 @@ def construir(nodos: list[Nodo], red: Red, cfg: dict) -> Instancia:
                     continue
                 arcos[(i, j)] = s
         arcos[(ini, fin)] = est[(ini, fin)]
+        # Poda heurística k-vecinos: por cada cliente conserva solo sus k arcos
+        # cliente->cliente de menor energía (entrantes y salientes). Reduce el modelo
+        # para escalar; PUEDE perder el óptimo exacto, por eso es opcional (k>0).
+        # Se preserva simetría (si i->j sobrevive, se intenta mantener j->i) y los
+        # arcos usados por la solución inicial, cuando se proporciona.
+        k_vec = int(cfg.get("escala", {}).get("k_vecinos", 0))
+        if k_vec > 0 and len(clientes) > k_vec:
+            arcos = _podar_k_vecinos(arcos, clientes, k_vec)
         inst.tipos.append(DatosTipo(t, F, arcos, incompatibles, podados))
     return inst
+
+
+def _podar_k_vecinos(arcos: dict[tuple[str, str], Estad], clientes: list[str], k: int,
+                     obligatorios: set[tuple[str, str]] | None = None) -> dict[tuple[str, str], Estad]:
+    """Conserva, por cliente, los k arcos cliente->cliente de menor ê (entrada y salida).
+
+    Reducción HEURÍSTICA (puede perder el óptimo). Los arcos con base/cargadores/fin
+    y los `obligatorios` (p.ej. de la solución inicial) se conservan siempre.
+    """
+    Cs = set(clientes)
+    oblig = obligatorios or set()
+    cc = [(i, j) for (i, j) in arcos if i in Cs and j in Cs]
+    salida: dict[str, list[tuple[float, str, str]]] = {c: [] for c in clientes}
+    entrada: dict[str, list[tuple[float, str, str]]] = {c: [] for c in clientes}
+    for (i, j) in cc:
+        e = arcos[(i, j)].e
+        salida[i].append((e, i, j))
+        entrada[j].append((e, i, j))
+    mantener: set[tuple[str, str]] = set()
+    for c in clientes:
+        for _, i, j in sorted(salida[c])[:k]:
+            mantener.add((i, j))
+        for _, i, j in sorted(entrada[c])[:k]:
+            mantener.add((i, j))
+    out = {}
+    for (i, j), s in arcos.items():
+        if i in Cs and j in Cs:
+            if (i, j) in mantener or (j, i) in mantener or (i, j) in oblig:
+                out[(i, j)] = s
+        else:
+            out[(i, j)] = s
+    return out
