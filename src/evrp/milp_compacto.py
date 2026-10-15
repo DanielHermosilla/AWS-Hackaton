@@ -114,6 +114,8 @@ class ModeloCompacto:
             h.setOptionValue("mip_heuristic_effort", float(esc["mip_heuristic_effort"]))
         if esc.get("presolve"):
             h.setOptionValue("presolve", str(esc["presolve"]))
+        if esc.get("mip_detect_symmetry") is not None:
+            h.setOptionValue("mip_detect_symmetry", bool(esc["mip_detect_symmetry"]))
         self.inicial = inicial
         self.x: dict[tuple[int, Arco], highspy.highs_var] = {}
         self.b, self.u, self.y = {}, {}, {}

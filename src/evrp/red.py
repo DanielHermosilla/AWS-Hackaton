@@ -249,6 +249,14 @@ class RedOSM(Red):
             h.update(self.origen_grafo.encode())
         h.update(f"{energia.consumo_kwh_km}:{energia.masa_kg}:{energia.eta_traccion}:"
                  f"{energia.eta_regeneracion}:{energia.usar_pendiente}".encode())
+        if energia.usar_pendiente and self.G is not None:
+            # La elevación se asigna en memoria (eved/usgs/copernicus): incluir sus valores.
+            import numpy as np
+
+            alturas = np.array([float(d.get("elevation", 0.0) or 0.0)
+                                for _, d in sorted(self.G.nodes(data=True), key=lambda t: t[0])])
+            h.update(f"elev:{getattr(self, 'elevacion', 'ninguna')}".encode())
+            h.update(np.round(alturas, 3).tobytes())
         return h.hexdigest()[:16]
 
     def _ruta_cache_ady(self, energia) -> Path:
@@ -371,6 +379,14 @@ def aplicar_elevacion(G, fuente: str, opciones: dict) -> dict:
 
             f = FuenteEved(opciones["csv"], radio_m=float(opciones["radio_m"]),
                            interpolacion=opciones["interpolacion"])
+        elif fuente == "copernicus":
+            from .elevacion.copernicus import FuenteCopernicus  # requiere extra "elevacion" (rasterio)
+
+            f = FuenteCopernicus()
+        elif fuente == "usgs":
+            from .elevacion.usgs import FuenteUsgs  # sin dependencias extra; 1ª vez descarga ~48 MB
+
+            f = FuenteUsgs()
         else:
             raise ValueError(f"Fuente de elevación no implementada: {fuente!r}")
         meta = f.aplicar(G)

@@ -16,6 +16,7 @@ dependencies = [
 
 [project.optional-dependencies]
 ia = ["boto3==1.40.0"]
+elevacion = ["rasterio==1.4.3"]
 
 [dependency-groups]
 arena = [
