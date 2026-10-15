@@ -39,10 +39,14 @@ def parser() -> argparse.ArgumentParser:
     result.add_argument("--seed", type=int, default=0)
     result.add_argument("--search-policy", choices=["adaptive", "standard", "deterministic"],
                         default="adaptive")
-    result.add_argument("--bedrock-model", default=os.getenv("BEDROCK_MODEL_ID"))
+    result.add_argument("--bedrock-model", default=os.getenv(
+        "BEDROCK_MODEL_ID", "us.anthropic.claude-opus-5",
+    ))
     result.add_argument("--aws-region", default=os.getenv("AWS_DEFAULT_REGION", "us-east-1"))
     result.add_argument("--aws-profile", default=os.getenv("AWS_PROFILE", "hackathon"))
-    result.add_argument("--llm-timeout-seconds", type=float, default=8)
+    result.add_argument("--llm-timeout-seconds", type=float, default=30)
+    result.add_argument("--llm-max-output-tokens", type=int, default=4096)
+    result.add_argument("--llm-effort", choices=["low", "medium", "high"])
     return result
 
 
@@ -61,6 +65,7 @@ def run(args) -> int:
         bedrock=BedrockConfig(
             model_id=args.bedrock_model, region=args.aws_region,
             profile=args.aws_profile or None, timeout_seconds=args.llm_timeout_seconds,
+            max_output_tokens=args.llm_max_output_tokens, reasoning_effort=args.llm_effort,
         ),
     )
     simulating = args.simulate_customers is not None
@@ -138,10 +143,13 @@ def run(args) -> int:
         "--search-policy", search.policy,
         "--aws-region", search.bedrock.region, "--aws-profile", search.bedrock.profile or "",
         "--llm-max-calls", "1", "--llm-timeout-seconds", str(search.bedrock.timeout_seconds),
+        "--llm-max-output-tokens", str(search.bedrock.max_output_tokens),
         "--solver-log-directory", str(logs), "--output", str(output / "result.json"),
     ]
     if search.bedrock.model_id:
         command.extend(["--bedrock-model", search.bedrock.model_id])
+    if search.bedrock.reasoning_effort:
+        command.extend(["--llm-effort", search.bedrock.reasoning_effort])
     for key, path in inputs.items():
         command.extend([f"--{key.replace('_', '-')}", str(path)])
     manifest = {

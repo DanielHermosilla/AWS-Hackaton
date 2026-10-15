@@ -1,5 +1,32 @@
 # Verificación de la rama `modelamiento`
 
+## Tuning amplio y diagnóstico 40/60: 15 de octubre de 2026
+
+La suite ampliada pasó **599 pruebas**. Comprueba tipos/rangos nativos,
+recursos y certificados protegidos, aplicación de presets, rechazo atómico
+de propuestas inválidas, trazabilidad de campos nulos, payload Claude,
+dominancia sin LP, arranques sin H y óptimos pequeños bajo las nuevas
+estrategias. Se incluye una regresión donde el arranque sugerido por el LLM
+es peor y el motor conserva el incumbente estándar.
+También pasaron Ruff, la sintaxis Bash de los scripts y `git diff --check`.
+Se verificó que el hash del código Python final coincide con el del benchmark.
+
+Prueba real de Bedrock y comparación:
+`artifacts/tuning-diagnostics/comparison-opus5-final/`.
+Mismo snapshot 40/60, un hilo, semilla 0, 60 segundos incluyendo inferencia.
+Estándar y adaptativa alcanzaron **40/40, 17,2026658055 kWh**, con validación
+vial satisfactoria. Máximo de entregas probado; energía sin prueba de
+optimalidad, pricing incompleto y cota analítica 0.
+
+Opus 5 realizó una llamada de 23,743 segundos y 18.758 tokens, con propuesta
+aplicada y 33 parámetros SCIP efectivos distintos del estándar. El maestro
+energético generó 849 columnas frente a ocho, sin mejorar energía.
+El salto respecto de las dos entregas anteriores se debe al nuevo arranque
+del motor, no acredita una ventaja del LLM.
+El [diagnóstico completo](diagnostico-40-clientes.md) conserva la evidencia,
+los intentos fallidos, un ensayo adaptativo peor y los límites de la medición.
+No se editaron el modelo matemático ni el documento LaTeX en esta revisión.
+
 ## Simulación 40/60: 15 de octubre de 2026
 
 `scripts/test_clients.sh --simulate-customers 40 --simulation-seed 0` conservó

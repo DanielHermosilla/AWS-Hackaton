@@ -23,7 +23,9 @@ Pyomo/Gurobi/SCIP y GCG posicional se conservan como referencias explícitas.
 | `src/ev_routing/solve.py` | `solve_instance`: dos fases; Gurobi primero, SCIP si no está disponible/licenciado. |
 | `src/ev_routing/route_solver.py` | Maestro sin H, pricing SCIP/Farkas, cortes de ternas y reducción certificada DFJ. |
 | `src/ev_routing/route_resources.py` | Etiquetas con poliedros de recursos continuos, dominancia y reconstrucción física. |
-| `src/ev_routing/route_policy.py` | Una decisión Bedrock previa a ambas fases; acciones cerradas y fallback. |
+| `src/ev_routing/route_heuristics.py` | Inserciones de flota y pricing guiado por duales, sin H; generan candidatos, no certificados de energía. |
+| `src/ev_routing/scip_tuning.py` | Catálogo de parámetros del SCIP instalado, validación nativa y registro de cambios efectivos. |
+| `src/ev_routing/route_policy.py` | Una decisión Bedrock previa a ambas fases; catálogo nativo, estrategias implementadas y fallback. |
 | `src/ev_routing/dw.py` | `solve_dantzig_wolfe`: dos fases con GCG, recuperación y cotas originales. |
 | `src/ev_routing/dw_bridge.py` | Traducción lineal Pyomo/GCG y dos particiones de restricciones. |
 | `src/ev_routing/dw_callbacks.py` | Observación de pricing, selección de cortes nativos y aplicación de políticas. |

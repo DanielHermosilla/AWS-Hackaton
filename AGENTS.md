@@ -55,8 +55,23 @@ registradas; una prueba con dobles no acredita acceso a AWS.
 La política vigente está en `route_policy.py`: **una llamada Bedrock antes de
 resolver, compartida por ambas fases**, ninguna llamada remota por nodo, corte
 o ronda de pricing. Consultas excepcionales futuras requieren un evento y
-presupuesto explícitos; no están habilitadas. `RoutePolicy` solo admite cortes,
-lotes y branching implementados. `dw.py`, `dw_bridge.py`, `dw_callbacks.py`
+presupuesto explícitos; no están habilitadas. `RoutePolicy` admite cortes,
+lotes, estrategias de arranque/pricing y parámetros nativos de búsqueda.
+`scip_tuning.py` descubre el catálogo en SCIP instalado, valida tipos y rangos
+con su API y registra los parámetros efectivos. Presupuestos globales, semillas,
+threads, tolerancias y criterios de prueba quedan fuera del tuning.
+El maestro con pricing mantiene presolve y separación nativa desactivados hasta
+implementar su compatibilidad con columnas futuras; DFJ expone también esas
+familias. No atribuir al LLM parámetros ignorados por el algoritmo.
+`route_heuristics.py` construye arranques y columnas por inserción sin H en casos
+no negativos y sin restricciones temporales. Se validan independientemente.
+Antes de consultar al LLM se conserva un arranque barato de referencia y se le
+informa su calidad y el presupuesto restante. Las estrategias adicionales no
+descartan un incumbente mejor; ambas consumen el mismo presupuesto de arranque.
+Un fallo heurístico nunca certifica pricing completo: se conserva el oráculo
+exacto de recursos continuos. La dominancia con dos vértices usa un testigo
+convexo comprobado; nunca relajar tolerancias para descartar etiquetas.
+`dw.py`, `dw_bridge.py`, `dw_callbacks.py`
 y su controlador conservan el experimento GCG heredado.
 `movement_limit` de snapshots 1.0 es metadato heredado en `scip-routes`, sin
 efecto en pricing, arranque ni validación. No construir `model.py` en ese flujo.
@@ -70,6 +85,9 @@ ausencia de jornada/ventanas/reserva final adicional y un tour completo que cabe
 en la batería inicial. Nunca aplicarla por una sugerencia no verificada del LLM.
 Región inicial `us-east-1`, perfil AWS inicial `hackathon`, ambos configurables.
 El modelo/perfil de inferencia es entrada obligatoria de la política adaptativa.
+El script de ensayo propone `us.anthropic.claude-opus-5`, reemplazable por
+input o entorno. Para Claude nuevo se omite temperatura y se puede configurar
+`--llm-effort`; tokens y timeout también son entradas acotadas.
 El benchmark compara las tres políticas del mismo motor y snapshot, registra
 llamadas reales y distingue un fallback de una corrida adaptativa efectiva.
 El flujo Gurobi/SCIP original continúa disponible como referencia.

@@ -166,27 +166,29 @@ Resultados medidos y alcance de los ensayos: [docs/validation.md](docs/validatio
 ## Dantzig–Wolfe y LLM mediante AWS
 
 `--solver scip-routes` utiliza un maestro por rutas sin H y pricing continuo.
-El LLM toma una decisión estratégica antes de ambas fases: cortes compatibles,
-lotes y branching. Los callbacks de pricing son locales. El motor conserva
+El LLM toma una decisión estratégica antes de ambas fases: parámetros nativos
+de SCIP, presets, arranques, pricing, cortes compatibles y lotes.
+Los callbacks de pricing son locales. El motor conserva
 control de los certificados y el checker valida toda la física.
 
 ```bash
 uv sync --locked --extra dw
-# Ejemplo probado con el perfil hackathon; se puede indicar otro modelo:
-export BEDROCK_MODEL_ID='us.amazon.nova-micro-v1:0'
+# Modelo seleccionado de la lista autorizada de la cuenta hackathon:
+export BEDROCK_MODEL_ID='us.anthropic.claude-opus-5'
 bash scripts/benchmark_dw.sh \
   --instance examples/toy_recharge.json \
   --bedrock-model "$BEDROCK_MODEL_ID" \
   --aws-region us-east-1 --aws-profile hackathon \
+  --llm-timeout-seconds 30 --llm-effort medium \
   --time-limit-seconds 60 --threads 1 --seeds 0 \
   --output-dir artifacts/benchmark-dw-toy
 ```
 
 Ejecuta las tres políticas en procesos separados y genera `summary.csv`,
 `summary.json`, manifiesto, resultados y logs. `us-east-1` y `hackathon` son
-valores iniciales configurables; no se fija un modelo ni se guardan credenciales.
+valores iniciales configurables; el modelo también se configura y no se guardan credenciales.
 Ejecutar el `export` en la misma terminal antes del benchmark. También se puede
-pasar el identificador directamente: `--bedrock-model us.amazon.nova-micro-v1:0`.
+pasar el identificador directamente: `--bedrock-model us.anthropic.claude-opus-5`.
 Para los servicios del concurso hay que añadir red original, archivo de caminos
 y, opcionalmente, el arranque compartido.
 
@@ -201,7 +203,7 @@ Con los archivos de `artifacts/hackathon/` ya preparados:
 
 ```bash
 bash scripts/test_clients.sh \
-  --bedrock-model us.amazon.nova-micro-v1:0 \
+  --bedrock-model us.anthropic.claude-opus-5 --llm-effort medium \
   --time-limit-seconds 60 --threads 1 --seed 0
 ```
 
@@ -212,6 +214,15 @@ Muestra el log completo de SCIP, el prompt del sistema y del usuario, y la decis
 validada antes de resolver. Hace como máximo una llamada Bedrock por ejecución.
 Región/perfil iniciales: `us-east-1`/`hackathon`; se pueden cambiar con
 `--aws-region`/`--aws-profile`. El modelo también admite `BEDROCK_MODEL_ID`.
+Sin modelo explícito ni variable de entorno, el script usa Claude Opus 5.
+El timeout de inferencia predeterminado del script es de 30 segundos; usa como
+máximo 4096 tokens de salida. `--llm-timeout-seconds`,
+`--llm-max-output-tokens` y `--llm-effort` permiten configurarlos.
+El LLM recibe los parámetros nativos de búsqueda disponibles, el incumbente
+validado y el presupuesto restante. Puede cambiar presets, branching, LP,
+heurísticas, selección de nodos y estrategias de generación de rutas.
+El motor conserva el mejor arranque encontrado. Ver el
+[diagnóstico medido del caso 40/60](docs/diagnostico-40-clientes.md).
 
 Cada ejecución crea un directorio nuevo en `artifacts/test-20c-60s/`, o el
 directorio vacío indicado mediante `--output-dir`. Conserva:
@@ -223,6 +234,8 @@ directorio vacío indicado mediante `--output-dir`. Conserva:
   el JSON fue rechazado.
 - `logs/llm-decision.json`: propuesta, configuración anterior, cambios efectivos,
   parámetros no aplicables al algoritmo elegido y estado de aceptación/fallback.
+- `logs/energy.parameters.json` y, cuando corresponde, `logs/deliveries.parameters.json`:
+  cambios nativos efectivos en SCIP, incluidos los producidos por presets.
 - `result.json` y `run-config.json`: solución, auditoría vial, configuración y hashes.
 
 Aceptar una propuesta no implica cambiar parámetros: se indica explícitamente
@@ -238,7 +251,7 @@ Para simular **40 clientes totales** (los 20 originales más 20 sintéticos):
 ```bash
 bash scripts/test_clients.sh \
   --simulate-customers 40 --simulation-seed 0 \
-  --bedrock-model us.amazon.nova-micro-v1:0 \
+  --bedrock-model us.anthropic.claude-opus-5 --llm-effort medium \
   --aws-region us-east-1 --aws-profile hackathon \
   --time-limit-seconds 60 --threads 1 --seed 0
 ```

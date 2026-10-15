@@ -29,7 +29,8 @@ class BedrockConfig(Contract):
     region: str = Field(default="us-east-1", min_length=1)
     profile: str | None = "hackathon"
     timeout_seconds: float = Field(default=8, gt=0, le=60)
-    max_output_tokens: int = Field(default=700, ge=128, le=4096)
+    max_output_tokens: int = Field(default=4096, ge=128, le=16384)
+    reasoning_effort: Literal["low", "medium", "high"] | None = None
 
     @field_validator("model_id", mode="before")
     @classmethod

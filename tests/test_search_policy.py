@@ -118,12 +118,14 @@ class FakeBedrock:
 
 def test_converse_uses_parameterized_model_and_json_without_dynamic_execution():
     native = FakeBedrock('```json\n{"pricing": "exact"}\n```')
-    client = BedrockPolicyClient(BedrockConfig(model_id="my-inference-profile"), client=native)
+    client = BedrockPolicyClient(
+        BedrockConfig(model_id="my-inference-profile", max_output_tokens=768), client=native,
+    )
     result = client({"structure": {"customers": 2}})
     assert result["policy"] == {"pricing": "exact"}
     assert result["usage"]["totalTokens"] == 20
     assert native.calls[0]["modelId"] == "my-inference-profile"
-    assert native.calls[0]["inferenceConfig"] == {"maxTokens": 700}
+    assert native.calls[0]["inferenceConfig"] == {"maxTokens": 768}
     assert json.loads(native.calls[0]["messages"][0]["content"][0]["text"]) == {
         "structure": {"customers": 2},
     }

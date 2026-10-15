@@ -23,10 +23,13 @@ experimentos; no una copia de su infraestructura.
 
 El flujo vigente sin H adapta esos mismos criterios en
 `route_policy.py::ROUTE_PROMPT` y `RoutePolicy`: una decisión previa compartida
-por ambas fases, cortes de ternas/DFJ, lotes y branching. La reducción exacta
+por ambas fases, catálogo de búsqueda de SCIP, presets, arranques, pricing,
+cortes de ternas/DFJ, lotes y branching. La reducción exacta
 la verifica el código y el LLM no puede autorizarla por sí mismo. No se consulta
 Bedrock desde el pricing. La traducción GCG descrita arriba es la referencia
 posicional anterior; ya no es el motor del benchmark.
+La ampliación conserva observación/hipótesis/acción, pero los constructores por
+inserción y las optimizaciones de dominancia son código propio del proyecto.
 
 Cambios respecto del material de referencia:
 

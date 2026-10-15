@@ -51,26 +51,37 @@ class BedrockResponseError(ValueError):
 
 class BedrockPolicyClient:
     def __init__(self, config: BedrockConfig, *, client: Any = None, system_prompt: str = SYSTEM_PROMPT,
-                 temperature: float | None = None, trace_directory: str | None = None):
+                 temperature: float | None = None, trace_directory: str | None = None,
+                 max_input_bytes: int = 40_000):
         self.config, self.client = config, client
         self.system_prompt = system_prompt
         self.temperature = temperature
         self.trace_directory = trace_directory
+        self.max_input_bytes = max_input_bytes
 
     def request_payload(self, request: dict[str, Any]) -> dict[str, Any]:
         """Cuerpo exacto de Converse; no contiene credenciales ni cabeceras."""
         text = json.dumps(request, ensure_ascii=False, allow_nan=False)
-        if len(text.encode("utf-8")) > 40_000:
+        if len(text.encode("utf-8")) > self.max_input_bytes:
             raise ValueError("El perfil excede el límite de entrada de Bedrock")
         inference = {"maxTokens": self.config.max_output_tokens}
-        if self.temperature is not None:
+        anthropic = "anthropic.claude-" in (self.config.model_id or "")
+        # Los Claude nuevos rechazan temperaturas distintas del valor nativo.
+        if self.temperature is not None and not anthropic:
             inference["temperature"] = self.temperature
-        return {
+        payload = {
             "modelId": self.config.model_id,
             "system": [{"text": self.system_prompt}],
             "messages": [{"role": "user", "content": [{"text": text}]}],
             "inferenceConfig": inference,
         }
+        if self.config.reasoning_effort is not None:
+            if not anthropic:
+                raise ValueError("reasoning_effort requiere un modelo Claude compatible")
+            payload["additionalModelRequestFields"] = {
+                "output_config": {"effort": self.config.reasoning_effort},
+            }
+        return payload
 
     def _trace(self, name: str, data: dict) -> None:
         if self.trace_directory:
@@ -99,7 +110,15 @@ class BedrockPolicyClient:
                     retries={"total_max_attempts": 1},
                 ),
             )
-        response = self.client.converse(**payload)
+        try:
+            response = self.client.converse(**payload)
+        except Exception as error:
+            detail = getattr(error, "response", {}).get("Error")
+            if detail:
+                self._trace("llm-error.json", {
+                    "code": detail.get("Code"), "message": str(detail.get("Message", ""))[:4000],
+                })
+            raise
         # La respuesta del modelo, incluso inválida, permite diagnosticar fallback.
         # Omitir cabeceras HTTP y metadatos de transporte.
         self._trace("llm-response.json", {

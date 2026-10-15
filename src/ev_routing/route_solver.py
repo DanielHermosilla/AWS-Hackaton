@@ -8,6 +8,7 @@ se ramifica sobre columnas que todavía no existen.
 
 from __future__ import annotations
 
+import json
 from itertools import combinations, islice
 from pathlib import Path
 from time import monotonic
@@ -18,23 +19,37 @@ from pyscipopt import SCIP_PARAMSETTING, SCIP_RESULT, Model, Pricer, quicksum
 
 from ev_routing.contracts import PhaseResult, ProblemInstance, SolverConfig, SolveResult
 from ev_routing.operations import arc_energy
+from ev_routing.route_heuristics import InsertionRoutes
 from ev_routing.route_policy import choose_route_policy
 from ev_routing.route_resources import RouteOracle, assemble_solution, route_from_walk
+from ev_routing.scip_tuning import apply_parameters
 from ev_routing.search_policy import SearchConfig
 from ev_routing.validation import validate_solution
 
 
-def _configure(model, config, policy, log_directory=None, name="solve"):
+def _configure(model, config, policy, log_directory=None, name="solve", *, single_tour=False):
     model.hideOutput(not config.tee)
     model.setIntParam("parallel/maxnthreads", config.threads)
     model.setIntParam("lp/threads", config.threads)
     model.setIntParam("randomization/randomseedshift", config.seed)
     model.setRealParam("limits/gap", config.relative_gap)
-    model.setIntParam(f"branching/{policy.branching}/priority", 1000000)
+    if not single_tour:
+        model.setPresolve(SCIP_PARAMSETTING.OFF)
+        model.setSeparating(SCIP_PARAMSETTING.OFF)
+        model.setIntParam("separating/maxrounds", 0)
+        model.setIntParam("separating/maxroundsroot", 0)
+        model.setIntParam("propagating/rootredcost/freq", -1)
+    changes = apply_parameters(model, policy, single_tour=single_tour)
     if log_directory:
         directory = Path(log_directory)
         directory.mkdir(parents=True, exist_ok=True)
         model.setLogfile(str(directory / f"{name}.scip.log"))
+        (directory / f"{name}.parameters.json").write_text(
+            json.dumps(changes, ensure_ascii=False, indent=2) + "\n", encoding="utf-8",
+        )
+    if config.tee:
+        print(f"[SCIP] Parámetros aplicados en {name}: " + json.dumps(changes), flush=True)
+    return changes
 
 
 def _valid(instance, solution):
@@ -131,7 +146,9 @@ def _tour_solve(instance, config, policy, deadline, best, log_directory=None):
     costs = {(a.from_node_id, a.to_node_id): arc_energy(a, instance.operations)
              for a in instance.arcs if a.from_node_id in nodes and a.to_node_id in nodes}
     model = Model("certified_directed_tour")
-    _configure(model, config, policy, log_directory, "energy")
+    native_parameters = _configure(
+        model, config, policy, log_directory, "energy", single_tour=True,
+    )
     x = {ij: model.addVar(vtype="B", obj=c, name=f"arc_{n}")
          for n, (ij, c) in enumerate(costs.items())}
     for node in nodes:
@@ -183,6 +200,7 @@ def _tour_solve(instance, config, policy, deadline, best, log_directory=None):
         "algorithm": "certified_single_tour_dfj", "binary_arc_variables": len(x),
         "subtour_rounds": rounds, "subtour_cuts": count, "movement_limit_used": None,
         "native_optimize_seconds": native_seconds,
+        "native_parameter_changes": native_parameters,
     }
     model.freeProb()
     return best, _phase("energy", best, bound, termination, monotonic() - started), stat
@@ -199,6 +217,10 @@ class RoutePricer(Pricer):
         self.calls = 0
         self.farkas_calls = 0
         self.max_columns_added_per_call = 0
+        self.heuristic = InsertionRoutes(instance)
+        self.heuristic_columns = 0
+        self.heuristic_seconds = 0.0
+        self.pricing_seconds = 0.0
 
     def pricerinit(self):
         self.convex = {k: self.model.getTransformedCons(c) for k, c in self.convex.items()}
@@ -255,6 +277,22 @@ class RoutePricer(Pricer):
 
         for vehicle, oracle in self.oracles.items():
             consider(vehicle, oracle.routes)
+        if added == 0 and self.policy.pricing_strategy == "heuristic_then_exact":
+            started = monotonic()
+            # Presupuesto interno fijo: el LLM elige esfuerzo por inicios, no tiempo.
+            stop = min(self.deadline, started + 0.25)
+            for vehicle in self.oracles:
+                candidates = self.heuristic.price(
+                    vehicle, {node: links[vehicle, i]
+                              for i, node in enumerate(self.instance.customer_ids)},
+                    cuts, int(self.phase == "energy" and not farkas),
+                    self.policy.pricing_heuristic_starts, stop,
+                )
+                consider(vehicle, candidates)
+            self.heuristic_columns += added
+            self.heuristic_seconds += monotonic() - started
+            if added:
+                return {"result": SCIP_RESULT.SUCCESS}
         while added < self.policy.columns_per_round and not all(o.complete for o in self.oracles.values()):
             if monotonic() >= self.deadline:
                 self.incomplete = True
@@ -273,6 +311,7 @@ class RoutePricer(Pricer):
         return {"result": SCIP_RESULT.SUCCESS}
 
     def _safe_price(self, farkas):
+        started = monotonic()
         try:
             return self._price(farkas)
         except Exception as error:
@@ -280,6 +319,8 @@ class RoutePricer(Pricer):
             self.incomplete = True
             self.model.interruptSolve()
             return {"result": SCIP_RESULT.DIDNOTRUN}
+        finally:
+            self.pricing_seconds += monotonic() - started
 
     def pricerredcost(self):
         return self._safe_price(False)
@@ -291,10 +332,7 @@ class RoutePricer(Pricer):
 def _master_phase(instance, config, policy, oracles, name, deadline, best, log_directory=None):
     started = monotonic()
     model = Model(f"routes_{name}")
-    _configure(model, config, policy, log_directory, name)
-    model.setPresolve(SCIP_PARAMSETTING.OFF)
-    model.setSeparating(SCIP_PARAMSETTING.OFF)
-    model.setIntParam("propagating/rootredcost/freq", -1)
+    native_parameters = _configure(model, config, policy, log_directory, name)
     n = len(instance.customer_ids)
     z = {(k, i): model.addVar(vtype="B", obj=-1 if name == "deliveries" else 0,
                              name=f"serve_{k}_{i}")
@@ -375,6 +413,10 @@ def _master_phase(instance, config, policy, oracles, name, deadline, best, log_d
         "labels_expanded": {k: o.expanded for k, o in oracles.items()},
         "branch_nodes": model.getNNodes(), "movement_limit_used": None,
         "native_optimize_seconds": native_seconds,
+        "pricing_seconds": pricer.pricing_seconds,
+        "heuristic_pricing_seconds": pricer.heuristic_seconds,
+        "heuristic_columns": pricer.heuristic_columns,
+        "native_parameter_changes": native_parameters,
         "bound_source": "analytic" if pricer.incomplete else "SCIP_with_exact_pricing_or_analytic",
     }
     model.freeProb()
@@ -390,19 +432,69 @@ def solve_routes(instance, config: SolverConfig, search_config=None, *, initial_
         raise ValueError("Solución inicial inválida para el modelo sin H")
     certificate, witness = certify_single_tour(instance, min(deadline, started + 0.5))
     best = witness or initial_solution
+    insertion = InsertionRoutes(instance)
+    seed_started = monotonic()
+    baseline = None
+    if witness is None:
+        baseline = insertion.seed(
+            "cheapest_insertion", 1, min(deadline, seed_started + 0.5), config.seed,
+        )
+        if baseline is not None and (best is None or (
+            len(baseline.served_visit_ids), -baseline.net_energy_kwh
+        ) > (len(best.served_visit_ids), -best.net_energy_kwh)):
+            best = baseline
+    seed_seconds = monotonic() - seed_started
+    common_actions = ["branching", "heuristics", "scip_parameters"]
     profile = {
         "formulation": "complete_feasible_routes_without_H",
         "customers": len(instance.customer_ids), "vehicles": len(instance.vehicle_ids),
         "chargers": len(instance.charger_ids),
         "nodes": len(instance.nodes), "arcs": len(instance.arcs),
         "single_tour_certificate": certificate,
+        "search_budget": {
+            "total_seconds": config.time_limit_seconds,
+            "remaining_seconds_before_inference": max(0, deadline - monotonic()),
+            "threads": config.threads, "seed": config.seed,
+            "relative_gap": config.relative_gap,
+            "inference_consumes_search_budget": True,
+        },
+        "validated_incumbent": {
+            "deliveries": len(best.served_visit_ids),
+            "energy_kwh": best.net_energy_kwh,
+            "all_customers_served": len(best.served_visit_ids) == len(instance.customer_ids),
+        } if best is not None else None,
         "operations": instance.operations.model_dump(exclude={
             "customer_time_windows", "service_seconds_by_customer", "charging_power_kw_by_station",
         }),
-        "applicable_actions": ["subtour_batch_size", "branching"] if witness else
-        ["route_cuts", "columns_per_round", "max_subset_rows", "branching"],
+        "pricing_features": {
+            "continuous_resource_oracle": "breadth_first_enumeration_with_dominance",
+            "fast_insertion_supported": insertion.supported,
+            "starting_solution_provided": initial_solution is not None,
+            "native_branching_waits_for_pricing": True,
+            "dominance_lp_backend": "SciPy HiGHS; independent of SCIP parameters",
+        },
+        "applicable_actions": (
+            [*common_actions, "subtour_batch_size", "presolve", "separation"] if witness else
+            [*common_actions, "route_cuts", "columns_per_round", "max_subset_rows",
+             "pricing_search", "dominance",
+             *(["seed_strategy", "seed_starts", "pricing_strategy", "pricing_heuristic_starts"]
+               if insertion.supported else [])]
+        ),
     }
     policy, tuning = choose_route_policy(search_config, profile, deadline, policy_provider)
+    seed_started = monotonic()
+    candidate = None
+    if witness is None and not (policy.seed_strategy == "cheapest_insertion" and policy.seed_starts == 1):
+        candidate = insertion.seed(
+            policy.seed_strategy, policy.seed_starts,
+            min(deadline, seed_started + max(0, 0.5 - seed_seconds)), config.seed,
+        )
+        if candidate is not None and (best is None or (
+            len(candidate.served_visit_ids), -candidate.net_energy_kwh
+        ) > (len(best.served_visit_ids), -best.net_energy_kwh)):
+            best = candidate
+    seed_solution = best
+    seed_seconds += monotonic() - seed_started
     phases, stats = [], []
     if witness is not None:
         phases.append(_phase(
@@ -415,8 +507,16 @@ def solve_routes(instance, config: SolverConfig, search_config=None, *, initial_
         phases.append(phase)
         stats.append(stat)
     else:
-        oracles = {k: RouteOracle(instance, k) for k in instance.vehicle_ids}
+        oracles = {k: RouteOracle(
+            instance, k, search=policy.pricing_search, dominance=policy.dominance,
+        ) for k in instance.vehicle_ids}
         for name in ("deliveries", "energy"):
+            if name == "deliveries" and best is not None and len(best.served_visit_ids) == len(instance.customer_ids):
+                phases.append(_phase(
+                    name, best, float(len(instance.customer_ids)), "witness_and_cardinality_bound",
+                    monotonic() - started,
+                ))
+                continue
             if name == "energy" and best is None:
                 break
             phase_deadline = (monotonic() + 0.7 * max(0, deadline - monotonic())
@@ -436,7 +536,7 @@ def solve_routes(instance, config: SolverConfig, search_config=None, *, initial_
         phases=phases, solution=best, lexicographic_optimal=optimal,
         status="optimal" if optimal else "feasible" if best else phases[-1].status,
         solution_source=(
-            "initial_solution" if best is initial_solution else "heuristic" if best is witness
+            "initial_solution" if best is initial_solution else "heuristic" if best is seed_solution
             else "solver"
         ) if best else None,
         runtime_seconds=monotonic() - started,
@@ -445,5 +545,12 @@ def solve_routes(instance, config: SolverConfig, search_config=None, *, initial_
             "engine": "scip_routes_without_h", "movement_limit_used": None,
             "single_tour_certificate": certificate, "phases": stats,
             "controller": tuning, "configuration": search_config.model_dump(),
+            "initial_routes": {
+                "strategy": policy.seed_strategy, "runtime_seconds": seed_seconds,
+                "deliveries": len(seed_solution.served_visit_ids) if seed_solution else None,
+                "energy_kwh": seed_solution.net_energy_kwh if seed_solution else None,
+                "baseline_energy_kwh": baseline.net_energy_kwh if baseline else None,
+                "additional_candidate_energy_kwh": candidate.net_energy_kwh if candidate else None,
+            },
         },
     )

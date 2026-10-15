@@ -67,7 +67,7 @@ class Polytope:
                 charges.append((self.charges[i] + weight * (self.charges[j] - self.charges[i]))[None])
         return Polytope(np.vstack(points), np.vstack(charges)).hull()
 
-    def dominates(self, other: Polytope) -> bool:
+    def dominates(self, other: Polytope, *, vertices_only: bool = False) -> bool:
         # Menos carga acumulada, más batería y menor tiempo dominan incluso con
         # regeneración: E_final = b_inicial + Q_total - b_final.
         signs = np.array([-1.0, 1.0, 1.0])
@@ -75,8 +75,26 @@ class Polytope:
         for target in b:
             if np.any(np.all(a <= target, axis=1)):
                 continue
-            if len(a) == 1:
+            if vertices_only or len(a) == 1 or np.any(a.min(axis=0) > target):
                 return False
+            if len(a) == 2:
+                # Intersección de intervalos de theta para una combinación de dos
+                # vértices: evitar miles de LP de dominancia en aristas de recarga.
+                low, high = 0.0, 1.0
+                for start, slope, bound in zip(a[0], a[1] - a[0], target):
+                    if slope > 0:
+                        high = min(high, (bound - start) / slope)
+                    elif slope < 0:
+                        low = max(low, (bound - start) / slope)
+                    elif start > bound:
+                        low, high = 1.0, 0.0
+                if low > high:
+                    return False
+                if any(np.all((1 - theta) * a[0] + theta * a[1] <= target)
+                       for theta in (low, high, (low + high) / 2)):
+                    continue
+                # Si el redondeo impide comprobar el testigo, conservar el LP
+                # anterior; nunca declarar dominancia aproximada.
             result = linprog(
                 np.zeros(len(a)), A_ub=a.T, b_ub=target,
                 A_eq=np.ones((1, len(a))), b_eq=[1.0],
@@ -144,7 +162,8 @@ def assemble_solution(instance: ProblemInstance, routes: list[VehicleRoute]) -> 
 class RouteOracle:
     """Exploración reutilizable entre duales y fases; ninguna cota de movimientos."""
 
-    def __init__(self, instance: ProblemInstance, vehicle: str):
+    def __init__(self, instance: ProblemInstance, vehicle: str, *,
+                 search: str = "breadth_first", dominance: str = "convex"):
         self.instance, self.vehicle = instance, vehicle
         self.bits = {node: 1 << i for i, node in enumerate(instance.customer_ids)}
         self.outgoing = defaultdict(list)
@@ -161,15 +180,18 @@ class RouteOracle:
         self.routes: dict[int, VehicleRoute] = {}
         self.expanded = 0
         self.complete = False
+        self.search, self.dominance = search, dominance
 
     def _insert(self, label: Label) -> None:
         key = label.walk[-1], label.mask
         frontier = self.frontiers[key]
-        if any(old.resources.dominates(label.resources) for old in frontier):
+        vertices_only = self.dominance == "vertices_only"
+        if any(old.resources.dominates(label.resources, vertices_only=vertices_only)
+               for old in frontier):
             return
         kept = []
         for old in frontier:
-            if label.resources.dominates(old.resources):
+            if label.resources.dominates(old.resources, vertices_only=vertices_only):
                 old.active = False
             else:
                 kept.append(old)
@@ -212,7 +234,7 @@ class RouteOracle:
         if not self.queue:
             self.complete = True
             return changed
-        label = self.queue.popleft()
+        label = self.queue.pop() if self.search == "depth_first" else self.queue.popleft()
         if not label.active:
             return changed
         self.expanded += 1

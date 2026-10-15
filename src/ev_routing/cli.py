@@ -113,6 +113,8 @@ def build_parser() -> argparse.ArgumentParser:
     run.add_argument("--aws-profile", default=os.getenv("AWS_PROFILE", "hackathon"))
     run.add_argument("--llm-max-calls", type=int, default=1)
     run.add_argument("--llm-timeout-seconds", type=float, default=8)
+    run.add_argument("--llm-max-output-tokens", type=int, default=4096)
+    run.add_argument("--llm-effort", choices=["low", "medium", "high"])
     run.add_argument("--decision-interval-seconds", type=float, default=15)
     run.add_argument("--solver-log-directory", type=Path)
     run.add_argument("--show-llm-trace", action="store_true",
@@ -216,6 +218,7 @@ def _run(args: argparse.Namespace) -> int:
             bedrock=BedrockConfig(
                 model_id=args.bedrock_model, region=args.aws_region,
                 profile=args.aws_profile or None, timeout_seconds=args.llm_timeout_seconds,
+                max_output_tokens=args.llm_max_output_tokens, reasoning_effort=args.llm_effort,
             ),
             max_llm_calls=args.llm_max_calls,
             decision_interval_seconds=args.decision_interval_seconds,

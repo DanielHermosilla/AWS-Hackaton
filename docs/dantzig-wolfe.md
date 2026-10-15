@@ -46,9 +46,14 @@ La dominancia exige mismo nodo/conjunto atendido y acredita, para cada estado
 descartado, otro con más batería, no más tiempo y no más \(Q\). Comparar solo
 energía consumida sería incorrecto con saturación. Se usan pequeños LP de
 `scipy.optimize.linprog` para comprobar combinaciones convexas dominantes.
+Antes del LP se comprueban cotas por coordenada; para dos vértices se resuelve
+la intersección de intervalos del peso convexo y se verifica el testigo sin
+relajar tolerancias. `vertices_only` admite una dominancia más conservadora:
+puede retener etiquetas redundantes, pero no elimina rutas adicionales.
 El checker reproduce por separado la física de las rutas reconstruidas.
 
-Se reutilizan etiquetas entre duales y fases. No hay máximo de movimientos,
+La política puede recorrer la cola en anchura o profundidad. Se reutilizan
+etiquetas entre duales y fases. No hay máximo de movimientos,
 estaciones ni etiquetas. La exploración puede crecer exponencialmente y no
 se garantiza resolución rápida para toda red. Un presupuesto temporal blando
 puede interrumpir el pricing, especialmente con ciclos regenerativos sin jornada.
@@ -70,6 +75,24 @@ Toda columna futura recibe ese coeficiente y su contribución al coste reducido.
 Son válidos por unicidad de servicio y recuperación entera de rutas. Se desactivan
 cortes genéricos del maestro que no implementen coeficientes de columnas futuras.
 No se usa el separador de GCG que exigía un maestro de otro tipo.
+
+`route_heuristics.py` añade dos aceleraciones para casos no negativos y sin
+restricciones temporales. Una inserción por coste o regret construye rutas
+completas de flota sin recargar, validadas sin H; no altera la disponibilidad
+de recargas del modelo. Si atiende todos los clientes, la primera fase queda
+probada por el testigo y la cota cardinal. Su energía no queda probada óptima.
+Los inicios tienen un presupuesto fijo de 0,5 segundos dentro del tiempo total.
+Se conserva primero un arranque por inserción barata y se informa al LLM junto
+con el presupuesto restante. La estrategia elegida puede añadir candidatos,
+pero solo reemplaza al incumbente si mejora entregas o, a igual cumplimiento,
+energía. El presupuesto de 0,5 segundos es compartido, no se duplica.
+
+El pricing opcional `heuristic_then_exact` busca primero columnas por inserción
+guiada por duales de clientes y ternas, con hasta 0,25 segundos por llamada
+dentro del tiempo restante. Si no añade columnas, vuelve al oráculo exacto.
+No se emite un certificado por agotar inicios o no encontrar una mejora heurística.
+Regeneración, recargas continuas, ventanas y revisitas siguen en el oráculo.
+Las otras instancias omiten estas inserciones y mantienen el pricing general.
 
 ## Reducción certificada rápida
 
@@ -102,10 +125,24 @@ Las políticas comparten formulación, reducción certificada, recursos y prueba
 | `deterministic` | Lotes de 20 columnas y hasta 50 ternas, sin AWS |
 | `adaptive` | Una llamada previa, compartida por ambas fases |
 
-El LLM elige familia/cantidad de ternas, lotes de columnas y subtours, y regla
-nativa de branching `relpscost`/`mostinf`. El perfil indica qué opciones aplican
-al algoritmo elegido. No decide física, objetivos, presupuesto, validez de la
-reducción ni certificados. Respuestas inválidas producen fallback registrado.
+El LLM recibe el catálogo de parámetros de la biblioteca SCIP instalada.
+`scip_parameters` permite más de 1.200 controles en el maestro general:
+branching, heurísticas, selección de nodos y opciones de LP. DFJ expone además
+presolve, separación, propagación y conflictos: más de 2.000 controles.
+Los nombres disponibles dependen de la versión; sus tipos y rangos se validan
+con SCIP antes de aplicarlos. Presets de heurísticas/presolve/separación también
+pueden modificar numerosos parámetros nativos; se registran sus efectos reales.
+
+Además elige arranque por inserción, número de inicios, pricing heurístico seguido
+de exacto, orden de exploración, dominancia, ternas y lotes. El perfil identifica
+qué aplica. Parámetros globales de recursos, semillas, tolerancias, comprobaciones
+físicas y certificados permanecen fijados por el usuario y el motor. En el maestro
+general siguen bloqueadas las reducciones/cortes nativos sin compatibilidad
+implementada con columnas futuras. Una propuesta inválida completa produce
+fallback, sin aplicar parcialmente parámetros. Solo los campos adicionales
+con valor `null` se omiten como anotaciones sin acción, registrándolos en
+`ignored_null_fields`; un campo desconocido con valor o un parámetro nativo
+inválido rechaza la propuesta completa. El JSON original se conserva.
 
 Los callbacks de pricing son locales. No hay AWS por nodo, corte o ronda.
 Consultas excepcionales durante la búsqueda quedan fuera de esta implementación:
@@ -116,18 +153,29 @@ una llamada incluso si se configura un valor superior.
 Región inicial `us-east-1`, perfil `hackathon`; modelo/perfil de inferencia
 parametrizable y obligatorio para `adaptive`. Se registran uso y tiempo;
 coste monetario desconocido sin tarifa verificada. No se guardan claves.
+El script de ensayo propone Claude Opus 5 por solicitud del usuario, conservando
+la selección por argumento/entorno. Para Claude se omite temperatura;
+`--llm-effort medium`, `--llm-max-output-tokens 4096` y
+`--llm-timeout-seconds 30` permiten una propuesta más amplia. La llamada y la
+preparación de arranques consumen parte del mismo presupuesto de resolución.
+El catálogo tiene un límite de entrada de 160.000 bytes para esta política.
+Se agrupan prefijos repetidos sin eliminar parámetros; la respuesta debe usar
+nombres completos con `/`. `*.parameters.json` registra los cambios nativos
+efectivos, incluidos los presets, y `llm-decision.json` registra las decisiones
+del controlador. Ambos complementan los prompts y las respuestas originales.
 
 ## Ejecución
 
 ```bash
 uv sync --locked --extra dw
-export BEDROCK_MODEL_ID='us.amazon.nova-micro-v1:0'
+export BEDROCK_MODEL_ID='us.anthropic.claude-opus-5'
 bash scripts/benchmark_dw.sh \
   --instance artifacts/hackathon/service-instance.json \
   --road-instance artifacts/hackathon/instance.json \
   --path-archive artifacts/hackathon/service-paths.json \
   --initial-solution artifacts/hackathon/service-instance.start.json \
   --bedrock-model "$BEDROCK_MODEL_ID" \
+  --llm-timeout-seconds 30 --llm-effort medium \
   --time-limit-seconds 60 --threads 1 --seeds 0 1 2 \
   --output-dir artifacts/benchmark-routes
 ```
