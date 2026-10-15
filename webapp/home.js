@@ -1,7 +1,5 @@
-// Inicio: overview of the illustrative Plan fixture. boot.js creates the shared
-// shell first; any error thrown here is shown by boot.js as a load failure.
-// Values are design fixtures: no solver, completed deliveries or live telemetry.
-import { applyDataProvenance, SCENARIO, VEHICLES, NODES, ROUTES, SOURCE_DETAILS, number, visitIdsForRoute as visitsOf, routeById, chargeCount } from './shared/data.js';
+// Inicio and Plan consume the same adapted result or explicitly selected example.
+import { applyDataProvenance, DATA_SOURCE, SCENARIO, VEHICLES, NODES, ROUTES, RUN_INFO, SOURCE_DETAILS, number, visitIdsForRoute as visitsOf, routeById, chargeCount } from './shared/data.js';
 import { readPlanContext } from './state.js';
 import { planHref } from './home-navigation.js';
 import { escapeHtml as esc } from './shared/html.js';
@@ -9,6 +7,7 @@ import { escapeHtml as esc } from './shared/html.js';
 applyDataProvenance();
 
 const main = document.getElementById('home-main');
+const pending = DATA_SOURCE === 'pending';
 const finite = value => Number.isFinite(value) ? value : null;
 const count = value => number(value, 0);
 const percent = value => Number.isFinite(value) ? `${number(value)} %` : '—';
@@ -16,6 +15,7 @@ const ratio = (part, whole) => Number.isFinite(part) && part >= 0 && whole > 0 ?
 const inScale = (value, max) => Number.isFinite(value) && value >= 0 && value <= max && max > 0;
 const planLink = (params = {}) => {
   const url = new URL(planHref);
+  if (RUN_INFO) url.searchParams.set('run', RUN_INFO.runId);
   for (const [key, value] of Object.entries(params)) url.searchParams.set(key, value);
   return url.href;
 };
@@ -30,9 +30,11 @@ const stationTotal = NODES.filter(node => node.type === 'charger').length;
 const assignedTotal = new Set(ROUTES.flatMap(route => [...visitsOf(route)])).size;
 const unassigned = Math.max(0, visitTotal - assignedTotal);
 // Zero is a valid total; a missing value on any route makes the total unavailable.
-const energyTotal = ROUTES.length && ROUTES.every(route => Number.isFinite(route?.energyKwh))
-  ? ROUTES.reduce((sum, route) => sum + route.energyKwh, 0) : null;
-const chargeTotal = ROUTES.reduce((sum, route) => sum + chargeCount(route), 0);
+const energyTotal = RUN_INFO ? RUN_INFO.totalEnergyKwh
+  : ROUTES.length && ROUTES.every(route => Number.isFinite(route?.energyKwh))
+    ? ROUTES.reduce((sum, route) => sum + route.energyKwh, 0) : null;
+const chargeCounts = ROUTES.map(chargeCount);
+const chargeTotal = chargeCounts.every(Number.isFinite) ? chargeCounts.reduce((sum, value) => sum + value, 0) : null;
 
 const owners = new Map();
 const fleet = VEHICLES.map((vehicle, index) => {
@@ -45,7 +47,8 @@ const fleet = VEHICLES.map((vehicle, index) => {
     name: String(vehicle.name ?? vehicle.id ?? 'Vehículo'),
     model: String(vehicle.model ?? ''),
     color: /^#[0-9a-f]{6}$/i.test(vehicle.color) ? vehicle.color : palette[index % palette.length],
-    active: !!route,
+    active: !!route && route.active !== false,
+    hasRoute: !!route,
     initialSoc: finite(vehicle.initialSoc),
     assigned,
     assignmentShare: ratio(assigned, visitTotal),
@@ -58,11 +61,14 @@ const active = fleet.filter(vehicle => vehicle.active);
 const overlapCount = [...owners.values()].filter(owned => owned > 1).length;
 const distributed = active.reduce((sum, vehicle) => sum + vehicle.assigned, 0);
 const assignmentValid = visitTotal > 0 && overlapCount === 0 && distributed === assignedTotal;
-const representedEnergy = active.reduce((sum, vehicle) => sum + (vehicle.energyKwh ?? 0), 0);
+const withRoute = fleet.filter(vehicle => vehicle.hasRoute);
+const representedEnergy = withRoute.reduce((sum, vehicle) => sum + (vehicle.energyKwh ?? 0), 0);
 const energyValid = energyTotal !== null
-  && active.every(vehicle => vehicle.energyKwh !== null && vehicle.energyKwh >= 0)
+  && withRoute.every(vehicle => vehicle.energyKwh !== null)
   && Math.abs(representedEnergy - energyTotal) < 1e-9 * Math.max(1, Math.abs(energyTotal));
-const energyMax = Math.max(2, Math.ceil(Math.max(0, ...active.map(vehicle => vehicle.energyKwh ?? 0)) / 2) * 2);
+const energyMin = Math.min(0, Math.floor(Math.min(0, ...withRoute.map(vehicle => vehicle.energyKwh ?? 0)) / 2) * 2);
+const energyMax = Math.max(energyMin < 0 ? 0 : 2, Math.ceil(Math.max(0, ...withRoute.map(vehicle => vehicle.energyKwh ?? 0)) / 2) * 2);
+const energyRange = energyMax - energyMin;
 
 // Session context saved by the Plan; invalid or foreign context is ignored.
 function resumeFrom(saved) {
@@ -102,9 +108,27 @@ const values = {
   chargeStops: count(chargeTotal),
   stations: count(stationTotal),
 };
-for (const element of main.querySelectorAll('[data-value]')) element.textContent = values[element.dataset.value] ?? '—';
+for (const element of main.querySelectorAll('[data-value]')) {
+  element.textContent = pending && element.dataset.value !== 'scenario' ? '—' : values[element.dataset.value] ?? '—';
+}
 const links = { fleet: planLink({ tab: 'fleet' }), stops: planLink({ tab: 'stops' }), chargers: planLink({ chargers: '1' }) };
 for (const anchor of main.querySelectorAll('[data-link]')) anchor.href = links[anchor.dataset.link];
+
+if (RUN_INFO || pending) {
+  main.querySelector('#delivery-heading').textContent = 'Entregas del modelo';
+  main.querySelector('.console-deliveries .chart-caption').textContent = 'Servicio explícito por vehículo';
+  main.querySelector('.console-fleet .panel-foot p').textContent = pending
+    ? 'Carga y calcula una instancia para ver la batería de regreso.'
+    : 'Batería informada por el motor. La marca señala la salida.';
+  main.querySelector('.console-energy .chart-caption').textContent = energyTotal === null
+    ? 'Consumo no disponible para esta ejecución' : 'Energía informada por el motor';
+  main.querySelector('.vision-footer-top > p').textContent = pending
+    ? 'Sin resultado. Los indicadores aparecerán después del cálculo.'
+    : 'Resultado del motor · Entregas previstas por el modelo, sin telemetría en vivo';
+  main.querySelector('.data-note [data-motion-detail] p').textContent = pending
+    ? 'Selecciona una entrada y calcula el plan. Los datos de ejemplo se consultan como una fuente separada.'
+    : 'Solo se cuentan los locales con servicio explícito en el resultado. Pasar por un local no implica atenderlo. Cada local cuenta una sola vez; las paradas repetidas conservan su orden. La batería se convierte de kWh a porcentaje con la capacidad configurada. “—” indica información no disponible. La energía de recarga es la incorporada a la batería, no la electricidad comprada. La factibilidad tiene el alcance informado por el proveedor; no garantiza el consumo real. La disponibilidad de estaciones no está verificada.';
+}
 
 // The shell owns the only Continue link (#continue-plan); only its text is updated.
 function renderResume() {
@@ -125,11 +149,16 @@ addEventListener('pageshow', event => { if (event.persisted) renderResume(); });
 // Vehicles without a route open the Plan fleet list instead of an empty selection.
 const vehicleHref = vehicle => esc(vehicle.active ? planLink({ vehicle: vehicle.id }) : links.fleet);
 const mark = (vehicle, style = '') => `data-viz-vehicle="${esc(vehicle.id)}" style="--vehicle-color:${vehicle.color};${style}"`;
-const track = (value, max, extra = '') => `<span class="viz-track" aria-hidden="true">${inScale(value, max)
-  ? `<span class="viz-fill viz-ink" style="width:${value / max * 100}%"></span>` : ''}${extra}</span>`;
+const energyTrack = value => {
+  const baseline = -energyMin / energyRange * 100;
+  const fill = Number.isFinite(value)
+    ? `<span class="viz-fill viz-ink" style="left:${(Math.min(0, value) - energyMin) / energyRange * 100}%;width:${Math.abs(value) / energyRange * 100}%"></span>` : '';
+  return `<span class="viz-track${energyMin < 0 ? ' signed' : ''}" aria-hidden="true">${fill}<i class="energy-zero" style="left:${baseline}%"></i></span>`;
+};
 const noRoute = '<small>Sin recorrido</small>';
 
 function gauges() {
+  if (!fleet.length) return `<p class="chart-empty">${pending ? 'Aún no hay un resultado de flota.' : 'Esta ejecución no contiene vehículos.'}</p>`;
   return `<div class="gauge-grid">${fleet.map(vehicle => {
     const start = vehicle.initialSoc;
     // Departure battery mark on the 0–100 % arc.
@@ -147,7 +176,7 @@ function gauges() {
     return `<a class="gauge-card${vehicle.active ? '' : ' is-inactive'}" ${mark(vehicle)} href="${vehicleHref(vehicle)}">
       <span class="gauge-name"><i class="vehicle-dot viz-ink" aria-hidden="true"></i>${esc(vehicle.name)}<span aria-hidden="true">↗</span></span>
       <span class="gauge-figure"><svg viewBox="0 0 220 138" aria-hidden="true"><path class="gauge-track" d="M20 110 A90 90 0 0 1 200 110"/>${fill}${tick}</svg>
-        <span class="gauge-value"><strong>${value}</strong><span>${vehicle.active ? 'al regreso' : 'sin datos de regreso'}</span></span></span>
+        <span class="gauge-value"><strong>${value}</strong><span>${vehicle.finalSoc === null ? 'sin datos de regreso' : vehicle.active ? 'al regreso' : 'en base'}</span></span></span>
       <span class="gauge-axis" aria-hidden="true"><span>0 %</span><span>100 %</span></span>
       <span class="gauge-departure"><i class="tick-key" aria-hidden="true"></i>Salida ${percent(start)}</span>
       ${vehicle.finalSoc !== null && !inScale(vehicle.finalSoc, 100) ? '<span class="scale-note">Valor fuera de escala</span>' : ''}
@@ -156,6 +185,7 @@ function gauges() {
 }
 
 function assignment() {
+  if (pending) return '<p class="chart-empty">Aún no hay entregas calculadas.</p>';
   // The bar is decorative for assistive technology: the legend carries the same links and numbers.
   const segments = fleet.filter(vehicle => vehicle.assigned > 0).map(vehicle =>
     `<a class="allocation-segment" tabindex="-1" href="${vehicleHref(vehicle)}" ${mark(vehicle, `width:${vehicle.assignmentShare}%`)}><span class="viz-ink"></span></a>`).join('');
@@ -167,17 +197,21 @@ function assignment() {
   const rows = fleet.map(vehicle => `<li><a class="legend-row" ${mark(vehicle)} href="${vehicleHref(vehicle)}">
     <span class="legend-name"><i class="vehicle-dot viz-ink" aria-hidden="true"></i>${esc(vehicle.name)}</span>
     <strong>${vehicle.active ? `${count(vehicle.assigned)} <span class="sr-only">locales,</span><small>· ${percent(vehicle.assignmentShare)}</small>` : noRoute}</strong></a></li>`).join('');
-  return `${bar}<ul class="viz-legend">${rows}<li class="legend-row legend-unassigned"><span>Sin asignar</span><strong>${count(unassigned)}</strong></li></ul>`;
+  return `${bar}<ul class="viz-legend">${rows}<li class="legend-row legend-unassigned"><span>${RUN_INFO ? 'Pendientes' : 'Sin asignar'}</span><strong>${count(unassigned)}</strong></li></ul>`;
 }
 
 function energy() {
+  if (pending) return '<p class="chart-empty">Aún no hay un resultado energético.</p>';
   const rows = fleet.map(vehicle => `<a class="bar-row" ${mark(vehicle)} href="${vehicleHref(vehicle)}">
-    <span class="chart-row-label"><span>${esc(vehicle.name)}</span><strong>${vehicle.active ? `${number(vehicle.energyKwh)} <small>kWh</small>` : noRoute}</strong></span>${track(vehicle.energyKwh, energyMax)}</a>`).join('');
+    <span class="chart-row-label"><span>${esc(vehicle.name)}</span><strong>${vehicle.hasRoute ? `${number(vehicle.energyKwh)} <small>kWh</small>` : noRoute}</strong></span>${energyTrack(vehicle.energyKwh)}</a>`).join('');
   const note = energyValid ? ''
-    : energyTotal === null ? 'Consumo no disponible: al menos un recorrido no informa energía.'
+    : energyTotal === null ? RUN_INFO ? 'Consumo total no disponible en esta ejecución.' : 'Consumo no disponible: al menos un recorrido no informa energía.'
+    : withRoute.some(vehicle => vehicle.energyKwh === null) ? 'El desglose de consumo por vehículo no está completo.'
     : 'Los consumos por vehículo no coinciden con el total del plan. Revísalos en el Plan.';
-  return `<div class="energy-chart"><div class="chart-axis" aria-hidden="true"><span>0</span><span>${number(energyMax)} kWh</span></div>${rows}
-    ${note ? `<p class="chart-caption">${note}</p>` : ''}</div>`;
+  const anyEnergy = withRoute.some(vehicle => vehicle.energyKwh !== null);
+  return `<div class="energy-chart">${anyEnergy ? `<div class="chart-axis" aria-hidden="true"><span>${number(energyMin)}</span><span>${number(energyMax)} kWh</span></div>` : ''}${rows}
+    ${note ? `<p class="chart-caption">${note}</p>` : ''}
+    ${energyMin < 0 ? '<p class="chart-caption">Los valores negativos conservan el balance regenerativo informado por el motor.</p>' : ''}</div>`;
 }
 
 const widgets = { 'soc-gauges': gauges, 'assignment-bar': assignment, 'energy-bars': energy };

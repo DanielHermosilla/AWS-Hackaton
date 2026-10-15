@@ -102,3 +102,14 @@ body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; color
   .selection { bottom:110px; }
   .map-region .maplibregl-ctrl-bottom-right { bottom:0; }
 }
+
+/* Result states use the same surfaces and typography as the existing Plan. */
+.plan-empty { color:var(--zmd-muted,#617084); font-size:12px; line-height:1.6; padding:12px 4px; }
+.vehicle-inactive { color:var(--zmd-muted,#617084); font-size:11px; margin:-5px 0 12px; }
+.vehicle-heading>div { min-width:0; }
+.vehicle-name,.vehicle-model,.route-head,.stop-name,.detail-eyebrow,.selection h3 { overflow-wrap:anywhere; }
+.stop-name { min-width:0; }
+.stop-number,.stop-row>strong { flex-shrink:0; }
+.unserved-group .stop-number { color:var(--zmd-muted,#617084); }
+.selection .stop-occurrence { font-size:10px; margin-top:12px; }
+.legend { max-width:calc(100% - 50px); flex-wrap:wrap; }

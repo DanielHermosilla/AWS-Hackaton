@@ -1,10 +1,11 @@
 import * as maplibre from './vendor/maplibre/maplibre-gl.mjs';
-import { NODES, ROUTES, VEHICLES, routesForNode, visitLabel } from './shared/data.js';
+import { DATA_SOURCE, NODES, ROUTES, VEHICLES, RUN_INFO, routesForNode, visitLabel, visitIdsForRoute } from './shared/data.js';
 import { icon } from './shared/icons.js';
 import { prefersReducedMotion, onReducedMotionChange } from './state.js';
 
 // Business IDs are opaque; they must not collide with the basemap's own sources.
-const mapRoutes = ROUTES.map((route, index) => ({ route, sourceId: `zmd-route-${index}` }));
+const mapRoutes = ROUTES.map((route, index) => ({ route, sourceId: `zmd-route-${index}` }))
+  .filter(({ route }) => route.geometry !== null && route.geometry !== undefined);
 
 const css = document.createElement('link');
 css.rel = 'stylesheet';
@@ -20,6 +21,21 @@ export async function createMap(container, options = {}) {
   let chargersVisible = false, selectedId = null, cameraMode = 'fit';
   const markers = [];
   const noop = () => {};
+  const unavailable = message => {
+    host.parentElement.classList.add('map-unavailable');
+    host.append(status);
+    status.textContent = message;
+    return {selectVehicle:noop,selectNode:noop,fit:noop,toggleChargers:noop,setPlanVisible:noop,getView:noop,restoreView:noop,destroy:noop};
+  };
+  if (!NODES.length) return unavailable(DATA_SOURCE === 'pending'
+    ? 'Carga una instancia y calcula el plan para ver sus ubicaciones.'
+    : 'Esta ejecución no contiene ubicaciones para mostrar.');
+  const geometryMessage = () => {
+    if (!RUN_INFO || !planVisible) return '';
+    const shown = vehicleId ? ROUTES.filter(route => route.vehicleId === vehicleId) : ROUTES;
+    return shown.some(route => route.active && !route.geometry)
+      ? 'Sin geometría para parte del recorrido. Se muestran las paradas; no se reconstruyen calles.' : '';
+  };
   let observer;
   try {
     map = new maplibre.Map({
@@ -34,10 +50,7 @@ export async function createMap(container, options = {}) {
       renderWorldCopies: false
     });
   } catch {
-    host.parentElement.classList.add('map-unavailable');
-    host.append(status);
-    status.textContent = 'Mapa no disponible en este navegador. Puedes explorar las paradas en la lista.';
-    return {selectVehicle:noop,selectNode:noop,fit:noop,toggleChargers:noop,setPlanVisible:noop,getView:noop,restoreView:noop,destroy:noop};
+    return unavailable('Mapa no disponible en este navegador. Puedes explorar las paradas en la lista.');
   }
   host.append(status);
   status.textContent = 'Cargando cartografía…';
@@ -54,9 +67,12 @@ export async function createMap(container, options = {}) {
     cameraMode = 'fit';
     const visibleRoutes = vehicleId ? ROUTES.filter(r => r.vehicleId === vehicleId) : ROUTES;
     const stopIds = new Set(visibleRoutes.flatMap(r => r.stopIds));
-    const coords = planVisible
-      ? [...visibleRoutes.flatMap(r => r.geometry.coordinates), ...NODES.filter(n => stopIds.has(n.id)).map(n => [n.lng,n.lat])]
+    let coords = planVisible
+      ? [...visibleRoutes.flatMap(r => r.geometry?.coordinates || []), ...NODES.filter(n => stopIds.has(n.id)).map(n => [n.lng,n.lat])]
       : NODES.filter(n => n.type !== 'charger').map(n => [n.lng, n.lat]);
+    if (!coords.length) coords = NODES.filter(node => node.type !== 'charger').map(node => [node.lng, node.lat]);
+    if (!coords.length) coords = NODES.map(node => [node.lng, node.lat]);
+    if (!coords.length) return;
     const bounds = coords.reduce((b,c) => b.extend(c), new maplibre.LngLatBounds(coords[0], coords[0]));
     const requestedPadding = typeof options.padding === 'function' ? options.padding() : options.padding || 56;
     const padding = typeof requestedPadding === 'number'
@@ -76,8 +92,12 @@ export async function createMap(container, options = {}) {
       el.classList.toggle('is-selected', node.id === selectedId);
       el.setAttribute('aria-pressed', String(node.id === selectedId));
       if (node.type === 'visit') {
-        const owner = selectedOwner || owners[0];
+        // A visited location may be a pass-through. Route ownership colors only
+        // explicit service in a real result, while selection keeps all occurrences.
+        const serviceOwners = RUN_INFO ? owners.filter(route => visitIdsForRoute(route).has(node.id)) : owners;
+        const owner = serviceOwners.find(route => route.vehicleId === vehicleId) || serviceOwners[0];
         el.style.background = planVisible ? VEHICLES.find(v => v.id === owner?.vehicleId)?.color || '#576b7e' : '#576b7e';
+        el.classList.toggle('is-muted', !!vehicleId && !serviceOwners.some(route => route.vehicleId === vehicleId) && planVisible);
       }
     }
     if (!ready) return;
@@ -111,7 +131,7 @@ export async function createMap(container, options = {}) {
   map.on('load', () => {
     ready = true;
     clearTimeout(timer);
-    status.textContent = '';
+    status.textContent = geometryMessage();
     for (const { route, sourceId } of mapRoutes) {
       map.addSource(sourceId, {type:'geojson', data:{type:'Feature', properties:{}, geometry:route.geometry}});
       const color = VEHICLES.find(v => v.id === route.vehicleId).color;
@@ -151,11 +171,15 @@ export async function createMap(container, options = {}) {
   });
   observer.observe(host);
   return {
-    selectVehicle(id, refit = true) { vehicleId = id; selectedId = null; update(); if (refit) fit(); },
+    selectVehicle(id, refit = true) {
+      vehicleId = id; selectedId = null; update();
+      if (ready) status.textContent = geometryMessage();
+      if (refit) fit();
+    },
     selectNode,
     fit,
     toggleChargers(value) {chargersVisible = !!value; update();},
-    setPlanVisible(value) {planVisible = !!value; update();},
+    setPlanVisible(value) {planVisible = !!value; update(); if (ready) status.textContent = geometryMessage();},
     getView() {
       const center = map.getCenter();
       return { center:[center.lng,center.lat], zoom:map.getZoom(), padding:map.getPadding(), mode:cameraMode };

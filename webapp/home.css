@@ -99,6 +99,11 @@ html[data-theme="dark"] .console-adaptive .consola {
 .chart-row-label small { color:var(--muted); font-size:11px; font-weight:400; letter-spacing:0; }
 .viz-track { display:block; position:relative; height:9px; margin-top:8px; border-radius:4px; background:var(--chart-track); }
 .viz-fill { display:block; height:100%; border-radius:4px; background:var(--vehicle-color); }
+.energy-chart .viz-fill { position:absolute; }
+.energy-zero { display:none; position:absolute; top:-3px; height:15px; width:1px; background:var(--muted); }
+.signed .energy-zero { display:block; }
+.gauge-name,.chart-row-label>span { overflow-wrap:anywhere; min-width:0; }
+.gauge-name>span:last-child { flex-shrink:0; }
 
 /* Footer and disclosure */
 .vision-footer { padding-top:16px; border-top:1px solid var(--line); color:var(--muted); font-size:12px; }
