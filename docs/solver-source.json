@@ -1,0 +1,249 @@
+{
+  "source_branch": "origin/modelamiento",
+  "source_commit": "624203573bffdeec334a9e07a64b361a515f9725",
+  "source_author": "Daniel Hermosilla <daniel.hermosilla.r@ug.uchile.cl>",
+  "import_method": "Scoped source import; upstream history retained in origin/modelamiento. No branch merge.",
+  "excluded_upstream_modules": [
+    "service_graph.py",
+    "heuristics.py",
+    "benchmark.py",
+    "simulation.py",
+    "cli.py"
+  ],
+  "local_adaptations": {
+    "src/ev_routing/pipeline.py": "Remove service_graph imports/expansion and reject service_paths_nonnegative; preserve native result schema and solver/checker/metrics.",
+    "src/ev_routing/cli.py": "Local JSON entry point for the shared pipeline, replacing upstream CLI that imports excluded preprocessing."
+  },
+  "files": {
+    "config/default.json": {
+      "upstream_blob": "c4659d903c959569356401687648e7ccd9e29895",
+      "import_sha256": "249af10f017d7bb0b7be7501d0b10d560f8a6ccb8429aad9ddc0495a68ad5fa2",
+      "modified": false
+    },
+    "config/operations.example.json": {
+      "upstream_blob": "c706adc8f5289a4dc76b52d9377a48a25bb9074f",
+      "import_sha256": "5a564e1f0a25767b9043aa6e9a78e50c6f4a79b41850320a6f7950df4a999ec6",
+      "modified": false
+    },
+    "docs/licenses/LLM4MIP.txt": {
+      "upstream_blob": "91d6f7b62a0bdaf4ba0f8c32e524cf5883545012",
+      "import_sha256": "181b960a58a806893b99cecb657fc07ed20f3fa50b84f70752b446a221967adf",
+      "modified": false
+    },
+    "docs/llm4mip-adaptation.md": {
+      "upstream_blob": "010faca72b28440b2d33b98aee75f4c7c654dd68",
+      "import_sha256": "ac283a12bb1c4436bebad53e9247fbac8b5df313fa8df5d07558ccddd2be7ede",
+      "modified": false
+    },
+    "examples/toy_recharge.json": {
+      "upstream_blob": "18ad165f0c9aad37fec66d78b5704c95c5a7a8f1",
+      "import_sha256": "1ce0e438067f1a9cf5a9aaa1e8c98e8a80a32ff6f87aea7a9e7ae2356722e907",
+      "modified": false
+    },
+    "examples/toy_regeneration.json": {
+      "upstream_blob": "fa718d6390666e9f3fbcc3c2c62503f684802796",
+      "import_sha256": "dc11c8eace4250c36e8c55c622583cbe6cbb1b753ab2ece1b3577d60cb412a33",
+      "modified": false
+    },
+    "modelamiento.pdf": {
+      "upstream_blob": "b098e393582de73c3a5abe45db5fa81a67c721c2",
+      "import_sha256": "b6624a75af7b2fe102bce4ee7b954332183efc3008118436ff161105ecb8b5aa",
+      "modified": false
+    },
+    "modelamiento.tex": {
+      "upstream_blob": "4db2edf47ab2d06e101e62669dc1fa7aad00209c",
+      "import_sha256": "98c0153a67b02f207e6d07f60e53d2af027aeab05bd7e5b6343da60fca744be7",
+      "modified": false
+    },
+    "pyproject.toml": {
+      "upstream_blob": "c961244715ae9405b0ee9a7824658083f02fa074",
+      "import_sha256": "b7f0b98a8d40e30c651eeda5f66cc8331549bc02588bc8ac648260b3e5a10395",
+      "modified": false
+    },
+    "src/ev_routing/AGENTS.md": {
+      "upstream_blob": "d50a0643815150b2450c1080d7ab24a898d6a810",
+      "import_sha256": "660373c15120c2cb441db4b787efc918e1c590762a074dff4654bd850daef73a",
+      "modified": false
+    },
+    "src/ev_routing/__init__.py": {
+      "upstream_blob": "a4a118b3ebd45fef290e62d913f7f4eefa7c9c6e",
+      "import_sha256": "325c8e6b93f739aae5a4d086d2acfcc6029840a22c1ac675deac9284f78b5440",
+      "modified": false
+    },
+    "src/ev_routing/config.py": {
+      "upstream_blob": "b1e7c3d878953a19a20a9db396bf366847d46548",
+      "import_sha256": "ffc8f4f087d93e61565835b08a61aa99d2403101eba1046889ff714f68ce9c85",
+      "modified": false
+    },
+    "src/ev_routing/contracts.py": {
+      "upstream_blob": "967341e6178d33c32b4b20f4e926f5e7720f044c",
+      "import_sha256": "b9b2ae04f33d5317910398e6862c70a05c877a1f65a813df49d1d5279dc2ac08",
+      "modified": false
+    },
+    "src/ev_routing/dw.py": {
+      "upstream_blob": "d7971d5f71ed4b54118fe20901117629531e27cb",
+      "import_sha256": "26a068d5ed13f349f1b615f559bd26e3423a38ff0857e21f8af6a734075693e1",
+      "modified": false
+    },
+    "src/ev_routing/dw_bridge.py": {
+      "upstream_blob": "eba88412efdd42a81408205d4179bce199aa6c61",
+      "import_sha256": "6526769a86dba2c1f4c39198a8714f3075919ede240c03826e463beb60afbc3c",
+      "modified": false
+    },
+    "src/ev_routing/dw_callbacks.py": {
+      "upstream_blob": "37c9651c2fe535886185a0ee8b98ef47dcf59f9e",
+      "import_sha256": "a782adf2451fbeb80f9b05c8337b077142940934aba60c42440316730b6c5e3b",
+      "modified": false
+    },
+    "src/ev_routing/energy.py": {
+      "upstream_blob": "20332c320f36d3739b701cc91254e12466171108",
+      "import_sha256": "f1ea2364897d0b172180ebac20f20abfe99d4a9f85b2b848454b3328ed90b84a",
+      "modified": false
+    },
+    "src/ev_routing/inputs.py": {
+      "upstream_blob": "fdcd7aa0d7cd3363cff203db8d8dd89ac2acd69c",
+      "import_sha256": "1856cc1f20c937b2ef8a4d243cb75be9388a130d4a86f264202bb14544beaa4b",
+      "modified": false
+    },
+    "src/ev_routing/llm/AGENTS.md": {
+      "upstream_blob": "e9362c53bff49dd5b095caab38f619a45f001e2f",
+      "import_sha256": "3ffc0b064aa6be87f9728a722afb1e9d0d615fe63a7f4bc3d97efe38b1b1eab6",
+      "modified": false
+    },
+    "src/ev_routing/llm/__init__.py": {
+      "upstream_blob": "631ece7c80820ace1295a17b2f1b1c1985a356ca",
+      "import_sha256": "d84fb953b490725d4e05feb9ec8e738a8df25de79a996dfaf86d88eff1d629fe",
+      "modified": false
+    },
+    "src/ev_routing/llm/bedrock.py": {
+      "upstream_blob": "96504d5b79ff053de33eede6af91e6671ac33643",
+      "import_sha256": "83e302d93e280a55aa10a7896a2e674d1e49a423238ca2964edd023aa6b3234e",
+      "modified": false
+    },
+    "src/ev_routing/llm/tuning.py": {
+      "upstream_blob": "0480017eed124155bc7e990a7d1aff613469bcfa",
+      "import_sha256": "228f87fc5256a3e2f2d109609db98860499070c82c0cba0b5b6e980f0c3fda29",
+      "modified": false
+    },
+    "src/ev_routing/metrics.py": {
+      "upstream_blob": "56ca973a0dc843d65b840f16e04563327f0f0c76",
+      "import_sha256": "8e96f2d8e8b4b45bf9d41c855eaa346eafd7f0d9a527f983329d8a47338d8ba1",
+      "modified": false
+    },
+    "src/ev_routing/model.py": {
+      "upstream_blob": "04f4d9be49f4ca870464568aac20137740f138e1",
+      "import_sha256": "658a89032fb9b31a74578ac7373bb9999868144f7c957c66e34ace7888424fd8",
+      "modified": false
+    },
+    "src/ev_routing/network.py": {
+      "upstream_blob": "b93f85765e74d4bf4348926ce575d491f6791df5",
+      "import_sha256": "a4d55f517a6e2cea022390f54c91d7f9d458e24ecfa8560b26d7fd5b14b2fa89",
+      "modified": false
+    },
+    "src/ev_routing/operations.py": {
+      "upstream_blob": "0a2855a59a19b1fb5d779388af93c251cb4b3772",
+      "import_sha256": "2578d711951ff39c58dba0cb95cff5b729cd10e39503208f0ee1f0d26e57974f",
+      "modified": false
+    },
+    "src/ev_routing/pipeline.py": {
+      "upstream_blob": "cc4ed958231a3487f425fbf82cceb7b9d29d7787",
+      "import_sha256": "27e1c33c88b3cf276b698f5764c8fc3bb537492aff918f5d48c5447973e79f1a",
+      "modified": true
+    },
+    "src/ev_routing/route_heuristics.py": {
+      "upstream_blob": "4fc13007fc22559703c42886e16bf8debee08458",
+      "import_sha256": "25093082c007deeb54a6022d155a21ae9fc7aeaf3eca22a2cd121bdb564983bf",
+      "modified": false
+    },
+    "src/ev_routing/route_policy.py": {
+      "upstream_blob": "9c2a3ceffe92baa579acc4e0595c53770cad2b15",
+      "import_sha256": "c77b215fa9b336710e48a6cbad079b4158ba66679c003af0d11b4e62f2578ef9",
+      "modified": false
+    },
+    "src/ev_routing/route_resources.py": {
+      "upstream_blob": "2442995a0dd81d7d15ef224fa0165901226ee41c",
+      "import_sha256": "49330114e7421c30b19edb36c782bd5b7b613a696b22518a9af77e78bf545eb7",
+      "modified": false
+    },
+    "src/ev_routing/route_solver.py": {
+      "upstream_blob": "0dd9320032d98a8c9f050cd1660cea679b9a3767",
+      "import_sha256": "ff3cc118a739b4f9ec57aa8c2abe8d4cdfc32e294e9de34badb3540da1f16309",
+      "modified": false
+    },
+    "src/ev_routing/scip_tuning.py": {
+      "upstream_blob": "8ec40ffddcc429d0d30a5c69dc4fb5aa567e4447",
+      "import_sha256": "92fc0a033eacc9d96b68deceb5feec9776b94489b6535745dc088876516da23f",
+      "modified": false
+    },
+    "src/ev_routing/search_policy.py": {
+      "upstream_blob": "7bfc8afa1cc4a8f917915ae1682925cf5d480307",
+      "import_sha256": "583bcfb308a276c7b253fab460c570b90ec2f8bda3638929100bf1b42c37f445",
+      "modified": false
+    },
+    "src/ev_routing/solve.py": {
+      "upstream_blob": "6c2d55c8e508551997b9b8a2dddf0b9bc46c2d7b",
+      "import_sha256": "27cbcca4db90873f026f4cf0a6bd61bdf5beff546e84cb8cc8be25798a626963",
+      "modified": false
+    },
+    "src/ev_routing/validation.py": {
+      "upstream_blob": "1c2e77f3d329db64ba1dd8cadac7b396ac6c507c",
+      "import_sha256": "2d7cb6973d83777029d657f81326504160fd6329c337c907aecae520aee8e104",
+      "modified": false
+    },
+    "tests/oracle.py": {
+      "upstream_blob": "e2ecf87b5a61ba23223f0d79f65ec90b5b2e0783",
+      "import_sha256": "6cfc573916933d43c9dbacd7e977af436735734dd0dece223410d2f38a595b1d",
+      "modified": false
+    },
+    "tests/test_config.py": {
+      "upstream_blob": "33c5d9ccff82d4da15bf954b20e3f92c10feed43",
+      "import_sha256": "e5b37741cea2cb2c74ff60c4a979b8ca54e78c8d88ec3e8e95f82cf778507d18",
+      "modified": false
+    },
+    "tests/test_contracts.py": {
+      "upstream_blob": "553df7deb68b6695977bc557123702ede87de1f7",
+      "import_sha256": "1bf676b8f64daeda1ba9a452401855082bc4bea118dc41a4bf26780939d84b5e",
+      "modified": false
+    },
+    "tests/test_energy.py": {
+      "upstream_blob": "32ebe5f596e1748c181c4d59e0dc50aecaded419",
+      "import_sha256": "88e930e463e612e8f16d2f523a99d7e67771ade12159cc9ec31588be72c72769",
+      "modified": false
+    },
+    "tests/test_inputs.py": {
+      "upstream_blob": "2a15ff4576b0901507c4ceafc703adf1c4985189",
+      "import_sha256": "21c21f933b39ba765a1feb233f6d4311fee9bf652b1ee654bd9a9a154770c8eb",
+      "modified": false
+    },
+    "tests/test_metrics.py": {
+      "upstream_blob": "a03e0dcb5230a1a769b5d211f76a26f3de843c72",
+      "import_sha256": "dfc9ffa45a44b846193b17b563ad686c717e0014b8b36b8e168aec70daca6232",
+      "modified": false
+    },
+    "tests/test_model.py": {
+      "upstream_blob": "1f455a498022868c00da64496c1371ecaf27e713",
+      "import_sha256": "df6f8c3584c31539b4c17f99aae969a90396c9140b32fc24d6e6e6462853715f",
+      "modified": false
+    },
+    "tests/test_network.py": {
+      "upstream_blob": "de05b1f5f0ab7530c3278b8f0be67ee56325da95",
+      "import_sha256": "c7c943df57f50d6043d524854d1d4b87c1e18be7724ab8f4e7b6e7ca94586f99",
+      "modified": false
+    },
+    "tests/test_solve.py": {
+      "upstream_blob": "05cc1d92362dae5e176b81e65c57854f8c88d530",
+      "import_sha256": "cec9eb593fec725f59cb369190d38186aaf9ce5f842c17cca8561b2264caee47",
+      "modified": false
+    },
+    "tests/test_validation.py": {
+      "upstream_blob": "237678987bddee8023bb76f12b40fda9822a1f9b",
+      "import_sha256": "c0e046402f5f87de46cc5b98024477e3e574337dadf455800ab2f088157c8eb3",
+      "modified": false
+    },
+    "uv.lock": {
+      "upstream_blob": "65d84bdd1c619f10cd4ba9dc9cb1009c49b93796",
+      "import_sha256": "4c0ca91df9ec9d8c36ac524121f59df75172d2d8ffd4935aae2f0306a4f21ed2",
+      "modified": false
+    }
+  }
+}

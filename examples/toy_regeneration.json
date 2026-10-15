@@ -1,0 +1,28 @@
+{
+  "schema_version": "1.0",
+  "name": "toy-regeneration-with-saturation",
+  "nodes": [
+    {"node_id": "BASE", "node_type": "base"},
+    {"node_id": "J", "node_type": "junction"},
+    {"node_id": "A", "node_type": "visit"}
+  ],
+  "arcs": [
+    {"from_node_id": "BASE", "to_node_id": "J", "energy_kwh": 1.0},
+    {"from_node_id": "J", "to_node_id": "A", "energy_kwh": -8.0},
+    {"from_node_id": "A", "to_node_id": "BASE", "energy_kwh": 6.0}
+  ],
+  "parameters": {
+    "vehicle_count": 2,
+    "battery_capacity_kwh": 10.0,
+    "reserve_kwh": 1.0,
+    "initial_soc": 0.6,
+    "movement_limit": 3,
+    "vehicle_connector_types": []
+  },
+  "provenance": {
+    "kind": "synthetic",
+    "expected_deliveries": 1,
+    "expected_net_energy_kwh": 2.0,
+    "explanation": "Batería 6 -> 5 -> 10 -> 4. Solo recupera 5 de los 8 kWh potenciales. La suma cruda de arcos (-1) NO es el consumo efectivo (2)."
+  }
+}
