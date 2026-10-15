@@ -241,7 +241,8 @@ bash scripts/test_clients.sh \
 La instancia predeterminada contiene **20 clientes y 60 estaciones**.
 El script usa `scip-routes`, sin H, y comprueba que se conservan 60 estaciones.
 `scripts/test_20_clients.sh` sigue disponible como alias.
-Muestra los logs de SCIP y las decisiones validadas del orquestador.
+Muestra los logs de SCIP, las respuestas finales del LLM al recibirlas y,
+por separado, la aceptación/rechazo, cambios antes/después y campos inactivos.
 Cada solicitud y respuesta se conserva en `logs/decisions/`.
 El máximo predeterminado es de cuatro llamadas Bedrock; se controla con
 `--llm-max-calls`, `--llm-time-fraction` y `--llm-timeout-seconds`.
@@ -251,10 +252,10 @@ Región/perfil iniciales: `us-east-1`/`hackathon`; se pueden cambiar con
 Cada ejecución crea un directorio nuevo en `artifacts/test-20c-60s/`, o el
 directorio vacío indicado mediante `--output-dir`. Conserva:
 
-- `run.log`: salida íntegra de SCIP, prompts y decisiones mostradas.
+- `run.log`: salida íntegra de SCIP, respuestas y decisiones mostradas.
 - `logs/*.scip.log`: logs nativos por fase y etapa.
-- `logs/decisions/NN-evento/llm-request.json`: cuerpo exacto de Converse.
-- `logs/decisions/NN-evento/llm-response.json`: respuesta y tokens, incluso si
+- `logs/decisions/NN/llm-request.json`: cuerpo exacto de Converse.
+- `logs/decisions/NN/llm-response.json`: respuesta y tokens, incluso si
   el JSON fue rechazado.
 - `logs/llm-decision.json`: propuesta, configuración anterior, cambios efectivos,
   parámetros no aplicables al algoritmo elegido y estado de aceptación/fallback.
@@ -287,6 +288,54 @@ al depósito. El muestreo es uniforme por nodo elegible: **no representa domicil
 ni una distribución observada de demanda**. Los originales y los 60 cargadores
 se conservan, al igual que calles, energías, flota y batería. Los nuevos clientes
 usan el tiempo de servicio común y no reciben ventanas inventadas.
+
+### Desde archivos originales locales, con SCIP y LLM en vivo
+
+Usar un directorio nuevo evita reutilizar instancias, energía integrada y caminos.
+El GraphML es la descarga vial original; esta variante no vuelve a consultar OSM.
+Las rutas absolutas siguientes corresponden a los datos de este equipo:
+
+```bash
+EVRP_DATA=/Users/daniel/AWS-Amazon
+EVRP_RUN="$PWD/artifacts/desde-cero-$(date +%Y%m%d-%H%M%S)"
+mkdir -p "$EVRP_RUN"
+
+uv run --locked --extra dw ev-routing prepare \
+  --nodes "$EVRP_DATA/data/competition_routing_nodes.csv" \
+  --graphml "$EVRP_DATA/artifacts/network/competition_delivery.graphml" \
+  --network-profile delivery --eved "$EVRP_DATA/data/eVED_EV.csv" \
+  --energy-cache "$EVRP_RUN/eved-summary.json" --config config/default.json \
+  --output "$EVRP_RUN/instance.json"
+
+bash scripts/test_clients.sh \
+  --road-instance "$EVRP_RUN/instance.json" \
+  --simulate-customers 40 --simulation-seed 0 \
+  --search-policy adaptive --time-limit-seconds 120 \
+  --bedrock-model us.anthropic.claude-fable-5 \
+  --bedrock-fast-model us.amazon.nova-micro-v1:0 \
+  --llm-reasoning-effort high --llm-max-output-tokens 4096 \
+  --llm-timeout-seconds 45 --llm-fast-timeout-seconds 8 \
+  --llm-instance-context-bytes 8000 --llm-max-calls 2 \
+  --llm-time-fraction .5 --decision-interval-seconds 15 \
+  --aws-profile hackathon --aws-region us-east-1 \
+  --output-dir "$EVRP_RUN/run"
+```
+
+El script activa `--tee --show-llm-trace` y conserva la salida completa.
+No pasar estos logs por `distill`: se necesita salida exacta para inspeccionarlos.
+Para incluir una descarga nueva, cambiar `--graphml` por
+`"$EVRP_RUN/network.graphml"` y agregar `--download-network` al comando `prepare`.
+La latencia de OSM es adicional y no se ha medido en este ensayo.
+
+Medición del 15 de octubre de 2026: CSV + eVED sin caché + GraphML local hasta
+instancia vial, **16,318 s**; simulación a 40 clientes y preparación de caminos,
+**9,448 s**; SCIP estándar con presupuesto de 15 s, **15,001 s**. Incluyendo
+procesos, hashes, lectura/escritura y validación vial, **45,329 s** en total.
+Resultado: 40/40, 14,56660712 kWh, gap energético final 0,2838 %.
+Es el tiempo de una corrida completa, no el primer instante de ese gap.
+Con presupuesto adaptativo de 120 s, sumar los mismos costes de preparación
+da aproximadamente **150 s**; es una estimación, no una nueva medición conjunta.
+Evidencia local: `artifacts/llm-head/cold-local-20261015/`.
 
 La semilla de ubicaciones (`--simulation-seed`) es independiente de la semilla
 del solver (`--seed`). La misma red, total y semilla generan los mismos clientes.

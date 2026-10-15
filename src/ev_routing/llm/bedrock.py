@@ -51,11 +51,13 @@ class BedrockResponseError(ValueError):
 
 class BedrockPolicyClient:
     def __init__(self, config: BedrockConfig, *, client: Any = None, system_prompt: str = SYSTEM_PROMPT,
-                 temperature: float | None = None, trace_directory: str | None = None):
+                 temperature: float | None = None, trace_directory: str | None = None,
+                 show_trace: bool = False):
         self.config, self.client = config, client
         self.system_prompt = system_prompt
         self.temperature = temperature
         self.trace_directory = trace_directory
+        self.show_trace = show_trace
 
     def request_payload(self, request: dict[str, Any]) -> dict[str, Any]:
         """Cuerpo exacto de Converse; no contiene credenciales ni cabeceras."""
@@ -112,11 +114,18 @@ class BedrockPolicyClient:
         self._trace("llm-response.json", {
             key: response.get(key) for key in ("output", "usage", "stopReason", "metrics")
         })
+        answer = "".join(
+            block.get("text", "")
+            for block in response.get("output", {}).get("message", {}).get("content", [])
+        )
+        if self.show_trace:
+            print("\n[LLM] Respuesta recibida (todavía no implica aplicación):\n" + json.dumps({
+                "model_id": self.config.model_id, "event": request.get("event"),
+                "stop_reason": response.get("stopReason"), "usage": response.get("usage"),
+                "metrics": response.get("metrics"),
+            }, ensure_ascii=False) + "\n" + answer, flush=True)
         if response.get("stopReason") not in {"end_turn", "stop_sequence"}:
             raise BedrockResponseError("incomplete_response", response)
-        answer = "".join(
-            block.get("text", "") for block in response["output"]["message"]["content"]
-        )
         # Aceptar una envoltura Markdown sin interpretar nada como código.
         if answer.strip().startswith("```") and answer.strip().endswith("```"):
             answer = "\n".join(answer.strip().splitlines()[1:-1])

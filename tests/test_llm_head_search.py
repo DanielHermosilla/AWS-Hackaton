@@ -204,6 +204,25 @@ def test_invalid_head_action_keeps_last_valid_policy():
     head.close()
 
 
+def test_live_head_prints_actual_changes_and_inactive_settings(capsys):
+    head = LLMHead(SearchConfig(
+        policy="adaptive", show_llm_trace=True, bedrock={"model_id": "double"},
+    ), {}, monotonic()+5, 5, lambda _: {"policy": {
+        "node_selection": "depth_first", "seed_starts": 24,
+    }}, instance=pairs())
+    head.decide("pricing_progress", {"phase": "energy"})
+    if head.pending:
+        head.pending.result(timeout=1)
+        head.collect()
+    output = capsys.readouterr().out
+    assert "Consulta enviada; SCIP continúa" in output
+    assert "Decisión validada" in output
+    assert '"status": "applied"' in output
+    assert '"before": "hybrid"' in output and '"after": "depth_first"' in output
+    assert '"inactive_settings": {' in output and '"seed_starts": 24' in output
+    head.close()
+
+
 def test_malformed_provider_response_falls_back_without_stopping_search():
     config = SearchConfig(policy="adaptive", bedrock={"model_id": "double"})
     head = LLMHead(config, {}, monotonic()+5, 5, lambda _: [], instance=pairs())

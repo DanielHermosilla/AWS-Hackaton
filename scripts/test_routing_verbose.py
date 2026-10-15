@@ -41,9 +41,13 @@ def parser() -> argparse.ArgumentParser:
     result.add_argument("--search-policy", choices=["adaptive", "standard", "deterministic"],
                         default="adaptive")
     result.add_argument("--bedrock-model", default=os.getenv("BEDROCK_MODEL_ID"))
+    result.add_argument("--bedrock-fast-model", default=os.getenv("BEDROCK_FAST_MODEL_ID"))
     result.add_argument("--aws-region", default=os.getenv("AWS_DEFAULT_REGION", "us-east-1"))
     result.add_argument("--aws-profile", default=os.getenv("AWS_PROFILE", "hackathon"))
     result.add_argument("--llm-timeout-seconds", type=float, default=8)
+    result.add_argument("--llm-fast-timeout-seconds", type=float, default=8)
+    result.add_argument("--llm-instance-context-bytes", type=int, default=45000)
+    result.add_argument("--decision-interval-seconds", type=float, default=15)
     result.add_argument("--llm-max-calls", type=int, default=4)
     result.add_argument("--llm-max-output-tokens", type=int, default=2048)
     result.add_argument("--llm-reasoning-effort", choices=["low", "medium", "high", "xhigh", "max"])
@@ -64,11 +68,15 @@ def run(args) -> int:
     search = SearchConfig(
         policy=args.search_policy, max_llm_calls=args.llm_max_calls, show_llm_trace=True,
         llm_time_fraction=args.llm_time_fraction,
+        instance_context_bytes=args.llm_instance_context_bytes,
+        decision_interval_seconds=args.decision_interval_seconds,
         bedrock=BedrockConfig(
             model_id=args.bedrock_model, region=args.aws_region,
             profile=args.aws_profile or None, timeout_seconds=args.llm_timeout_seconds,
             max_output_tokens=args.llm_max_output_tokens,
             reasoning_effort=args.llm_reasoning_effort,
+            fast_model_id=args.bedrock_fast_model,
+            fast_timeout_seconds=args.llm_fast_timeout_seconds,
         ),
     )
     simulating = args.simulate_customers is not None
@@ -133,6 +141,8 @@ def run(args) -> int:
         )
         del road, archive
     preparation_seconds = monotonic() - started
+    print(f"Preparación desde la entrada: {preparation_seconds:.3f} s "
+          "(no incluye descarga OSM ni creación previa de la instancia vial).", flush=True)
     logs = output / "logs"
     search.log_directory = str(logs)
     command = [
@@ -144,12 +154,17 @@ def run(args) -> int:
         "--aws-region", search.bedrock.region, "--aws-profile", search.bedrock.profile or "",
         "--llm-max-calls", str(search.max_llm_calls),
         "--llm-timeout-seconds", str(search.bedrock.timeout_seconds),
+        "--llm-fast-timeout-seconds", str(search.bedrock.fast_timeout_seconds),
+        "--llm-instance-context-bytes", str(search.instance_context_bytes),
+        "--decision-interval-seconds", str(search.decision_interval_seconds),
         "--llm-max-output-tokens", str(search.bedrock.max_output_tokens),
         "--llm-time-fraction", str(search.llm_time_fraction),
         "--solver-log-directory", str(logs), "--output", str(output / "result.json"),
     ]
     if search.bedrock.model_id:
         command.extend(["--bedrock-model", search.bedrock.model_id])
+    if search.bedrock.fast_model_id:
+        command.extend(["--bedrock-fast-model", search.bedrock.fast_model_id])
     if search.bedrock.reasoning_effort:
         command.extend(["--llm-reasoning-effort", search.bedrock.reasoning_effort])
     for key, path in inputs.items():
@@ -170,7 +185,8 @@ def run(args) -> int:
     ) + "\n", encoding="utf-8")
     # El hijo valida hashes de red/caminos y factibilidad antes de llamar a AWS.
     print(f"{counts['customers']} clientes, 60 estaciones; solver sin H. Salida: {output}", flush=True)
-    print("SCIP y LLM en vivo; copia íntegra en run.log. Máximo una llamada Bedrock.", flush=True)
+    print("SCIP, respuestas LLM y decisiones en vivo; copia íntegra en run.log. "
+          f"Máximo {search.max_llm_calls} llamadas Bedrock.", flush=True)
     with (output / "run.log").open("w", encoding="utf-8") as log:
         process = subprocess.Popen(
             command, cwd=PROJECT, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
@@ -198,7 +214,8 @@ def run(args) -> int:
             "energy_kwh": result["kpis"]["net_battery_energy_kwh"],
             "llm_status": result["tuning"]["status"], "llm_calls": result["tuning"]["calls"],
             "result": str(result_path), "log": str(output / "run.log"),
-            "prompt": str(logs / "llm-request.json") if (logs / "llm-request.json").exists() else None,
+            "wall_seconds_including_preparation": monotonic() - started,
+            "decisions_directory": str(logs / "decisions"),
             "decision": str(logs / "llm-decision.json")
             if (logs / "llm-decision.json").exists() else None,
         }, ensure_ascii=False), flush=True)

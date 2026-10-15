@@ -108,6 +108,12 @@ class LLMHead:
         self.mps = None
         self.closed = False
 
+    def _console(self, label, data):
+        if self.config.show_llm_trace:
+            print(f"\n[LLM] {label}:\n" + json.dumps(
+                data, ensure_ascii=False, indent=2, allow_nan=False,
+            ), flush=True)
+
     def attach_master(self, model, name):
         if not self.config.export_mps or not self.config.log_directory:
             return
@@ -124,7 +130,7 @@ class LLMHead:
 
     def _call(self, request, bedrock, index):
         started = monotonic()
-        result = {"request": request, "model_id": bedrock.model_id}
+        result = {"request": request, "model_id": bedrock.model_id, "call_index": index}
         try:
             provider = self.provider
             if provider is None:
@@ -133,6 +139,7 @@ class LLMHead:
                     bedrock, system_prompt=ROUTE_PROMPT, temperature=0,
                     trace_directory=(str(Path(self.config.log_directory) / "decisions" / f"{index:02d}")
                                      if self.config.log_directory else None),
+                    show_trace=self.config.show_llm_trace,
                 )
             result["reply"] = provider(request)
         except Exception as error:
@@ -156,6 +163,9 @@ class LLMHead:
                           usage_status="provider_returned_after_deadline")
             if result.get("error"):
                 record["provider_error"] = result["error"]
+            self._console("Respuesta tardía; política conservada", {
+                key: value for key, value in record.items() if key != "proposal"
+            })
             self.abandoned.remove((future, record))
         if (self.pending is not None and monotonic() >= self.pending_deadline
                 and (not self.pending.done()
@@ -167,6 +177,7 @@ class LLMHead:
             record = {
                 "event": self.pending_request["event"], "phase": self.pending_request["phase"],
                 "model_id": self.pending_model, "status": "not_applied",
+                "call_index": self.calls,
                 "reason": "decision_deadline", "runtime_seconds": elapsed,
                 "usage": None, "usage_status": "unknown_until_provider_returns",
                 "inference_completed": False,
@@ -175,6 +186,7 @@ class LLMHead:
             self.records.append(record)
             self.abandoned.append((self.pending, record))
             self.pending = None
+            self._console("Decisión vencida; no se aplica", record)
             _save_decision(self.config, self.report())
         if self.pending is None or not self.pending.done():
             return False
@@ -187,6 +199,7 @@ class LLMHead:
         record = {
             "event": result["request"]["event"], "phase": result["request"]["phase"],
             "model_id": result["model_id"], "runtime_seconds": result["seconds"],
+            "call_index": result["call_index"],
             "usage": reply.get("usage"), "status": "rejected",
             "elapsed_seconds": monotonic() - self.started,
             "inference_completed": True,
@@ -227,6 +240,9 @@ class LLMHead:
             except (ValueError, KeyError, TypeError):
                 record["reason"] = "invalid_policy"
         self.records.append(record)
+        self._console("Decisión validada", {
+            key: value for key, value in record.items() if key != "proposal"
+        })
         _save_decision(self.config, self.report())
         return record["status"] == "applied"
 
@@ -286,6 +302,14 @@ class LLMHead:
         future = Future()
         self.pending = future
         index = self.calls
+        self._console("Consulta enviada; SCIP continúa", {
+            "call_index": index, "model_id": bedrock.model_id,
+            "event": event, "phase": self.current_phase,
+            "timeout_seconds": bedrock.timeout_seconds,
+            "instance_scope": self.context.get("scope"),
+            "request_directory": (str(Path(self.config.log_directory) / "decisions" / f"{index:02d}")
+                                  if self.config.log_directory else None),
+        })
 
         def run():
             future.set_result(self._call(request, bedrock, index))
@@ -301,11 +325,13 @@ class LLMHead:
             self.records.append({
                 "event": self.pending_request["event"], "phase": self.pending_request["phase"],
                 "model_id": self.pending_model,
+                "call_index": self.calls,
                 "status": "not_applied", "reason": "inference_inflight_at_solve_end",
                 "runtime_seconds": max(0, monotonic()-self.last_request), "usage": None,
                 "usage_status": "unknown_until_provider_returns",
                 "inference_completed": False,
             })
+            self._console("Fin de resolución con solicitud pendiente", self.records[-1])
         _save_decision(self.config, self.report())
 
     def report(self):

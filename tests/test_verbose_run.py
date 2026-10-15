@@ -60,6 +60,28 @@ def test_invalid_response_is_still_available_for_diagnosis(tmp_path):
     assert json.loads((tmp_path / "llm-response.json").read_text())["usage"]["totalTokens"] == 25
 
 
+def test_live_response_prints_even_invalid_output_without_transport_or_reasoning(capsys):
+    class WithReasoning(BedrockDouble):
+        def converse(self, **kwargs):
+            response = super().converse(**kwargs)
+            response["output"]["message"]["content"].append({
+                "reasoningContent": {"reasoningText": {"text": "private reasoning block"}},
+            })
+            return response
+    native = WithReasoning("invalid JSON response")
+    client = BedrockPolicyClient(
+        BedrockConfig(model_id="test-model"), client=native, show_trace=True,
+    )
+    with pytest.raises(BedrockResponseError, match="invalid_json"):
+        client({"event": "pricing_progress"})
+    output = capsys.readouterr().out
+    assert "invalid JSON response" in output
+    assert "pricing_progress" in output and '"totalTokens": 25' in output
+    assert "todavía no implica aplicación" in output
+    assert "not-to-be-logged" not in output
+    assert "private reasoning block" not in output
+
+
 def test_reasoning_model_omits_sampling_temperature_and_parses_only_final_text(tmp_path):
     class ReasoningDouble(BedrockDouble):
         def converse(self, **kwargs):
@@ -160,12 +182,20 @@ def test_script_streams_raw_solver_output_and_propagates_exit_status(script, inp
         return SimpleNamespace(stdout=io.StringIO("SCIP node log\nexact raw line\n"), wait=lambda: 1)
 
     monkeypatch.setattr(script.subprocess, "Popen", popen)
-    assert script.main([*inputs, "--llm-reasoning-effort", "max"]) == 1
+    assert script.main([
+        *inputs, "--llm-reasoning-effort", "max", "--bedrock-fast-model", "fast-model",
+        "--llm-fast-timeout-seconds", "6", "--llm-instance-context-bytes", "8000",
+        "--decision-interval-seconds", "10",
+    ]) == 1
     command = seen[0]
     assert "--tee" in command and "--show-llm-trace" in command
     assert command[command.index("--solver") + 1] == "scip-routes"
     assert command[command.index("--llm-max-calls") + 1] == "4"
     assert command[command.index("--llm-reasoning-effort") + 1] == "max"
+    assert command[command.index("--bedrock-fast-model") + 1] == "fast-model"
+    assert command[command.index("--llm-fast-timeout-seconds") + 1] == "6.0"
+    assert command[command.index("--llm-instance-context-bytes") + 1] == "8000"
+    assert command[command.index("--decision-interval-seconds") + 1] == "10.0"
     assert (tmp_path / "output/run.log").read_text() == "SCIP node log\nexact raw line\n"
     assert "SCIP node log\nexact raw line\n" in capsys.readouterr().out
     manifest = json.loads((tmp_path / "output/run-config.json").read_text())
