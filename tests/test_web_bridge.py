@@ -48,6 +48,20 @@ def prepared_request():
     return p
 
 
+def precision_request(capacity=10.00006, reserve=1):
+    p = prepared_request()
+    p["fleet"].update(battery_capacity_kwh=capacity, reserve_kwh=reserve)
+    prep = p["prepared"]
+    prep["nodos"] = [
+        {"id": nid, "tipo": kind, "lat": 0, "lon": i / 1000, "fila": i,
+         "conectores": ["CHADEMO"] if kind == "cargador" else [], "puertos": 1}
+        for i, (nid, kind) in enumerate((("BASE", "base"), ("C1", "cargador"), ("V1", "cliente")))
+    ]
+    prep["tramos"] = {a["id"] + "|" + b["id"]: [[100, 0]] for a in prep["nodos"] for b in prep["nodos"] if a != b}
+    prep["tramos"].update({"BASE|C1": [[1, 0]], "C1|V1": [[6, 0]], "V1|BASE": [[2, 0]]})
+    return p
+
+
 class RequestTests(unittest.TestCase):
     def test_required_explicit_energy_and_network(self):
         for field in ("battery_capacity_kwh", "reserve_kwh", "consumption_kwh_km"):
@@ -347,3 +361,51 @@ class RobustBoundaryTests(unittest.TestCase):
         self.assertIsNotNone(active["geometry"])
         self.assertEqual(active["geometry"]["coordinates"][1], interior[::-1])
         self.assertFalse(any("extremos" in w for w in result["warnings"]))
+
+
+    @unittest.skipUnless(importlib.util.find_spec("evrp") and importlib.util.find_spec("highspy"), "Requires pinned provider")
+    def test_provider_rounding_at_upper_battery_boundary_is_explicitly_unavailable(self):
+        p = precision_request()
+        result = service.solve(p)["result"]
+        active = next(r for r in result["routes"] if r["served_visit_ids"])
+        charge_stop = active["steps"][1]
+        self.assertIsNone(charge_stop["departure_energy_kwh"])
+        self.assertEqual(charge_stop["arrival_energy_kwh"], 5)
+        self.assertIsNone(result["validation"]["feasible"])
+        self.assertEqual(result["validation"]["violations"], [])
+        self.assertTrue(any("precisión" in w.lower() and "redonde" in w for w in result["warnings"]))
+        raw = result["raw"]["result"]["detalle"][active["vehicle_id"]][0]
+        self.assertEqual(raw["bateria_salida_kwh"], 10.0001)
+        self.assertEqual(result["raw"]["input"], p)
+
+    @unittest.skipUnless(importlib.util.find_spec("evrp") and importlib.util.find_spec("highspy"), "Requires pinned provider")
+    def test_provider_rounding_at_reserve_boundary_is_explicitly_unavailable(self):
+        p = precision_request(capacity=10.00004, reserve=2.00004)
+        result = service.solve(p)["result"]
+        active = next(r for r in result["routes"] if r["served_visit_ids"])
+        final_stop = active["steps"][-1]
+        self.assertIsNone(final_stop["arrival_energy_kwh"])
+        self.assertIsNone(final_stop["departure_energy_kwh"])
+        self.assertIsNone(result["validation"]["feasible"])
+        self.assertEqual(result["validation"]["violations"], [])
+        raw = result["raw"]["result"]["detalle"][active["vehicle_id"]][-1]
+        self.assertEqual(raw["bateria_llegada_kwh"], 2)
+        self.assertTrue(any("precisión" in w.lower() and "redonde" in w for w in result["warnings"]))
+
+    @unittest.skipUnless(importlib.util.find_spec("evrp") and importlib.util.find_spec("highspy"), "Requires pinned provider")
+    def test_physical_battery_violation_is_not_excused_as_rounding(self):
+        from evrp.api import Resultado
+        p = precision_request(capacity=10, reserve=1)
+        original = service.solve(p)["result"]["raw"]["result"]
+        active_id = next(k for k, route in original["rutas"].items() if len(route) > 2)
+        for field, invalid in (("bateria_salida_kwh", 10.0001), ("bateria_llegada_kwh", .9999)):
+            with self.subTest(field=field):
+                raw = copy.deepcopy(original)
+                raw["detalle"][active_id][0][field] = invalid
+                if field == "bateria_llegada_kwh":
+                    raw["detalle"][active_id][0]["carga_kwh"] = 10 - invalid
+                with patch("evrp.resolver_preparada", return_value=Resultado(**raw)):
+                    result = service.solve(p)["result"]
+                self.assertFalse(result["validation"]["feasible"])
+                self.assertTrue(any("reserva" in v for v in result["validation"]["violations"]))
+                self.assertEqual(result["raw"]["result"]["detalle"][active_id][0][field], invalid)

@@ -172,6 +172,9 @@ def present(validated, prepared, cfg, raw, decode):
         "No se publica un certificado de optimalidad ni equivalencia con el modelo vial base; las trazas originales están en la exportación.",
     ]
     routes, served, total_balance = [], set(), 0.
+    # validador._simular independently rounds each detail value to 4 decimals.
+    rounding_tolerance = 5e-5 + 1e-12
+    boundary_precision_unavailable = False
     actual_routes = raw.get("rutas", {})
     if set(actual_routes) != {v["id"] for v in fleet}:
         raise ProviderError("Las rutas del proveedor no corresponden a la flota solicitada.", "invalid_provider_result")
@@ -204,10 +207,16 @@ def present(validated, prepared, cfg, raw, decode):
             if any(isinstance(v, bool) or not isinstance(v, (float, int)) or not math.isfinite(v)
                    for v in (arrival, departure, charge)):
                 raise ProviderError("La batería del proveedor no es un número finito.", "invalid_provider_result")
-            if (arrival < f["reserve_kwh"] - .0002 or departure < f["reserve_kwh"] - .0002 or
-                arrival > f["battery_capacity_kwh"] + .0002 or departure > f["battery_capacity_kwh"] + .0002 or
+            if (arrival < f["reserve_kwh"] - rounding_tolerance or departure < f["reserve_kwh"] - rounding_tolerance or
+                arrival > f["battery_capacity_kwh"] + rounding_tolerance or departure > f["battery_capacity_kwh"] + rounding_tolerance or
                 charge < 0 or not math.isclose(arrival + charge, departure, abs_tol=.0002)):
                 violations.append(f"Vehículo {vid}, parada {pos}: balance/capacidad/reserva incoherente.")
+            readings = {"arrival_energy_kwh": arrival, "departure_energy_kwh": departure}
+            for field, value in readings.items():
+                if ((f["reserve_kwh"] - rounding_tolerance <= value < f["reserve_kwh"]) or
+                    (f["battery_capacity_kwh"] < value <= f["battery_capacity_kwh"] + rounding_tolerance)):
+                    readings[field] = None
+                    boundary_precision_unavailable = True
             if charge > .0002 and by_id[nid]["node_type"] != "charger":
                 violations.append(f"Vehículo {vid}, parada {pos}: recarga fuera de un cargador.")
             delivered = [nid] if by_id[nid]["node_type"] == "visit" else []
@@ -217,8 +226,7 @@ def present(validated, prepared, cfg, raw, decode):
                 else:
                     visits.append(nid)
                 served.add(nid)
-            steps.append({"position": pos, "node_id": nid, "arrival_energy_kwh": arrival,
-                          "departure_energy_kwh": departure, "charge_kwh": charge,
+            steps.append({"position": pos, "node_id": nid, **readings, "charge_kwh": charge,
                           "energy_kwh": None, "delivered_visit_ids": delivered})
             charges += charge
             previous_departure = departure
@@ -243,7 +251,9 @@ def present(validated, prepared, cfg, raw, decode):
     coherent = isinstance(effective, (float, int)) and not isinstance(effective, bool) and math.isclose(effective, total_balance, abs_tol=max(.001, sum(len(r["steps"]) for r in routes) * .0002))
     if not coherent:
         warnings.append("La energía efectiva informada no coincide con el balance del detalle de recarga. La factibilidad del resultado mostrado queda sin certificar.")
-    feasible = False if violations or not provider_feasible else (True if coherent else None)
+    if boundary_precision_unavailable:
+        warnings.append("Precisión de batería insuficiente en un límite: el proveedor redondea a 4 decimales y alguna lectura cruza capacidad o reserva dentro de 0,00005 kWh. Esa lectura se muestra como no disponible, sin recortarla; el valor original está en la exportación. La factibilidad queda sin certificar.")
+    feasible = False if violations or not provider_feasible else (True if coherent and not boundary_precision_unavailable else None)
     red_type = prepared.red.get("tipo", "preparada")
     if red_type == "haversine":
         warnings.append("Red exploratoria haversine: las líneas guardadas no son rutas viales validadas.")
@@ -254,7 +264,8 @@ def present(validated, prepared, cfg, raw, decode):
         "nodes": nodes, "fleet": fleet, "routes": routes, "served_count": len(served), "total_visits": len(visit_ids),
         "unserved_visit_ids": unserved, "total_energy_kwh": None,
         "validation": {"feasible": feasible, "violations": violations,
-                       "scope": "Validador evrp sobre caminos preparados y modelo energético determinista, con recarga completa; no acredita una red real ni equivalencia con modelamiento.pdf. El puente comprueba la coherencia del detalle y KPIs."},
+                       "scope": "Validador evrp sobre caminos preparados y modelo energético determinista, con recarga completa; no acredita una red real ni equivalencia con modelamiento.pdf. El puente comprueba la coherencia del detalle y KPIs."
+                                + (" El detalle redondeado no permite certificar alguna lectura en el límite de capacidad/reserva." if boundary_precision_unavailable else "")},
         "phases": [], "warnings": warnings,
         "assumptions": ["Capacidad útil, reserva y consumo son supuestos indicados en esta ejecución.",
                         "Flota homogénea Leaf 2013, conectores CHAdeMO/J1772; el depósito no ofrece recarga.",

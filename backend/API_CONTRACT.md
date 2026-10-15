@@ -135,6 +135,17 @@ explica la inconsistencia. Las violaciones físicas/estructurales explícitas de
 puede informar `true` dentro del alcance textual, nunca garantía de consumos reales.
 La beta no implementa otro estimador energético.
 
+El detalle upstream redondea llegada, salida y recarga a cuatro decimales de kWh.
+La capacidad y reserva configuradas conservan su precisión. Si ese redondeo deja
+una lectura de llegada/salida fuera de `[reserva, capacidad]` por hasta
+`0.00005 kWh + 0.000000000001 kWh` (medio incremento del redondeo más un margen
+de coma flotante), solo esa lectura de presentación pasa a `null`. Una advertencia
+explica la pérdida de precisión y `validation.feasible` pasa a `null`, salvo que
+existan violaciones, que conservan `false`. El alcance de validación lo indica.
+No se recorta la cifra al límite, no se reconstruye una batería de mayor precisión
+ni se modifica el detalle original de `raw.result`. Una desviación mayor que esa
+banda se registra como violación física y no se justifica por redondeo.
+
 Las cotas/gaps no finitas se exportan como `null` junto a su ruta, motivo y valor
 original textual en `unavailable_statistics`. Ningún dato físico no finito se
 convierte silenciosamente; invalida la respuesta del proveedor.
