@@ -157,7 +157,7 @@ export function initRunPanel() {
       ? 'Se utilizará la red incluida en el JSON. Las coordenadas son opcionales: los nodos sin ubicación se conservan en la lista. El servidor valida la instancia sin cambiar su configuración física.'
       : 'El servidor preparará una aproximación por distancia, sin red vial ni pendiente. Las coordenadas no acreditan conectividad por calles.';
     $('native-note').hidden = !native;
-    $('native-note').textContent = native ? 'Parámetros del JSON protegidos. Arcos, operaciones, conectores, compatibilidad y procedencia se conservan íntegros. Para cambiarlos, edita el archivo y vuelve a cargarlo. Solo el presupuesto del solver se configura aquí.' : '';
+    $('native-note').textContent = native ? 'Parámetros del JSON protegidos. Arcos, operaciones, conectores, compatibilidad y procedencia se conservan íntegros. Los parámetros omitidos usan los valores predeterminados del contrato nativo del motor; sus valores efectivos aparecerán en la instancia exportada después de ejecutar. Para cambiar el escenario, edita el archivo y vuelve a cargarlo. Solo el presupuesto del solver se configura aquí.' : '';
     $('fleet-help').hidden = native;
     $('run-consumption').closest('label').hidden = native;
     for (const field of dialog.querySelectorAll('.run-fields input')) {

@@ -107,7 +107,7 @@ export function inputNodes(input) {
 }
 
 export function parseInstanceFile(text, filename = '') {
-  let value;
+  let value, preparationAttempt;
   const cleaned = text.replace(/^\ufeff/, '');
   if (/\.csv$/i.test(filename) || !cleaned.trimStart().startsWith('{')) {
     const rows = csvRows(cleaned);
@@ -125,7 +125,15 @@ export function parseInstanceFile(text, filename = '') {
   } else {
     try { value = JSON.parse(cleaned); }
     catch { throw new Error('El archivo no contiene JSON válido.'); }
-    if (value?.schema_version === 'zmd.integration-beta.attempt/2') value = value.request?.instance ? value.request : value.prepare_request || value.request;
+    if (value?.schema_version === 'zmd.integration-beta.attempt/2') {
+      if (value.prepare_request && !value.request?.instance && value.request != null) {
+        preparationAttempt = value.request;
+        requireFields(preparationAttempt, ['api_version', 'solver'], 'request');
+        if (preparationAttempt.api_version !== API_VERSION) throw new Error('Versión del intento no admitida; se requiere API 3.0.');
+        if (preparationAttempt.solver !== undefined) requireFields(preparationAttempt.solver, ['time_limit_seconds'], 'solver');
+      }
+      value = value.request?.instance ? value.request : value.prepare_request || value.request;
+    }
     if (value?.api_version === API_VERSION && value.result) value = value.result.raw?.input;
     if (!record(value)) throw new Error('El archivo no contiene una entrada completa reutilizable.');
     if (value.schema_version === '1.0') value = {instance: validateNativeInstance(value)};
@@ -138,7 +146,7 @@ export function parseInstanceFile(text, filename = '') {
       requireFields(value, ['api_version', 'nodes', 'fleet', 'network_mode'], 'prepare');
       requireFields(value.fleet, ['num_vehicles', 'battery_capacity_kwh', 'reserve_kwh', 'initial_soc', 'consumption_kwh_km', 'vehicle_connector_types'], 'fleet');
       if (value.network_mode !== 'haversine') throw new Error('La preparación de nodos requiere network_mode haversine explícito.');
-      value = {nodes: value.nodes, prepareRequest: value};
+      value = {nodes: value.nodes, prepareRequest: value, ...(preparationAttempt ? {request: preparationAttempt} : {})};
     } else throw new Error('Versión no admitida. Los formatos anteriores no son compatibles: carga un CSV o una ProblemInstance nativa 1.0.');
   }
   inputNodes(value);

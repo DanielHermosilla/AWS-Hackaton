@@ -43,6 +43,32 @@ test('canonical request, native export and API3 result reload without physics ov
   }
 });
 
+test('omitted native parameters stay omitted until the backend applies its contract defaults', () => {
+  const original = native();
+  delete original.parameters;
+  const input = parseInstanceFile(JSON.stringify(original), 'native-defaults.json');
+  assert.deepEqual(makeSolveRequest(input, 10).instance, original);
+  assert.equal(Object.hasOwn(makeSolveRequest(input, 10).instance, 'parameters'), false);
+});
+
+test('a preparation failure export restores the original solver budget and preparation input', () => {
+  const prepareRequest = makePrepareRequest(parseInstanceFile(csv, 'nodes.csv'), fleet);
+  const exported = {
+    schema_version: 'zmd.integration-beta.attempt/2',
+    request: {api_version: '3.0', solver: {time_limit_seconds: 42}},
+    prepare_request: prepareRequest,
+    stage: 'preparing',
+    response: {api_version: '3.0', error: {code: 'preparation_failed', message: 'Preparation failed'}},
+    status: 'error',
+    message: 'Preparation failed',
+    observed_at: '2026-10-15T12:00:00.000Z'
+  };
+  const restored = parseInstanceFile(JSON.stringify(exported), 'intento.json');
+  assert.deepEqual(restored.request, exported.request);
+  assert.deepEqual(restored.prepareRequest, prepareRequest);
+  assert.deepEqual(makePrepareRequest(restored, restored.prepareRequest.fleet), prepareRequest);
+});
+
 test('CSV creates only a prepare request; it never creates arcs or estimated energy in the UI', () => {
   const input = parseInstanceFile(csv, 'nodes.csv');
   const request = makePrepareRequest(input, fleet);
