@@ -1,0 +1,165 @@
+{
+  "elevacion": {
+    "fuente": "usgs",
+    "nodos": 9688,
+    "directos": 9688,
+    "cobertura_directa": 1.0,
+    "interpolados": 0,
+    "resolucion_grados": 9.259259259259259e-05,
+    "resolucion_m_aprox": 10.3,
+    "bbox": [
+      -83.95997,
+      42.16003,
+      -83.54047,
+      42.38995
+    ],
+    "raster_px": [
+      4531,
+      2483
+    ],
+    "bytes_descargados": 45003400,
+    "desde_cache": true,
+    "altura_min_m": 209.7,
+    "altura_max_m": 322.1
+  },
+  "comparaciones": [
+    {
+      "instancia": "competition",
+      "perfil": "ev_routing",
+      "plano": {
+        "energia_total_kwh": 11.1521,
+        "km_total": 71.136,
+        "entregas": 20,
+        "tiempo_s": 7.83
+      },
+      "pendiente": {
+        "energia_total_kwh": 12.1763,
+        "km_total": 71.347,
+        "entregas": 20,
+        "tiempo_s": 7.74
+      },
+      "delta_energia_kwh": 1.0242,
+      "delta_km": 0.211,
+      "vehiculos_con_orden_distinto": 0,
+      "orden_plano": {
+        "1": [
+          "V12",
+          "V3",
+          "V6",
+          "V19",
+          "V7",
+          "V16",
+          "V15",
+          "V14",
+          "V1",
+          "V18",
+          "V8",
+          "V17",
+          "V4",
+          "V20",
+          "V10",
+          "V2",
+          "V9",
+          "V5",
+          "V11",
+          "V13"
+        ],
+        "2": []
+      },
+      "orden_pendiente": {
+        "1": [
+          "V12",
+          "V3",
+          "V6",
+          "V19",
+          "V7",
+          "V16",
+          "V15",
+          "V14",
+          "V1",
+          "V18",
+          "V8",
+          "V17",
+          "V4",
+          "V20",
+          "V10",
+          "V2",
+          "V9",
+          "V5",
+          "V11",
+          "V13"
+        ],
+        "2": []
+      }
+    },
+    {
+      "instancia": "evaluation",
+      "perfil": "ev_routing",
+      "plano": {
+        "energia_total_kwh": 12.0769,
+        "km_total": 77.035,
+        "entregas": 20,
+        "tiempo_s": 7.75
+      },
+      "pendiente": {
+        "energia_total_kwh": 13.1359,
+        "km_total": 77.146,
+        "entregas": 20,
+        "tiempo_s": 7.76
+      },
+      "delta_energia_kwh": 1.059,
+      "delta_km": 0.111,
+      "vehiculos_con_orden_distinto": 0,
+      "orden_plano": {
+        "1": [
+          "V10",
+          "V3",
+          "V17",
+          "V6",
+          "V16",
+          "V2",
+          "V20",
+          "V19",
+          "V5",
+          "V15",
+          "V7",
+          "V11",
+          "V4",
+          "V18",
+          "V8",
+          "V14",
+          "V1",
+          "V13",
+          "V9",
+          "V12"
+        ],
+        "2": []
+      },
+      "orden_pendiente": {
+        "1": [
+          "V10",
+          "V3",
+          "V17",
+          "V6",
+          "V16",
+          "V2",
+          "V20",
+          "V19",
+          "V5",
+          "V15",
+          "V7",
+          "V11",
+          "V4",
+          "V18",
+          "V8",
+          "V14",
+          "V1",
+          "V13",
+          "V9",
+          "V12"
+        ],
+        "2": []
+      }
+    }
+  ]
+}

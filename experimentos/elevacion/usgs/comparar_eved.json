@@ -1,0 +1,23 @@
+{
+  "nodos_comparados": 1571,
+  "fuente_a": "usgs",
+  "fuente_b": "eved_directo",
+  "mae_m": 0.72,
+  "rmse_m": 1.29,
+  "sesgo_medio_m_usgs_menos_eved": -0.04,
+  "p50_abs_m": 0.34,
+  "p90_abs_m": 1.77,
+  "max_abs_m": 11.61,
+  "corr_pearson": 0.9968,
+  "usgs_rango_m": [
+    230.6,
+    322.1
+  ],
+  "eved_rango_m": [
+    229.5,
+    321.5
+  ],
+  "usgs_segundos": 0.18,
+  "usgs_desde_cache": true,
+  "usgs_bytes_descargados": 45003400
+}
