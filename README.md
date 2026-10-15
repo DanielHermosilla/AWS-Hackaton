@@ -6,11 +6,11 @@ Queremos ayudar a un operador a planificar entregas sin quedarse sin batería: c
 
 El escenario del desafío considera dos Nissan Leaf 2013 con un 60 % de carga inicial. Las entradas actuales contienen un depósito, 20 locales y 60 cargadores. El mismo código deberá aceptar nuevas instancias y flotas parametrizadas.
 
-**Estado:** definición del proyecto y de su modelo matemático. La arquitectura y las integraciones descritas aquí son el plan de implementación.
+**Estado de la rama `modelamiento`:** flujo ejecutable por CLI, desde CSV y red vial hasta Pyomo, solver, verificación independiente y JSON. **Gurobi es la primera opción; SCIP es el respaldo si Gurobi no está disponible o su licencia no permite resolver la instancia.** El LLM y la UI corresponden a etapas posteriores.
 
 ## Nuestro modelamiento
 
-**La formulación que implementaremos está en [modelamiento.pdf](modelamiento.pdf).** Es un modelo de programación lineal entera mixta (MILP) sobre una **red vial dirigida**, cuyas decisiones incluyen las calles recorridas, las entregas realizadas y la energía recargada.
+**La formulación implementada está en [modelamiento.pdf](modelamiento.pdf).** Es un modelo de programación lineal entera mixta (MILP) sobre una **red vial dirigida**, cuyas decisiones incluyen las calles recorridas, las entregas realizadas y la energía recargada. [docs/model.md](docs/model.md) relaciona cada ecuación con su componente Pyomo.
 
 Su objetivo es lexicográfico:
 
@@ -28,30 +28,71 @@ El modelo:
 - Usa `H` como cota del número de movimientos, no como duración de jornada. Esa cota limita el alcance del certificado de optimalidad.
 - Supone consumos deterministas y tramos viales elementales. La versión base no incluye carga en el depósito, jornada, tiempos de servicio, capacidad de paquetes ni colas.
 
-Los nodos de los CSV no constituyen por sí solos la red de calles. Habrá que construir esa red y estimar su consumo usando eVED, integrando las señales con sus intervalos reales de tiempo.
+Los nodos de los CSV no constituyen por sí solos la red de calles. El comando `prepare` utiliza un GraphML de OSMnx o descarga una red dirigida sin simplificar, solo cuando se solicita. Integra eVED con intervalos reales por vehículo/viaje y obtiene una referencia descriptiva de kWh/km. Este estimador inicial **no es un predictor validado del consumo futuro** y no produce regeneración en los arcos OSM; el modelo sí admite consumos firmados y saturación en instancias JSON.
 
-## Enfoque de solución
+## Ejecutar
 
-1. **Entrada común.** Normalizar el CSV o los datos del formulario en una misma instancia validada.
-2. **Modelo parametrizable.** Construir en Pyomo la formulación del PDF, con los parámetros de la instancia.
-3. **Interpretación con un LLM.** Analizar la estructura del modelo y proponer ajustes de búsqueda para el solver, reutilizando y adaptando material de [LLM4MIP](https://llm4mip.github.io/).
-4. **Tuning mediante AWS.** Invocar el LLM a través de **Amazon Bedrock**, usando un modelo habilitado para la cuenta, región y plan/créditos de la hackatón. Validar sus propuestas contra opciones realmente admitidas por el solver.
-5. **Resolución y comprobación.** Resolver las dos prioridades y verificar las rutas con un comprobador independiente.
-6. **Resultados.** Mostrar mapa, entregas, batería, recargas, energía, tiempos y estado/gap por fase; exportar un JSON reproducible.
+Requiere Python 3.12 o 3.13 y `uv`. Las dependencias Python, incluida la interfaz Gurobi, están fijadas en `uv.lock`. La licencia Gurobi se configura fuera del repositorio. Para el respaldo, instalar el ejecutable SCIP con soporte de lectura `.nl` y dejarlo en `PATH`; instalar únicamente un paquete Python de SCIP no satisface esa integración.
 
-**El LLM ajusta parámetros del solver; no cambia el modelo, sus restricciones ni sus objetivos.** Compararemos su configuración con una configuración estándar bajo condiciones equivalentes. LLM4MIP aporta procedimientos, prompts y herramientas auxiliares; la integración Pyomo–AWS–solver se desarrollará en este repositorio.
+```bash
+uv sync --locked
+uv run ev-routing run \
+  --instance examples/toy_recharge.json \
+  --output artifacts/toy_recharge.json
+```
 
-## Resultados y desarrollo
+El ejemplo requiere dos entregas y una recarga: el óptimo consume 14 kWh netos e incorpora 9 kWh a la batería. `examples/toy_regeneration.json` tiene una entrega y óptimo de 2 kWh; comprueba que la regeneración excedente se pierde cuando la batería se llena. Son ejemplos sintéticos, no resultados del concurso.
 
-Los KPI principales son factibilidad, entregas cumplidas, consumo energético y tiempo de cómputo. También evaluaremos escalabilidad. Los ahorros de tiempo y emisiones se mostrarán únicamente con una referencia comparable y supuestos documentados.
+Para fijar un backend, agregar `--solver gurobi` o `--solver scip`. El valor predeterminado `auto` habilita el respaldo. No se cambia de solver por timeout o infactibilidad. `--time-limit-seconds 60` limita el presupuesto compartido por las dos fases; es un límite blando. Los detalles de licencias, fases y certificados están en [docs/solvers.md](docs/solvers.md).
 
-Trabajaremos con un backend Python modular, Pyomo, un único solver inicial, una UI en Streamlit y un cliente AWS centralizado. Priorizamos código simple y bibliotecas existentes, sin overkill ni reinventar herramientas.
+Preparar los datos locales, conservando los originales:
 
-Los equipos de datos, optimización, UI/UX y LLM trabajarán con contratos compartidos, ramas y worktrees separados, e integración coordinada en `master`.
+```bash
+uv run ev-routing prepare \
+  --nodes data/competition_routing_nodes.csv \
+  --graphml artifacts/network/ann_arbor.graphml \
+  --download-network \
+  --eved data/eVED_EV.csv \
+  --energy-cache artifacts/energy/eved-summary.json \
+  --config config/default.json \
+  --output artifacts/instances/competition.json
+
+uv run ev-routing run \
+  --instance artifacts/instances/competition.json \
+  --config config/default.json \
+  --output artifacts/results/competition.json
+```
+
+Si el GraphML ya existe, se reutiliza sin descargar ni reemplazarlo. Omitir `--download-network` exige una red local. `--energy-rate 0.16` permite usar un coeficiente explícitamente supuesto en lugar de `--eved`. `--visit-id ID`, repetible, y `--charger-id ID` o `--no-chargers` permiten ensayos con subconjuntos; esa selección queda registrada.
+
+**Antes de interpretar una corrida real**, revisar `config/default.json`: 24 kWh útiles, reserva de 2.4 kWh y `movement_limit=30` son supuestos de ejemplo, no requisitos acreditados por la hackatón. En una red vial grande, 30 movimientos pueden excluir muchas entregas; aumentar `H` también aumenta el MILP. El grafo conserva intersecciones y tramos, y añade accesos bidireccionales cortos desde los servicios: su factibilidad vehicular es un supuesto registrado. El importador rechaza accesos mayores que `--max-snap-distance-m` (100 m por defecto) y registra servicios sin retorno vial.
+
+`run` utiliza los parámetros físicos guardados en la instancia; de `--config` solo toma la sección `solver`. Así no cambia el problema después de prepararlo. La salida incluye rutas completas, energía, recargas, entregas pendientes, cotas/gaps por fase, tiempos, procedencia y comprobación de factibilidad. Sin referencia de comparación, los ahorros de tiempo y CO2e quedan en `null`.
+
+## Pruebas
+
+```bash
+uv run pytest -q
+uv run pytest --cov=ev_routing --cov-report=term-missing \
+  --junitxml=artifacts/tests/results.xml
+uv run ruff check src tests
+```
+
+Las pruebas habituales no descargan mapas ni llaman a AWS. Incluyen integración energética, errores de datos, calles dirigidas, oráculos que enumeran recorridos pequeños, dos solvers, fallos de licencia, timeouts, manipulación de rutas para probar el validador y CLI completa. Los casos con solver se omiten si ninguno está disponible; revisar los `skipped` antes de interpretar una ejecución como validación del MILP. Para pruebas sin solver: `uv run pytest -m "not solver"`.
+
+Resultados medidos y alcance de los ensayos: [docs/validation.md](docs/validation.md).
+
+## Próxima etapa: tuning mediante AWS
+
+El flujo actual es **datos → instancia → Pyomo → Gurobi/SCIP → verificación → JSON**, sin llamadas a LLM. `llm/tuning.py` documenta el punto de integración y genera un perfil local; `propose_tuning` permanece desactivado.
+
+Posteriormente adaptaremos el análisis estructural de [LLM4MIP](https://llm4mip.github.io/) para proponer opciones del solver mediante **Amazon Bedrock y un modelo habilitado para la cuenta, región y plan/créditos AWS de la hackatón**. El LLM no cambiará datos, restricciones, objetivos ni tolerancias. Las propuestas se validarán contra una lista de opciones permitidas y se compararán con la configuración estándar bajo iguales recursos y presupuesto. La futura UI en Streamlit consumirá el mismo backend.
+
+Priorizamos código simple, modular y bibliotecas existentes. [STRUCTURE.md](STRUCTURE.md) explica brevemente cada archivo y sus funciones. Los equipos trabajan en ramas y worktrees separados; la integración objetivo del proyecto es `master`.
 
 Documentos de referencia:
 
-- [modelamiento.pdf](modelamiento.pdf): formulación matemática a implementar.
-- [presentation.pptx](presentation.pptx): enunciado, reglas y KPI de la hackatón.
-- [README.es.md](README.es.md): diccionario de los históricos eVED.
+- [modelamiento.pdf](modelamiento.pdf): formulación matemática implementada.
+- [data/presentation.pptx](data/presentation.pptx): enunciado, reglas y KPI de la hackatón, distribuido localmente.
+- [diccionario.md](diccionario.md): diccionario de los históricos eVED.
 - [AGENTS.md](AGENTS.md): arquitectura, contratos, reglas de implementación y trabajo en paralelo.

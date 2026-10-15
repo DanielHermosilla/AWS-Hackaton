@@ -18,8 +18,8 @@ from ev_routing.contracts import (
     ProblemInstance,
     RouteStep,
     Solution,
-    SolveResult,
     SolverConfig,
+    SolveResult,
     VehicleRoute,
 )
 from ev_routing.inputs import ROUTING_COLUMNS, load_instance, save_instance

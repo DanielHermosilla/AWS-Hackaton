@@ -1,0 +1,30 @@
+{
+  "schema_version": "1.0",
+  "name": "toy-two-deliveries-requires-charging",
+  "nodes": [
+    {"node_id": "BASE", "node_type": "base"},
+    {"node_id": "A", "node_type": "visit"},
+    {"node_id": "F", "node_type": "charger", "connector_types": ["J1772"]},
+    {"node_id": "B", "node_type": "visit"}
+  ],
+  "arcs": [
+    {"from_node_id": "BASE", "to_node_id": "A", "energy_kwh": 4.0, "distance_m": 4000},
+    {"from_node_id": "A", "to_node_id": "F", "energy_kwh": 1.0, "distance_m": 1000},
+    {"from_node_id": "F", "to_node_id": "B", "energy_kwh": 6.0, "distance_m": 6000},
+    {"from_node_id": "B", "to_node_id": "BASE", "energy_kwh": 3.0, "distance_m": 3000}
+  ],
+  "parameters": {
+    "vehicle_count": 2,
+    "battery_capacity_kwh": 10.0,
+    "reserve_kwh": 1.0,
+    "initial_soc": 0.6,
+    "movement_limit": 4,
+    "vehicle_connector_types": ["J1772"]
+  },
+  "provenance": {
+    "kind": "synthetic",
+    "expected_deliveries": 2,
+    "expected_net_energy_kwh": 14.0,
+    "explanation": "Un vehículo completa el ciclo con 9 kWh de recarga en F; el otro puede permanecer en BASE. No son datos reales."
+  }
+}

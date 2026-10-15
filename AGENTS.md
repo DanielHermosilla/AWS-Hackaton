@@ -19,6 +19,24 @@ No convertir una decisión de implementación en una exigencia de la organizaci�
 
 Este archivo describe la arquitectura objetivo. No implica que sus módulos ya estén implementados. No crear archivos vacíos o dependencias solo para completar el árbol.
 
+### Alcance actual: rama `modelamiento`
+
+Por decisión explícita del usuario, esta etapa implementa el flujo por CLI
+**datos → red/energía → Pyomo del PDF → Gurobi/SCIP → validación → JSON**.
+Gurobi es la opción predeterminada y SCIP el respaldo ante falta de disponibilidad
+o licencia válida, incluida una licencia insuficiente para el tamaño del modelo.
+No cambiar de backend por infactibilidad o timeout. Documentar la interfaz y
+licencias en `docs/solvers.md`; no guardar licencias en Git.
+
+**El LLM permanece fuera del flujo y no se realizan llamadas a AWS.** Conservar
+un esqueleto comentado para su futura integración con Bedrock, sin simular tuning
+ni agregar dependencias o credenciales todavía. La UI queda para una etapa posterior.
+Estas decisiones concretan el alcance actual; las secciones de producto y AWS
+describen el objetivo posterior. `STRUCTURE.md` explica la implementación presente
+y `README.md` contiene comandos ejecutables. Documentar las ecuaciones Pyomo con
+sus números del PDF y contrastarlas con pruebas independientes, no solo con
+restricciones del mismo modelo.
+
 ## 2. Requerimientos oficiales y límites del alcance
 
 - Escenario oficial: **dos Nissan Leaf 2013**, cada uno con **60 % de SoC inicial**.
@@ -74,7 +92,7 @@ Priorizar **código simple, legible y suficiente para el caso real**. Evitar ove
 - Un solo proyecto Python y un backend organizado por responsabilidades.
 - Pyomo para modelar. Usar una integración existente con el solver, no implementar branch-and-bound, presolve o un protocolo propio.
 - Para el MVP, usar **Streamlit** como interfaz y un mapa integrado con una biblioteca existente. El backend debe poder ejecutarse sin Streamlit.
-- **HiGHS es el backend inicial propuesto** cuando no se haya confirmado otra elección y su licencia. Si el equipo decide usar COPT/Gurobi para acercarse al entorno de LLM4MIP, documentar licencia, disponibilidad, integración Pyomo y decisión antes de implementar el adaptador. Mantener un solo backend funcional en el MVP.
+- **Gurobi es el backend principal y SCIP el respaldo**, según el alcance actual. Usar los adaptadores existentes de Pyomo; no agregar otros backends sin una necesidad acordada. No asumir equivalencia entre sus parámetros ni entre sus licencias.
 - Usar `boto3` para AWS y estructuras validadas, preferentemente Pydantic, para los contratos. Usar bibliotecas existentes para CSV, grafos y mapas.
 - No agregar microservicios, colas, Kubernetes, una base de datos, un framework de agentes, varias capas de repositorios o interfaces genéricas sin una necesidad demostrada.
 - Preferir funciones pequeñas y tipos explícitos. Extraer una abstracción cuando exista reutilización real, no por anticipación.
@@ -86,9 +104,10 @@ Estructura objetivo:
 ```text
 AGENTS.md
 README.md                         # instalación, ejecución y demo del producto
-diccionario.md                      # diccionario original de datos
-presentation.pptx                 # enunciado original
+diccionario.md                    # diccionario original de datos
+data/presentation.pptx             # enunciado original local
 modelamiento.pdf                  # formulación matemática que se implementará
+STRUCTURE.md                      # mapa mínimo de archivos y funciones actuales
 pyproject.toml
 .env.example                      # nombres de variables; nunca secretos
 config/
