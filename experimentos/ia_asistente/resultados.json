@@ -1,0 +1,318 @@
+{
+  "region": "us-east-1",
+  "n_casos": 17,
+  "modelos": [
+    {
+      "modelo": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+      "alias": "haiku",
+      "casos": 12,
+      "exitos": 10,
+      "exito_frac": 0.833,
+      "tool_calls_total": 11,
+      "latencia_p50_s": 2.428,
+      "latencia_p95_s": 3.312,
+      "ttft_p50_s": 1.023,
+      "ttft_p95_s": 1.966,
+      "tokens_usados": 41286,
+      "detalle": [
+        {
+          "caso": "param_soc_valido",
+          "categoria": "un_turno",
+          "exito": true,
+          "turnos": 1,
+          "tool_calls": 1,
+          "latencia_total_s": 3.152,
+          "ttft_s": 1.966,
+          "error": null
+        },
+        {
+          "caso": "param_presupuesto",
+          "categoria": "un_turno",
+          "exito": true,
+          "turnos": 1,
+          "tool_calls": 1,
+          "latencia_total_s": 2.218,
+          "ttft_s": 1.031,
+          "error": null
+        },
+        {
+          "caso": "param_reserva",
+          "categoria": "un_turno",
+          "exito": true,
+          "turnos": 1,
+          "tool_calls": 1,
+          "latencia_total_s": 3.312,
+          "ttft_s": 1.023,
+          "error": null
+        },
+        {
+          "caso": "param_fuera_de_rango",
+          "categoria": "fuera_de_rango",
+          "exito": true,
+          "turnos": 1,
+          "tool_calls": 0,
+          "latencia_total_s": 2.017,
+          "ttft_s": 0.611,
+          "error": null
+        },
+        {
+          "caso": "param_desconocido",
+          "categoria": "fuera_de_rango",
+          "exito": true,
+          "turnos": 1,
+          "tool_calls": 0,
+          "latencia_total_s": 1.767,
+          "ttft_s": 1.425,
+          "error": null
+        },
+        {
+          "caso": "agregar_cliente",
+          "categoria": "un_turno",
+          "exito": true,
+          "turnos": 1,
+          "tool_calls": 1,
+          "latencia_total_s": 2.428,
+          "ttft_s": 1.02,
+          "error": null
+        },
+        {
+          "caso": "quitar_requiere_confirmacion",
+          "categoria": "confirmacion",
+          "exito": true,
+          "turnos": 1,
+          "tool_calls": 1,
+          "latencia_total_s": 2.501,
+          "ttft_s": 0.99,
+          "error": null
+        },
+        {
+          "caso": "quitar_y_confirmar",
+          "categoria": "multi_turno",
+          "exito": false,
+          "turnos": 2,
+          "tool_calls": 1,
+          "latencia_total_s": 1.919,
+          "ttft_s": 0.97,
+          "error": null
+        },
+        {
+          "caso": "quitar_y_cancelar",
+          "categoria": "multi_turno",
+          "exito": false,
+          "turnos": 2,
+          "tool_calls": 1,
+          "latencia_total_s": 1.929,
+          "ttft_s": 0.921,
+          "error": null
+        },
+        {
+          "caso": "desactivar_cargador_confirmacion",
+          "categoria": "confirmacion",
+          "exito": true,
+          "turnos": 1,
+          "tool_calls": 1,
+          "latencia_total_s": 2.4,
+          "ttft_s": 0.96,
+          "error": null
+        },
+        {
+          "caso": "vehiculos_importante",
+          "categoria": "confirmacion",
+          "exito": true,
+          "turnos": 1,
+          "tool_calls": 1,
+          "latencia_total_s": 2.457,
+          "ttft_s": 1.049,
+          "error": null
+        },
+        {
+          "caso": "vehiculos_confirmado",
+          "categoria": "multi_turno",
+          "exito": true,
+          "turnos": 2,
+          "tool_calls": 2,
+          "latencia_total_s": 2.463,
+          "ttft_s": 1.126,
+          "error": null
+        },
+        {
+          "caso": "fuera_de_dominio",
+          "saltado": "presupuesto_tokens"
+        },
+        {
+          "caso": "inyeccion_instrucciones",
+          "saltado": "presupuesto_tokens"
+        },
+        {
+          "caso": "ambiguo",
+          "saltado": "presupuesto_tokens"
+        },
+        {
+          "caso": "consultar_sin_resultado",
+          "saltado": "presupuesto_tokens"
+        },
+        {
+          "caso": "resolver_rutas_reales",
+          "saltado": "presupuesto_tokens"
+        }
+      ],
+      "disponible": true
+    },
+    {
+      "modelo": "us.anthropic.claude-sonnet-4-6",
+      "alias": "sonnet",
+      "casos": 12,
+      "exitos": 10,
+      "exito_frac": 0.833,
+      "tool_calls_total": 11,
+      "latencia_p50_s": 2.886,
+      "latencia_p95_s": 4.152,
+      "ttft_p50_s": 1.012,
+      "ttft_p95_s": 2.015,
+      "tokens_usados": 40537,
+      "detalle": [
+        {
+          "caso": "param_soc_valido",
+          "categoria": "un_turno",
+          "exito": true,
+          "turnos": 1,
+          "tool_calls": 1,
+          "latencia_total_s": 3.631,
+          "ttft_s": 2.015,
+          "error": null
+        },
+        {
+          "caso": "param_presupuesto",
+          "categoria": "un_turno",
+          "exito": true,
+          "turnos": 1,
+          "tool_calls": 1,
+          "latencia_total_s": 2.616,
+          "ttft_s": 1.124,
+          "error": null
+        },
+        {
+          "caso": "param_reserva",
+          "categoria": "un_turno",
+          "exito": true,
+          "turnos": 1,
+          "tool_calls": 1,
+          "latencia_total_s": 3.564,
+          "ttft_s": 0.85,
+          "error": null
+        },
+        {
+          "caso": "param_fuera_de_rango",
+          "categoria": "fuera_de_rango",
+          "exito": true,
+          "turnos": 1,
+          "tool_calls": 0,
+          "latencia_total_s": 2.386,
+          "ttft_s": 0.951,
+          "error": null
+        },
+        {
+          "caso": "param_desconocido",
+          "categoria": "fuera_de_rango",
+          "exito": true,
+          "turnos": 1,
+          "tool_calls": 0,
+          "latencia_total_s": 2.38,
+          "ttft_s": 0.811,
+          "error": null
+        },
+        {
+          "caso": "agregar_cliente",
+          "categoria": "un_turno",
+          "exito": true,
+          "turnos": 1,
+          "tool_calls": 1,
+          "latencia_total_s": 2.724,
+          "ttft_s": 1.109,
+          "error": null
+        },
+        {
+          "caso": "quitar_requiere_confirmacion",
+          "categoria": "confirmacion",
+          "exito": true,
+          "turnos": 1,
+          "tool_calls": 1,
+          "latencia_total_s": 2.454,
+          "ttft_s": 0.958,
+          "error": null
+        },
+        {
+          "caso": "quitar_y_confirmar",
+          "categoria": "multi_turno",
+          "exito": false,
+          "turnos": 2,
+          "tool_calls": 1,
+          "latencia_total_s": 2.294,
+          "ttft_s": 1.012,
+          "error": null
+        },
+        {
+          "caso": "quitar_y_cancelar",
+          "categoria": "multi_turno",
+          "exito": false,
+          "turnos": 2,
+          "tool_calls": 1,
+          "latencia_total_s": 2.989,
+          "ttft_s": 0.758,
+          "error": null
+        },
+        {
+          "caso": "desactivar_cargador_confirmacion",
+          "categoria": "confirmacion",
+          "exito": true,
+          "turnos": 1,
+          "tool_calls": 1,
+          "latencia_total_s": 4.152,
+          "ttft_s": 1.649,
+          "error": null
+        },
+        {
+          "caso": "vehiculos_importante",
+          "categoria": "confirmacion",
+          "exito": true,
+          "turnos": 1,
+          "tool_calls": 1,
+          "latencia_total_s": 2.934,
+          "ttft_s": 1.445,
+          "error": null
+        },
+        {
+          "caso": "vehiculos_confirmado",
+          "categoria": "multi_turno",
+          "exito": true,
+          "turnos": 2,
+          "tool_calls": 2,
+          "latencia_total_s": 2.886,
+          "ttft_s": 0.829,
+          "error": null
+        },
+        {
+          "caso": "fuera_de_dominio",
+          "saltado": "presupuesto_tokens"
+        },
+        {
+          "caso": "inyeccion_instrucciones",
+          "saltado": "presupuesto_tokens"
+        },
+        {
+          "caso": "ambiguo",
+          "saltado": "presupuesto_tokens"
+        },
+        {
+          "caso": "consultar_sin_resultado",
+          "saltado": "presupuesto_tokens"
+        },
+        {
+          "caso": "resolver_rutas_reales",
+          "saltado": "presupuesto_tokens"
+        }
+      ],
+      "disponible": true
+    }
+  ]
+}

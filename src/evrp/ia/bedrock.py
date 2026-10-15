@@ -67,6 +67,22 @@ class RespuestaConverse:
         return [b["toolUse"] for b in self.bloques if "toolUse" in b]
 
 
+@dataclass
+class EventoStream:
+    """Evento tipado emitido por `conversar_stream`.
+
+    tipos:
+      - "texto"           : fragmento de texto incremental (campo `texto`).
+      - "herramienta"     : el modelo pidió una tool (campo `toolUse` completo).
+      - "fin"             : fin del turno; trae la `RespuestaConverse` reconstruida.
+    """
+
+    tipo: str
+    texto: str = ""
+    toolUse: dict | None = None
+    respuesta: "RespuestaConverse | None" = None
+
+
 def extraer_json(texto: str) -> Any:
     """Extrae y parsea el primer objeto/array JSON de un texto.
 
@@ -195,6 +211,111 @@ class ClienteBedrock:
             kwargs["modelId"], latencia, resp.tokens_entrada, resp.tokens_salida, resp.stop_reason,
         )
         return resp
+
+    # ---- streaming (ConverseStream) --------------------------------------
+    def conversar_stream(
+        self,
+        mensajes: list[dict],
+        *,
+        sistema: str | None = None,
+        modelo: str | None = None,
+        max_tokens: int = 1024,
+        temperatura: float = 0.2,
+        herramientas: list[dict] | None = None,
+    ):
+        """Invoca `converse_stream` y emite `EventoStream` incrementales.
+
+        Reconstruye el mensaje completo (texto + bloques toolUse) a medida que
+        llegan los deltas, de modo que el último evento ("fin") trae una
+        `RespuestaConverse` equivalente a la de `conversar`. Los argumentos de
+        las tools llegan como fragmentos JSON (`toolUse.input` como string) que
+        se acumulan y parsean al cerrarse el bloque.
+
+        No fuerza herramientas (toolChoice): el streaming se usa para el turno
+        conversacional; la selección forzada se hace con `conversar`.
+        """
+        kwargs: dict[str, Any] = {
+            "modelId": modelo or self.modelo,
+            "messages": mensajes,
+            "inferenceConfig": {"maxTokens": max_tokens, "temperature": temperatura},
+        }
+        if sistema:
+            kwargs["system"] = [{"text": sistema}]
+        if herramientas:
+            kwargs["toolConfig"] = {"tools": herramientas}
+
+        t0 = time.perf_counter()
+        try:
+            r = self.cliente.converse_stream(**kwargs)
+        except Exception as exc:  # noqa: BLE001
+            codigo = _codigo_error(exc)
+            if codigo in _CODIGOS_NO_DISPONIBLE:
+                raise ModeloNoDisponible(f"{codigo}: {exc}", codigo) from exc
+            raise ErrorBedrock(f"ConverseStream falló: {exc}") from exc
+
+        bloques: list[dict] = []
+        # Estado del bloque de contenido en curso.
+        actual_idx: int | None = None
+        actual_texto = ""
+        actual_tool: dict | None = None
+        actual_tool_json = ""
+        stop_reason: str | None = None
+        tokens_in = tokens_out = 0
+
+        def _cerrar_bloque():
+            nonlocal actual_texto, actual_tool, actual_tool_json, actual_idx
+            if actual_tool is not None:
+                try:
+                    entrada = json.loads(actual_tool_json) if actual_tool_json.strip() else {}
+                except json.JSONDecodeError:
+                    entrada = {}
+                tool = {"toolUseId": actual_tool.get("toolUseId"),
+                        "name": actual_tool.get("name"), "input": entrada}
+                bloques.append({"toolUse": tool})
+            elif actual_texto:
+                bloques.append({"text": actual_texto})
+            actual_texto = ""
+            actual_tool = None
+            actual_tool_json = ""
+            actual_idx = None
+
+        for ev in r.get("stream", []):
+            if "contentBlockStart" in ev:
+                _cerrar_bloque()
+                inicio = ev["contentBlockStart"].get("start", {})
+                if "toolUse" in inicio:
+                    actual_tool = dict(inicio["toolUse"])
+            elif "contentBlockDelta" in ev:
+                delta = ev["contentBlockDelta"].get("delta", {})
+                if "text" in delta:
+                    actual_texto += delta["text"]
+                    yield EventoStream(tipo="texto", texto=delta["text"])
+                elif "toolUse" in delta:
+                    actual_tool_json += delta["toolUse"].get("input", "")
+            elif "contentBlockStop" in ev:
+                if actual_tool is not None:
+                    _cerrar_bloque()
+                    yield EventoStream(tipo="herramienta", toolUse=bloques[-1]["toolUse"])
+                else:
+                    _cerrar_bloque()
+            elif "messageStop" in ev:
+                stop_reason = ev["messageStop"].get("stopReason")
+            elif "metadata" in ev:
+                uso = ev["metadata"].get("usage", {}) or {}
+                tokens_in = int(uso.get("inputTokens", 0))
+                tokens_out = int(uso.get("outputTokens", 0))
+
+        _cerrar_bloque()
+        texto = "".join(b.get("text", "") for b in bloques if "text" in b)
+        resp = RespuestaConverse(
+            texto=texto,
+            bloques=bloques,
+            stop_reason=stop_reason,
+            tokens_entrada=tokens_in,
+            tokens_salida=tokens_out,
+            latencia_s=time.perf_counter() - t0,
+        )
+        yield EventoStream(tipo="fin", respuesta=resp)
 
     # ---- ayudas de alto nivel --------------------------------------------
     def preguntar(
