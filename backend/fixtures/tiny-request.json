@@ -1,0 +1,28 @@
+{
+  "api_version": "2.0-beta.1",
+  "nodes": [
+    {
+      "node_id": "Base|ñ",
+      "node_type": "base",
+      "latitude": 0,
+      "longitude": 0
+    },
+    {
+      "node_id": "Base|ñ#fin",
+      "node_type": "visit",
+      "latitude": 0,
+      "longitude": 0.001
+    }
+  ],
+  "fleet": {
+    "num_vehicles": 2,
+    "battery_capacity_kwh": 10,
+    "reserve_kwh": 1,
+    "initial_soc": 0.6,
+    "consumption_kwh_km": 1
+  },
+  "solver": {
+    "time_limit_seconds": 2
+  },
+  "network_mode": "haversine"
+}
