@@ -143,9 +143,11 @@ def test_ejecutar_agregar_y_quitar_cliente():
     assert r2["ok"] and r2["quitado"] == "V9"
 
 
-def test_extraer_pedidos_degrada_si_falta_modulo():
+def test_extraer_pedidos_usa_ingesta_integrada():
+    # Con el módulo de ingesta integrado y sin cliente IA, usa el extractor heurístico.
     r = ejecutar_herramienta("extraer_pedidos", {"texto": "entregar en X"}, Sesion())
-    assert r["ok"] is False and r.get("disponible") is False
+    assert r.get("disponible") is True
+    assert r["ok"] is True and isinstance(r["pedidos"], list)
 
 
 def test_consultar_sin_resultado():

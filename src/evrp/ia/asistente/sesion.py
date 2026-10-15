@@ -200,7 +200,7 @@ def ejecutar_herramienta(nombre: str, entrada: dict, sesion: Sesion,
             return _consultar(sesion, str(entrada.get("campo", "resumen")))
 
         if nombre == "extraer_pedidos":
-            return _extraer_pedidos(str(entrada.get("texto", "")))
+            return _extraer_pedidos(str(entrada.get("texto", "")), getattr(sesion, "cliente_ia", None))
 
         if nombre == "explicar":
             return _explicar(sesion)
@@ -227,9 +227,7 @@ def _resolver(sesion: Sesion, *, perfiles: list[str] | None) -> dict:
         csv_tmp = Path(td) / "nodos.csv"
         _escribir_csv(sesion.nodos, csv_tmp)
         cfg = overrides_a_config(sesion.overrides)
-        # red haversine: evita descargas OSM en el flujo conversacional (rápido y
-        # determinista). El motor sigue siendo quien produce y valida las rutas.
-        cfg.setdefault("pipeline", {})["red"] = "haversine"
+        # Red por defecto del motor (OSM empaquetado). Línea recta solo si se pide explícitamente.
         res = motor_resolver(str(csv_tmp), cfg, perfiles, salida=None)
 
     sesion.ultimo_resultado = {"rutas": res.rutas, "kpis": res.kpis,
@@ -261,13 +259,14 @@ def _consultar(sesion: Sesion, campo: str) -> dict:
     return {"ok": False, "error": f"campo '{campo}' no está en el resultado"}
 
 
-def _extraer_pedidos(texto: str) -> dict:
+def _extraer_pedidos(texto: str, cliente=None) -> dict:
     try:
         from evrp.ia import ingesta  # type: ignore
     except Exception:
         return {"ok": False, "disponible": False, "mensaje": "ingesta no disponible"}
     try:
-        pedidos = ingesta.extraer_pedidos(texto)  # type: ignore[attr-defined]
+        salida = ingesta.extraer(texto=texto, cliente=cliente)
+        pedidos = salida.get("pedidos", [])
         return {"ok": True, "disponible": True, "pedidos": pedidos}
     except Exception as exc:  # noqa: BLE001
         return {"ok": False, "disponible": True, "error": str(exc)[:200]}
@@ -281,7 +280,8 @@ def _explicar(sesion: Sesion) -> dict:
     except Exception:
         return {"ok": False, "disponible": False, "mensaje": "explicacion no disponible"}
     try:
-        texto = explicacion.explicar(sesion.ultimo_resultado)  # type: ignore[attr-defined]
+        texto = explicacion.explicar(sesion.ultimo_resultado,
+                                     cliente=getattr(sesion, "cliente_ia", None))
         return {"ok": True, "disponible": True, "explicacion": texto}
     except Exception as exc:  # noqa: BLE001
         return {"ok": False, "disponible": True, "error": str(exc)[:200]}

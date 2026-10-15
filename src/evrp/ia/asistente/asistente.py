@@ -158,6 +158,7 @@ class Asistente:
     # --- API no-streaming -------------------------------------------------
     def enviar(self, mensaje: str, sesion: Sesion | None = None) -> dict:
         sesion = sesion or Sesion()
+        sesion.cliente_ia = self.cliente  # para ganchos de ingesta/explicación
         confirm = self._resolver_confirmacion(mensaje, sesion)
         if confirm is not None:
             self._anota_historial(sesion, mensaje, confirm.respuesta)
@@ -243,6 +244,7 @@ class Asistente:
         El evento 'fin' trae el estado y resultado finales + tokens.
         """
         sesion = sesion or Sesion()
+        sesion.cliente_ia = self.cliente
         confirm = self._resolver_confirmacion(mensaje, sesion)
         if confirm is not None:
             self._anota_historial(sesion, mensaje, confirm.respuesta)
