@@ -1,0 +1,21 @@
+{
+  "fuente": "copernicus",
+  "nodos": 9688,
+  "directos": 9688,
+  "cobertura_directa": 1.0,
+  "fuera_de_cobertura": 0,
+  "teselas": [
+    "Copernicus_DSM_COG_10_N42_00_W084_00_DEM"
+  ],
+  "teselas_pedidas": 1,
+  "muestreo": "bilineal",
+  "resolucion_m_aprox": 30,
+  "bytes_descargados": 0,
+  "mb_descargados": 0.0,
+  "segundos_descarga": 0.0,
+  "segundos_muestreo": 0.99,
+  "altura_min_m": 208.8,
+  "altura_max_m": 329.0,
+  "desde_cache": false,
+  "segundos_total": 1.16
+}

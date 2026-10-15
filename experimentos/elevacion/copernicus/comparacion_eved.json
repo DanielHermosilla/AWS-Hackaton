@@ -1,0 +1,27 @@
+{
+  "radio_eved_m": 120.0,
+  "nodos_grafo": 9688,
+  "nodos_directos_eved": 1571,
+  "nodos_comparados": 1571,
+  "cobertura_copernicus": 1.0,
+  "segundos_copernicus": 0.13,
+  "error_altura_cop_vs_eved_m": {
+    "mae": 2.53,
+    "rmse": 3.48,
+    "sesgo_medio": 2.02,
+    "mediana_abs": 1.88,
+    "p90_abs": 5.45,
+    "max_abs": 17.76,
+    "min": -6.24,
+    "max": 17.76
+  },
+  "correlacion_pearson": 0.9849,
+  "rango_cop_m": [
+    227.5,
+    329.0
+  ],
+  "rango_eved_m": [
+    229.5,
+    321.5
+  ]
+}
