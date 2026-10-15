@@ -1,8 +1,9 @@
-"""Versioned /solve boundary, adapted from deploy-aws service responsibilities.
+"""API 3.0: explicit synthetic preparation and Daniel's native ProblemInstance.
 
-Provider contract: evrp f88d012; deliberately not compatible with API 1.0.
-No user supplied path, Python configuration, AWS settings or solver options execute.
+The provider is the local ev_routing core imported from Daniel's 6242035 commit.
+The HTTP boundary never accepts file paths, free solver options, or AWS settings.
 """
+
 from __future__ import annotations
 
 import copy
@@ -11,19 +12,31 @@ import json
 import math
 import time
 import uuid
+from pathlib import Path
 from typing import Any
 
-API_VERSION = "2.0-beta.1"
-PROVIDER_COMMIT = "f88d0120c0b80087d718224b46b2613735cee69c"
-MAX_NODES = 200
-MAX_SEGMENTS = 200_000
-CSV_FIELDS = {"node_id", "node_type", "latitude", "longitude", "address", "network",
-              "total_ports", "dc_fast_ports", "level2_ports", "connector_types", "max_power_kw"}
-ENERGY_FIELDS = {"usar_pendiente", "consumo_kwh_km", "masa_kg", "eta_traccion", "eta_regeneracion"}
+API_VERSION = "3.0"
+PROVIDER_COMMIT = "624203573bffdeec334a9e07a64b361a515f9725"
+MAX_PREPARE_NODES = 200
+MAX_NATIVE_NODES = 20_000
+MAX_NATIVE_ARCS = 200_000
+CSV_FIELDS = {
+    "node_id",
+    "node_type",
+    "latitude",
+    "longitude",
+    "address",
+    "network",
+    "total_ports",
+    "dc_fast_ports",
+    "level2_ports",
+    "connector_types",
+    "max_power_kw",
+}
 
 
 class SolveRequestError(ValueError):
-    """An actionable, safe validation error at the public boundary."""
+    """Safe, actionable validation error at the HTTP boundary."""
 
 
 class ProviderError(RuntimeError):
@@ -33,8 +46,9 @@ class ProviderError(RuntimeError):
 
 
 def strict_loads(value: str | bytes) -> Any:
-    def invalid(value):
+    def invalid(_):
         raise SolveRequestError("JSON no permite NaN ni Infinity.")
+
     def pairs(items):
         out = {}
         for key, value in items:
@@ -42,225 +56,322 @@ def strict_loads(value: str | bytes) -> Any:
                 raise SolveRequestError("JSON contiene una clave duplicada.")
             out[key] = value
         return out
+
     try:
         return json.loads(value, parse_constant=invalid, object_pairs_hook=pairs)
     except (ValueError, UnicodeError, RecursionError) as exc:
         if isinstance(exc, SolveRequestError):
             raise
-        raise SolveRequestError("JSON inválido; use un objeto UTF-8 sin claves duplicadas.") from exc
+        raise SolveRequestError(
+            "JSON inválido; use un objeto UTF-8 sin claves duplicadas."
+        ) from exc
 
 
 def json_bytes(value: Any) -> bytes:
-    return json.dumps(value, ensure_ascii=False, allow_nan=False, separators=(",", ":")).encode("utf-8")
+    return json.dumps(value, ensure_ascii=False, allow_nan=False, separators=(",", ":")).encode(
+        "utf-8"
+    )
 
 
 def fingerprint(value: Any) -> str:
-    return hashlib.sha256(json.dumps(value, ensure_ascii=False, allow_nan=False,
-                                     sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+    return hashlib.sha256(
+        json.dumps(
+            value, ensure_ascii=False, allow_nan=False, sort_keys=True, separators=(",", ":")
+        ).encode()
+    ).hexdigest()
 
 
 def object_fields(value, allowed, label, required=()):
     if not isinstance(value, dict):
         raise SolveRequestError(f"{label} debe ser un objeto JSON.")
     if set(value) - set(allowed):
-        raise SolveRequestError(f"{label} contiene campos no admitidos: {', '.join(sorted(set(value) - set(allowed)))}.")
+        raise SolveRequestError(
+            f"{label} contiene campos no admitidos: {', '.join(sorted(set(value) - set(allowed)))}."
+        )
     if set(required) - set(value):
         raise SolveRequestError(f"{label}: faltan {', '.join(sorted(set(required) - set(value)))}.")
     return value
 
 
-def number(value, label, minimum=None, maximum=None, *, integer=False, strings=False):
-    if isinstance(value, bool) or not isinstance(value, (int, float, str) if strings else (int, float)):
+def number(value, label, minimum=None, maximum=None, *, integer=False):
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
         raise SolveRequestError(f"{label} debe ser un número finito.")
     try:
-        n = float(value)
-    except (ValueError, OverflowError) as exc:
-        raise SolveRequestError(f"{label} debe ser un número finito.") from exc
-    if not math.isfinite(n) or (minimum is not None and n < minimum) or (maximum is not None and n > maximum):
+        finite = math.isfinite(value)
+    except OverflowError as exc:
+        raise SolveRequestError(f"{label} está fuera del rango numérico admitido.") from exc
+    if not finite:
+        raise SolveRequestError(f"{label} debe ser un número finito.")
+    if (minimum is not None and value < minimum) or (maximum is not None and value > maximum):
         raise SolveRequestError(f"{label} está fuera del rango admitido.")
-    if integer and not n.is_integer():
+    if integer and int(value) != value:
         raise SolveRequestError(f"{label} debe ser entero.")
-    return int(n) if integer else n
+    return int(value) if integer else float(value)
 
 
-def text(value, label, maximum=4000):
-    if not isinstance(value, str) or len(value) > maximum or any(ord(c) < 32 and c not in '\n\t' for c in value):
-        raise SolveRequestError(f"{label} debe ser texto válido de hasta {maximum} caracteres.")
-    return value
+def _finite_json(value):
+    try:
+        return json_bytes(value)
+    except (ValueError, TypeError, OverflowError, RecursionError) as exc:
+        raise SolveRequestError("La petición debe ser JSON finito válido.") from exc
 
 
-def normalize_nodes(rows):
-    if not isinstance(rows, list) or not 1 <= len(rows) <= MAX_NODES:
-        raise SolveRequestError(f"nodes debe contener entre 1 y {MAX_NODES} nodos.")
-    result, seen = [], set()
-    for i, row in enumerate(rows):
-        object_fields(row, CSV_FIELDS, f"nodes[{i}]", ("node_id", "node_type", "latitude", "longitude"))
-        nid = text(row["node_id"], "node_id", 256)
-        if not nid.strip() or nid in seen:
-            raise SolveRequestError("node_id debe ser único y no vacío.")
-        seen.add(nid)
-        kind = row["node_type"]
-        if not isinstance(kind, str) or kind not in {"base", "visit", "charger"}:
-            raise SolveRequestError("node_type debe ser base, visit o charger.")
-        out = {"node_id": nid, "node_type": kind,
-               "latitude": number(row["latitude"], "latitude", -90, 90, strings=True),
-               "longitude": number(row["longitude"], "longitude", -180, 180, strings=True)}
-        for field in ("address", "network", "connector_types"):
-            value = row.get(field)
-            out[field] = text("" if value is None else value, field)
-        out["connector_types"] = ";".join(c.strip() for c in out["connector_types"].split(";") if c.strip())
-        for field in ("total_ports", "dc_fast_ports", "level2_ports", "max_power_kw"):
-            value = row.get(field)
-            out[field] = None if value is None or value == "" else number(
-                value, field, 0, integer=field != "max_power_kw", strings=True)
-        total, dc, level2 = (out[k] for k in ("total_ports", "dc_fast_ports", "level2_ports"))
-        if total is not None and (sum(v or 0 for v in (dc, level2)) > total):
-            raise SolveRequestError(f"Puertos inconsistentes en {nid}: DC + nivel 2 supera total_ports.")
-        result.append(out)
-    if sum(n["node_type"] == "base" for n in result) != 1:
-        raise SolveRequestError("La instancia debe contener exactamente una base.")
-    return result
+def _models():
+    try:
+        import ev_routing
+
+        expected = Path(__file__).resolve().parents[1] / "src" / "ev_routing"
+        if not Path(ev_routing.__file__).resolve().is_relative_to(expected.resolve()):
+            raise ProviderError(
+                "Los contratos deben cargarse desde el núcleo local src/ev_routing.",
+                "provider_unavailable",
+                503,
+            )
+        from ev_routing.contracts import Node, ProblemInstance, SolverConfig
+
+        return Node, ProblemInstance, SolverConfig
+    except ImportError as exc:
+        raise ProviderError(
+            "El núcleo ev_routing no está instalado; sincronice el entorno del proyecto.",
+            "provider_unavailable",
+            503,
+        ) from exc
 
 
-def validate_prepared(prepared):
-    object_fields(prepared, {"esquema", "nodos", "tramos", "geometrias", "red", "energia_caminos", "origen"},
-                  "prepared", ("esquema", "nodos", "tramos", "red", "energia_caminos"))
-    if prepared["esquema"] != "evrp.instancia_preparada/1":
-        raise SolveRequestError("Esquema preparado no admitido; se requiere evrp.instancia_preparada/1.")
-    native = prepared["nodos"]
-    if not isinstance(native, list) or not 1 <= len(native) <= MAX_NODES:
-        raise SolveRequestError("prepared.nodos excede el tamaño admitido o está vacío.")
-    rows, filas = [], set()
-    for n in native:
-        object_fields(n, {"id", "tipo", "lat", "lon", "fila", "conectores", "puertos", "potencia_kw", "direccion", "operador"},
-                      "prepared.nodos", ("id", "tipo", "lat", "lon", "fila", "conectores"))
-        if not isinstance(n["tipo"], str) or n["tipo"] not in {"base", "cliente", "cargador"}:
-            raise SolveRequestError("Tipo de nodo preparado no admitido.")
-        fila = number(n["fila"], "fila", 0, integer=True)
-        if fila in filas:
-            raise SolveRequestError("prepared.nodos contiene índices fila duplicados.")
-        filas.add(fila)
-        if not isinstance(n["conectores"], list) or not all(isinstance(c, str) for c in n["conectores"]):
-            raise SolveRequestError("conectores debe ser una lista de texto.")
-        rows.append({"node_id": n["id"], "node_type": {"base": "base", "cliente": "visit", "cargador": "charger"}[n["tipo"]],
-                     "latitude": n["lat"], "longitude": n["lon"], "address": n.get("direccion", ""),
-                     "network": n.get("operador", ""), "connector_types": ";".join(n["conectores"]),
-                     "total_ports": n.get("puertos"), "max_power_kw": n.get("potencia_kw")})
-    nodes = normalize_nodes(rows)
-    pairs = {}
-    for a in nodes:
-        for b in nodes:
-            key = f'{a["node_id"]}|{b["node_id"]}'
-            if key in pairs:
-                raise SolveRequestError("Serialización preparada ambigua por IDs con '|'; vuelva a preparar desde los nodos originales.")
-            pairs[key] = (a["node_id"], b["node_id"])
-    segments = prepared["tramos"]
-    if not isinstance(segments, dict) or not isinstance(prepared.get("geometrias", {}), dict):
-        raise SolveRequestError("tramos y geometrias deben ser objetos por par de nodos.")
-    required = {key for key, (a, b) in pairs.items() if a != b}
-    if not required.issubset(segments):
-        raise SolveRequestError("La preparada no cubre todos los pares dirigidos de nodos.")
-    positions = {n["node_id"]: (n["latitude"], n["longitude"]) for n in nodes}
-    total_points = 0
-    for name, collection in (("tramos", segments), ("geometrias", prepared.get("geometrias", {}))):
-        for key, values in collection.items():
-            if key not in pairs or not isinstance(values, list):
-                raise SolveRequestError(f"{name} contiene una referencia inexistente o una secuencia inválida.")
-            origin, destination = pairs[key]
-            if name == "tramos" and origin == destination and values:
-                raise SolveRequestError("Los tramos de permanencia deben estar vacíos; el proveedor no recorre autoarcos.")
-            if name == "tramos" and not values and positions[origin] != positions[destination]:
-                raise SolveRequestError("Un camino entre coordenadas distintas no puede tener una secuencia vacía.")
-            total_points += len(values)
-            if total_points > MAX_SEGMENTS:
-                raise SolveRequestError("La preparada excede el límite de segmentos/geometrías de esta beta.")
-            if name == "geometrias" and len(values) < 2:
-                raise SolveRequestError("Cada geometría guardada requiere al menos dos puntos.")
-            for pair in values:
-                if not isinstance(pair, list) or len(pair) != 2:
-                    raise SolveRequestError(f"Cada elemento de {name} debe tener dos números.")
-                if name == "tramos":
-                    number(pair[0], "distancia km", 0); number(pair[1], "desnivel m")
-                else:
-                    number(pair[0], "geometría latitude", -90, 90); number(pair[1], "geometría longitude", -180, 180)
-    energy = object_fields(prepared["energia_caminos"], ENERGY_FIELDS, "energia_caminos", ENERGY_FIELDS)
-    if type(energy["usar_pendiente"]) is not bool:
-        raise SolveRequestError("usar_pendiente debe ser booleano.")
-    for key in ("consumo_kwh_km", "masa_kg"):
-        number(energy[key], key, 1e-12)
-    number(energy["eta_traccion"], "eta_traccion", 1e-12, 1)
-    number(energy["eta_regeneracion"], "eta_regeneracion", 0, 1)
-    if (not isinstance(prepared["red"], dict) or not isinstance(prepared["red"].get("tipo"), str)
-            or prepared["red"]["tipo"] not in {"osm", "haversine", "preparada"}):
-        raise SolveRequestError("prepared.red.tipo debe ser osm, haversine o preparada.")
-    if not isinstance(prepared.get("origen", {}), dict):
-        raise SolveRequestError("prepared.origen debe ser un objeto.")
-    return nodes, pairs
+def _validate_model(model, value, label):
+    try:
+        # JSON strict validation permits native geometry arrays as tuples, while
+        # rejecting bool/string coercion into physical numeric fields.
+        return model.model_validate_json(_finite_json(value), strict=True)
+    except ValueError as exc:
+        if isinstance(exc, SolveRequestError):
+            raise
+        errors = getattr(exc, "errors", lambda **_: [])(include_url=False, include_input=False)
+        details = "; ".join(
+            f"{'.'.join(map(str, item['loc']))}: {item['msg']}" for item in errors[:6]
+        )
+        raise SolveRequestError(
+            f"{label} inválida. {details or 'Revise su esquema y valores.'}"
+        ) from exc
+
+
+def _native_instance(value):
+    _, ProblemInstance, _ = _models()
+    if not isinstance(value, dict) or value.get("schema_version") != "1.0":
+        raise SolveRequestError(
+            "instance debe ser un objeto ProblemInstance con schema_version='1.0'."
+        )
+    provenance = value.get("provenance", {})
+    representation = provenance.get("representation") if isinstance(provenance, dict) else None
+    if representation == "service_paths_nonnegative" or (
+        isinstance(representation, dict)
+        and representation.get("kind") == "service_paths_nonnegative"
+    ):
+        raise SolveRequestError(
+            "La representación service_paths_nonnegative no está admitida; use la instancia nativa de arcos elementales de Daniel."
+        )
+    if (
+        not isinstance(value.get("nodes"), list)
+        or not 1 <= len(value["nodes"]) <= MAX_NATIVE_NODES
+        or not isinstance(value.get("arcs"), list)
+        or len(value["arcs"]) > MAX_NATIVE_ARCS
+    ):
+        raise SolveRequestError(
+            "La instancia supera el límite local de nodos/arcos o sus listas son inválidas."
+        )
+    instance = _validate_model(ProblemInstance, value, "Instancia nativa")
+    if any(not node.node_id.strip() for node in instance.nodes):
+        raise SolveRequestError("node_id no puede estar vacío o contener solo espacios.")
+    for arc in instance.arcs:
+        if any(abs(lat) > 90 or abs(lon) > 180 for lat, lon in arc.geometry):
+            raise SolveRequestError(
+                "La geometría nativa debe usar pares [latitud,longitud] dentro de sus rangos."
+            )
+    return instance
 
 
 def validate_request(payload):
-    object_fields(payload, {"api_version", "nodes", "prepared", "fleet", "solver", "network_mode", "exclude_node_ids"},
-                  "petición", ("api_version", "fleet"))
-    try:
-        json_bytes(payload)
-    except (ValueError, TypeError, OverflowError, RecursionError) as exc:
-        raise SolveRequestError("La petición debe ser JSON finito válido.") from exc
+    object_fields(
+        payload,
+        {"api_version", "instance", "solver"},
+        "petición",
+        ("api_version", "instance", "solver"),
+    )
+    _finite_json(payload)
     if payload["api_version"] != API_VERSION:
-        raise SolveRequestError(f"api_version debe ser {API_VERSION}.")
-    if ("nodes" in payload) == ("prepared" in payload):
-        raise SolveRequestError("Envíe nodes o prepared, exactamente una entrada.")
-    native = payload.get("prepared")
-    if "prepared" in payload:
-        if "network_mode" in payload:
-            raise SolveRequestError("prepared ya contiene la red; no admite network_mode.")
-        nodes, pairs = validate_prepared(native)
-        energy = dict(native["energia_caminos"])
-    else:
-        if payload.get("network_mode") != "haversine":
-            raise SolveRequestError("Para nodes confirme network_mode='haversine': referencia sin red vial.")
-        nodes, pairs = normalize_nodes(payload["nodes"]), None
-        energy = {"usar_pendiente": False, "masa_kg": 1590., "eta_traccion": .9, "eta_regeneracion": .6}
-    f = object_fields(payload["fleet"], {"num_vehicles", "battery_capacity_kwh", "reserve_kwh", "initial_soc", "consumption_kwh_km"},
-                      "fleet", ("battery_capacity_kwh", "reserve_kwh"))
-    fleet = {"num_vehicles": number(f.get("num_vehicles", 2), "num_vehicles", 1, 20, integer=True),
-             "battery_capacity_kwh": number(f["battery_capacity_kwh"], "battery_capacity_kwh", 1e-9),
-             "reserve_kwh": number(f["reserve_kwh"], "reserve_kwh", 1e-9),
-             "initial_soc": number(f.get("initial_soc", .6), "initial_soc", 1e-9, 1)}
-    if fleet["reserve_kwh"] > fleet["initial_soc"] * fleet["battery_capacity_kwh"]:
-        raise SolveRequestError("reserve_kwh no puede superar la batería inicial.")
-    consumption = f.get("consumption_kwh_km", energy.get("consumo_kwh_km"))
-    fleet["consumption_kwh_km"] = number(consumption, "consumption_kwh_km", 1e-12)
-    if native is not None and not math.isclose(fleet["consumption_kwh_km"], energy["consumo_kwh_km"], rel_tol=0, abs_tol=1e-12):
-        raise SolveRequestError("consumption_kwh_km difiere de la preparada; vuelva a preparar la red.")
-    energy["consumo_kwh_km"] = fleet["consumption_kwh_km"]
-    solver = object_fields(payload.get("solver", {}), {"time_limit_seconds"}, "solver")
-    seconds = number(solver.get("time_limit_seconds", 30), "time_limit_seconds", 1, 120)
-    excluded = payload.get("exclude_node_ids", [])
-    ids = {n["node_id"] for n in nodes}
-    if not isinstance(excluded, list) or not all(isinstance(i, str) for i in excluded) or len(set(excluded)) != len(excluded):
-        raise SolveRequestError("exclude_node_ids debe ser una lista de IDs únicos.")
-    if not set(excluded).issubset(ids):
-        raise SolveRequestError("exclude_node_ids contiene un ID inexistente.")
-    if any(n["node_type"] == "base" and n["node_id"] in excluded for n in nodes):
-        raise SolveRequestError("No se puede excluir la base.")
-    return {"nodes": nodes, "prepared": native, "pairs": pairs, "fleet": fleet,
-            "energy": energy, "time_limit_seconds": seconds, "excluded": excluded}
+        raise SolveRequestError(
+            "api_version debe ser 3.0; esta API recibe el contrato nativo de Daniel."
+        )
+    solver = object_fields(
+        payload["solver"], {"time_limit_seconds"}, "solver", ("time_limit_seconds",)
+    )
+    seconds = number(solver["time_limit_seconds"], "time_limit_seconds", 1, 120)
+    instance = _native_instance(payload["instance"])
+    _, _, SolverConfig = _models()
+    config = SolverConfig(
+        solver="scip-routes",
+        time_limit_seconds=seconds,
+        threads=1,
+        seed=0,
+        relative_gap=0,
+        tee=False,
+    )
+    return instance, config
+
+
+def prepare(payload):
+    object_fields(
+        payload,
+        {"api_version", "nodes", "fleet", "network_mode"},
+        "preparación",
+        ("api_version", "nodes", "fleet", "network_mode"),
+    )
+    _finite_json(payload)
+    if payload["api_version"] != API_VERSION or payload["network_mode"] != "haversine":
+        raise SolveRequestError(
+            "Confirme api_version='3.0' y network_mode='haversine' para la preparación sintética."
+        )
+    rows = payload["nodes"]
+    if not isinstance(rows, list) or not 1 <= len(rows) <= MAX_PREPARE_NODES:
+        raise SolveRequestError(
+            f"La preparación sintética admite entre 1 y {MAX_PREPARE_NODES} nodos."
+        )
+    fleet = object_fields(
+        payload["fleet"],
+        {
+            "num_vehicles",
+            "battery_capacity_kwh",
+            "reserve_kwh",
+            "initial_soc",
+            "consumption_kwh_km",
+            "vehicle_connector_types",
+        },
+        "fleet",
+        ("battery_capacity_kwh", "reserve_kwh", "consumption_kwh_km"),
+    )
+    count = number(fleet.get("num_vehicles", 2), "num_vehicles", 1, 20, integer=True)
+    capacity = number(fleet["battery_capacity_kwh"], "battery_capacity_kwh", 1e-12)
+    reserve = number(fleet["reserve_kwh"], "reserve_kwh", 1e-12)
+    soc = number(fleet.get("initial_soc", 0.6), "initial_soc", 1e-12, 1)
+    consumption = number(fleet["consumption_kwh_km"], "consumption_kwh_km", 1e-12)
+    connectors = fleet.get("vehicle_connector_types", ["J1772", "CHAdeMO"])
+    if not isinstance(connectors, list) or not all(
+        isinstance(c, str) and c.strip() for c in connectors
+    ):
+        raise SolveRequestError(
+            "vehicle_connector_types debe ser una lista de conectores explícitos."
+        )
+    Node, _, _ = _models()
+    nodes = []
+    for row in rows:
+        object_fields(
+            row, CSV_FIELDS, "nodo CSV", ("node_id", "node_type", "latitude", "longitude")
+        )
+        data = copy.deepcopy(row)
+        if not isinstance(data["node_type"], str) or data["node_type"] not in {
+            "base",
+            "visit",
+            "charger",
+        }:
+            raise SolveRequestError("Los nodos CSV deben ser base, visit o charger.")
+        connector_text = data.get("connector_types", "")
+        if not isinstance(connector_text, str):
+            raise SolveRequestError("connector_types CSV debe ser texto separado por ';'.")
+        data["connector_types"] = list(
+            dict.fromkeys(c.strip() for c in connector_text.split(";") if c.strip())
+        )
+        node = _validate_model(Node, data, "Nodo CSV")
+        if node.latitude is None or node.longitude is None:
+            raise SolveRequestError(
+                "La preparación haversine requiere coordenadas en todos los nodos."
+            )
+        total, dc, level2 = node.total_ports, node.dc_fast_ports, node.level2_ports
+        if total is not None and sum(v or 0 for v in (dc, level2)) > total:
+            raise SolveRequestError(
+                f"Puertos inconsistentes en {node.node_id}: DC + nivel 2 supera el total."
+            )
+        nodes.append(node.model_dump(mode="json"))
+    arcs = []
+    for origin in nodes:
+        for destination in nodes:
+            if origin is destination:
+                continue
+            lat1, lon1, lat2, lon2 = map(
+                math.radians,
+                (
+                    origin["latitude"],
+                    origin["longitude"],
+                    destination["latitude"],
+                    destination["longitude"],
+                ),
+            )
+            h = (
+                math.sin((lat2 - lat1) / 2) ** 2
+                + math.cos(lat1) * math.cos(lat2) * math.sin((lon2 - lon1) / 2) ** 2
+            )
+            distance_m = 2 * 6_371_009 * math.asin(min(1.0, math.sqrt(max(0.0, h))))
+            arcs.append(
+                {
+                    "from_node_id": origin["node_id"],
+                    "to_node_id": destination["node_id"],
+                    "distance_m": distance_m,
+                    "energy_kwh": distance_m / 1000 * consumption,
+                }
+            )
+    instance = _native_instance(
+        {
+            "schema_version": "1.0",
+            "name": "Escenario geodésico sintético",
+            "nodes": nodes,
+            "arcs": arcs,
+            "parameters": {
+                "vehicle_count": count,
+                "battery_capacity_kwh": capacity,
+                "reserve_kwh": reserve,
+                "initial_soc": soc,
+                "vehicle_connector_types": connectors,
+            },
+            "provenance": {
+                "kind": "synthetic",
+                "network": {"kind": "haversine", "vial": False},
+                "consumption_kwh_km": consumption,
+                "assumptions": [
+                    "Red completa geodésica sintética; no representa calles ni restricciones de circulación.",
+                    "Energía supuesta como distancia geodésica por consumo configurado; sin pendiente.",
+                    "No se fabrican geometrías viales.",
+                    "La coincidencia de conectores es textual y sensible a mayúsculas, conforme al contrato nativo.",
+                ],
+            },
+        }
+    )
+    return {"api_version": API_VERSION, "instance": instance.model_dump(mode="json")}
 
 
 def solve(payload):
     started = time.perf_counter()
-    validated = validate_request(payload)
-    from .evrp_adapter import run
-    result = run(validated)
+    instance, config = validate_request(payload)
+    prepared_seconds = time.perf_counter() - started
+    from .daniel_adapter import run
+
+    result = run(instance, config)
     result["run_id"] = str(uuid.uuid4())
-    result["raw"]["input"] = copy.deepcopy(payload)
-    prepared = result["raw"]["prepared"]
-    network_identity = {key: prepared[key] for key in ("esquema", "nodos", "tramos", "geometrias", "energia_caminos")}
-    network_identity["red"] = {key: value for key, value in prepared["red"].items() if key != "tiempos"}
-    result["metadata"].update(provider="evrp", provider_commit=PROVIDER_COMMIT,
-                              input_hash=fingerprint(payload),
-                              config_hash=fingerprint(result["raw"]["effective_config"]),
-                              network_hash=fingerprint(network_identity))
+    canonical = instance.model_dump(mode="json")
+    result["raw"].update(input=copy.deepcopy(payload), instance=canonical)
+    result["metadata"].update(
+        provider="ev_routing",
+        provider_commit=PROVIDER_COMMIT,
+        native_schema_version="1.0",
+        input_hash=fingerprint(canonical),
+        config_hash=fingerprint(result["raw"]["effective_config"]),
+        network_hash=fingerprint(
+            {
+                "nodes": canonical["nodes"],
+                "arcs": canonical["arcs"],
+                "provenance": canonical["provenance"],
+            }
+        ),
+    )
+    result["runtime_seconds"]["preparation"] = prepared_seconds
     result["runtime_seconds"]["total"] = time.perf_counter() - started
     envelope = {"api_version": API_VERSION, "result": result}
     json_bytes(envelope)
@@ -268,6 +379,13 @@ def solve(payload):
 
 
 def health():
-    from .evrp_adapter import provider_available
-    return {"status": "ok", "api_version": API_VERSION, "provider": "evrp",
-            "provider_commit": PROVIDER_COMMIT, "provider_available": provider_available()}
+    from .daniel_adapter import provider_available
+
+    return {
+        "status": "ok",
+        "api_version": API_VERSION,
+        "provider": "ev_routing",
+        "provider_commit": PROVIDER_COMMIT,
+        "native_schema_version": "1.0",
+        "provider_available": provider_available(),
+    }
