@@ -126,6 +126,7 @@ def strict_provider_result(raw):
 
 def _geometry(route_ids, prepared):
     points = []
+    positions = {n.id: (n.lat, n.lon) for n in prepared.nodos}
     for origin, destination in zip(route_ids, route_ids[1:]):
         if origin == destination:
             continue
@@ -133,6 +134,13 @@ def _geometry(route_ids, prepared):
         sequence = prepared.geometrias.get((origin, destination))
         if not sequence:
             return None
+        # RedOSM keeps the original node positions at both ends; snaps are
+        # interior points. a_dict rounds geometry to 6 decimals but not nodes.
+        # Admit only that rounding error (plus floating slack), never snap radius.
+        for endpoint, node_id in ((sequence[0], origin), (sequence[-1], destination)):
+            if any(not math.isclose(actual, expected, rel_tol=0, abs_tol=5e-7 + 1e-12)
+                   for actual, expected in zip(endpoint, positions[node_id])):
+                return None
         coords = [[float(lon), float(lat)] for lat, lon in sequence]
         if points:
             if points[-1] != coords[0]:
@@ -240,7 +248,7 @@ def present(validated, prepared, cfg, raw, decode):
     if red_type == "haversine":
         warnings.append("Red exploratoria haversine: las líneas guardadas no son rutas viales validadas.")
     if any(r["geometry"] is None and r["served_visit_ids"] for r in routes):
-        warnings.append("Falta geometría guardada en alguna ruta; se conserva su secuencia de paradas.")
+        warnings.append("Geometría omitida: faltan secuencias guardadas, son discontinuas o sus extremos no corresponden a los nodos. Vuelva a preparar la instancia para dibujarla; se conserva la secuencia de paradas.")
     return {
         "status": "validation_failed" if feasible is False else ("partial" if unserved else "result_available"),
         "nodes": nodes, "fleet": fleet, "routes": routes, "served_count": len(served), "total_visits": len(visit_ids),

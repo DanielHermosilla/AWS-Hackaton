@@ -313,3 +313,37 @@ class RobustBoundaryTests(unittest.TestCase):
         self.assertEqual(sum(s["charge_kwh"] for s in route["steps"]), 5)
         self.assertEqual(route["steps"][-1]["departure_energy_kwh"], 8)
         self.assertEqual(result["raw"]["result"]["kpis"]["energia_efectiva_kwh"], -1)
+
+    @unittest.skipUnless(importlib.util.find_spec("evrp") and importlib.util.find_spec("highspy"), "Requires pinned provider")
+    def test_saved_geometry_on_another_continent_is_suppressed(self):
+        p = prepared_request()
+        prep = p["prepared"]
+        prep["red"] = {"tipo": "osm", "vial": True}
+        keys = list(prep["tramos"])
+        prep["geometrias"] = {keys[0]: [[40, 10], [40, 10.001]],
+                               keys[1]: [[40, 10.001], [40, 10]]}
+        result = service.solve(p)["result"]
+        active = next(r for r in result["routes"] if r["served_visit_ids"])
+        self.assertIsNone(active["geometry"])
+        self.assertTrue(result["validation"]["feasible"])
+        self.assertEqual(result["served_count"], 1)
+        self.assertTrue(any("extremos" in w and "preparar" in w for w in result["warnings"]))
+        self.assertEqual(result["raw"]["input"]["prepared"]["geometrias"], prep["geometrias"])
+
+    @unittest.skipUnless(importlib.util.find_spec("evrp") and importlib.util.find_spec("highspy"), "Requires pinned provider")
+    def test_saved_osm_geometry_accepts_provider_rounding_and_interior_snaps(self):
+        p = prepared_request()
+        prep = p["prepared"]
+        prep["red"] = {"tipo": "osm", "vial": True}
+        for i, n in enumerate(prep["nodos"]):
+            n["lat"], n["lon"] = 10.12345649 + i / 1000, 20.12345649 + i / 1000
+        start = [round(prep["nodos"][0][k], 6) for k in ("lat", "lon")]
+        end = [round(prep["nodos"][1][k], 6) for k in ("lat", "lon")]
+        interior = [10.1235, 20.1236]
+        keys = list(prep["tramos"])
+        prep["geometrias"] = {keys[0]: [start, interior, end], keys[1]: [end, interior, start]}
+        result = service.solve(p)["result"]
+        active = next(r for r in result["routes"] if r["served_visit_ids"])
+        self.assertIsNotNone(active["geometry"])
+        self.assertEqual(active["geometry"]["coordinates"][1], interior[::-1])
+        self.assertFalse(any("extremos" in w for w in result["warnings"]))

@@ -91,7 +91,7 @@ libres del solver, tipos heterogéneos y configuración AWS.
 | `fleet` | Lista `{id,type,label,battery_capacity_kwh,reserve_kwh,initial_soc}`. SoC es fracción. |
 | `routes` | Lista `{vehicle_id,served_visit_ids,steps,geometry,distance_km,energy_kwh}`. Incluye vehículos inactivos base→base. |
 | `steps` | `{position,node_id,arrival_energy_kwh,departure_energy_kwh,charge_kwh,energy_kwh,delivered_visit_ids}`. Posición 0 es el origen, ausente del detalle upstream. Ocurrencias repetidas conservan posiciones. |
-| `geometry` | `null` o GeoJSON `LineString` `[lon,lat]`, exclusivamente de secuencias realmente guardadas y continuas. Nunca usa el fallback de `RedPreparada.geometria`. |
+| `geometry` | `null` o GeoJSON `LineString` `[lon,lat]`, exclusivamente de secuencias realmente guardadas, continuas y con extremos correspondientes a sus nodos. Nunca usa el fallback de `RedPreparada.geometria`. |
 | `served_count`, `total_visits`, `unserved_visit_ids` | Contrasta cumplimiento del proveedor con las rutas y demanda activa. |
 | `total_energy_kwh`, `routes[].energy_kwh`, `steps[].energy_kwh` | `null`: no se publica consumo efectivo con semántica ambigua. |
 | `validation` | `{feasible: boolean\|null,violations: string[],scope: string}`. Se conserva el alcance del validador del proveedor y se comprueba coherencia de presentación. |
@@ -106,6 +106,18 @@ El adapter usa códigos internos únicos antes de preparar/resolver para no acti
 las colisiones `|`/`#fin` del proveedor. Los objetos preparados/raw mantienen esos
 IDs internos auténticos y `metadata.id_map` permite reconstruirlos; los campos de
 presentación y la entrada original mantienen los IDs del usuario.
+
+Cada extremo guardado debe coincidir con la coordenada del nodo asociado, con
+tolerancia de `0.0000005° + 0.000000000001°` por componente (latitud/longitud).
+`RedOSM.geometria` del proveedor fijado incluye las coordenadas originales en ambos
+extremos y los puntos ajustados a calles en el interior. Su `max_acceso_m` no
+justifica desplazar los extremos. `InstanciaPreparada.a_dict` redondea geometrías
+a seis decimales, pero mantiene la precisión de los nodos: la tolerancia cubre
+ese redondeo y un margen de coma flotante. No se modifica ningún punto ni se
+crean conexiones. Si falta esa correspondencia (incluida una preparada externa
+con extremos solo ajustados a calles), se omite la geometría con una advertencia
+que pide volver a preparar; rutas, detalle y entrada original siguen disponibles.
+Esto valida la asociación de la línea, no su conectividad vial real.
 
 La configuración del proveedor usa `milp`, formulación `completa`, conectividad
 `flujo`, un hilo, sin poda de vecinos ni cargadores. Esta elección evita el segundo
