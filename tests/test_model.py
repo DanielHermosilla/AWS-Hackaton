@@ -2,10 +2,14 @@
 
 from __future__ import annotations
 
+from fractions import Fraction
+from random import Random
+
 import pyomo.environ as pyo
 import pytest
-from oracle import integer_walk_oracle
+from oracle import integer_walk_oracle, no_charge_walk_oracle
 
+from ev_routing import validation
 from ev_routing.contracts import Arc, ModelParameters, Node, ProblemInstance
 from ev_routing.model import activate_energy_phase, build_model, extract_solution
 
@@ -276,6 +280,27 @@ def test_saturation_discards_regeneration_and_energy_uses_actual_battery():
     assert any("eq13_uncapped_branch" in violation for violation in _violations(model))
 
 
+@pytest.mark.parametrize("saturation_branch", [0, 1])
+def test_both_saturation_branches_are_valid_exactly_at_capacity(saturation_branch):
+    instance = _instance(
+        nodes=[("depot", "base"), ("downhill", "junction"), ("client", "visit")],
+        arcs=[("depot", "downhill", -4), ("downhill", "client", 1), ("client", "depot", 1)],
+        movements=3,
+    )
+    model = build_model(instance)
+    _assign_walks(
+        model,
+        {"vehicle_1": ["depot", "downhill", "client", "depot"]},
+        deliveries={("client", "vehicle_1", 2)},
+    )
+    assert pyo.value(model.u["vehicle_1", 0]) == pyo.value(model.B)
+    model.gamma["vehicle_1", 0].set_value(saturation_branch)
+    assert _violations(model) == []
+    solution = extract_solution(model, instance)
+    assert solution.net_energy_kwh == -2
+    assert validation.validate_solution(instance, solution).feasible
+
+
 def test_unjustified_battery_discard_is_forbidden_below_capacity():
     model = build_model(_revisit_instance())
     _assign_walks(model, {})
@@ -352,7 +377,7 @@ def test_extraction_rejects_absent_fractional_or_disconnected_values():
 
 
 @pytest.fixture(scope="module")
-def installed_solver():
+def installed_solver(record_testsuite_property):
     """Gurobi primero y SCIP después; una licencia ausente no invalida tests puros."""
     errors = []
     for name in ("gurobi_direct", "scip"):
@@ -368,6 +393,8 @@ def installed_solver():
             if not pyo.check_optimal_termination(result):
                 errors.append(f"{name}: la prueba de licencia no terminó óptima")
                 continue
+            record_testsuite_property("model_test_solver", name)
+            record_testsuite_property("model_test_solver_version", str(solver.version()))
             return solver
         except Exception as error:
             errors.append(f"{name}: {type(error).__name__}: {error}")
@@ -400,3 +427,283 @@ def test_lexicographic_optimum_matches_independent_exhaustive_walks(
     assert len(solution.served_visit_ids) == known_optimum[0]
     assert solution.net_energy_kwh == pytest.approx(known_optimum[1], abs=1e-6)
     assert _violations(model) == []
+
+
+def _solve_against_oracle(
+    solver,
+    instance: ProblemInstance,
+    *,
+    fractional_without_charge: bool = False,
+):
+    """Comparar ambas fases y verificar sus dos incumbentes fuera de Pyomo."""
+    oracle = no_charge_walk_oracle if fractional_without_charge else integer_walk_oracle
+    expected_count, expected_energy = oracle(instance)
+    model = build_model(instance)
+    first_result = solver.solve(model)
+    assert pyo.check_optimal_termination(first_result)
+    assert pyo.value(model.served_count) == pytest.approx(expected_count, abs=1e-6)
+    first_solution = extract_solution(model, instance)
+    first_validation = validation.validate_solution(instance, first_solution)
+    assert first_validation.feasible, first_validation.violations
+    assert len(first_solution.served_visit_ids) == expected_count
+
+    activate_energy_phase(model, expected_count)
+    second_result = solver.solve(model)
+    assert pyo.check_optimal_termination(second_result)
+    assert pyo.value(model.served_count) == pytest.approx(expected_count, abs=1e-6)
+    assert pyo.value(model.E_total) == pytest.approx(float(expected_energy), abs=1e-6)
+    solution = extract_solution(model, instance)
+    final_validation = validation.validate_solution(instance, solution)
+    assert final_validation.feasible, final_validation.violations
+    assert solution.net_energy_kwh == pytest.approx(float(expected_energy), abs=1e-6)
+    assert _violations(model) == []
+    return model, solution
+
+
+def _seeded_instance(seed: int, *, fractional_without_charge: bool) -> ProblemInstance:
+    """Generar redes dirigidas pequeñas sin mirar el resultado del solver."""
+    rng = Random(seed)
+    depot = f"depot:{seed}"
+    visits = [f"customer:{seed}:{index}" for index in range(2 + seed % 2)]
+    junction = f"junction:{seed}"
+    station = f"charger:{seed}"
+    node_specs = [
+        (depot, "base"),
+        *((node, "visit") for node in visits),
+        (junction, "junction"),
+    ]
+    with_charger = not fractional_without_charge and seed % 3 != 0
+    if with_charger:
+        node_specs.append((station, "charger"))
+    values = (
+        [-2.75, -1.25, 0.0, 0.75, 1.5, 3.25, 5.5]
+        if fractional_without_charge
+        else list(range(-3, 6))
+    )
+    arcs = {}
+    for origin, _ in node_specs:
+        for destination, _ in node_specs:
+            if origin != destination and rng.random() < 0.4:
+                arcs[origin, destination] = rng.choice(values)
+    # Al menos una entrega es posible; las demás dependen de la red y la energía.
+    arcs[depot, visits[0]] = 1.25 if fractional_without_charge else rng.choice([1, 2])
+    arcs[visits[0], depot] = 1.75 if fractional_without_charge else rng.choice([1, 2])
+    rng.shuffle(node_specs)
+    instance = _instance(
+        nodes=node_specs,
+        arcs=[(origin, destination, energy) for (origin, destination), energy in arcs.items()],
+        movements=3 + seed % 3,
+        vehicles=1 + seed % 2,
+    )
+    if with_charger and seed % 2:
+        # Un vehículo no puede cargar; el otro sí. No inferir compatibilidad global.
+        instance = ProblemInstance.model_validate(
+            instance.model_dump() | {
+                "compatible_chargers": {"vehicle_1": [], "vehicle_2": [station]}
+            }
+        )
+    return instance
+
+
+@pytest.mark.solver
+@pytest.mark.parametrize("seed", range(12), ids=lambda seed: f"integer-seed-{seed}")
+def test_seeded_integer_networks_have_exact_continuous_charge_optima(installed_solver, seed):
+    instance = _seeded_instance(seed, fractional_without_charge=False)
+    _solve_against_oracle(installed_solver, instance)
+
+
+@pytest.mark.solver
+@pytest.mark.parametrize("seed", range(20, 26), ids=lambda seed: f"fractional-seed-{seed}")
+def test_seeded_fractional_networks_match_exact_no_charge_enumeration(installed_solver, seed):
+    instance = _seeded_instance(seed, fractional_without_charge=True)
+    _solve_against_oracle(installed_solver, instance, fractional_without_charge=True)
+
+
+@pytest.mark.solver
+def test_optimal_route_crosses_an_articulation_customer_twice_but_delivers_once(installed_solver):
+    instance = _instance(
+        nodes=[("depot", "base"), ("bridge", "visit"), ("leaf", "visit")],
+        arcs=[
+            ("depot", "bridge", 1),
+            ("bridge", "depot", 1),
+            ("bridge", "leaf", 1),
+            ("leaf", "bridge", 1),
+        ],
+        movements=4,
+    )
+    assert integer_walk_oracle(instance) == (2, 4)
+    _, solution = _solve_against_oracle(installed_solver, instance)
+    bridge_steps = [step for step in solution.routes[0].steps if step.node_id == "bridge"]
+    assert len(bridge_steps) == 2
+    assert sum("bridge" in step.delivered_visit_ids for step in bridge_steps) == 1
+
+
+@pytest.mark.solver
+def test_optimal_route_must_leave_after_an_intermediate_depot_return(installed_solver):
+    instance = _instance(
+        nodes=[("depot", "base"), ("left", "visit"), ("right", "visit")],
+        arcs=[
+            ("depot", "left", 1), ("left", "depot", 1),
+            ("depot", "right", 1), ("right", "depot", 1),
+        ],
+        movements=4,
+    )
+    assert integer_walk_oracle(instance) == (2, 4)
+    _, solution = _solve_against_oracle(installed_solver, instance)
+    steps = solution.routes[0].steps
+    assert steps[2].node_id == "depot"
+    assert steps[3].node_id in {"left", "right"}
+    assert steps[1].node_id != steps[3].node_id
+
+
+@pytest.mark.solver
+def test_two_positive_charges_at_the_same_station_are_necessary(installed_solver):
+    instance = _instance(
+        nodes=[("depot", "base"), ("station", "charger"), ("client", "visit")],
+        arcs=[
+            ("depot", "station", 1),
+            ("station", "client", 4),
+            ("client", "station", 5),
+            ("station", "depot", 2),
+        ],
+        movements=4,
+    )
+    assert integer_walk_oracle(instance) == (1, 12)
+    _, solution = _solve_against_oracle(installed_solver, instance)
+    steps = solution.routes[0].steps
+    assert [step.node_id for step in steps] == [
+        "depot", "station", "client", "station", "depot"
+    ]
+    assert steps[1].charged_to_battery_kwh == pytest.approx(5)
+    assert steps[3].charged_to_battery_kwh >= 2 - 1e-6
+    assert solution.net_energy_kwh == pytest.approx(12)
+
+
+@pytest.mark.solver
+def test_integer_oracle_does_not_impose_integer_charging_on_the_milp(installed_solver):
+    instance = _instance(
+        nodes=[("depot", "base"), ("station", "charger"), ("client", "visit")],
+        arcs=[("depot", "station", 1), ("station", "client", 1), ("client", "depot", 1)],
+        movements=3,
+    )
+    assert integer_walk_oracle(instance) == (1, 3)
+    model, _ = _solve_against_oracle(installed_solver, instance)
+    # Hay un óptimo entero, pero una recarga fraccionaria también es óptima:
+    # el objetivo mide consumo en tramos, no energía comprada o batería final.
+    model.q["vehicle_1", 1].fix(0.5)
+    result = installed_solver.solve(model)
+    assert pyo.check_optimal_termination(result)
+    solution = extract_solution(model, instance)
+    assert solution.routes[0].steps[1].charged_to_battery_kwh == pytest.approx(0.5)
+    assert solution.net_energy_kwh == pytest.approx(3)
+    report = validation.validate_solution(instance, solution)
+    assert report.feasible, report.violations
+
+
+@pytest.mark.solver
+def test_later_regeneration_does_not_make_an_intermediate_deficit_feasible(installed_solver):
+    instance = _instance(
+        nodes=[("depot", "base"), ("uphill", "junction"), ("client", "visit")],
+        arcs=[("depot", "uphill", 8), ("uphill", "client", -8), ("client", "depot", 1)],
+        movements=3,
+    )
+    # El saldo final de la caminata sería 5 kWh, pero el primer tramo deja -2.
+    assert sum(arc.energy_kwh for arc in instance.arcs) == 1
+    assert integer_walk_oracle(instance) == (0, 0)
+    _, solution = _solve_against_oracle(installed_solver, instance)
+    assert all(step.node_id == "depot" for step in solution.routes[0].steps)
+
+
+@pytest.mark.solver
+@pytest.mark.parametrize(("return_energy", "deliveries"), [(3.0, 1), (3.25, 0)])
+def test_reserve_at_return_is_inclusive_and_cannot_be_violated(
+    installed_solver, return_energy, deliveries
+):
+    instance = _instance(
+        nodes=[("depot", "base"), ("client", "visit")],
+        arcs=[("depot", "client", 2), ("client", "depot", return_energy)],
+        movements=2,
+    )
+    expected_energy = Fraction(5) if deliveries else Fraction(0)
+    assert no_charge_walk_oracle(instance) == (deliveries, expected_energy)
+    _, solution = _solve_against_oracle(
+        installed_solver, instance, fractional_without_charge=True
+    )
+    if deliveries:
+        assert solution.routes[0].steps[-1].battery_arrival_kwh == pytest.approx(1)
+
+
+@pytest.mark.solver
+@pytest.mark.parametrize(("movements", "energy"), [(4, 0), (8, -4)])
+def test_signed_gain_cycle_is_bounded_by_movements_and_capacity(installed_solver, movements, energy):
+    # Caso algebraico deliberado: no se afirma que sea una predicción física real.
+    instance = _instance(
+        nodes=[("depot", "base"), ("gain", "junction"), ("client", "visit")],
+        arcs=[
+            ("depot", "gain", -2), ("gain", "depot", 0),
+            ("depot", "client", 1), ("client", "depot", 1),
+        ],
+        movements=movements,
+    )
+    assert no_charge_walk_oracle(instance) == (1, energy)
+    _, solution = _solve_against_oracle(
+        installed_solver, instance, fractional_without_charge=True
+    )
+    assert solution.net_energy_kwh >= -4 - 1e-6
+    assert len(solution.routes[0].steps) == movements + 1
+
+
+@pytest.mark.solver
+@pytest.mark.parametrize(("movements", "deliveries", "energy"), [(3, 0, 0), (4, 1, 4)])
+def test_exact_movement_limit_changes_reachable_deliveries(
+    installed_solver, movements, deliveries, energy
+):
+    instance = _instance(
+        nodes=[
+            ("depot", "base"), ("out", "junction"),
+            ("client", "visit"), ("back", "junction"),
+        ],
+        arcs=[
+            ("depot", "out", 1), ("out", "client", 1),
+            ("client", "back", 1), ("back", "depot", 1),
+        ],
+        movements=movements,
+    )
+    assert integer_walk_oracle(instance) == (deliveries, energy)
+    _, solution = _solve_against_oracle(installed_solver, instance)
+    assert len(solution.served_visit_ids) == deliveries
+
+
+@pytest.mark.solver
+@pytest.mark.parametrize(("vehicles", "deliveries"), [(1, 1), (2, 2)])
+def test_assignment_to_two_vehicles_increases_service_under_the_same_h(
+    installed_solver, vehicles, deliveries
+):
+    instance = _instance(
+        nodes=[("depot", "base"), ("left", "visit"), ("right", "visit")],
+        arcs=[
+            ("depot", "left", 1), ("left", "depot", 1),
+            ("depot", "right", 1), ("right", "depot", 1),
+        ],
+        movements=2,
+        vehicles=vehicles,
+    )
+    assert integer_walk_oracle(instance) == (deliveries, 2 * deliveries)
+    _, solution = _solve_against_oracle(installed_solver, instance)
+    assert all(
+        sum(len(step.delivered_visit_ids) for step in route.steps) == 1
+        for route in solution.routes
+    )
+
+
+def test_oracles_reject_unsupported_charging_or_fractional_grid_assumptions():
+    fraction_instance = _instance(
+        nodes=[("depot", "base"), ("client", "visit")],
+        arcs=[("depot", "client", 0.25), ("client", "depot", 0.5)],
+        movements=2,
+    )
+    assert no_charge_walk_oracle(fraction_instance) == (1, Fraction(3, 4))
+    with pytest.raises(ValueError, match="energías enteras"):
+        integer_walk_oracle(fraction_instance)
+    with pytest.raises(ValueError, match="F_k vacío"):
+        no_charge_walk_oracle(_revisit_instance())

@@ -137,6 +137,41 @@ a mano, entregas separadas del tránsito, retorno intermedio, compatibilidad,
 recarga prohibida en depósito, saturación, déficit intermedio, nodos aislados
 y extracción. Las pruebas con solver comparan ambas fases con óptimos
 obtenidos por un enumerador de caminatas y niveles de carga independiente de
-Pyomo (`tests/oracle.py`), limitado a fixtures pequeñas de energías enteras.
+Pyomo (`tests/oracle.py`), limitado a fixtures pequeñas bajo las hipótesis de
+exactitud descritas a continuación.
 Buscan Gurobi y después SCIP; si ninguno puede resolver, se omiten únicamente
 esas pruebas y queda registrado el motivo.
+
+La batería de pruebas también incluye 18 redes dirigidas generadas con semillas
+fijas: 12 con energías enteras y posibles recargas, y 6 sin recarga con energías
+fraccionarias. En cada una compara el máximo de entregas y luego el mínimo de
+energía, y somete los incumbentes de **ambas fases** al validador independiente.
+Otros casos fuerzan dos visitas a un cliente con una sola entrega, retorno
+intermedio al depósito, dos recargas positivas en la misma estación, asignación
+entre vehículos y cambios de factibilidad al variar `H`. También comprueban
+saturación justo en capacidad, reserva justo al regresar, déficit antes de
+regeneración y una recarga fraccionaria óptima con datos enteros. Un ciclo de ganancia
+energética artificial comprueba que el modelo finito respeta `H` y la capacidad;
+no se presenta como una predicción física de una calle real.
+
+El oráculo entero no aproxima las cargas continuas del MILP mediante una
+cuadrícula arbitraria. Para una caminata y sus ramas de saturación fijadas,
+se elimina `q` y quedan restricciones de diferencias entre baterías, además
+de cotas y fijaciones. Con capacidad, reserva, energía inicial y consumos
+enteros, esa matriz de diferencias tiene vértices enteros; existe una solución
+óptima entera en cada rama factible. La unión finita de caminatas y ramas
+conserva al menos un óptimo entero. Por eso enumerar esos niveles es exacto
+para las fixtures admitidas, aunque otras soluciones óptimas puedan tener
+recargas fraccionarias. El oráculo rechaza entradas no enteras en vez de
+redondearlas silenciosamente.
+
+El oráculo sin recarga usa `Fraction` para evaluar exactamente los decimales de
+las fixtures y rechaza estaciones habilitadas; ignorarlas cambiaría el problema.
+Ninguno de los dos oráculos usa Pyomo, valores auxiliares del modelo o su solver.
+
+Para calcular el máximo servicio de cada combinación de caminatas, el oráculo
+toma la unión de los clientes encontrados: en la versión base una entrega no
+consume energía, tiempo ni capacidad adicional y puede asignarse a una sola
+de sus visitas. Esta reducción preserva los dos óptimos. No obliga a entregar
+cada vez que se pasa por un cliente; esa separación se comprueba también con
+recorridos explícitos y con un cliente de articulación visitado dos veces.
