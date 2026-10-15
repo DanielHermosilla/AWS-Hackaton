@@ -2,7 +2,23 @@
 
 Estado al 15-10-2026. Las ramas `exp/*` ya están integradas en `main`.
 
-## Oleada 2: lanzar con autorización
+## Oleada 2: COMPLETADA (15-10-2026), integrada en `main`
+
+Informes en `docs/experimentos/`: `ia_asistente`, `ia_ingesta`, `ia_explicacion` (C+D), `ia_tuning`, `elevacion_eved`, `elevacion_usgs`, `elevacion_copernicus` y `arena_scip`.
+
+| Ítem | Resultado | Pendiente |
+|---|---|---|
+| A. Asistente | Streaming y uso de herramientas; Sonnet 4.6 resolvió 8/8 del set focalizado; primer texto en ≤ 1 s | Exponerlo por SSE (FastAPI/Lambda) |
+| B. Ingesta | F1 = 1,0 en texto; 0,94 en imagen | Geocodificación real (Nominatim o Amazon Location; hoy no existe ningún índice de lugares) |
+| C. Explicación | 100 % de fidelidad, verificada | — |
+| D. Contexto | MAE −27,6 % solo con la fórmula de temperatura; el LLM no mejora la precisión, solo la usabilidad | — |
+| E. Ajuste del solver | **Sin mejora** frente a la configuración base, con el mismo presupuesto | Reevaluar solo con ≥ 80 clientes |
+| Elevación | +8,8 % de energía (USGS, eVED) y +12 % (Copernicus); no cambia el orden de las rutas; USGS frente a eVED: error medio absoluto 0,7 m | Elegir la fuente por defecto: USGS (cobertura del 100 %, sin dependencias) |
+| Arena con SCIP | `ev_routing` con su propio flujo (SCIP) y H ∈ {30, 60, 100}: 0 entregas con 1–5 clientes (sin solución factible dentro del tiempo); `evrp`: 100 % con gap 0 | Acordar los supuestos con el autor |
+
+Se excedió el tope de tokens en la ingesta: ~178 mil frente a los 150 mil asignados.
+
+## Oleada 1 (referencia)
 
 Máximo 4 agentes a la vez, cada uno en su propio worktree y rama `exp/<area>`. Se hacen en dos tandas.
 
