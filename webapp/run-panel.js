@@ -1,5 +1,5 @@
-import { createSolverClient, readExecution, saveExecution } from './shared/solver-client.js';
-import { parseInstanceFile, inputNodes, makeSolveRequest, SYNTHETIC_REQUEST } from './shared/solver-input.js';
+import { API_VERSION, createSolverClient, readExecution, saveExecution } from './shared/solver-client.js';
+import { parseInstanceFile, inputNodes, makeSolveRequest, makePrepareRequest, solverSettings, validateNativeInstance, SYNTHETIC_PREPARATION } from './shared/solver-input.js';
 
 export function initRunPanel() {
   const strip = document.createElement('section');
@@ -16,7 +16,7 @@ export function initRunPanel() {
     <p>Revisa la instancia y los supuestos antes de ejecutar. El motor se ejecuta en este servidor local.</p>
     <form id="run-form">
       <label class="run-file" for="instance-file">Instancia <input id="instance-file" type="file" accept=".csv,.json" aria-describedby="instance-help"></label>
-      <p id="instance-help" class="run-help">CSV de nodos, preparada evrp o una instancia descargada de esta beta. Hasta 8 MB.</p>
+      <p id="instance-help" class="run-help">CSV de nodos, ProblemInstance nativa 1.0 o una descarga del API 3.0. Hasta 8 MB.</p>
       <button id="use-synthetic" type="button" class="run-text-button">Usar caso sintético pequeño</button>
       <p id="input-summary" class="input-summary">Ningún archivo seleccionado.</p>
       <fieldset class="run-fields"><legend>Flota y supuestos</legend>
@@ -27,8 +27,9 @@ export function initRunPanel() {
         <label>Consumo supuesto · kWh/km<input id="run-consumption" name="consumption_kwh_km" type="number" min="0.001" step="any" placeholder="Supuesto explícito" required></label>
         <label>Presupuesto solver · s<input id="run-seconds" name="time_limit_seconds" type="number" min="1" max="120" step="1" value="10" required></label>
       </fieldset>
-      <p class="run-help">El perfil oficial usa 2 Nissan Leaf 2013 al 60 %. Capacidad útil, reserva y consumo son supuestos de esta ejecución.</p>
-      <p id="network-note" class="run-help">El CSV aporta ubicaciones. Esta beta usa una aproximación por distancia, sin red vial ni pendiente. Una preparada conserva la red que declara.</p>
+      <p id="native-note" class="run-help" hidden></p>
+      <p id="fleet-help" class="run-help">El perfil oficial usa 2 Nissan Leaf 2013 al 60 %. Capacidad útil, reserva y consumo son supuestos de esta ejecución.</p>
+      <p id="network-note" class="run-help">El CSV aporta ubicaciones. Esta beta usa una aproximación por distancia, sin red vial ni pendiente. Una instancia nativa conserva sus arcos, parámetros y operaciones.</p>
       <label class="run-ack"><input id="run-ack" type="checkbox" required><span>Revisé estos parámetros y el alcance de la red.</span></label>
       <p id="run-message" class="run-message" role="status" aria-live="polite" tabindex="-1"></p>
       <div class="dialog-actions"><button id="stop-waiting" type="button" hidden>Dejar de esperar</button><button id="solve-run" type="submit" class="primary">Calcular rutas</button></div>
@@ -37,7 +38,7 @@ export function initRunPanel() {
     <div class="run-exports"><button id="export-instance" type="button" disabled>Descargar instancia</button><button id="export-result" type="button" disabled>Descargar resultado</button><button id="export-attempt" type="button" hidden>Descargar intento fallido</button><button id="show-example" type="button">Ver ejemplo de diseño</button></div>`;
   document.body.append(dialog);
   const $ = id => document.getElementById(id);
-  let input = null, rawResponse = null, lastRequest = null, busy = false;
+  let input = null, rawResponse = null, lastRequest = null, lastPrepareRequest = null, canonicalInstance = null, busy = false;
   let draftEdited = false;
   let failedAttempt = null;
   let dialogOpener = $('open-run');
@@ -60,10 +61,11 @@ export function initRunPanel() {
       $('run-description').textContent = 'Revisa la entrada y ejecuta para obtener un resultado vigente.';
     } else if (rawResponse?.result) {
       const result = rawResponse.result;
-      $('run-source').textContent = result.validation?.feasible === true ? 'Resultado del motor · comprobado'
+      const noSolutionLabels = {no_solution: 'Sin solución encontrada', unavailable: 'Solver no disponible', error: 'Ejecución con error'};
+      $('run-source').textContent = !result.has_solution ? noSolutionLabels[result.status] || 'Sin solución disponible' : result.validation?.feasible === true ? 'Resultado del motor · comprobado'
         : result.validation?.feasible === false ? 'Resultado del motor · validación fallida'
           : 'Resultado del motor · verificación pendiente';
-      $('run-description').textContent = `${result.metadata?.time_limit_reached === true ? 'Límite de tiempo · ' : ''}${result.served_count}/${result.total_visits} entregas planificadas · ${result.network?.vial ? 'Red vial declarada' : 'Red no vial'} · ${result.run_id.slice(0, 8)}`;
+      $('run-description').textContent = `${result.metadata?.time_limit_reached === true ? 'Límite de tiempo · ' : ''}${result.has_solution ? `${result.served_count}/${result.total_visits} entregas planificadas` : `${result.total_visits} destinos · entregas sin evaluar`} · ${result.network?.vial ? 'Red vial declarada' : 'Red no vial'} · ${result.run_id.slice(0, 8)}`;
     } else if (saved) {
       $('run-source').textContent = 'Sin resultado del motor';
       $('run-description').textContent = 'Carga una instancia o vuelve al ejemplo de diseño.';
@@ -98,7 +100,7 @@ export function initRunPanel() {
       message(state.message, state.status === 'error');
       if (state.status === 'running') $('export-attempt').hidden = true;
       if (state.status === 'error' && lastRequest) {
-        failedAttempt = {schema_version: 'zmd.integration-beta.attempt/1', request: lastRequest,
+        failedAttempt = {schema_version: 'zmd.integration-beta.attempt/2', request: lastRequest, prepare_request: lastPrepareRequest, stage: state.stage,
           response: state.response, status: 'error', message: state.message, observed_at: new Date().toISOString()};
         $('export-attempt').hidden = false;
       }
@@ -107,6 +109,13 @@ export function initRunPanel() {
         catch (error) { message(error.message, true); }
       }
       renderStrip();
+    },
+    onPrepared(request, isCurrent) {
+      validateNativeInstance(request.instance);
+      if (!isCurrent()) return;
+      canonicalInstance = request.instance;
+      lastRequest = request;
+      $('export-instance').disabled = false;
     },
     async onResult(response, isCurrent) {
       // Validate the exact result that will be consumed on both pages before retaining its ID.
@@ -119,6 +128,7 @@ export function initRunPanel() {
   });
   function dirty() {
     draftEdited = true;
+    canonicalInstance = null;
     client.invalidate();
     setBusy(false);
     $('run-ack').checked = false;
@@ -128,38 +138,48 @@ export function initRunPanel() {
     catch (error) { message(error.message, true); }
     renderStrip();
   }
-  function fieldsFrom(request) {
-    const fleet = request.fleet || {};
-    $('run-count').value = fleet.num_vehicles ?? 2;
-    $('run-soc').value = (fleet.initial_soc ?? .6) * 100;
+  function fieldsFrom(value) {
+    const native = value.instance;
+    const fleet = native?.parameters || value.prepareRequest?.fleet || {};
+    $('run-count').value = (native ? fleet.vehicle_count : fleet.num_vehicles) ?? (native ? '' : 2);
+    $('run-soc').value = fleet.initial_soc == null ? (native ? '' : 60) : fleet.initial_soc * 100;
     $('run-capacity').value = fleet.battery_capacity_kwh ?? '';
     $('run-reserve').value = fleet.reserve_kwh ?? '';
-    $('run-consumption').value = fleet.consumption_kwh_km ?? request.prepared?.energia_caminos?.consumo_kwh_km ?? '';
-    $('run-seconds').value = request.solver?.time_limit_seconds ?? 10;
+    $('run-consumption').value = native ? '' : fleet.consumption_kwh_km ?? '';
+    $('run-seconds').value = value.request?.solver?.time_limit_seconds ?? 10;
   }
   function setInput(value, name) {
     input = value;
     const nodes = inputNodes(value);
-    const excludedCount = value.request?.exclude_node_ids?.length || 0;
-    $('input-summary').textContent = `${name} · ${nodes.filter(n => n.node_type === 'base').length} depósito · ${nodes.filter(n => n.node_type === 'visit').length} destinos · ${nodes.filter(n => n.node_type === 'charger').length} cargadores${excludedCount ? ` · ${excludedCount} nodos excluidos por el archivo` : ''}`;
-    $('network-note').textContent = value.prepared
-      ? `Red preparada: ${value.prepared.red?.tipo || 'sin tipo declarado'}. La compatibilidad energética y cobertura se revisan en el servidor; no se descargarán mapas.`
-      : 'Aproximación por distancia, sin red vial ni pendiente. Las coordenadas no acreditan conectividad por calles.';
-    if (value.request) fieldsFrom(value.request);
-    else if (value.prepared) fieldsFrom({prepared: value.prepared});
+    const native = !!value.instance;
+    $('input-summary').textContent = `${name} · ${nodes.filter(n => n.node_type === 'base').length} depósito · ${nodes.filter(n => n.node_type === 'visit').length} destinos · ${nodes.filter(n => n.node_type === 'charger').length} cargadores${native ? ` · ${value.instance.arcs.length} arcos` : ''}`;
+    $('network-note').textContent = native
+      ? 'Se utilizará la red incluida en el JSON. Las coordenadas son opcionales: los nodos sin ubicación se conservan en la lista. El servidor valida la instancia sin cambiar su configuración física.'
+      : 'El servidor preparará una aproximación por distancia, sin red vial ni pendiente. Las coordenadas no acreditan conectividad por calles.';
+    $('native-note').hidden = !native;
+    $('native-note').textContent = native ? 'Parámetros del JSON protegidos. Arcos, operaciones, conectores, compatibilidad y procedencia se conservan íntegros. Para cambiarlos, edita el archivo y vuelve a cargarlo. Solo el presupuesto del solver se configura aquí.' : '';
+    $('fleet-help').hidden = native;
+    $('run-consumption').closest('label').hidden = native;
+    for (const field of dialog.querySelectorAll('.run-fields input')) {
+      if (field.id !== 'run-seconds') field.disabled = native;
+    }
+    if (native || value.prepareRequest) fieldsFrom(value);
+    canonicalInstance = native ? value.instance : null;
     $('solve-run').disabled = false;
   }
-  function buildRequest() {
+  function buildJob() {
     if (!input) throw new Error('Selecciona una instancia antes de calcular.');
+    if (input.instance) return {request: makeSolveRequest(input, $('run-seconds').value), prepareRequest: null};
     const values = Object.fromEntries(['num_vehicles', 'battery_capacity_kwh', 'reserve_kwh', 'initial_soc', 'consumption_kwh_km']
       .map(key => [key, $('run-form').elements.namedItem(key).value]));
     values.initial_soc = Number(values.initial_soc) / 100;
-    return makeSolveRequest(input, values, $('run-seconds').value);
+    return {request: {api_version: API_VERSION, solver: solverSettings($('run-seconds').value)},
+      prepareRequest: makePrepareRequest(input, values)};
   }
   function open(trigger) {
     dialogOpener = trigger;
     dialog.showModal();
-    (input ? $('run-capacity') : $('instance-file')).focus();
+    (input?.instance ? $('run-seconds') : input ? $('run-capacity') : $('instance-file')).focus();
   }
   $('open-run').addEventListener('click', () => open($('open-run')));
   $('run-download').addEventListener('click', () => { open($('run-download')); $('result-details').open = true; $('export-result').focus(); });
@@ -183,8 +203,8 @@ export function initRunPanel() {
   $('use-synthetic').addEventListener('click', () => {
     fileRevision++;
     dirty();
-    const request = structuredClone(SYNTHETIC_REQUEST);
-    setInput({...request, request}, 'Caso sintético · valores supuestos');
+    const prepareRequest = structuredClone(SYNTHETIC_PREPARATION);
+    setInput({nodes: prepareRequest.nodes, prepareRequest}, 'Caso sintético · valores supuestos');
     $('instance-file').value = '';
     message('Caso sintético preparado para una ejecución real del motor. Capacidad 10 kWh, reserva 1 kWh y consumo 1 kWh/km son valores de prueba.');
   });
@@ -193,11 +213,14 @@ export function initRunPanel() {
     event.preventDefault();
     if (busy) return;
     try {
-      lastRequest = buildRequest();
+      const job = buildJob();
+      lastRequest = job.request;
+      lastPrepareRequest = job.prepareRequest;
+      canonicalInstance = input.instance || null;
       // Check minimal persistence before spending compute.
       save({stale: true, status: 'ready', message: ''});
-      await client.solve(lastRequest);
-      $('export-instance').disabled = false;
+      await client.solve(lastRequest, {prepareRequest: lastPrepareRequest});
+      $('export-instance').disabled = !canonicalInstance;
     } catch (error) { message(error.message, true); }
   });
   $('stop-waiting').addEventListener('click', () => client.stopWaiting());
@@ -214,14 +237,8 @@ export function initRunPanel() {
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
   $('export-instance').addEventListener('click', () => {
-    try {
-      const request = buildRequest();
-      const result = !saved?.stale ? rawResponse?.result : null;
-      download({schema_version: 'zmd.integration-beta.instance/1', request,
-        ...(result ? {prepared: result.raw.prepared, effective_config: result.raw.effective_config,
-          assumptions: result.assumptions, metadata: result.metadata} : {}),
-      }, 'instancia-beta.json');
-    } catch (error) { message(error.message, true); }
+    if (canonicalInstance) download(canonicalInstance, 'instancia-nativa.json');
+    else message('Prepara o carga una instancia nativa antes de descargarla.', true);
   });
   $('export-result').addEventListener('click', () => {
     if (rawResponse) download(rawResponse, `resultado-${rawResponse.result.run_id}.json`);
@@ -251,7 +268,8 @@ export function initRunPanel() {
         const request = result.raw.input;
         // A slow run fetch must not overwrite a draft already edited on this page.
         if (!draftEdited) {
-          setInput({...request, request}, 'Instancia de esta ejecución');
+          setInput({instance: result.raw.instance, request}, 'Instancia nativa de esta ejecución');
+          canonicalInstance = result.raw.instance;
           lastRequest = request;
           $('export-instance').disabled = false;
         }
@@ -261,8 +279,10 @@ export function initRunPanel() {
           `Ejecución: ${result.run_id}`,
           `Alcance de la comprobación: ${result.validation?.scope || 'No disponible'}`,
           `Preparación: ${result.runtime_seconds?.preparation ?? '—'} s · resolución (incluye modelo y validación): ${result.runtime_seconds?.solver ?? '—'} s · total del servicio: ${result.runtime_seconds?.total ?? '—'} s`,
-          'Optimalidad: sin certificado verificable en esta beta.',
-          ...(request.exclude_node_ids?.length ? [`Nodos excluidos de la demanda activa: ${request.exclude_node_ids.join(', ')}.`] : []),
+          result.metadata?.lexicographic_optimal ? 'Optimalidad lexicográfica declarada por el motor para esta instancia.' : 'Optimalidad lexicográfica no demostrada.',
+          `Estado nativo: ${result.metadata?.native_status || result.status}.`,
+          ...(result.metadata?.certificate_scope ? [`Alcance del certificado: ${result.metadata.certificate_scope}`] : []),
+          ...(result.phases || []).map(phase => `${phase.name === 'deliveries' ? 'Entregas' : 'Energía'} · ${phase.sense === 'maximize' ? 'maximizar' : 'minimizar'} · ${phase.proven_optimal ? 'óptimo probado de esta fase' : 'sin prueba de optimalidad'} · incumbente ${phase.incumbent ?? '—'} · cota ${phase.best_bound ?? '—'} · gap relativo ${phase.relative_gap ?? '—'} · ${phase.termination_condition} · ${phase.runtime_seconds} s.`),
           ...(result.assumptions || []), ...(result.warnings || []), ...(result.validation?.violations || []),
         ];
         for (const fact of facts) {

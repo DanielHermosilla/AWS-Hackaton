@@ -1,0 +1,103 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { parseInstanceFile, makePrepareRequest, makeSolveRequest } from '../shared/solver-input.js';
+import { createSolverClient } from '../shared/solver-client.js';
+
+const native = () => ({
+  schema_version: '1.0', name: 'Native preserved',
+  nodes: [
+    {node_id: 'BASE', node_type: 'base'},
+    {node_id: 'J|ñ', node_type: 'junction'},
+    {node_id: 'A', node_type: 'visit'},
+    {node_id: 'F', node_type: 'charger', connector_types: ['J1772']}
+  ],
+  arcs: [
+    {from_node_id: 'BASE', to_node_id: 'J|ñ', energy_kwh: 1, distance_m: 120},
+    {from_node_id: 'J|ñ', to_node_id: 'A', energy_kwh: -2, source_id: 'signed'},
+    {from_node_id: 'A', to_node_id: 'BASE', energy_kwh: 2}
+  ],
+  parameters: {vehicle_count: 2, battery_capacity_kwh: 10, reserve_kwh: 1, initial_soc: .6, movement_limit: 3, vehicle_connector_types: ['J1772']},
+  operations: {energy_margin_fraction: .1, disabled_charger_ids: ['F']},
+  compatible_chargers: {vehicle_1: ['F'], vehicle_2: []},
+  provenance: {kind: 'synthetic', note: '<not markup>', nested: {source: 'operator'}}
+});
+const csv = 'node_id,node_type,latitude,longitude\nBASE,base,42,-83\nA,visit,42.1,-83.1\n';
+const fleet = {num_vehicles: 2, battery_capacity_kwh: 10, reserve_kwh: 1, initial_soc: .6, consumption_kwh_km: 1};
+const response = body => ({ok: true, status: 200, json: async () => body});
+const deferred = () => {let resolve; const promise = new Promise(r => {resolve = r;}); return {promise, resolve};};
+
+test('native JSON preserves every physical field including absent coordinates and signed arcs', () => {
+  const original = native();
+  const input = parseInstanceFile(JSON.stringify(original), 'native.json');
+  const request = makeSolveRequest(input, 12);
+  assert.deepEqual(request, {api_version: '3.0', instance: original, solver: {time_limit_seconds: 12}});
+  assert.deepEqual(input.instance, original);
+  assert.equal(input.instance.nodes[0].latitude, undefined);
+});
+
+test('canonical request, native export and API3 result reload without physics overrides', () => {
+  const request = {api_version: '3.0', instance: native(), solver: {time_limit_seconds: 12}};
+  for (const data of [request.instance, request, {api_version: '3.0', result: {raw: {input: request, instance: request.instance}}}]) {
+    const input = parseInstanceFile(JSON.stringify(data), 'native.json');
+    assert.deepEqual(makeSolveRequest(input, 12), request);
+  }
+});
+
+test('CSV creates only a prepare request; it never creates arcs or estimated energy in the UI', () => {
+  const input = parseInstanceFile(csv, 'nodes.csv');
+  const request = makePrepareRequest(input, fleet);
+  assert.deepEqual(Object.keys(request).sort(), ['api_version', 'fleet', 'network_mode', 'nodes']);
+  assert.equal(request.api_version, '3.0');
+  assert.equal(request.network_mode, 'haversine');
+  assert.equal(request.instance, undefined);
+  assert.throws(() => makeSolveRequest(input, 10), /prepar/i);
+});
+
+test('old prepared provider, old API and old export wrappers are explicitly rejected', () => {
+  for (const data of [
+    {esquema: 'evrp.instancia_preparada/1', nodos: []},
+    {api_version: '2.0-beta.1', nodes: []},
+    {schema_version: 'zmd.integration-beta.instance/1', request: {}}
+  ]) assert.throws(() => parseInstanceFile(JSON.stringify(data), 'old.json'), /no admitid|anterior/i);
+});
+
+test('native invalid references and unpaired coordinates are actionable without normalizing them', () => {
+  const first = native(); first.nodes[0].latitude = 42;
+  assert.throws(() => parseInstanceFile(JSON.stringify(first), 'x.json'), /coordenadas/i);
+  const second = native(); second.arcs[0].to_node_id = 'missing';
+  assert.throws(() => parseInstanceFile(JSON.stringify(second), 'x.json'), /referencia/i);
+});
+
+test('preparation completes before solve and the returned canonical instance is used exactly', async () => {
+  const canonical = native(), calls = [], accepted = [];
+  const client = createSolverClient({
+    fetchImpl: async (url, options) => {
+      calls.push({url, body: JSON.parse(options.body)});
+      return response(url === '/prepare' ? {api_version: '3.0', instance: canonical} : {api_version: '3.0', result: {run_id: 'new'}});
+    },
+    onResult: value => accepted.push(value)
+  });
+  const prepareRequest = makePrepareRequest(parseInstanceFile(csv, 'nodes.csv'), fleet);
+  await client.solve({api_version: '3.0', solver: {time_limit_seconds: 10}}, {prepareRequest});
+  assert.deepEqual(calls.map(call => call.url), ['/prepare', '/solve']);
+  assert.deepEqual(calls[1].body.instance, canonical);
+  assert.equal(accepted.length, 1);
+});
+
+test('editing while preparation is in flight prevents launching the stale solve', async () => {
+  const waiting = deferred(), calls = [];
+  const client = createSolverClient({fetchImpl: (url) => {calls.push(url); return waiting.promise;}});
+  const task = client.solve({api_version: '3.0', solver: {time_limit_seconds: 10}}, {prepareRequest: {api_version: '3.0', nodes: []}});
+  client.invalidate();
+  waiting.resolve(response({api_version: '3.0', instance: native()}));
+  await task;
+  assert.deepEqual(calls, ['/prepare']);
+});
+
+test('a malformed preparation never launches solve and retains a recoverable error', async () => {
+  const calls = [], states = [];
+  const client = createSolverClient({fetchImpl: async url => {calls.push(url); return response({api_version: '1.0', instance: native()});}, onChange: state => states.push(state)});
+  await client.solve({api_version: '3.0', solver: {time_limit_seconds: 10}}, {prepareRequest: {api_version: '3.0'}});
+  assert.deepEqual(calls, ['/prepare']);
+  assert.equal(states.at(-1).status, 'error');
+});

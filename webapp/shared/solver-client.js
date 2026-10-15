@@ -1,5 +1,5 @@
 // Same-origin transport. Aborting the browser wait does not cancel the solver.
-export const API_VERSION = '2.0-beta.1';
+export const API_VERSION = '3.0';
 export const EXECUTION_KEY = 'zmd.webapp.execution.v1';
 
 async function readResponse(response) {
@@ -15,7 +15,9 @@ async function readResponse(response) {
 }
 
 export async function getSavedRun(runId, fetchImpl = fetch) {
-  return readResponse(await fetchImpl(`/solve?run_id=${encodeURIComponent(runId)}`, {cache: 'no-store'}));
+  const response = await fetchImpl(`/solve?run_id=${encodeURIComponent(runId)}`, {cache: 'no-store'});
+  if (response.status === 404) throw new Error('Esta ejecución expiró o pertenece a una versión anterior. Carga de nuevo la instancia y vuelve a calcular.');
+  return readResponse(response);
 }
 
 export function readExecution(storage) {
@@ -35,7 +37,7 @@ export function saveExecution(value, storage) {
   } catch { return false; }
 }
 
-export function createSolverClient({fetchImpl = fetch, onChange = () => {}, onResult = () => {}} = {}) {
+export function createSolverClient({fetchImpl = fetch, onChange = () => {}, onPrepared = () => {}, onResult = () => {}} = {}) {
   let revision = 0;
   let controller = null;
   return {
@@ -48,17 +50,30 @@ export function createSolverClient({fetchImpl = fetch, onChange = () => {}, onRe
       this.invalidate();
       onChange({status: 'stopped', message: 'Dejaste de esperar. El cálculo puede continuar en el servidor.'});
     },
-    async solve(request) {
+    async solve(request, {prepareRequest = null} = {}) {
       this.invalidate();
       const current = revision;
       controller = new AbortController();
-      onChange({status: 'running', message: 'Preparando y resolviendo la instancia…'});
+      let stage = prepareRequest ? 'preparing' : 'solving';
+      const post = async (url, body) => readResponse(await fetchImpl(url, {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(body), signal: controller.signal,
+      }));
+      onChange({status: 'running', stage, message: prepareRequest ? 'Preparando la instancia en el servidor…' : 'Resolviendo la instancia nativa…'});
       try {
-        const response = await fetchImpl('/solve', {
-          method: 'POST', headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify(request), signal: controller.signal,
-        });
-        const body = await readResponse(response);
+        let solveRequest = request;
+        if (prepareRequest) {
+          const prepared = await post('/prepare', prepareRequest);
+          if (current !== revision) return null;
+          if (prepared?.api_version !== API_VERSION || prepared?.instance?.schema_version !== '1.0')
+            throw new Error('La preparación no devolvió una instancia nativa 1.0 del API 3.0.');
+          solveRequest = {api_version: API_VERSION, instance: prepared.instance, solver: request.solver};
+          await onPrepared(solveRequest, () => current === revision);
+          if (current !== revision) return null;
+          stage = 'solving';
+          onChange({status: 'running', stage, message: 'Instancia preparada. Resolviendo con el motor…'});
+        }
+        const body = await post('/solve', solveRequest);
         if (current !== revision) return null;
         await onResult(body, () => current === revision);
         if (current !== revision) return null;
@@ -66,7 +81,7 @@ export function createSolverClient({fetchImpl = fetch, onChange = () => {}, onRe
         return body;
       } catch (error) {
         if (current !== revision) return null;
-        onChange({status: 'error', response: error.response ?? null, message: error instanceof TypeError
+        onChange({status: 'error', stage, response: error.response ?? null, message: error instanceof TypeError
           ? 'No se pudo conectar con el motor. Comprueba que el servidor beta esté ejecutándose y vuelve a intentar.'
           : error.message || 'No se pudo completar la ejecución.'});
         return null;

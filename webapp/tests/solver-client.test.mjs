@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createSolverClient, getSavedRun } from '../shared/solver-client.js';
-import { parseInstanceFile, makeSolveRequest } from '../shared/solver-input.js';
+import { parseInstanceFile, makePrepareRequest, solverSettings } from '../shared/solver-input.js';
 
 const header = 'node_id,node_type,latitude,longitude,address,network,total_ports,dc_fast_ports,level2_ports,connector_types,max_power_kw';
 const csv = `\ufeff${header}\r\nBASE#fin,base,42,-83,"Depósito, norte",,,,,,\r\n"V|ñ",visit,42.001,-83.002,"Tienda ""Sur""",,,,,,\r\n`;
@@ -16,7 +16,7 @@ test('CSV preserves BOM, quoted commas, escaped quotes and opaque identifiers', 
   assert.equal(input.nodes[1].node_id, 'V|ñ');
   assert.equal(input.nodes[1].address, 'Tienda "Sur"');
   assert.equal(input.nodes[1].total_ports, undefined);
-  assert.equal(makeSolveRequest(input, fleet, 10).network_mode, 'haversine');
+  assert.equal(makePrepareRequest(input, fleet, 10).network_mode, 'haversine');
 });
 
 test('CSV rejects duplicate IDs, malformed quotes, wrong columns and nonfinite coordinates', () => {
@@ -28,20 +28,16 @@ test('CSV rejects duplicate IDs, malformed quotes, wrong columns and nonfinite c
 
 test('configuration is explicit and physically consistent before solve', () => {
   const input = parseInstanceFile(csv, 'x.csv');
-  assert.throws(() => makeSolveRequest(input, {...fleet, battery_capacity_kwh: ''}, 10), /capacidad/i);
-  assert.throws(() => makeSolveRequest(input, {...fleet, reserve_kwh: 8}, 10), /reserva/i);
-  assert.throws(() => makeSolveRequest(input, fleet, Infinity), /tiempo/i);
-  assert.equal(makeSolveRequest(input, fleet, 10).fleet.initial_soc, .6);
+  assert.throws(() => makePrepareRequest(input, {...fleet, battery_capacity_kwh: ''}, 10), /capacidad/i);
+  assert.throws(() => makePrepareRequest(input, {...fleet, reserve_kwh: 8}, 10), /reserva/i);
+  assert.throws(() => solverSettings(Infinity), /tiempo/i);
+  assert.equal(makePrepareRequest(input, fleet, 10).fleet.initial_soc, .6);
 });
 
-test('exported request and result reload without losing parameters or provenance', () => {
-  const request = makeSolveRequest(parseInstanceFile(csv, 'x.csv'), fleet, 10);
-  const imported = parseInstanceFile(JSON.stringify({schema_version: 'zmd.integration-beta.instance/1', request}), 'x.json');
-  assert.deepEqual(imported.request, request);
-  const fromResult = parseInstanceFile(JSON.stringify({api_version: '2.0-beta.1', result: {raw: {input: request}}}), 'resultado.json');
-  assert.deepEqual(fromResult.request, request);
-  const fromAttempt = parseInstanceFile(JSON.stringify({schema_version: 'zmd.integration-beta.attempt/1', request, status: 'error'}), 'intento.json');
-  assert.deepEqual(fromAttempt.request, request);
+test('a failed preparation attempt reloads the original explicit settings', () => {
+  const prepare_request = makePrepareRequest(parseInstanceFile(csv, 'x.csv'), fleet);
+  const imported = parseInstanceFile(JSON.stringify({schema_version: 'zmd.integration-beta.attempt/2', prepare_request, status: 'error'}), 'attempt.json');
+  assert.deepEqual(imported.prepareRequest, prepare_request);
 });
 
 test('a late response cannot overwrite a newer execution', async () => {
@@ -81,7 +77,7 @@ test('HTTP failure, corrupt JSON, and abort are distinct recoverable states', as
 });
 
 test('missing saved run never falls back to sample data', async () => {
-  await assert.rejects(getSavedRun('expired', async () => ({ok: false, status: 404, json: async () => ({error: {message: 'Ejecución expirada'}})})), /expirada/);
+  await assert.rejects(getSavedRun('expired', async () => ({ok: false, status: 404, json: async () => ({error: {message: 'Ejecución expirada'}})})), /expir/);
 });
 
 test('asynchronous response validation can check currency again before saving', async () => {
@@ -100,29 +96,27 @@ test('asynchronous response validation can check currency again before saving', 
   assert.deepEqual(accepted, []);
 });
 
-test('unsupported imported configuration is rejected instead of silently discarded', () => {
-  const request = makeSolveRequest(parseInstanceFile(csv, 'x.csv'), fleet, 10);
+test('unsupported preparation configuration is rejected instead of discarded', () => {
+  const request = makePrepareRequest(parseInstanceFile(csv, 'x.csv'), fleet);
   assert.throws(() => parseInstanceFile(JSON.stringify({...request, movement_limit: 6}), 'x.json'), /movement_limit/);
-  assert.throws(() => parseInstanceFile(JSON.stringify({...request, solver: {...request.solver, mip_gap: .1}}), 'x.json'), /mip_gap/);
-  assert.throws(() => parseInstanceFile(JSON.stringify({...request, nodes: undefined, prepared: {}, network_mode: 'haversine'}), 'x.json'), /network_mode/);
-  const optionalSolver = {...request}; delete optionalSolver.solver;
-  assert.doesNotThrow(() => parseInstanceFile(JSON.stringify(optionalSolver), 'x.json'));
+  assert.throws(() => parseInstanceFile(JSON.stringify({...request, fleet: {...request.fleet, unexpected: true}}), 'x.json'), /unexpected/);
+  assert.throws(() => parseInstanceFile(JSON.stringify({...request, network_mode: 'osm'}), 'x.json'), /network_mode/);
 });
 
 test('nullable optional CSV-schema fields roundtrip and fleet limits match the service', () => {
-  const request = makeSolveRequest(parseInstanceFile(csv, 'x.csv'), fleet, 10);
+  const request = makePrepareRequest(parseInstanceFile(csv, 'x.csv'), fleet, 10);
   Object.assign(request.nodes[1], {total_ports: null, dc_fast_ports: null, level2_ports: null, max_power_kw: null});
   assert.doesNotThrow(() => parseInstanceFile(JSON.stringify(request), 'x.json'));
-  assert.throws(() => makeSolveRequest(parseInstanceFile(csv, 'x.csv'), {...fleet, num_vehicles: 21}, 10), /20/);
+  assert.throws(() => makePrepareRequest(parseInstanceFile(csv, 'x.csv'), {...fleet, num_vehicles: 21}, 10), /20/);
 });
 
 test('numeric CSV fields in API downloads remain reusable without changing original input', () => {
-  const request = makeSolveRequest(parseInstanceFile(csv, 'x.csv'), fleet, 10);
+  const request = makePrepareRequest(parseInstanceFile(csv, 'x.csv'), fleet, 10);
   request.nodes[0].latitude = '42';
   request.nodes[0].total_ports = '';
   request.nodes[1].max_power_kw = '0';
   const input = parseInstanceFile(JSON.stringify(request), 'x.json');
-  assert.equal(input.request.nodes[0].latitude, '42');
+  assert.equal(input.prepareRequest.nodes[0].latitude, '42');
   request.nodes[0].latitude = true;
   assert.throws(() => parseInstanceFile(JSON.stringify(request), 'x.json'), /latitud/i);
 });

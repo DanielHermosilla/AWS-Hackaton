@@ -29,9 +29,9 @@ export const RUN_INFO = fixture.RUN_INFO || null;
 export const { SCENARIO, VEHICLES, NODES, ROUTES } = fixture;
 export const SOURCE_DETAILS = source === 'solver' ? {
   title: 'Resultado del motor', file: 'Motor', context: 'Resultado del motor',
-  description: 'Plan calculado por el proveedor evrp para esta instancia y configuración. Las entregas son planificadas, no completadas en terreno.',
+  description: 'Plan calculado por el motor ev_routing de Daniel para esta instancia nativa y configuración. Las entregas son planificadas, no completadas en terreno.',
   geometry: RUN_INFO.network?.vial
-    ? 'La instancia preparada declara una red vial. Solo se dibujan las geometrías guardadas; los tramos sin geometría permanecen en la lista.'
+    ? 'La instancia nativa declara una red vial. Solo se dibujan las geometrías guardadas; los tramos sin geometría permanecen en la lista.'
     : 'La red de esta ejecución no es vial. Sus distancias y trazados son aproximaciones; no acreditan conectividad por calles.',
   stations: 'Estaciones incluidas en la instancia; disponibilidad en terreno sin verificar.',
   summary: RUN_INFO.validationScope,
@@ -89,8 +89,7 @@ const visitLabels = new Map(NODES.filter(node => node.type === 'visit')
   .map((node, index) => [node.id, String(index + 1)]));
 export const visitLabel = id => visitLabels.get(id) || '';
 export const number = (n, digits = 1) => Number.isFinite(n) ? n.toLocaleString('es-CL', {maximumFractionDigits: digits}) : '—';
-// These design fixtures describe assigned visits, not completed deliveries.
-// The motor's eventual served-delivery contract must replace this interpretation.
+// Real results count explicit service; examples retain their illustrative assignments.
 export const visitIdsForRoute = route => source === 'solver' ? new Set(route?.servedVisitIds || [])
   : new Set((route?.stops || []).map(stop => stop.nodeId).filter(id => nodeById(id)?.type === 'visit'));
 export const deliveryCount = route => visitIdsForRoute(route).size;

@@ -2,18 +2,33 @@
 
 Interfaz HTML/CSS/JavaScript para planificar una flota eléctrica de reparto, desarrollada por ZMD Mobility. Tiene dos pantallas, Inicio y Plan, con cabecera y navegación compartidas. No requiere paquetes JavaScript ni compilación.
 
-Esta rama incorpora una **integración beta local con evrp/HiGHS**. Para cargar una
-instancia y ejecutar el motor, seguir [la guía de integración](../docs/integration-beta.md):
+Esta rama conecta la interfaz con el **motor nativo de Daniel (`ev_routing`)**
+mediante el API 3.0. Desde la raíz del repositorio:
 
 ```sh
-# Desde la raíz, con el Python del checkout fijado del proveedor:
-/ruta/al/proveedor/.venv/bin/python -m backend.local_server --port 8000
+uv sync --locked
+uv run --locked python -m backend.local_server --port 4294
 ```
 
-Abrir `http://127.0.0.1:8000/` y elegir **Cargar y calcular**. CSV y preparadas se
-revisan antes del cálculo; Inicio y Plan comparten la ejecución y sus descargas.
-El consumo efectivo y los certificados no disponibles se muestran explícitamente.
-El servidor temporal conserva hasta cuatro resultados, que expiran al reiniciarlo.
+Abrir `http://127.0.0.1:4294/` y elegir **Cargar y calcular**. El CSV se envía a
+`/prepare` para que el backend construya la instancia; después se envía la
+ProblemInstance 1.0 canónica a `/solve`. La preparación por distancia es una
+aproximación no vial explícita. La UI no estima energía ni construye arcos.
+
+También se puede cargar directamente un **JSON nativo ProblemInstance 1.0**.
+Sus arcos, parámetros, operaciones, compatibilidad de cargadores y procedencia
+se conservan sin cambios. Los campos físicos se bloquean en el formulario;
+solo se puede modificar el presupuesto del solver. Para cambiar la instancia,
+editar el JSON y volver a cargarlo. Los formatos antiguos de preparación y
+el API beta 2 no se admiten.
+
+La descarga de instancia entrega un JSON nativo reutilizable. La descarga de
+resultado conserva el envoltorio API 3.0 y los objetos originales del motor.
+Los nodos nativos sin coordenadas permanecen en la lista: no se generan
+ubicaciones ni trazados ficticios. Un resultado sin solución mantiene métricas
+desconocidas y sus fases, sin convertirlo en cero entregas o infactibilidad
+probada. El servidor temporal conserva hasta cuatro resultados y estos expiran
+al reiniciarlo. Ver [el contrato y sus límites](../docs/integration-beta.md).
 
 Para consultar únicamente el ejemplo de diseño, desde la raíz:
 
@@ -50,7 +65,7 @@ Usa HTTP: los módulos JavaScript y el mapa no funcionan abriendo el HTML como a
 - La cartografía de fondo necesita internet para acceder a OpenFreeMap. La lista de paradas sigue disponible si falla el mapa. Abrir la webapp no consulta OSRM.
 
 En modo ejemplo, las entregas, consumo, recarga y batería siguen siendo ilustrativos.
-En modo motor, se presenta el resultado identificado de evrp con su alcance de
+En modo motor, se presenta el resultado nativo identificado de Daniel con su alcance de
 validación, servicio explícito y supuestos. Editar marca el resultado anterior;
 un fallo nunca activa el ejemplo como reemplazo. «Dejar de esperar» no cancela el
 solver. No hay autenticación, facturación, permisos ni telemetría en vivo.
@@ -87,4 +102,4 @@ node --test webapp/tests/*.test.mjs
 
 Estas pruebas comprueban referencias, unidades, estados y tipos usados por la
 interfaz; no certifican factibilidad energética. La guía beta incluye las pruebas
-Python con HTTP y HiGHS reales.
+Python con HTTP y el solver nativo; cada evidencia declara su alcance.

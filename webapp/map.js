@@ -6,6 +6,7 @@ import { prefersReducedMotion, onReducedMotionChange } from './state.js';
 // Business IDs are opaque; they must not collide with the basemap's own sources.
 const mapRoutes = ROUTES.map((route, index) => ({ route, sourceId: `zmd-route-${index}` }))
   .filter(({ route }) => route.geometry !== null && route.geometry !== undefined);
+const mappedNodes = NODES.filter(node => Number.isFinite(node.lng) && Number.isFinite(node.lat));
 
 const css = document.createElement('link');
 css.rel = 'stylesheet';
@@ -35,9 +36,9 @@ export async function createMap(container, options = {}) {
     status.textContent = message;
     return {selectVehicle:noop,selectNode:noop,fit:noop,toggleChargers:noop,setPlanVisible:noop,getView:noop,restoreView:noop,destroy:noop};
   };
-  if (!NODES.length) return unavailable(DATA_SOURCE === 'pending'
+  if (!mappedNodes.length) return unavailable(DATA_SOURCE === 'pending'
     ? 'Carga una instancia y calcula el plan para ver sus ubicaciones.'
-    : 'Esta ejecución no contiene ubicaciones para mostrar.');
+    : 'La instancia no incluye coordenadas para el mapa. Sus nodos y recorridos siguen disponibles en la lista.');
   const geometryMessage = () => {
     if (!RUN_INFO || !planVisible) return '';
     const shown = vehicleId ? ROUTES.filter(route => route.vehicleId === vehicleId) : ROUTES;
@@ -47,6 +48,7 @@ export async function createMap(container, options = {}) {
   const renderStatus = () => {
     status.textContent = [
       cartographyFailed ? 'No se pudo cargar parte de la cartografía. Las paradas siguen disponibles.' : '',
+      mappedNodes.length < NODES.length ? `${NODES.length - mappedNodes.length} nodos sin coordenadas permanecen en la lista.` : '',
       ready ? geometryMessage() : ''
     ].filter(Boolean).join(' ');
   };
@@ -55,7 +57,7 @@ export async function createMap(container, options = {}) {
     map = new maplibre.Map({
       container: host,
       style: new URL('./vendor/maplibre/positron.json', import.meta.url).href,
-      center: [NODES[0].lng, NODES[0].lat],
+      center: [mappedNodes[0].lng, mappedNodes[0].lat],
       zoom: 11.3,
       attributionControl: true,
       pitchWithRotate: false,
@@ -83,10 +85,10 @@ export async function createMap(container, options = {}) {
     const visibleRoutes = vehicleId ? ROUTES.filter(r => r.vehicleId === vehicleId) : ROUTES;
     const stopIds = new Set(visibleRoutes.flatMap(r => r.stopIds));
     let coords = planVisible
-      ? [...visibleRoutes.flatMap(r => r.geometry?.coordinates || []), ...NODES.filter(n => stopIds.has(n.id)).map(n => [n.lng,n.lat])]
-      : NODES.filter(n => n.type !== 'charger').map(n => [n.lng, n.lat]);
-    if (!coords.length) coords = NODES.filter(node => node.type !== 'charger').map(node => [node.lng, node.lat]);
-    if (!coords.length) coords = NODES.map(node => [node.lng, node.lat]);
+      ? [...visibleRoutes.flatMap(r => r.geometry?.coordinates || []), ...mappedNodes.filter(n => stopIds.has(n.id)).map(n => [n.lng,n.lat])]
+      : mappedNodes.filter(n => n.type !== 'charger').map(n => [n.lng, n.lat]);
+    if (!coords.length) coords = mappedNodes.filter(node => node.type !== 'charger').map(node => [node.lng, node.lat]);
+    if (!coords.length) coords = mappedNodes.map(node => [node.lng, node.lat]);
     if (!coords.length) return;
     const bounds = coords.reduce((b,c) => b.extend(c), new maplibre.LngLatBounds(coords[0], coords[0]));
     const requestedPadding = typeof options.padding === 'function' ? options.padding() : options.padding || 56;
@@ -126,7 +128,7 @@ export async function createMap(container, options = {}) {
   }
   function selectNode(id, move = true) {
     const node = NODES.find(n => n.id === id);
-    if (!node) return;
+    if (!node || !Number.isFinite(node.lng) || !Number.isFinite(node.lat)) return;
     selectedId = id;
     update();
     const currentPoint = map.project([node.lng, node.lat]);
@@ -154,13 +156,14 @@ export async function createMap(container, options = {}) {
       map.addLayer({id:`${sourceId}-line`,type:'line',source:sourceId,layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':color,'line-width':4}});
       map.on('click', `${sourceId}-line`, () => options.onVehicleSelect?.(route.vehicleId));
     }
-    for (const node of NODES) {
+    for (const node of mappedNodes) {
       const el = document.createElement('button');
       el.type = 'button';
       el.className = `zmd-pin type-${node.type}`;
       el.title = node.label;
       el.setAttribute('aria-label',`${node.label} (${node.id})`);
       if (node.type === 'visit') el.textContent = visitLabel(node.id);
+      else if (node.type === 'junction') el.textContent = '·';
       else el.innerHTML = node.type === 'base' ? icon('base',19) : icon('plug',14);
       el.addEventListener('click', event => {
         event.stopPropagation();

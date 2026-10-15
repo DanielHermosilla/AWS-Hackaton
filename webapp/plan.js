@@ -9,13 +9,14 @@ applyDataProvenance();
 
 const $ = id => document.getElementById(id);
 const pending = DATA_SOURCE === 'pending';
+const noSolution = RUN_INFO?.hasSolution === false;
 const detail = detailSurface($('selection'));
 let selected = null, tab = 'fleet', selectedStop = null, map, returnFocus;
 let detailOpen = false;
 const mobile = matchMedia('(max-width:760px)');
 const vehicleById = id => VEHICLES.find(v => v.id === id);
 const served = new Set(ROUTES.flatMap(route => [...visitIdsForRoute(route)]));
-const unserved = NODES.filter(node => node.type === 'visit' && !served.has(node.id));
+const unserved = noSolution ? [] : NODES.filter(node => node.type === 'visit' && !served.has(node.id));
 const stopTitle = (node, index, route) => node.type !== 'base' ? node.label
   : index === 0 ? 'Salida de base' : index === route.stops.length - 1 ? 'Regreso a base' : 'Paso por base';
 const servedAt = (state, node) => RUN_INFO ? state?.deliveredVisitIds?.includes(node.id) : node.type === 'visit' && !!state;
@@ -66,12 +67,12 @@ addEventListener('pageshow', () => { delete document.body.dataset.leavingDemo; }
 $('scenario-location').textContent = SCENARIO.name;
 $('fleet-tab').querySelector('span').textContent = VEHICLES.length;
 $('stops-tab').querySelector('span').textContent = NODES.filter(n => n.type === 'visit').length;
-$('plan-deliveries').textContent = pending ? '—' : RUN_INFO ? RUN_INFO.servedCount : served.size;
+$('plan-deliveries').textContent = pending ? '—' : RUN_INFO ? number(RUN_INFO.servedCount, 0) : served.size;
 $('plan-demand').textContent = pending ? '/ —' : `/ ${NODES.filter(n => n.type === 'visit').length}`;
 $('plan-energy').textContent = number(RUN_INFO ? RUN_INFO.totalEnergyKwh
   : ROUTES.length && ROUTES.every(r => Number.isFinite(r.energyKwh)) ? ROUTES.reduce((sum, r) => sum + r.energyKwh, 0) : null);
 const charges = ROUTES.map(chargeCount);
-$('plan-charges').textContent = pending ? '—' : number(charges.every(Number.isFinite) ? charges.reduce((sum, value) => sum + value, 0) : null, 0);
+$('plan-charges').textContent = pending || noSolution ? '—' : number(charges.every(Number.isFinite) ? charges.reduce((sum, value) => sum + value, 0) : null, 0);
 if (RUN_INFO || pending) {
   $('plan-deliveries').closest('p').querySelector('small').textContent = 'entregas del modelo';
   $('plan-energy').closest('p').querySelector('small').textContent = RUN_INFO?.totalEnergyKwh == null ? 'consumo no disponible' : 'energía informada';
@@ -144,7 +145,7 @@ function render() {
             ? s.chargeKwh > 0 ? `Recarga · +${number(s.chargeKwh)} kWh` : s.chargeKwh === null ? 'Recarga no informada' : 'Paso sin recarga'
             : RUN_INFO && n.type === 'visit' ? `${n.id} · ${servedAt(s, n) ? 'Entrega del modelo' : 'Paso sin entrega'}` : n.id;
           return `<button class="stop-row ${active ? 'active' : ''}" data-stop="${esc(n.id)}" data-route="${esc(v.id)}" data-index="${i}" aria-pressed="${active}">
-            <span class="stop-number">${n.type === 'base' ? icon('base', 16) : n.type === 'charger' ? icon('plug', 16) : visitLabel(n.id)}</span>
+            <span class="stop-number">${n.type === 'base' ? icon('base', 16) : n.type === 'charger' ? icon('plug', 16) : n.type === 'junction' ? '·' : visitLabel(n.id)}</span>
             <span class="stop-name">${esc(stopTitle(n, i, r))}<small>${esc(secondary)}</small></span>
             <strong>${number(s.arrivalSoc)} %</strong>
           </button>`;
@@ -152,7 +153,7 @@ function render() {
     }).join('') +
     (!selected && unserved.length ? `<section class="route-group unserved-group"><div class="route-head">Pendientes <small>${unserved.length} locales sin servicio en el plan</small></div>${unserved.map(node =>
       `<button class="stop-row" data-unserved="${esc(node.id)}"><span class="stop-number">${visitLabel(node.id)}</span><span class="stop-name">${esc(node.label)}<small>${esc(node.id)}</small></span></button>`).join('')}</section>` : '') +
-    (!routes.length && !unserved.length ? `<p class="plan-empty">${pending ? 'Aún no hay un resultado de paradas.' : NODES.some(node => node.type === 'visit') ? 'Esta ejecución no contiene recorridos.' : 'Esta ejecución no contiene destinos de entrega.'}</p>` : '');
+    (!routes.length && !unserved.length ? `<p class="plan-empty">${pending ? 'Aún no hay un resultado de paradas.' : noSolution ? 'El motor no dispone de una solución con recorridos.' : NODES.some(node => node.type === 'visit') ? 'Esta ejecución no contiene recorridos.' : 'Esta ejecución no contiene destinos de entrega.'}</p>` : '');
 }
 
 function vehicle(id, focus = false, refit = true) {
@@ -193,7 +194,9 @@ function stop(node, routeId, index, trigger, move = true) {
   const title = state ? stopTitle(node, stopIndex, route) : node.label;
   const serviceDescription = node.type === 'charger' ? SOURCE_DETAILS.charger
     : node.type === 'base' ? 'Centro de distribución'
+    : node.type === 'junction' ? 'Intersección de la red · paso sin servicio'
     : state ? servedAt(state, node) ? RUN_INFO ? 'Entrega prevista por el modelo' : 'Entrega prevista' : 'Paso por el local sin entrega'
+    : noSolution ? 'Sin resultado de servicio para este destino'
     : RUN_INFO ? 'Pendiente de servicio en este plan' : 'Sin asignar en este plan';
   $('selection').innerHTML = `<button class="close" id="close-selection" aria-label="Cerrar detalle">${icon('close', 16)}</button>
     <p class="detail-eyebrow">${route ? esc(vehicleById(route.vehicleId).name) + ' · ' : ''}${esc(node.id)}</p>

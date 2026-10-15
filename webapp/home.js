@@ -8,6 +8,7 @@ applyDataProvenance();
 
 const main = document.getElementById('home-main');
 const pending = DATA_SOURCE === 'pending';
+const noSolution = RUN_INFO?.hasSolution === false;
 const finite = value => Number.isFinite(value) ? value : null;
 const count = value => number(value, 0);
 const percent = value => Number.isFinite(value) ? `${number(value)} %` : '—';
@@ -27,14 +28,14 @@ const stopsOf = route => Array.isArray(route?.stops) ? route.stops : [];
 
 const visitTotal = new Set(NODES.filter(node => node.type === 'visit').map(node => node.id)).size;
 const stationTotal = NODES.filter(node => node.type === 'charger').length;
-const assignedTotal = new Set(ROUTES.flatMap(route => [...visitsOf(route)])).size;
-const unassigned = Math.max(0, visitTotal - assignedTotal);
+const assignedTotal = noSolution ? null : new Set(ROUTES.flatMap(route => [...visitsOf(route)])).size;
+const unassigned = noSolution ? null : Math.max(0, visitTotal - assignedTotal);
 // Zero is a valid total; a missing value on any route makes the total unavailable.
 const energyTotal = RUN_INFO ? RUN_INFO.totalEnergyKwh
   : ROUTES.length && ROUTES.every(route => Number.isFinite(route?.energyKwh))
     ? ROUTES.reduce((sum, route) => sum + route.energyKwh, 0) : null;
 const chargeCounts = ROUTES.map(chargeCount);
-const chargeTotal = chargeCounts.every(Number.isFinite) ? chargeCounts.reduce((sum, value) => sum + value, 0) : null;
+const chargeTotal = !noSolution && chargeCounts.every(Number.isFinite) ? chargeCounts.reduce((sum, value) => sum + value, 0) : null;
 
 const owners = new Map();
 const fleet = VEHICLES.map((vehicle, index) => {
@@ -100,7 +101,7 @@ function resumeFrom(saved) {
 // ---- Text, links and the shell's single Continue action -----------------
 const values = {
   scenario: SCENARIO.name,
-  assignedFleet: count(active.filter(vehicle => vehicle.assigned > 0).length),
+  assignedFleet: noSolution ? '—' : count(active.filter(vehicle => vehicle.assigned > 0).length),
   vehicles: count(VEHICLES.length),
   assigned: count(assignedTotal),
   visits: count(visitTotal),
@@ -155,7 +156,7 @@ const energyTrack = value => {
     ? `<span class="viz-fill viz-ink" style="left:${(Math.min(0, value) - energyMin) / energyRange * 100}%;width:${Math.abs(value) / energyRange * 100}%"></span>` : '';
   return `<span class="viz-track${energyMin < 0 ? ' signed' : ''}" aria-hidden="true">${fill}<i class="energy-zero" style="left:${baseline}%"></i></span>`;
 };
-const noRoute = '<small>Sin recorrido</small>';
+const noRoute = `<small>${noSolution ? 'Sin resultado' : 'Sin recorrido'}</small>`;
 
 function gauges() {
   if (!fleet.length) return `<p class="chart-empty">${pending ? 'Aún no hay un resultado de flota.' : 'Esta ejecución no contiene vehículos.'}</p>`;
@@ -172,7 +173,7 @@ function gauges() {
     const value = vehicle.finalSoc === null ? '—' : `${number(vehicle.finalSoc)}<small>%</small>`;
     const facts = vehicle.active
       ? `<span><strong>${count(vehicle.assigned)}</strong> locales</span><span><strong>${count(vehicle.chargeStops)}</strong> recarga${vehicle.chargeStops === 1 ? '' : 's'}</span>`
-      : '<span>Sin recorrido en este plan</span>';
+      : `<span>${noSolution ? 'Sin resultado para este vehículo' : 'Sin recorrido en este plan'}</span>`;
     return `<a class="gauge-card${vehicle.active ? '' : ' is-inactive'}" ${mark(vehicle)} href="${vehicleHref(vehicle)}">
       <span class="gauge-name"><i class="vehicle-dot viz-ink" aria-hidden="true"></i>${esc(vehicle.name)}<span aria-hidden="true">↗</span></span>
       <span class="gauge-figure"><svg viewBox="0 0 220 138" aria-hidden="true"><path class="gauge-track" d="M20 110 A90 90 0 0 1 200 110"/>${fill}${tick}</svg>
@@ -186,6 +187,7 @@ function gauges() {
 
 function assignment() {
   if (pending) return '<p class="chart-empty">Aún no hay entregas calculadas.</p>';
+  if (noSolution) return '<p class="chart-empty">No hay una solución disponible para evaluar las entregas.</p>';
   // The bar is decorative for assistive technology: the legend carries the same links and numbers.
   const segments = fleet.filter(vehicle => vehicle.assigned > 0).map(vehicle =>
     `<a class="allocation-segment" tabindex="-1" href="${vehicleHref(vehicle)}" ${mark(vehicle, `width:${vehicle.assignmentShare}%`)}><span class="viz-ink"></span></a>`).join('');
@@ -202,6 +204,7 @@ function assignment() {
 
 function energy() {
   if (pending) return '<p class="chart-empty">Aún no hay un resultado energético.</p>';
+  if (noSolution) return '<p class="chart-empty">No hay una solución cuyo consumo pueda presentarse.</p>';
   const rows = fleet.map(vehicle => `<a class="bar-row" ${mark(vehicle)} href="${vehicleHref(vehicle)}">
     <span class="chart-row-label"><span>${esc(vehicle.name)}</span><strong>${vehicle.hasRoute ? `${number(vehicle.energyKwh)} <small>kWh</small>` : noRoute}</strong></span>${energyTrack(vehicle.energyKwh)}</a>`).join('');
   const note = energyValid ? ''

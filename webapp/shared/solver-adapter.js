@@ -24,11 +24,13 @@ function stringArray(value, field, unique = false) {
 }
 
 export function adaptSolverResponse(envelope) {
-  require(record(envelope) && envelope.api_version === '2.0-beta.1', 'api_version no admitida');
+  require(record(envelope) && envelope.api_version === '3.0', 'api_version no admitida');
   const result = envelope.result;
   require(record(result), 'result');
   require(text(result.run_id), 'run_id');
-  require(['result_available', 'partial', 'validation_failed'].includes(result.status), 'status no admitido');
+  require(['result_available', 'partial', 'validation_failed', 'no_solution', 'unavailable', 'error'].includes(result.status), 'status no admitido');
+  const noSolution = ['no_solution', 'unavailable', 'error'].includes(result.status);
+  require(typeof result.has_solution === 'boolean' && result.has_solution !== noSolution, 'has_solution y status no coinciden');
   for (const field of ['nodes', 'fleet', 'routes', 'phases']) require(Array.isArray(result[field]), field);
   const nodes = uniqueIds(result.nodes, 'node_id', 'nodes');
   const vehicles = uniqueIds(result.fleet, 'id', 'fleet');
@@ -37,12 +39,14 @@ export function adaptSolverResponse(envelope) {
   const visits = new Set(result.nodes.filter(node => node.node_type === 'visit').map(node => node.node_id));
   const NODES = result.nodes.map((node, index) => {
     const path = `nodes[${index}]`;
-    require(['base', 'visit', 'charger'].includes(node.node_type), `${path}.node_type`);
-    require(Number.isFinite(node.latitude) && Math.abs(node.latitude) <= 90, `${path}.latitude`);
-    require(Number.isFinite(node.longitude) && Math.abs(node.longitude) <= 180, `${path}.longitude`);
-    for (const field of ['address', 'network', 'connector_types']) {
+    require(['base', 'visit', 'charger', 'junction'].includes(node.node_type), `${path}.node_type`);
+    require(node.latitude === null || (Number.isFinite(node.latitude) && Math.abs(node.latitude) <= 90), `${path}.latitude`);
+    require(node.longitude === null || (Number.isFinite(node.longitude) && Math.abs(node.longitude) <= 180), `${path}.longitude`);
+    require((node.latitude === null) === (node.longitude === null), `${path}.coordenadas incompletas`);
+    for (const field of ['address', 'network']) {
       require(node[field] == null || typeof node[field] === 'string', `${path}.${field}`);
     }
+    if (node.connector_types !== undefined) stringArray(node.connector_types, `${path}.connector_types`);
     for (const field of ['total_ports', 'dc_fast_ports', 'level2_ports']) {
       require(node[field] == null || (Number.isInteger(node[field]) && node[field] >= 0), `${path}.${field}`);
     }
@@ -50,7 +54,7 @@ export function adaptSolverResponse(envelope) {
     return {
       id: node.node_id, type: node.node_type, lat: node.latitude, lng: node.longitude,
       label: node.address?.trim() || (node.node_type === 'base' ? 'Base' : node.node_id),
-      address: node.address || '', connectors: node.connector_types || '',
+      address: node.address || '', connectors: (node.connector_types || []).join('; '),
       network: node.network || '', powerKw: node.max_power_kw ?? null
     };
   });
@@ -118,10 +122,15 @@ export function adaptSolverResponse(envelope) {
       finalSoc: steps.at(-1)?.departureSoc ?? null
     };
   });
-  require(Number.isInteger(result.served_count) && result.served_count === delivered.size, 'served_count no coincide con las entregas explícitas');
   require(Number.isInteger(result.total_visits) && result.total_visits === visits.size, 'total_visits no coincide con los nodos');
   const unserved = stringArray(result.unserved_visit_ids, 'unserved_visit_ids', true);
-  require(sameSet(new Set(unserved), new Set([...visits].filter(id => !delivered.has(id)))), 'unserved_visit_ids no coincide con las entregas pendientes');
+  if (noSolution) {
+    require(ROUTES.length === 0 && result.served_count === null && unserved.length === 0 &&
+      result.total_energy_kwh === null && result.validation?.feasible === null, 'sin solución: métricas o rutas contradictorias');
+  } else {
+    require(Number.isInteger(result.served_count) && result.served_count === delivered.size, 'served_count no coincide con las entregas explícitas');
+    require(sameSet(new Set(unserved), new Set([...visits].filter(id => !delivered.has(id)))), 'unserved_visit_ids no coincide con las entregas pendientes');
+  }
   require(nullableNumber(result.total_energy_kwh), 'total_energy_kwh');
   if (result.total_energy_kwh !== null && ROUTES.every(route => route.energyKwh !== null)) {
     const suppliedTotal = ROUTES.reduce((sum, route) => sum + route.energyKwh, 0);
@@ -140,6 +149,16 @@ export function adaptSolverResponse(envelope) {
       result.runtime_seconds[field] >= 0), `runtime_seconds.${field}`);
   }
   require(result.phases.every(record), 'phases');
+  for (const phase of result.phases) {
+    require(['deliveries', 'energy'].includes(phase.name) &&
+      phase.sense === (phase.name === 'deliveries' ? 'maximize' : 'minimize'), 'phases objetivo/sentido');
+    require(typeof phase.has_solution === 'boolean' && typeof phase.proven_optimal === 'boolean' &&
+      (!phase.proven_optimal || phase.has_solution), 'phases certificado');
+    require(text(phase.status) && text(phase.termination_condition), 'phases terminación');
+    for (const field of ['incumbent', 'best_bound', 'absolute_gap', 'relative_gap'])
+      require(nullableNumber(phase[field]), `phases.${field}`);
+    require(Number.isFinite(phase.runtime_seconds) && phase.runtime_seconds >= 0, 'phases.runtime_seconds');
+  }
   stringArray(result.warnings, 'warnings');
   stringArray(result.assumptions, 'assumptions');
   require(record(result.network), 'network');
@@ -151,7 +170,7 @@ export function adaptSolverResponse(envelope) {
     SCENARIO: { id: result.run_id, name: 'Resultado del motor', demonstration: false, synthetic: false },
     VEHICLES, NODES, ROUTES,
     RUN_INFO: {
-      runId: result.run_id, source: 'solver', status: result.status,
+      runId: result.run_id, source: 'solver', status: result.status, hasSolution: result.has_solution,
       feasible: validation.feasible, validationScope: validation.scope, violations: [...violations],
       servedCount: result.served_count, totalVisits: result.total_visits, unservedVisitIds: [...unserved],
       totalEnergyKwh: result.total_energy_kwh, phases: result.phases,

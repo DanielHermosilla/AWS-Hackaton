@@ -59,15 +59,51 @@ export function validateNodes(nodes) {
   return nodes;
 }
 
+const record = value => value !== null && typeof value === 'object' && !Array.isArray(value);
+const nativeFields = ['schema_version', 'name', 'nodes', 'arcs', 'parameters', 'operations', 'compatible_chargers', 'provenance'];
+const requireFields = (value, allowed, name) => {
+  if (!record(value)) throw new Error(`Falta el objeto ${name}.`);
+  const unknown = Object.keys(value).filter(key => !allowed.includes(key));
+  if (unknown.length) throw new Error(`Parámetros no admitidos en ${name}: ${unknown.join(', ')}.`);
+};
+
+// Lightweight input checks only. The backend's native Pydantic contract remains
+// authoritative; the original instance is returned without defaults or rewrites.
+export function validateNativeInstance(instance) {
+  requireFields(instance, nativeFields, 'ProblemInstance');
+  if (instance.schema_version !== '1.0' || !Array.isArray(instance.nodes) || !Array.isArray(instance.arcs))
+    throw new Error('Carga una ProblemInstance nativa con schema_version 1.0, nodes y arcs.');
+  const ids = new Set();
+  for (const node of instance.nodes) {
+    if (!record(node) || typeof node.node_id !== 'string' || !node.node_id.trim() || ids.has(node.node_id))
+      throw new Error('La instancia nativa contiene un ID de nodo vacío o repetido.');
+    ids.add(node.node_id);
+    if (!['base', 'visit', 'charger', 'junction'].includes(node.node_type)) throw new Error(`Tipo de nodo no admitido: ${node.node_type}.`);
+    if ((node.latitude == null) !== (node.longitude == null)) throw new Error(`Coordenadas incompletas en ${node.node_id}.`);
+    if (node.latitude != null && (!Number.isFinite(node.latitude) || Math.abs(node.latitude) > 90 || !Number.isFinite(node.longitude) || Math.abs(node.longitude) > 180))
+      throw new Error(`Coordenadas inválidas en ${node.node_id}.`);
+    if (node.connector_types !== undefined && (!Array.isArray(node.connector_types) || !node.connector_types.every(value => typeof value === 'string')))
+      throw new Error(`connector_types debe ser una lista en ${node.node_id}.`);
+  }
+  if (instance.nodes.filter(node => node.node_type === 'base').length !== 1) throw new Error('La instancia necesita exactamente un depósito (base).');
+  const pairs = new Set();
+  for (const arc of instance.arcs) {
+    if (!record(arc) || !ids.has(arc.from_node_id) || !ids.has(arc.to_node_id)) throw new Error('Un arco referencia nodos desconocidos.');
+    const key = JSON.stringify([arc.from_node_id, arc.to_node_id]);
+    if (pairs.has(key) || arc.from_node_id === arc.to_node_id) throw new Error('La instancia contiene arcos duplicados o autoarcos.');
+    pairs.add(key);
+    if (!Number.isFinite(arc.energy_kwh)) throw new Error('Cada arco necesita energy_kwh finita, con su signo original.');
+  }
+  for (const key of ['parameters', 'operations', 'provenance']) {
+    if (instance[key] !== undefined && !record(instance[key])) throw new Error(`${key} debe ser un objeto.`);
+  }
+  return instance;
+}
+
 export function inputNodes(input) {
+  if (input.instance) return validateNativeInstance(input.instance).nodes;
   if (input.nodes) return validateNodes(input.nodes);
-  const prepared = input.prepared;
-  if (!prepared || prepared.esquema !== 'evrp.instancia_preparada/1')
-    throw new Error('El JSON no es una instancia preparada evrp.instancia_preparada/1 admitida.');
-  return validateNodes(prepared.nodos?.map(node => ({
-    node_id: node.id, node_type: {base: 'base', cliente: 'visit', cargador: 'charger'}[node.tipo],
-    latitude: node.lat, longitude: node.lon, address: node.direccion,
-  })));
+  throw new Error('Selecciona un CSV o una ProblemInstance nativa 1.0.');
 }
 
 export function parseInstanceFile(text, filename = '') {
@@ -89,32 +125,23 @@ export function parseInstanceFile(text, filename = '') {
   } else {
     try { value = JSON.parse(cleaned); }
     catch { throw new Error('El archivo no contiene JSON válido.'); }
-    if (['zmd.integration-beta.instance/1', 'zmd.integration-beta.attempt/1'].includes(value.schema_version)) value = value.request;
-    else if (value.api_version === API_VERSION && value.result) value = value.result.raw?.input;
-    if (!value || typeof value !== 'object') throw new Error('El archivo no contiene una entrada completa reutilizable.');
-    if (value.api_version === API_VERSION) {
+    if (value?.schema_version === 'zmd.integration-beta.attempt/2') value = value.request?.instance ? value.request : value.prepare_request || value.request;
+    if (value?.api_version === API_VERSION && value.result) value = value.result.raw?.input;
+    if (!record(value)) throw new Error('El archivo no contiene una entrada completa reutilizable.');
+    if (value.schema_version === '1.0') value = {instance: validateNativeInstance(value)};
+    else if (value.api_version === API_VERSION && value.instance) {
       const request = value;
-      const allowed = {
-        request: ['api_version', 'nodes', 'prepared', 'fleet', 'solver', 'network_mode', 'exclude_node_ids'],
-        fleet: ['num_vehicles', 'battery_capacity_kwh', 'reserve_kwh', 'initial_soc', 'consumption_kwh_km'],
-        solver: ['time_limit_seconds'],
-      };
-      for (const [name, object] of [['request', request], ['fleet', request.fleet], ['solver', request.solver]]) {
-        if (name === 'solver' && object === undefined) continue;
-        if (!object || typeof object !== 'object' || Array.isArray(object)) throw new Error(`Falta el objeto ${name} en la instancia.`);
-        const unknown = Object.keys(object).filter(key => !allowed[name].includes(key));
-        if (unknown.length) throw new Error(`Parámetros no admitidos en ${name}: ${unknown.join(', ')}.`);
-      }
-      if (request.nodes && request.network_mode !== 'haversine')
-        throw new Error('Esta beta solo admite network_mode haversine explícito para una lista de nodos.');
-      if (request.prepared && 'network_mode' in request)
-        throw new Error('Una instancia preparada ya contiene su red y no admite network_mode.');
-      value = {...request, request};
-    } else if (value.esquema === 'evrp.instancia_preparada/1') value = {prepared: value};
-    else throw new Error('Versión de instancia no admitida. Carga un CSV, una preparada evrp o una descarga de esta beta.');
+      requireFields(request, ['api_version', 'instance', 'solver'], 'request');
+      if (request.solver !== undefined) requireFields(request.solver, ['time_limit_seconds'], 'solver');
+      value = {instance: validateNativeInstance(request.instance), request};
+    } else if (value.api_version === API_VERSION && value.nodes) {
+      requireFields(value, ['api_version', 'nodes', 'fleet', 'network_mode'], 'prepare');
+      requireFields(value.fleet, ['num_vehicles', 'battery_capacity_kwh', 'reserve_kwh', 'initial_soc', 'consumption_kwh_km', 'vehicle_connector_types'], 'fleet');
+      if (value.network_mode !== 'haversine') throw new Error('La preparación de nodos requiere network_mode haversine explícito.');
+      value = {nodes: value.nodes, prepareRequest: value};
+    } else throw new Error('Versión no admitida. Los formatos anteriores no son compatibles: carga un CSV o una ProblemInstance nativa 1.0.');
   }
   inputNodes(value);
-  if (value.nodes && value.prepared) throw new Error('Carga nodos o una instancia preparada, no ambas.');
   return value;
 }
 
@@ -124,8 +151,20 @@ function positive(value, name) {
   return Number(value);
 }
 
-export function makeSolveRequest(input, values, timeLimit) {
-  inputNodes(input);
+export function solverSettings(timeLimit) {
+  const seconds = positive(timeLimit, 'El tiempo límite');
+  if (seconds < 1 || seconds > 120) throw new Error('El tiempo límite debe estar entre 1 y 120 segundos.');
+  return {time_limit_seconds: seconds};
+}
+
+export function makeSolveRequest(input, timeLimit) {
+  if (!input.instance) throw new Error('Primero prepara los nodos en el servidor para obtener una instancia nativa.');
+  return {api_version: API_VERSION, instance: validateNativeInstance(input.instance), solver: solverSettings(timeLimit)};
+}
+
+export function makePrepareRequest(input, values) {
+  if (input.instance) throw new Error('Una instancia nativa ya contiene su red; no se reemplaza mediante preparación.');
+  validateNodes(input.nodes);
   const capacity = positive(values.battery_capacity_kwh, 'La capacidad útil');
   const initial = positive(values.initial_soc, 'El SoC inicial');
   const reserve = positive(values.reserve_kwh, 'La reserva');
@@ -134,19 +173,14 @@ export function makeSolveRequest(input, values, timeLimit) {
   if (!Number.isInteger(count) || count > 20) throw new Error('Configura entre 1 y 20 vehículos.');
   if (initial > 1) throw new Error('El SoC inicial debe ser de hasta 100 %.');
   if (reserve > initial * capacity) throw new Error('La reserva no puede superar la energía inicial.');
-  const seconds = positive(timeLimit, 'El tiempo límite');
-  if (seconds > 120) throw new Error('El tiempo límite de esta beta es de hasta 120 segundos.');
-  return {
-    api_version: API_VERSION,
-    ...(input.prepared ? {prepared: input.prepared} : {nodes: input.nodes, network_mode: 'haversine'}),
+  const connectors = input.prepareRequest?.fleet?.vehicle_connector_types;
+  return {api_version: API_VERSION, nodes: input.nodes, network_mode: 'haversine',
     fleet: {num_vehicles: count, battery_capacity_kwh: capacity, reserve_kwh: reserve,
-      initial_soc: initial, consumption_kwh_km: consumption},
-    solver: {time_limit_seconds: seconds},
-    ...(input.request?.exclude_node_ids ? {exclude_node_ids: input.request.exclude_node_ids} : {}),
-  };
+      initial_soc: initial, consumption_kwh_km: consumption,
+      ...(connectors ? {vehicle_connector_types: [...connectors]} : {})}};
 }
 
-export const SYNTHETIC_REQUEST = {
+export const SYNTHETIC_PREPARATION = {
   api_version: API_VERSION,
   network_mode: 'haversine',
   nodes: [
@@ -155,5 +189,4 @@ export const SYNTHETIC_REQUEST = {
     {node_id: 'V2', node_type: 'visit', latitude: -33.452, longitude: -70.659, address: 'Segundo destino sintético'},
   ],
   fleet: {num_vehicles: 2, battery_capacity_kwh: 10, reserve_kwh: 1, initial_soc: .6, consumption_kwh_km: 1},
-  solver: {time_limit_seconds: 10},
 };

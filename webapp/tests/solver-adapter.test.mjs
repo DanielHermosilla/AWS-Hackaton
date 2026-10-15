@@ -5,15 +5,16 @@ import { escapeHtml } from '../shared/html.js';
 
 function response() {
   return {
-    api_version: '2.0-beta.1',
+    api_version: '3.0',
     result: {
       run_id: 'run-one',
       status: 'result_available',
+      has_solution: true,
       nodes: [
         { node_id: 'BASE', node_type: 'base', latitude: -33.45, longitude: -70.66, address: 'Depósito' },
         { node_id: 'V|1', node_type: 'visit', latitude: -33.46, longitude: -70.65, address: 'Local uno' },
         { node_id: 'V2', node_type: 'visit', latitude: -33.47, longitude: -70.64, address: 'Local dos' },
-        { node_id: 'C#fin', node_type: 'charger', latitude: -33.48, longitude: -70.63, address: 'Estación', connector_types: 'CHAdeMO; CCS', max_power_kw: 50 }
+        { node_id: 'C#fin', node_type: 'charger', latitude: -33.48, longitude: -70.63, address: 'Estación', connector_types: ['CHAdeMO', 'CCS'], max_power_kw: 50 }
       ],
       fleet: [{ id: 'vehicle|1', type: 'Leaf', label: 'Vehículo uno', battery_capacity_kwh: 20, reserve_kwh: 2, initial_soc: 0.6 }],
       routes: [{
@@ -39,8 +40,8 @@ function response() {
       runtime_seconds: { preparation: 0.5, solver: 2.5, total: 3.1 },
       assumptions: ['Capacidad útil configurada: 20 kWh.'],
       network: { type: 'osm', road: true },
-      metadata: { provider: 'evrp', provider_commit: 'f88d012', input_hash: 'input', config_hash: 'config', network_hash: 'network' },
-      raw: { input: {}, prepared: {}, effective_config: {}, result: {} }
+      metadata: { provider: 'ev_routing', provider_commit: 'f88d012', input_hash: 'input', config_hash: 'config', network_hash: 'network' },
+      raw: { input: {}, instance: {}, effective_config: {}, result: {} }
     }
   };
 }
@@ -213,3 +214,42 @@ for (const [name, mutate, field] of [
     assert.throws(() => adaptSolverResponse(envelope), field);
   });
 }
+
+
+test('native junctions and missing paired coordinates remain in the list without fake map points', () => {
+  const envelope = response();
+  envelope.result.nodes[0].latitude = null; envelope.result.nodes[0].longitude = null;
+  envelope.result.nodes.push({node_id: 'J', node_type: 'junction', latitude: null, longitude: null, connector_types: []});
+  const data = adaptSolverResponse(envelope);
+  assert.equal(data.NODES[0].lat, null);
+  assert.equal(data.NODES[0].lng, null);
+  assert.equal(data.NODES.at(-1).type, 'junction');
+});
+
+test('no incumbent preserves unknown delivery, energy and feasibility instead of fabricated zero', () => {
+  for (const status of ['no_solution', 'unavailable', 'error']) {
+    const envelope = response();
+    Object.assign(envelope.result, {status, has_solution: false, routes: [], served_count: null, unserved_visit_ids: [], total_energy_kwh: null});
+    envelope.result.validation.feasible = null;
+    const {RUN_INFO, ROUTES} = adaptSolverResponse(envelope);
+    assert.equal(RUN_INFO.hasSolution, false);
+    assert.equal(RUN_INFO.servedCount, null);
+    assert.equal(RUN_INFO.totalVisits, 2);
+    assert.equal(RUN_INFO.feasible, null);
+    assert.deepEqual(ROUTES, []);
+  }
+});
+
+test('a no-solution envelope cannot also claim deliveries or feasibility', () => {
+  const envelope = response();
+  Object.assign(envelope.result, {status: 'no_solution', has_solution: false, routes: [], served_count: null, unserved_visit_ids: []});
+  assert.throws(() => adaptSolverResponse(envelope), /sin solución|has_solution/);
+});
+
+test('native phase certificates preserve per-phase bounds and never combine gaps', () => {
+  const envelope = response();
+  envelope.result.phases = [{name: 'deliveries', sense: 'maximize', status: 'ok', termination_condition: 'timelimit', has_solution: true, proven_optimal: false, incumbent: 1, best_bound: 2, absolute_gap: 1, relative_gap: .5, runtime_seconds: 2}];
+  assert.deepEqual(adaptSolverResponse(envelope).RUN_INFO.phases, envelope.result.phases);
+  envelope.result.phases[0].best_bound = Infinity;
+  assert.throws(() => adaptSolverResponse(envelope), /phases/);
+});

@@ -118,6 +118,7 @@ body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; color
   background:var(--zmd-warn-bg,#fff8e6); color:var(--zmd-warn-ink,#73541b);
   border-color:var(--zmd-warn-line,#e5d6b0); line-height:1.5;
 }
+.zmd-pin.type-junction { width:16px; height:16px; background:#576b7e; font-size:14px; }
 @media(forced-colors:active) {
   .sidebar > .map-status-inline { background:Canvas; color:CanvasText; border-color:CanvasText; }
 }
