@@ -7,10 +7,11 @@ from pathlib import Path
 from time import monotonic
 from typing import Literal
 
-from pydantic import Field
+from pydantic import Field, StrictBool, StrictFloat, StrictInt, StrictStr
 
 from ev_routing.contracts import Contract
 from ev_routing.search_policy import SearchConfig
+from ev_routing.scip_tuning import parameter_catalog, validate_parameters
 
 
 class RoutePolicy(Contract):
@@ -19,10 +20,22 @@ class RoutePolicy(Contract):
     max_subset_rows: int = Field(default=100, ge=0, le=1000, strict=True)
     subtour_batch_size: int = Field(default=100, ge=1, le=1000, strict=True)
     branching: Literal["relpscost", "mostinf"] = "relpscost"
+    heuristics: Literal["default", "fast", "aggressive", "off"] = "default"
+    presolve: Literal["default", "fast", "aggressive", "off"] = "default"
+    separation: Literal["default", "fast", "aggressive", "off"] = "default"
+    scip_parameters: dict[str, StrictBool | StrictInt | StrictFloat | StrictStr] = Field(
+        default_factory=dict, max_length=2500,
+    )
+    seed_strategy: Literal["none", "cheapest_insertion", "regret_insertion"] = "cheapest_insertion"
+    seed_starts: int = Field(default=1, ge=1, le=32, strict=True)
+    pricing_strategy: Literal["exhaustive", "heuristic_then_exact"] = "exhaustive"
+    pricing_search: Literal["breadth_first", "depth_first"] = "breadth_first"
+    pricing_heuristic_starts: int = Field(default=4, ge=1, le=32, strict=True)
+    dominance: Literal["convex", "vertices_only"] = "convex"
     rationale: str = Field(default="", max_length=1500)
 
 
-ROUTE_PROMPT = """Select one strategic search policy before an H-free electric
+ROUTE_PROMPT = """Select a substantive, coherent search configuration before an H-free electric
 vehicle routing solve. Return ONLY a JSON object with VALUES allowed by the schema.
 Do not include introductory or concluding prose, comments, schema or markdown.
 Example: {"route_cuts":"subset_row_triples","columns_per_round":50,
@@ -32,8 +45,25 @@ The exact model selects physically feasible complete routes, with binary custome
 assignments and continuous route weights. Pricing retains partial charging,
 regeneration saturation and time windows. Subset-row triple inequalities are valid
 and every future column receives its coefficient. More cuts may make pricing costly.
-The certified single-tour reduction, when applicable, uses directed arc variables
-and subtour inequalities. There only subtour_batch_size and branching are applicable.
+The native_scip_catalog lists actual installed parameters and their defaults. Use
+scip_parameters to set any listed knob, with its native bool/int/float/string type.
+Address LP strategy, primal heuristics, branching, node selection and, when unlocked,
+presolve and separation. Presets may change many native parameters at once.
+Do not copy all defaults or make arbitrary changes merely to increase their count:
+explain a falsifiable strategy, emphasizing the actual bottleneck.
+The certified single-tour reduction uses directed arc variables and subtour inequalities.
+The general master relies on a Python continuous-resource route pricer: it can be
+starved of useful long routes by breadth-first enumeration, while SCIP stays at
+the root. More native cuts or different branching cannot fix that alone.
+seed_strategy constructs independently validated no-charge incumbents when supported;
+regret_insertion and more seed_starts diversify whole-fleet starting routes.
+heuristic_then_exact first tries dual-guided feasible routes, then retains the exact
+oracle as a fallback. It never certifies lack of columns from a heuristic failure.
+pricing_search changes traversal order only; vertices_only uses conservative
+dominance and may retain extra labels. More subset-row cuts add work to pricing.
+The implementation enables these heuristics only for nonnegative untimed cases;
+all other resources, charging and revisits remain handled by exact pricing.
+Budget allocation is fixed by the caller, including heuristic and inference time.
 Do not change data, resources, formulation, objectives, budgets or proof criteria.
 Do not output code. The solver, never the LLM, proves optimality or complete pricing.
 This is one strategic call shared by both lexicographic phases, not a pricing callback.
@@ -79,6 +109,9 @@ def choose_route_policy(config: SearchConfig, profile: dict, deadline: float, pr
         "event": "before_decomposition", "phase": "both_lexicographic_phases",
         "structure": profile, "allowed_policy_schema": RoutePolicy.model_json_schema(),
         "current_policy": policy.model_dump(),
+        "native_scip_catalog": parameter_catalog(bool(
+            profile.get("single_tour_certificate", {}).get("applicable")
+        )),
     }
     before = policy.model_dump()
     if config.show_llm_trace:
@@ -96,6 +129,9 @@ def choose_route_policy(config: SearchConfig, profile: dict, deadline: float, pr
         response = provider(request)
         record["usage"] = response.get("usage")
         proposal = RoutePolicy.model_validate(response["policy"])
+        proposal.scip_parameters = validate_parameters(proposal.scip_parameters, bool(
+            profile.get("single_tour_certificate", {}).get("applicable")
+        ))
         policy = proposal
         record.update(status="applied", proposal=policy.model_dump())
         report.update(status="adaptive", applied_decisions=1)
