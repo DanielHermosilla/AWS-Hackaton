@@ -1,15 +1,13 @@
 // Local presentation preferences and Plan navigation context only.
 // There is no account, permission, billing or solver state in this module.
 export const PREFERENCE_STORAGE_KEY = 'zmd.webapp.presentation.v1';
-// Theme chosen in the former console exploration; read once for migration.
-const legacyThemeKey = 'zmd.homepage.console-theme.v1';
 const contextKey = 'zmd.webapp.plan.v1';
 
 export const PREFERENCES_EVENT = 'zmd:preferences-changed';
 export const DEFAULT_ORGANIZATION_NAME = 'Mi organización';
 export const ORGANIZATION_NAME_MAX = 60;
 export const DEFAULT_PREFERENCES = Object.freeze({
-  theme: 'dark',
+  theme: 'light',
   solidSurfaces: false,
   reducedMotion: false,
   organizationName: DEFAULT_ORGANIZATION_NAME
@@ -20,6 +18,8 @@ const themes = new Set(['light', 'dark']);
 const unsafeCharacters = /[\u0000-\u001f\u007f-\u009f\u00ad\u200b-\u200f\u2028-\u202e\u2060-\u2069\ufeff]/g;
 const osReducedMotion = typeof matchMedia === 'function' ? matchMedia('(prefers-reduced-motion: reduce)') : null;
 
+// Theme belongs to this document. A reload or navigation starts light again.
+let pageTheme = DEFAULT_PREFERENCES.theme;
 // Used only when the browser refuses storage, so the current page keeps working.
 let unsavedPreferences = null;
 let contextInMemory = null;
@@ -44,39 +44,28 @@ export function normalizePreferences(raw) {
   };
 }
 
-function readLegacyTheme() {
-  try {
-    const value = localStorage.getItem(legacyThemeKey);
-    return themes.has(value) ? value : null;
-  } catch {
-    return null;
-  }
-}
-
 export function readPreferences() {
-  if (unsavedPreferences) return { ...unsavedPreferences };
-  let saved = null;
-  try {
-    saved = JSON.parse(localStorage.getItem(PREFERENCE_STORAGE_KEY));
-  } catch {
-    saved = null;
+  let saved = unsavedPreferences;
+  if (!saved) {
+    try {
+      saved = JSON.parse(localStorage.getItem(PREFERENCE_STORAGE_KEY));
+    } catch {
+      saved = null;
+    }
   }
   const stored = saved && typeof saved === 'object' ? saved : {};
-  return normalizePreferences({
-    ...stored,
-    theme: themes.has(stored.theme) ? stored.theme : readLegacyTheme() || DEFAULT_PREFERENCES.theme
-  });
+  return normalizePreferences({ ...stored, theme: pageTheme });
 }
 
 export function savePreferences(preferences) {
-  const normalized = normalizePreferences(preferences);
+  const { theme, ...persistent } = normalizePreferences(preferences);
+  pageTheme = theme;
   try {
-    localStorage.setItem(PREFERENCE_STORAGE_KEY, JSON.stringify(normalized));
+    localStorage.setItem(PREFERENCE_STORAGE_KEY, JSON.stringify(persistent));
     unsavedPreferences = null;
-    try { localStorage.removeItem(legacyThemeKey); } catch { /* Migration already stored. */ }
     return true;
   } catch {
-    unsavedPreferences = normalized;
+    unsavedPreferences = persistent;
     return false;
   }
 }
@@ -84,6 +73,7 @@ export function savePreferences(preferences) {
 /** Reflect preferences on <html> and notify listeners on this page. */
 export function applyPreferences(preferences, { notify = true } = {}) {
   const normalized = normalizePreferences(preferences);
+  pageTheme = normalized.theme;
   const root = document.documentElement;
   root.dataset.theme = normalized.theme;
   root.dataset.solidSurfaces = String(normalized.solidSurfaces);
@@ -94,7 +84,7 @@ export function applyPreferences(preferences, { notify = true } = {}) {
   return normalized;
 }
 
-/** Merge, persist (when allowed) and apply immediately. */
+/** Merge, persist non-theme preferences (when allowed) and apply immediately. */
 export function updatePreferences(patch) {
   const preferences = normalizePreferences({ ...readPreferences(), ...patch });
   const saved = savePreferences(preferences);

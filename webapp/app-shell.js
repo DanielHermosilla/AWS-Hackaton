@@ -51,7 +51,7 @@ export function initShell(page) {
       <a class="zmd-brand topbar-brand" href="${home}" aria-label="ZMD Mobility, inicio"><img id="brand-logo" class="zmd-brand__logo" src="${ZMD_BRAND.logo}" width="272" height="64" alt=""></a>
       <div class="topbar-end top-actions">
         <button id="data-badge" class="data-badge" type="button" aria-label="Datos de ejemplo" aria-haspopup="dialog" aria-controls="about-dialog"><span id="about" class="data-badge__icon" aria-hidden="true">${icon('info', 15)}</span><span class="data-badge__full" aria-hidden="true">Datos de ejemplo</span><span class="data-badge__short" aria-hidden="true">Ejemplo</span></button>
-        <button id="theme-toggle" class="icon-button theme-toggle" type="button" aria-label="Tema oscuro" aria-pressed="true"><span class="theme-toggle__icon" data-theme-icon="light" hidden>${sunIcon}</span><span class="theme-toggle__icon" data-theme-icon="dark">${moonIcon}</span></button>
+        <button id="theme-toggle" class="icon-button theme-toggle" type="button" aria-label="Tema oscuro" aria-pressed="false"><span class="theme-toggle__icon" data-theme-icon="light">${sunIcon}</span><span class="theme-toggle__icon" data-theme-icon="dark" hidden>${moonIcon}</span></button>
         ${page === 'home' ? `<a id="continue-plan" class="continue-plan" href="${planHref}" aria-describedby="continue-plan-description">${continueLabel}</a><span id="continue-plan-description" class="sr-only"></span>` : ''}
       </div>
     </header>
@@ -78,11 +78,11 @@ export function initShell(page) {
     <dialog id="nav-drawer" aria-label="Navegación de la aplicación"></dialog>
     <dialog id="settings-dialog" class="app-dialog settings-dialog" aria-labelledby="settings-heading">
       <div class="dialog-heading"><h2 id="settings-heading">Ajustes</h2><button id="close-settings" class="icon-button" type="button" aria-label="Cerrar ajustes">${icon('close', 18)}</button></div>
-      <p class="settings-intro">Los cambios se aplican de inmediato y se guardan solo en este navegador.</p>
+      <p class="settings-intro">El tema se aplica solo a esta página, que siempre inicia en claro. Los demás ajustes se guardan en este navegador.</p>
       <section class="settings-section" aria-labelledby="appearance-heading">
         <h3 id="appearance-heading">Apariencia</h3>
         <fieldset class="theme-choice">
-          <legend>Tema</legend>
+          <legend>Tema de esta página</legend>
           <label class="theme-option"><input type="radio" name="theme-choice" value="light">${sunIcon}<span>Claro</span></label>
           <label class="theme-option"><input type="radio" name="theme-choice" value="dark">${moonIcon}<span>Oscuro</span></label>
         </fieldset>
@@ -158,7 +158,7 @@ export function initShell(page) {
 
   function setStatus(saved) {
     $('preference-status').textContent = saved
-      ? 'Ajustes guardados en este navegador.'
+      ? 'Ajustes aplicados. El tema vuelve a claro al cargar otra página.'
       : 'Aplicado en esta pestaña. El navegador no permite guardar los ajustes.';
   }
 
@@ -170,7 +170,7 @@ export function initShell(page) {
   }
 
   render();
-  $('preference-status').textContent = 'Los cambios se guardan en este navegador.';
+  $('preference-status').textContent = 'Los cambios se aplican de inmediato.';
   osMotion.addEventListener('change', updateMotionNote);
   // Keep other open tabs of this app in step.
   addEventListener('storage', event => {

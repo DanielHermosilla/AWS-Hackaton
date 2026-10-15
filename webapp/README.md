@@ -53,7 +53,7 @@ Usa HTTP: los módulos JavaScript y el mapa no funcionan abriendo el HTML como a
 - La etiqueta «Datos de ejemplo» abre el origen de los datos.
 - Navegación Inicio/Plan en barra lateral; en móvil, en un cajón.
 - Perfil local Diego Caballero (DC), sin cuenta ni sesión remota. Su menú abre los Ajustes (tema, superficies sólidas, movimiento reducido y nombre de la organización) y «Cerrar plan», que borra la selección guardada y conserva los ajustes.
-- El tema es oscuro por defecto. Las preferencias se guardan en `localStorage` de este navegador, se aplican al instante y `theme.js` las aplica antes de pintar la página.
+- Cada documento inicia en tema claro, también al recargar o navegar entre Inicio y Plan, aunque el sistema o una preferencia antigua indiquen oscuro. El interruptor permite cambiar el tema durante la página abierta; esa elección queda solo en memoria. El nombre de organización, las superficies sólidas y el movimiento reducido siguen guardándose en `localStorage`. El HTML y `theme.js` establecen el tema claro antes de pintar.
 - La selección del Plan (vehículo, pestaña, parada y estaciones visibles) se guarda en `sessionStorage` de la pestaña y también se refleja en la URL del Plan.
 - Se respetan el movimiento reducido del sistema y el del ajuste, el alto contraste y los colores forzados.
 
