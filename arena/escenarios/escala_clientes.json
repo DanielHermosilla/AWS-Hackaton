@@ -1,0 +1,31 @@
+{
+  "nombre": "escala_clientes",
+  "descripcion": "Escalamiento en numero de clientes: subconjuntos de competition (1,2,3,5,10,20) y sinteticas (40,60,80,100). ev_routing escala mal con H grande; se registra lo que logre.",
+  "instancias": [
+    {"nombre": "comp_c1", "csv": "data/competition_routing_nodes.csv", "max_clientes": 1},
+    {"nombre": "comp_c2", "csv": "data/competition_routing_nodes.csv", "max_clientes": 2},
+    {"nombre": "comp_c3", "csv": "data/competition_routing_nodes.csv", "max_clientes": 3},
+    {"nombre": "comp_c5", "csv": "data/competition_routing_nodes.csv", "max_clientes": 5},
+    {"nombre": "comp_c10", "csv": "data/competition_routing_nodes.csv", "max_clientes": 10},
+    {"nombre": "comp_c20", "csv": "data/competition_routing_nodes.csv", "max_clientes": 20},
+    {"nombre": "sint_c40", "sintetica": {"clientes": 40, "semilla": 1, "referencia_csv": "data/competition_routing_nodes.csv"}},
+    {"nombre": "sint_c60", "sintetica": {"clientes": 60, "semilla": 1, "referencia_csv": "data/competition_routing_nodes.csv"}},
+    {"nombre": "sint_c80", "sintetica": {"clientes": 80, "semilla": 1, "referencia_csv": "data/competition_routing_nodes.csv"}},
+    {"nombre": "sint_c100", "sintetica": {"clientes": 100, "semilla": 1, "referencia_csv": "data/competition_routing_nodes.csv"}}
+  ],
+  "supuestos": {
+    "perfil": "ev_routing",
+    "red": "osm",
+    "pendiente": false
+  },
+  "flota": {"vehiculos": 2},
+  "motores": ["evrp", "ev_routing"],
+  "solvers": [],
+  "presupuesto_s": 120,
+  "hilos": 1,
+  "repeticiones": 1,
+  "opciones_motor": {
+    "ev_routing": {"movement_limit": 10, "solver_pyomo": "appsi_highs", "max_snap_distance_m": 500.0},
+    "evrp": {"formulacion": "compacta"}
+  }
+}

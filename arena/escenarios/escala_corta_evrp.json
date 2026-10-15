@@ -1,0 +1,16 @@
+{
+  "nombre": "escala_corta_evrp",
+  "descripcion": "Version corta solo evrp a mayor escala: 20 clientes de competition y 40 sinteticos.",
+  "instancias": [
+    {"nombre": "comp_c20", "csv": "data/competition_routing_nodes.csv", "max_clientes": 20},
+    {"nombre": "sint_c40", "sintetica": {"clientes": 40, "semilla": 1, "referencia_csv": "data/competition_routing_nodes.csv"}}
+  ],
+  "supuestos": {"perfil": "ev_routing", "red": "osm", "pendiente": false},
+  "flota": {"vehiculos": 2},
+  "motores": ["evrp"],
+  "solvers": [],
+  "presupuesto_s": 120,
+  "hilos": 1,
+  "repeticiones": 1,
+  "opciones_motor": {"evrp": {"formulacion": "compacta"}}
+}

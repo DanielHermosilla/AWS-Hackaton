@@ -1,0 +1,16 @@
+{
+  "nombre": "flota_evrp",
+  "descripcion": "Barrido de flota 2..5 solo evrp sobre 5 clientes de competition (rapido).",
+  "instancias": [
+    {"nombre": "comp_c5", "csv": "data/competition_routing_nodes.csv", "max_clientes": 5}
+  ],
+  "supuestos": {"perfil": "ev_routing", "red": "osm", "pendiente": false},
+  "flota": {"vehiculos": 2},
+  "flota_barrido": [2, 3, 4, 5],
+  "motores": ["evrp"],
+  "solvers": [],
+  "presupuesto_s": 60,
+  "hilos": 1,
+  "repeticiones": 1,
+  "opciones_motor": {"evrp": {"formulacion": "compacta"}}
+}
