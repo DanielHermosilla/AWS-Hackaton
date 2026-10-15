@@ -18,6 +18,7 @@ export async function createMap(container, options = {}) {
   status.className = 'map-status';
   status.setAttribute('role', 'status');
   let map, ready = false, vehicleId = null, planVisible = options.showRoutes !== false;
+  let cartographyFailed = false;
   let chargersVisible = false, selectedId = null, cameraMode = 'fit';
   const markers = [];
   const noop = () => {};
@@ -35,6 +36,12 @@ export async function createMap(container, options = {}) {
     const shown = vehicleId ? ROUTES.filter(route => route.vehicleId === vehicleId) : ROUTES;
     return shown.some(route => route.active && !route.geometry)
       ? 'Sin geometría para parte del recorrido. Se muestran las paradas; no se reconstruyen calles.' : '';
+  };
+  const renderStatus = () => {
+    status.textContent = [
+      cartographyFailed ? 'No se pudo cargar parte de la cartografía. Las paradas siguen disponibles.' : '',
+      ready ? geometryMessage() : ''
+    ].filter(Boolean).join(' ');
   };
   let observer;
   try {
@@ -58,10 +65,11 @@ export async function createMap(container, options = {}) {
   map.addControl(new maplibre.NavigationControl({showCompass:false}), 'bottom-right');
   map.addControl(new maplibre.ScaleControl({unit:'metric'}), 'bottom-left');
   const timer = setTimeout(() => {
-    if (!ready) status.textContent = 'La cartografía está tardando en cargar. La lista de paradas sigue disponible.';
+    if (!ready && !cartographyFailed) status.textContent = 'La cartografía está tardando en cargar. La lista de paradas sigue disponible.';
   }, 12000);
   map.on('error', () => {
-    status.textContent = 'No se pudo cargar parte de la cartografía. Las paradas siguen disponibles.';
+    cartographyFailed = true;
+    renderStatus();
   });
   function fit(animate = true) {
     cameraMode = 'fit';
@@ -131,7 +139,7 @@ export async function createMap(container, options = {}) {
   map.on('load', () => {
     ready = true;
     clearTimeout(timer);
-    status.textContent = geometryMessage();
+    renderStatus();
     for (const { route, sourceId } of mapRoutes) {
       map.addSource(sourceId, {type:'geojson', data:{type:'Feature', properties:{}, geometry:route.geometry}});
       const color = VEHICLES.find(v => v.id === route.vehicleId).color;
@@ -173,13 +181,13 @@ export async function createMap(container, options = {}) {
   return {
     selectVehicle(id, refit = true) {
       vehicleId = id; selectedId = null; update();
-      if (ready) status.textContent = geometryMessage();
+      if (ready) renderStatus();
       if (refit) fit();
     },
     selectNode,
     fit,
     toggleChargers(value) {chargersVisible = !!value; update();},
-    setPlanVisible(value) {planVisible = !!value; update(); if (ready) status.textContent = geometryMessage();},
+    setPlanVisible(value) {planVisible = !!value; update(); if (ready) renderStatus();},
     getView() {
       const center = map.getCenter();
       return { center:[center.lng,center.lat], zoom:map.getZoom(), padding:map.getPadding(), mode:cameraMode };
