@@ -1,0 +1,109 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "arena/esquema_escenario.json",
+  "title": "Escenario de arena E-VRP",
+  "description": "Define instancias, supuestos físicos, flota, motores y solvers a comparar de forma neutral. Las rutas producidas por cualquier motor se revalidan con el validador neutral de la arena.",
+  "type": "object",
+  "required": ["nombre", "instancias", "supuestos", "motores"],
+  "additionalProperties": false,
+  "properties": {
+    "nombre": {"type": "string", "description": "Nombre del escenario (usado en los nombres de salida)."},
+    "descripcion": {"type": "string"},
+    "instancias": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Lista de instancias a resolver. Cada una es un CSV, un subconjunto de un CSV, o una instancia sintetica reproducible.",
+      "items": {
+        "type": "object",
+        "required": ["nombre"],
+        "additionalProperties": false,
+        "properties": {
+          "nombre": {"type": "string"},
+          "csv": {"type": "string", "description": "Ruta a un CSV de nodos en formato oficial."},
+          "clientes_ids": {
+            "type": "array", "items": {"type": "string"},
+            "description": "Subconjunto de node_id de clientes (visit) a conservar del CSV. El resto (base + cargadores) se mantiene."
+          },
+          "max_clientes": {"type": "integer", "minimum": 1, "description": "Alternativa a clientes_ids: toma los primeros N clientes del CSV."},
+          "sintetica": {
+            "type": "object",
+            "required": ["clientes"],
+            "additionalProperties": false,
+            "properties": {
+              "clientes": {"type": "integer", "minimum": 1},
+              "semilla": {"type": "integer", "default": 0},
+              "referencia_csv": {"type": "string", "description": "CSV de referencia para copiar base y cargadores reales."},
+              "cargadores": {"type": "integer", "minimum": 0, "description": "Numero de cargadores sinteticos; omitir para usar los de la referencia."}
+            }
+          }
+        }
+      }
+    },
+    "supuestos": {
+      "type": "object",
+      "description": "Supuestos fisicos comunes a todos los motores. Se mapean a cada API sin cambiar el problema.",
+      "additionalProperties": false,
+      "properties": {
+        "perfil": {"type": "string", "enum": ["eved", "ev_routing"], "description": "Perfil de supuestos de evrp; tambien fija los defaults equivalentes para ev_routing."},
+        "bateria_kwh": {"type": "number", "exclusiveMinimum": 0},
+        "reserva_kwh": {"type": "number", "minimum": 0},
+        "soc_inicial": {"type": "number", "exclusiveMinimum": 0, "maximum": 1},
+        "consumo_kwh_km": {"type": "number", "exclusiveMinimum": 0},
+        "conectores": {"type": "array", "items": {"type": "string"}},
+        "red": {"type": "string", "enum": ["osm", "haversine"], "default": "osm"},
+        "pendiente": {"type": "boolean", "default": false},
+        "max_acceso_m": {"type": ["number", "null"], "default": null}
+      }
+    },
+    "flota": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "vehiculos": {"type": "integer", "minimum": 1, "default": 2, "description": "Numero de vehiculos identicos (Nissan Leaf 2013)."}
+      }
+    },
+    "flota_barrido": {
+      "type": "array",
+      "items": {"type": "integer", "minimum": 1},
+      "description": "Opcional: barrido de tamanos de flota. El runner repite todas las instancias por cada valor y lo registra como columna 'vehiculos'."
+    },
+    "_nota_flota": {"type": "string"},
+    "motores": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"type": "string", "enum": ["evrp", "ev_routing"]},
+      "description": "Motores a ejecutar."
+    },
+    "solvers": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "Solvers para la competencia de MILP exportado (highs, scip, cbc). Vacio = no correr competencia de solvers."
+    },
+    "presupuesto_s": {"type": "number", "exclusiveMinimum": 0, "default": 60, "description": "Limite de tiempo por resolucion (blando)."},
+    "hilos": {"type": "integer", "minimum": 0, "default": 1, "description": "Hilos del solver (0 = por defecto del solver)."},
+    "repeticiones": {"type": "integer", "minimum": 1, "default": 1, "description": "Repeticiones por (motor, instancia) para medir variabilidad de tiempo."},
+    "opciones_motor": {
+      "type": "object",
+      "description": "Opciones especificas por motor.",
+      "additionalProperties": false,
+      "properties": {
+        "ev_routing": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "movement_limit": {"type": "integer", "minimum": 1, "default": 30, "description": "Cota H de movimientos del modelo del PDF."},
+            "solver_pyomo": {"type": "string", "enum": ["appsi_highs", "scip", "auto"], "default": "appsi_highs", "description": "Backend Pyomo a usar en el adaptador neutral."},
+            "max_snap_distance_m": {"type": "number", "default": 100.0}
+          }
+        },
+        "evrp": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "formulacion": {"type": "string", "enum": ["compacta", "completa"], "default": "compacta"}
+          }
+        }
+      }
+    }
+  }
+}

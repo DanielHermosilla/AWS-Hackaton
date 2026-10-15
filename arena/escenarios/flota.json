@@ -1,0 +1,24 @@
+{
+  "nombre": "flota",
+  "descripcion": "Variacion de tamano de flota (2..5 vehiculos) sobre una instancia fija de 5 clientes de competition.",
+  "instancias": [
+    {"nombre": "comp_c5", "csv": "data/competition_routing_nodes.csv", "max_clientes": 5}
+  ],
+  "supuestos": {
+    "perfil": "ev_routing",
+    "red": "osm",
+    "pendiente": false
+  },
+  "flota": {"vehiculos": 2},
+  "motores": ["evrp", "ev_routing"],
+  "solvers": [],
+  "presupuesto_s": 90,
+  "hilos": 1,
+  "repeticiones": 1,
+  "opciones_motor": {
+    "ev_routing": {"movement_limit": 10, "solver_pyomo": "appsi_highs", "max_snap_distance_m": 500.0},
+    "evrp": {"formulacion": "compacta"}
+  },
+  "_nota_flota": "El runner expande este escenario a vehiculos=2,3,4,5 mediante el campo 'flota_barrido'.",
+  "flota_barrido": [2, 3, 4, 5]
+}
