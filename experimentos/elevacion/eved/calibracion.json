@@ -1,0 +1,56 @@
+{
+  "n_viajes": 379,
+  "masa_kg": 1590.0,
+  "ajuste_global": {
+    "c_kwh_km": 0.11024963844033651,
+    "eta_traccion": 0.5001127000231006,
+    "eta_regeneracion": 0.9671000696863994,
+    "eta_traccion_crudo": 0.5001127000231006,
+    "eta_regeneracion_crudo": 0.9671000696863994,
+    "masa_kg": 1590.0,
+    "kappa": 0.004332750000000001,
+    "coef_nnls": [
+      0.11024963844033651,
+      0.008663547236052728,
+      0.004190202826933748
+    ],
+    "n_viajes": 379
+  },
+  "subida_m_mediana": 52.0,
+  "bajada_m_mediana": 52.3,
+  "split_70_30": {
+    "n_train": 265,
+    "n_test": 114,
+    "c_plano": 0.1541,
+    "ajuste_pendiente": {
+      "c_kwh_km": 0.10651709002762823,
+      "eta_traccion": 0.48821361154773907,
+      "eta_regeneracion": 0.935721847435496
+    },
+    "test_plano": {
+      "MAE_kwh": 0.2601,
+      "RMSE_kwh": 0.3828,
+      "MAPE_pct": 34.78
+    },
+    "test_pendiente": {
+      "MAE_kwh": 0.2341,
+      "RMSE_kwh": 0.362,
+      "MAPE_pct": 27.63
+    },
+    "mejora_MAE_pct": 10.0
+  },
+  "kfold_5": {
+    "k": 5,
+    "plano": {
+      "MAE_kwh": 0.2325,
+      "RMSE_kwh": 0.3425,
+      "MAPE_pct": 33.732
+    },
+    "pendiente": {
+      "MAE_kwh": 0.2095,
+      "RMSE_kwh": 0.3173,
+      "MAPE_pct": 26.646
+    },
+    "mejora_MAE_pct_media": 9.86
+  }
+}
