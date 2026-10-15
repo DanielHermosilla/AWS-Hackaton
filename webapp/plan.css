@@ -113,3 +113,11 @@ body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; color
 .unserved-group .stop-number { color:var(--zmd-muted,#617084); }
 .selection .stop-occurrence { font-size:10px; margin-top:12px; }
 .legend { max-width:calc(100% - 50px); flex-wrap:wrap; }
+.sidebar > .map-status-inline {
+  position:static; z-index:auto; flex-shrink:0; max-width:none; margin:0 22px 16px;
+  background:var(--zmd-warn-bg,#fff8e6); color:var(--zmd-warn-ink,#73541b);
+  border-color:var(--zmd-warn-line,#e5d6b0); line-height:1.5;
+}
+@media(forced-colors:active) {
+  .sidebar > .map-status-inline { background:Canvas; color:CanvasText; border-color:CanvasText; }
+}

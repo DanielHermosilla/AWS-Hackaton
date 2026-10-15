@@ -17,6 +17,13 @@ export async function createMap(container, options = {}) {
   const status = document.createElement('div');
   status.className = 'map-status';
   status.setAttribute('role', 'status');
+  const sidebarHeading = host.closest('.workspace')?.querySelector('.sidebar .scenario');
+  const placeStatus = () => {
+    if (sidebarHeading) {
+      status.classList.add('map-status-inline');
+      sidebarHeading.after(status);
+    } else host.append(status);
+  };
   let map, ready = false, vehicleId = null, planVisible = options.showRoutes !== false;
   let cartographyFailed = false;
   let chargersVisible = false, selectedId = null, cameraMode = 'fit';
@@ -24,7 +31,7 @@ export async function createMap(container, options = {}) {
   const noop = () => {};
   const unavailable = message => {
     host.parentElement.classList.add('map-unavailable');
-    host.append(status);
+    placeStatus();
     status.textContent = message;
     return {selectVehicle:noop,selectNode:noop,fit:noop,toggleChargers:noop,setPlanVisible:noop,getView:noop,restoreView:noop,destroy:noop};
   };
@@ -59,7 +66,7 @@ export async function createMap(container, options = {}) {
   } catch {
     return unavailable('Mapa no disponible en este navegador. Puedes explorar las paradas en la lista.');
   }
-  host.append(status);
+  placeStatus();
   status.textContent = 'Cargando cartografía…';
   const stopMotionListener = onReducedMotionChange(reduced => { if (reduced) map.stop(); });
   map.addControl(new maplibre.NavigationControl({showCompass:false}), 'bottom-right');
