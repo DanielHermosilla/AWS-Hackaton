@@ -35,16 +35,48 @@ class Resultado:
         return asdict(self)
 
 
+def _cfg(config, perfiles):
+    if isinstance(config, dict) or config is None:
+        return cfgmod.cargar(None, config, perfiles)
+    return cfgmod.cargar(config, None, perfiles)
+
+
+def preparar(nodos: str | Path, config: dict | str | Path | None = None,
+             perfiles: list[str] | None = None, geometria: bool = False):
+    """ETAPA 1 (preprocesamiento). Red vial + caminos de mínima energía entre nodos clave.
+
+    Devuelve `InstanciaPreparada` (guardar con `.guardar("x.json.gz")`, cargar con
+    `InstanciaPreparada.cargar(...)`). Usa de la config solo: pipeline.red, pipeline.energia,
+    red.* y el modelo de energía (consumo/masa/eficiencias) del primer tipo de vehículo.
+    """
+    from .preparacion import preparar_con_cfg
+
+    return preparar_con_cfg(str(nodos), _cfg(config, perfiles), geometria)
+
+
+def resolver_preparada(preparada, config: dict | str | Path | None = None,
+                       perfiles: list[str] | None = None, salida: str | Path | None = None,
+                       excluir: list[str] | None = None) -> Resultado:
+    """ETAPA 2 (solver). Resuelve una InstanciaPreparada (objeto o ruta .json/.json.gz).
+
+    Usa de la config: flota, tipos_vehiculo (batería, reserva, SoC, consumo), cargadores,
+    escala, solver, asesor. `excluir`: ids de nodos a ignorar sin volver a preparar.
+    """
+    from .pipeline import ejecutar
+    from .preparacion import InstanciaPreparada
+
+    prep = preparada if isinstance(preparada, InstanciaPreparada) else InstanciaPreparada.cargar(preparada)
+    r = ejecutar(None, _cfg(config, perfiles), salida, preparada=prep, excluir=excluir)
+    return Resultado(r["rutas"], r["rutas_indices"], r["kpis"], r["detalle"], r["bitacora"],
+                     r.get("explicacion"))
+
+
 def resolver(nodos: str | Path, config: dict | str | Path | None = None,
              perfiles: list[str] | None = None, salida: str | Path | None = None) -> Resultado:
-    """Resuelve un archivo de nodos. `config` puede ser un dict de sobrescritura o una ruta YAML."""
+    """Atajo: ETAPA 1 + ETAPA 2 en una llamada (equivale a preparar → resolver_preparada)."""
     from .pipeline import ejecutar
 
-    if isinstance(config, dict):
-        cfg = cfgmod.cargar(None, config, perfiles)
-    else:
-        cfg = cfgmod.cargar(config, None, perfiles)
-    r = ejecutar(str(nodos), cfg, salida)
+    r = ejecutar(str(nodos), _cfg(config, perfiles), salida)
     return Resultado(r["rutas"], r["rutas_indices"], r["kpis"], r["detalle"], r["bitacora"],
                      r.get("explicacion"))
 

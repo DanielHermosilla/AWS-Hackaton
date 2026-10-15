@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "evrp"
-version = "0.2.0"
+version = "0.3.0"
 description = "Motor E-VRP contraído (caminos de mínima energía + MILP HiGHS) y arena de comparación."
 requires-python = ">=3.12,<3.14"
 dependencies = [

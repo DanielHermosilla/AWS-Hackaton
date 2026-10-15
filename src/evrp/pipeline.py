@@ -43,11 +43,41 @@ def _rutas_por_vehiculo(inst, sol) -> tuple[dict[str, list[str]], dict[str, str]
     return rutas, tipo_de
 
 
-def ejecutar(ruta_nodos: str, cfg: dict, salida: str | Path | None = "results") -> dict:
+def _verificar_compatibilidad(preparada, energia) -> None:
+    """Los caminos se eligieron con un modelo de energía; resolver con otro distinto en
+    pendiente/eficiencias haría que los caminos ya no sean los de mínima energía."""
+    e = preparada.energia_caminos
+    if bool(e.get("usar_pendiente")) != bool(energia.usar_pendiente):
+        raise ValueError("La instancia se preparó con pipeline.energia="
+                         f"{'pendiente' if e.get('usar_pendiente') else 'plano'}; use la misma al resolver "
+                         "o vuelva a preparar")
+    if energia.usar_pendiente:
+        for k in ("eta_traccion", "eta_regeneracion", "masa_kg"):
+            if abs(float(e[k]) - float(getattr(energia, k))) > 1e-9:
+                raise ValueError(f"{k} distinto al de la preparación; vuelva a preparar")
+    # Con terreno plano el camino de mínima energía es el de menor km para cualquier consumo:
+    # cambiar consumo_kwh_km al resolver es válido.
+
+
+def ejecutar(ruta_nodos: str | None, cfg: dict, salida: str | Path | None = "results",
+             preparada=None, excluir: list[str] | None = None) -> dict:
+    """Pipeline completo. Si `preparada` (InstanciaPreparada) viene dada, se omite la etapa de
+    red (preprocesamiento) y solo se resuelve. `excluir`: ids de nodos a ignorar (p.ej. un
+    cargador fuera de servicio o un cliente cancelado) sin volver a preparar."""
     bit = Bitacora()
     asesor = crear_asesor(cfg)
-    nodos = cargar_nodos(ruta_nodos)
-    bit.paso("datos", nodos=len(nodos), archivo=str(ruta_nodos))
+    if preparada is not None:
+        nodos = list(preparada.nodos)
+        bit.paso("datos", nodos=len(nodos), archivo=preparada.origen.get("archivo"), preparada=True)
+    else:
+        nodos = cargar_nodos(ruta_nodos)
+        bit.paso("datos", nodos=len(nodos), archivo=str(ruta_nodos))
+    if excluir:
+        quitar = set(excluir)
+        if any(n.tipo == "base" and n.id in quitar for n in nodos):
+            raise ValueError("No se puede excluir la base")
+        nodos = [n for n in nodos if n.id not in quitar]
+        bit.paso("excluir", nodos=sorted(quitar))
 
     if cfg["asesor"].get("sugerir_config"):
         resumen = {"clientes": sum(n.tipo == "cliente" for n in nodos),
@@ -58,21 +88,26 @@ def ejecutar(ruta_nodos: str, cfg: dict, salida: str | Path | None = "results") 
             cfg = validar_cfg(fusionar(cfg, ajustes))
         bit.paso("asesor_config", ajustes=ajustes)
 
-    red = crear_red(cfg)
-    energia_ref = None
     from .instancia import tipos_desde_config
     energia_ref = tipos_desde_config(cfg)[0].energia
-    try:
+    if preparada is not None:
+        _verificar_compatibilidad(preparada, energia_ref)
+        red = preparada.a_red()
         red.preparar(nodos, energia_ref)
-    except Exception as exc:
-        if cfg["pipeline"]["red"] == "osm" and cfg["red"].get("respaldo_linea_recta"):
-            log.warning("Red OSM no disponible (%s); se usa haversine", exc)
-            bit.paso("red_respaldo", motivo=str(exc)[:200])
-            red = RedHaversine(cfg["red"]["factor_vial"])
+        bit.paso("red", tipo=red.nombre, preparada=True, tiempos_preparacion=preparada.red.get("tiempos"))
+    else:
+        red = crear_red(cfg)
+        try:
             red.preparar(nodos, energia_ref)
-        else:
-            raise
-    bit.paso("red", tipo=red.nombre, tiempos=getattr(red, "tiempos", None))
+        except Exception as exc:
+            if cfg["pipeline"]["red"] == "osm" and cfg["red"].get("respaldo_linea_recta"):
+                log.warning("Red OSM no disponible (%s); se usa haversine", exc)
+                bit.paso("red_respaldo", motivo=str(exc)[:200])
+                red = RedHaversine(cfg["red"]["factor_vial"])
+                red.preparar(nodos, energia_ref)
+            else:
+                raise
+        bit.paso("red", tipo=red.nombre, tiempos=getattr(red, "tiempos", None))
 
     # Escala: k-vecinos "auto" = exacto (0) hasta umbral_exacto clientes; si no, k_auto.
     esc = dict(cfg.get("escala", {}))
