@@ -1,0 +1,24 @@
+{
+  "fuente": "usgs",
+  "nodos": 9688,
+  "directos": 9688,
+  "cobertura_directa": 1.0,
+  "interpolados": 0,
+  "resolucion_grados": 9.259259259259259e-05,
+  "resolucion_m_aprox": 10.3,
+  "bbox": [
+    -83.95997,
+    42.16003,
+    -83.54047,
+    42.38995
+  ],
+  "raster_px": [
+    4531,
+    2483
+  ],
+  "bytes_descargados": 48507504,
+  "desde_cache": false,
+  "altura_min_m": 209.7,
+  "altura_max_m": 322.1,
+  "segundos": 18.0
+}
