@@ -34,7 +34,9 @@ def run_instance(
     # derivado de codex/optimizacion-contraida. No aceptar sus arcos agregados
     # sin la expansión/validación que esa representación necesita.
     representation = instance.provenance.get("representation", {})
-    if isinstance(representation, dict) and representation.get("kind") == "service_paths_nonnegative":
+    if representation == "service_paths_nonnegative" or (
+        isinstance(representation, dict) and representation.get("kind") == "service_paths_nonnegative"
+    ):
         raise ValueError("Esta integración requiere arcos elementales; no admite service_paths_nonnegative")
     initial_checking = time.perf_counter()
     if initial_solution is not None:

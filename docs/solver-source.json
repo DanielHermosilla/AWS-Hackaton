@@ -147,7 +147,7 @@
     },
     "src/ev_routing/pipeline.py": {
       "upstream_blob": "cc4ed958231a3487f425fbf82cceb7b9d29d7787",
-      "import_sha256": "27e1c33c88b3cf276b698f5764c8fc3bb537492aff918f5d48c5447973e79f1a",
+      "import_sha256": "e20c3a4de5915b8ca66fce445f72c9923dc3fcdd7260e75b2870da44309dba80",
       "modified": true
     },
     "src/ev_routing/route_heuristics.py": {

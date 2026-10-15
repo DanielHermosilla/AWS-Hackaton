@@ -39,9 +39,12 @@ def test_native_examples_preserve_data_and_report_physical_results(name, deliver
     assert not any(name == "evrp" or name.startswith("evrp.") for name in sys.modules)
 
 
-def test_excluded_representation_is_rejected_before_solver(monkeypatch):
+@pytest.mark.parametrize("representation", [
+    {"kind": "service_paths_nonnegative"}, "service_paths_nonnegative",
+])
+def test_excluded_representation_is_rejected_before_solver(monkeypatch, representation):
     instance = load_instance(EXAMPLES / "toy_recharge.json")
-    instance.provenance["representation"] = {"kind": "service_paths_nonnegative"}
+    instance.provenance["representation"] = representation
     monkeypatch.setattr(pipeline, "solve_instance", lambda *a, **kw: pytest.fail("solver called"))
     with pytest.raises(ValueError, match="arcos elementales"):
         pipeline.run_instance(instance)
