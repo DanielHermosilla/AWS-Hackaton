@@ -16,6 +16,7 @@ Pyomo/Gurobi/SCIP y GCG posicional se conservan como referencias explícitas.
 | `src/ev_routing/energy.py` | `integrate_eved_csv`, `fit_distance_rate`: integra energía y estima kWh/km. |
 | `src/ev_routing/network.py` | `build_osm_instance`, `build_instance_from_graph`: calles y accesos de servicio. |
 | `src/ev_routing/service_graph.py` | `build_service_graph`: Dijkstra de SciPy/CSR entre servicios; `expand_and_validate`: auditoría de las calles originales. |
+| `src/ev_routing/simulation.py` | Añade clientes sintéticos reproducibles en nodos viales conectados al depósito, preservando la red, energía y servicios originales. |
 | `src/ev_routing/heuristics.py` | `analyze_horizon`, `build_initial_solution`, `build_greedy_start`: certificado de H cuando aplica e incumbentes validados, sin MILP. |
 | `src/ev_routing/operations.py` | Margen de energía, tiempos y calendario más temprano de rutas fijas. |
 | `src/ev_routing/model.py` | `build_model`, `activate_energy_phase`, `extract_solution`: ecuaciones del PDF. |
@@ -37,7 +38,7 @@ Pyomo/Gurobi/SCIP y GCG posicional se conservan como referencias explícitas.
 | `scripts/prepare_hackathon.sh` | Prepara los datos completos; conserva el error original y no lanza el solver. |
 | `scripts/run_pptx.sh` | Ejecuta todos los servicios con caminos precalculados; dos fases y auditoría vial. |
 | `scripts/benchmark_dw.sh` | Benchmark sin H: estándar, determinista y adaptativo mediante Bedrock. |
-| `scripts/test_20_clients.sh`, `scripts/test_routing_verbose.py` | Corrida 20/60 con SCIP en vivo, prompt exacto, respuesta LLM y cambios efectivos por ejecución. |
+| `scripts/test_clients.sh`, `scripts/test_routing_verbose.py` | Corrida con SCIP en vivo, prompt exacto, respuesta LLM y cambios efectivos; `--simulate-customers` permite aumentar la demanda. `test_20_clients.sh` conserva el alias original. |
 | `examples/` | Dos instancias sintéticas pequeñas con óptimo conocido. |
 | `tests/` | Pruebas de datos, modelo, solvers, auditoría y flujo completo. |
 | `tests/oracle.py` | Enumeración independiente de casos pequeños para contrastar el MILP. |

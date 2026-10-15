@@ -195,17 +195,19 @@ y [procedencia de la adaptación de LLM4MIP](docs/llm4mip-adaptation.md).
 El adaptador Gurobi/SCIP y el antiguo `llm/tuning.py::propose_tuning` permanecen
 sin llamadas a AWS.
 
-### Ensayo visible con 20 clientes y 60 estaciones
+### Ensayo visible con clientes y 60 estaciones
 
 Con los archivos de `artifacts/hackathon/` ya preparados:
 
 ```bash
-bash scripts/test_20_clients.sh \
+bash scripts/test_clients.sh \
   --bedrock-model us.amazon.nova-micro-v1:0 \
   --time-limit-seconds 60 --threads 1 --seed 0
 ```
 
-El script comprueba **20 clientes y 60 estaciones** y usa `scip-routes`, sin H.
+La instancia predeterminada contiene **20 clientes y 60 estaciones**.
+El script usa `scip-routes`, sin H, y comprueba que se conservan 60 estaciones.
+`scripts/test_20_clients.sh` sigue disponible como alias.
 Muestra el log completo de SCIP, el prompt del sistema y del usuario, y la decisión
 validada antes de resolver. Hace como máximo una llamada Bedrock por ejecución.
 Región/perfil iniciales: `us-east-1`/`hackathon`; se pueden cambiar con
@@ -230,6 +232,40 @@ por un testigo completo, solo la fase energética necesita un log nativo SCIP.
 Los logs se muestran sin resumir para conservar la evidencia exacta.
 `--search-policy standard` permite la misma corrida sin AWS.
 `--help` muestra las opciones para otras rutas de archivos y arranque opcional.
+
+Para simular **40 clientes totales** (los 20 originales más 20 sintéticos):
+
+```bash
+bash scripts/test_clients.sh \
+  --simulate-customers 40 --simulation-seed 0 \
+  --bedrock-model us.amazon.nova-micro-v1:0 \
+  --aws-region us-east-1 --aws-profile hackathon \
+  --time-limit-seconds 60 --threads 1 --seed 0
+```
+
+`--simulate-customers N` admite otros totales mayores que la demanda de la red
+fuente. Selecciona nodos viales existentes sin reemplazo, dentro del rectángulo
+geográfico de los clientes originales y con conexión dirigida de ida y vuelta
+al depósito. El muestreo es uniforme por nodo elegible: **no representa domicilios
+ni una distribución observada de demanda**. Los originales y los 60 cargadores
+se conservan, al igual que calles, energías, flota y batería. Los nuevos clientes
+usan el tiempo de servicio común y no reciben ventanas inventadas.
+
+La semilla de ubicaciones (`--simulation-seed`) es independiente de la semilla
+del solver (`--seed`). La misma red, total y semilla generan los mismos clientes.
+El preprocesamiento recalcula Dijkstra para los nuevos servicios, sin descargar
+mapas, y escribe copias en `artifacts/test-40c-60s/<ejecución>/` (o el total elegido):
+`instance.json`, `service-instance.json`, `service-paths.json` y `simulation.json`,
+además de los logs y resultados anteriores. El informe de simulación identifica
+los clientes añadidos, semilla, área, candidatos y hash de la red fuente.
+
+La preparación y escritura tienen su propio tiempo en `run-config.json`; el
+presupuesto de resolución se aplica después. Tener conexión vial no garantiza
+que puedan atenderse todos con la batería disponible; se informa el cumplimiento
+y la prueba de optimalidad que alcance el solver. Para resolver de nuevo sin
+simular ni preparar caminos, omitir `--simulate-customers` y pasar esos tres
+snapshots mediante `--road-instance`, `--instance` y `--path-archive`.
+No combinar la simulación con un arranque de la instancia original.
 
 Priorizamos código simple, modular y bibliotecas existentes. [STRUCTURE.md](STRUCTURE.md) explica brevemente cada archivo y sus funciones. Los equipos trabajan en ramas y worktrees separados; la integración objetivo del proyecto es `master`.
 

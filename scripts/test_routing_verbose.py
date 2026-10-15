@@ -1,4 +1,4 @@
-"""Ensayo 20 clientes/60 estaciones con SCIP y traza visible de una decisión LLM."""
+"""Ensayo con 60 estaciones, clientes simulados opcionales y logs de SCIP/LLM."""
 
 from __future__ import annotations
 
@@ -10,13 +10,15 @@ import subprocess
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
+from time import monotonic
 from uuid import uuid4
 
 from ev_routing.contracts import SolverConfig
 from ev_routing.heuristics import InitialSolution
-from ev_routing.inputs import load_instance
+from ev_routing.inputs import load_instance, save_instance
 from ev_routing.search_policy import BedrockConfig, SearchConfig
-from ev_routing.service_graph import REPRESENTATION, fingerprint
+from ev_routing.service_graph import REPRESENTATION, build_service_graph, fingerprint
+from ev_routing.simulation import simulate_customers
 
 PROJECT = Path(__file__).resolve().parents[1]
 
@@ -27,6 +29,10 @@ def parser() -> argparse.ArgumentParser:
     result.add_argument("--road-instance", type=Path, default=Path("artifacts/hackathon/instance.json"))
     result.add_argument("--path-archive", type=Path, default=Path("artifacts/hackathon/service-paths.json"))
     result.add_argument("--initial-solution", type=Path)
+    result.add_argument("--simulate-customers", type=int, metavar="TOTAL",
+                        help="Conservar clientes originales y añadir ubicaciones sintéticas hasta TOTAL")
+    result.add_argument("--simulation-seed", type=int, default=0,
+                        help="Semilla de ubicaciones, independiente de --seed del solver (default: 0)")
     result.add_argument("--output-dir", type=Path, help="Directorio nuevo; por defecto uno por ejecución")
     result.add_argument("--time-limit-seconds", type=float, default=60)
     result.add_argument("--threads", type=int, default=1)
@@ -57,8 +63,14 @@ def run(args) -> int:
             profile=args.aws_profile or None, timeout_seconds=args.llm_timeout_seconds,
         ),
     )
-    inputs = {key: getattr(args, key).resolve()
-              for key in ("instance", "road_instance", "path_archive")}
+    simulating = args.simulate_customers is not None
+    if simulating and args.initial_solution is not None:
+        raise ValueError(
+            "--initial-solution no se puede combinar con --simulate-customers: "
+            "el nuevo snapshot necesita su propio arranque"
+        )
+    keys = ("road_instance",) if simulating else ("instance", "road_instance", "path_archive")
+    inputs = {key: getattr(args, key).resolve() for key in keys}
     if args.initial_solution is not None:
         inputs["initial_solution"] = args.initial_solution.resolve()
     for key, path in inputs.items():
@@ -67,11 +79,17 @@ def run(args) -> int:
                 f"Falta --{key.replace('_', '-')}: {path}. "
                 "Preparar la red y service-graph o indicar archivos existentes."
             )
-    instance = load_instance(inputs["instance"])
+    started = monotonic()
+    instance = load_instance(inputs["road_instance" if simulating else "instance"])
+    source_inputs = inputs.copy()
+    if simulating:
+        print(f"Simulando {args.simulate_customers} clientes totales; "
+              f"semilla {args.simulation_seed}.", flush=True)
+        instance = simulate_customers(instance, args.simulate_customers, seed=args.simulation_seed)
     counts = {"customers": len(instance.customer_ids), "chargers": len(instance.charger_ids)}
-    if counts != {"customers": 20, "chargers": 60}:
-        raise ValueError(f"Este ensayo exige 20 clientes y 60 estaciones; la entrada contiene {counts}")
-    if instance.provenance.get("representation", {}).get("kind") != REPRESENTATION:
+    if counts["customers"] < 1 or counts["chargers"] != 60:
+        raise ValueError(f"Este ensayo exige clientes y 60 estaciones; la entrada contiene {counts}")
+    if not simulating and instance.provenance.get("representation", {}).get("kind") != REPRESENTATION:
         raise ValueError("--instance debe ser el grafo de servicios, vinculado a su red y caminos")
     if "initial_solution" in inputs:
         initial = InitialSolution.model_validate_json(inputs["initial_solution"].read_text())
@@ -79,11 +97,37 @@ def run(args) -> int:
             raise ValueError("El arranque no corresponde al snapshot seleccionado")
     stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     output = (args.output_dir or Path(
-        f"artifacts/test-20c-60s/{stamp}-{uuid4().hex[:6]}",
+        f"artifacts/test-{counts['customers']}c-60s/{stamp}-{uuid4().hex[:6]}",
     )).resolve()
     if output.exists() and any(output.iterdir()):
         raise ValueError(f"El directorio no está vacío: {output}. Elegir otro para conservar los logs.")
     output.mkdir(parents=True, exist_ok=True)
+    simulation = instance.provenance.get("source_provenance", {}).get("simulation")
+    if simulating:
+        simulation = instance.provenance["simulation"]
+        inputs = {key: output / name for key, name in (
+            ("road_instance", "instance.json"), ("instance", "service-instance.json"),
+            ("path_archive", "service-paths.json"),
+        )}
+        print("Precalculando caminos de energía mínima para los nuevos servicios…", flush=True)
+        road = instance
+        instance, archive = build_service_graph(road, road.parameters.movement_limit)
+        # Igual que service-graph --service-movements none: no elegir ni utilizar H.
+        instance.provenance["horizon_selection"] = {
+            "mode": "none", "effective_horizon": None, "movement_limit_used": None,
+        }
+        instance.provenance["representation"]["optimality_scope"] = (
+            "Rutas sin H sobre los caminos fijos disponibles; no toda la red vial."
+        )
+        archive.service_instance_sha256 = fingerprint(instance)
+        save_instance(road, inputs["road_instance"])
+        save_instance(instance, inputs["instance"])
+        inputs["path_archive"].write_text(archive.model_dump_json() + "\n", encoding="utf-8")
+        (output / "simulation.json").write_text(
+            json.dumps(simulation, ensure_ascii=False, indent=2) + "\n", encoding="utf-8",
+        )
+        del road, archive
+    preparation_seconds = monotonic() - started
     logs = output / "logs"
     search.log_directory = str(logs)
     command = [
@@ -105,13 +149,17 @@ def run(args) -> int:
         "formulation": "complete_routes_without_h", "command": command,
         "inputs": {key: {"path": str(path), "sha256": _file_hash(path)}
                    for key, path in inputs.items()},
+        "source_inputs": {key: {"path": str(path), "sha256": _file_hash(path)}
+                          for key, path in source_inputs.items()},
+        "simulation": simulation, "simulation_generated": simulating,
+        "preparation_seconds": preparation_seconds,
         "solver_config": config.model_dump(), "search_config": search.model_dump(),
     }
     (output / "run-config.json").write_text(json.dumps(
         manifest, ensure_ascii=False, indent=2, allow_nan=False,
     ) + "\n", encoding="utf-8")
     # El hijo valida hashes de red/caminos y factibilidad antes de llamar a AWS.
-    print(f"20 clientes, 60 estaciones; solver sin H. Salida: {output}", flush=True)
+    print(f"{counts['customers']} clientes, 60 estaciones; solver sin H. Salida: {output}", flush=True)
     print("SCIP y LLM en vivo; copia íntegra en run.log. Máximo una llamada Bedrock.", flush=True)
     with (output / "run.log").open("w", encoding="utf-8") as log:
         process = subprocess.Popen(

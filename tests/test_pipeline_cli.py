@@ -279,6 +279,7 @@ def test_run_cli_preserves_instance_parameters_and_only_overrides_solver(
     assert stdout["solver"] == "scip"
     assert stdout["deliveries"] == 1
     assert stdout["net_battery_energy_kwh"] == 2
+    assert stdout["movement_limit"] == example.instance.parameters.movement_limit
     assert stdout["result_path"] == str(output)
     assert source.read_bytes() == original_bytes
     seen_instance, seen_config = fake_solver[0]
@@ -308,6 +309,7 @@ def test_run_cli_returns_one_for_unvalidated_or_missing_solution(
     captured = capsys.readouterr()
     assert not captured.err
     assert json.loads(captured.out)["deliveries"] is None
+    assert json.loads(captured.out)["movement_limit"] is None
     result = json.loads(output.read_text())
     assert not result["kpis"]["feasible"]
     assert result["status"] == ("time_limit" if no_solution else "invalid_solution")

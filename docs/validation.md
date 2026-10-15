@@ -1,5 +1,31 @@
 # Verificación de la rama `modelamiento`
 
+## Simulación 40/60: 15 de octubre de 2026
+
+`scripts/test_clients.sh --simulate-customers 40 --simulation-seed 0` conservó
+los 20 clientes fuente y los 60 cargadores, y seleccionó 20 ubicaciones nuevas
+entre 64.306 nodos viales elegibles. Los arcos, sus energías, flota y batería
+se conservaron. Los snapshots y caminos regenerados están separados de los
+originales, en `artifacts/test-40c-60s/validation-seed0/`; `simulation.json`
+identifica los nodos añadidos y el hash de la fuente.
+
+Con 60 segundos, un hilo y semilla de solver 0, la ejecución produjo
+**2/40 entregas, 2,209425617119548 kWh, factible sin prueba de optimalidad**.
+Pasó la validación sobre calles. El maestro general agotó el presupuesto con
+pricing incompleto: la cota de entregas sigue siendo 40 y la de energía 0.
+Este resultado no demuestra que las otras entregas sean inviables.
+
+Hubo una llamada real a Bedrock, con el mismo modelo, región y perfil del
+ensayo 20/60. La propuesta aceptada conservó los parámetros efectivos.
+Se guardaron ambos logs nativos, los prompts, la respuesta y la decisión.
+No se cambió el solver ni se afirma que este ensayo mida una mejora de rendimiento.
+La suite final pasó **571 pruebas**, junto con Ruff y la sintaxis de ambos scripts
+Bash. Se verificó por SHA-256 que la red fuente conserva el contenido usado en
+la corrida 20/60. Después del ensayo se corrigió el resumen CLI para mostrar
+`movement_limit: null` en este motor: el valor 200 de snapshots anteriores es
+metadato heredado y no se utiliza para resolver. La formulación del JSON de la
+corrida ya registra `movement_limit_used: null`.
+
 ## Ensayo visible 20/60: 15 de octubre de 2026
 
 `scripts/test_20_clients.sh` se ejecutó con los snapshots preparados de

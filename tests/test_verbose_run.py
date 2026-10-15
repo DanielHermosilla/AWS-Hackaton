@@ -9,12 +9,12 @@ from types import SimpleNamespace
 
 import pytest
 
-from ev_routing.contracts import Node, ProblemInstance
-from ev_routing.inputs import save_instance
+from ev_routing.contracts import Arc, Node, ProblemInstance
+from ev_routing.inputs import load_instance, save_instance
 from ev_routing.llm.bedrock import BedrockPolicyClient, BedrockResponseError
 from ev_routing.route_policy import ROUTE_PROMPT, choose_route_policy
 from ev_routing.search_policy import BedrockConfig, SearchConfig
-from ev_routing.service_graph import REPRESENTATION
+from ev_routing.service_graph import REPRESENTATION, PathArchive, check_service_context
 
 
 class BedrockDouble:
@@ -154,11 +154,11 @@ def test_script_streams_raw_solver_output_and_propagates_exit_status(script, inp
 def test_script_rejects_wrong_counts_before_starting_solver(script, inputs, monkeypatch, capsys):
     source = Path(inputs[1])
     data = json.loads(source.read_text())
-    data["nodes"] = [node for node in data["nodes"] if node["node_id"] != "C0"]
+    data["nodes"] = [node for node in data["nodes"] if node["node_id"] != "F0"]
     source.write_text(json.dumps(data))
     monkeypatch.setattr(script.subprocess, "Popen", lambda *a, **k: pytest.fail("solver"))
     assert script.main(inputs) == 2
-    assert "20 clientes y 60 estaciones" in capsys.readouterr().err
+    assert "60 estaciones" in capsys.readouterr().err
 
 
 def test_script_preserves_existing_logs(script, inputs, tmp_path, capsys):
@@ -168,3 +168,63 @@ def test_script_preserves_existing_logs(script, inputs, tmp_path, capsys):
     assert script.main(inputs) == 2
     assert "no está vacío" in capsys.readouterr().err
     assert (output / "run.log").read_text() == "previous run"
+
+
+def test_script_prepares_40_customers_and_passes_matching_new_snapshots(script, inputs,
+                                                                    tmp_path, monkeypatch):
+    nodes = [
+        Node(node_id="0", node_type="base", latitude=-1, longitude=-1),
+        *[Node(node_id=f"C{i}", node_type="visit", latitude=i / 19, longitude=i / 19)
+          for i in range(20)],
+        *[Node(node_id=f"F{i}", node_type="charger", latitude=2, longitude=2 + i / 100)
+          for i in range(60)],
+        *[Node(node_id=f"J{i}", node_type="junction", latitude=i / 50, longitude=0.7)
+          for i in range(25)],
+    ]
+    road = ProblemInstance(nodes=nodes, arcs=[
+        Arc(from_node_id=a, to_node_id=b, energy_kwh=0.1)
+        for node in nodes[1:] for a, b in (("0", node.node_id), (node.node_id, "0"))
+    ])
+    road_path = tmp_path / "roads.json"
+    save_instance(road, road_path)
+    original_bytes = road_path.read_bytes()
+    commands = []
+
+    def popen(command, **kwargs):
+        commands.append(command)
+        return SimpleNamespace(stdout=io.StringIO("SCIP simulation\n"), wait=lambda: 0)
+
+    monkeypatch.setattr(script.subprocess, "Popen", popen)
+    assert script.main([*inputs, "--simulate-customers", "40", "--simulation-seed", "7"]) == 0
+    output = tmp_path / "output"
+    generated = load_instance(output / "instance.json")
+    compact = load_instance(output / "service-instance.json")
+    archive = PathArchive.model_validate_json((output / "service-paths.json").read_text())
+    check_service_context(compact, generated, archive)
+    assert len(compact.customer_ids) == 40 and len(compact.charger_ids) == 60
+    assert compact.provenance["horizon_selection"]["movement_limit_used"] is None
+    assert road_path.read_bytes() == original_bytes
+    manifest = json.loads((output / "run-config.json").read_text())
+    assert manifest["simulation"]["seed"] == 7
+    assert len(manifest["simulation"]["added_customer_ids"]) == 20
+    command = commands[0]
+    assert command[command.index("--road-instance") + 1] == str(output / "instance.json")
+    assert command[command.index("--path-archive") + 1] == str(output / "service-paths.json")
+    # Se puede reutilizar la instancia de 40 sin volver a generar demanda ni caminos.
+    assert script.main([
+        "--instance", str(output / "service-instance.json"),
+        "--road-instance", str(output / "instance.json"),
+        "--path-archive", str(output / "service-paths.json"),
+        "--output-dir", str(tmp_path / "reused"), "--search-policy", "standard",
+    ]) == 0
+    assert len(commands) == 2
+    reused = json.loads((tmp_path / "reused/run-config.json").read_text())
+    assert not reused["simulation_generated"]
+    assert reused["simulation"] == manifest["simulation"]
+
+
+def test_simulation_rejects_initial_solution_from_previous_snapshot(script, inputs, capsys):
+    assert script.main([
+        *inputs, "--simulate-customers", "40", "--initial-solution", "old.start.json",
+    ]) == 2
+    assert "nuevo snapshot" in capsys.readouterr().err

@@ -244,7 +244,7 @@ def _run(args: argparse.Namespace) -> int:
                 "deliveries": result["kpis"]["served_deliveries"],
                 "net_battery_energy_kwh": result["kpis"]["net_battery_energy_kwh"],
                 "lexicographic_optimal": result["solve"]["lexicographic_optimal"],
-                "movement_limit": instance.parameters.movement_limit,
+                "movement_limit": result["formulation"]["movement_limit_used"],
                 "initial_solution_provided": result["initial_solution"]["provided"],
             },
             ensure_ascii=False,
