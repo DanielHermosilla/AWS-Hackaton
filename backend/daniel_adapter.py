@@ -5,6 +5,7 @@ Source contract: ev_routing at 6242035. Runtime imports only the local project c
 
 from __future__ import annotations
 
+import copy
 from pathlib import Path
 
 from .service import ProviderError, json_bytes
@@ -97,9 +98,13 @@ def project_result(instance, config, native):
     if solved.message:
         warnings.append(solved.message)
     network = instance.provenance.get("network", {})
-    network_kind = network.get("kind", "native") if isinstance(network, dict) else "native"
+    network_kind = network.get("kind") if isinstance(network, dict) else None
     if not isinstance(network_kind, str):
-        network_kind = "native"
+        network_kind = (
+            "directed_road_graph"
+            if isinstance(network, dict) and network.get("source") == "directed_road_graph"
+            else "native"
+        )
     synthetic = (
         instance.provenance.get("kind", "").startswith("synthetic")
         if isinstance(instance.provenance.get("kind"), str)
@@ -165,6 +170,15 @@ def project_result(instance, config, native):
                         "charge_kwh": step.charged_to_battery_kwh,
                         "energy_kwh": step.effective_arc_energy_kwh if valid else None,
                         "delivered_visit_ids": list(step.delivered_visit_ids),
+                        "next_node_id": step.next_node_id,
+                        "predicted_arc_energy_kwh": step.predicted_arc_energy_kwh,
+                        "effective_arc_energy_kwh": step.effective_arc_energy_kwh,
+                        "arrival_seconds": step.arrival_seconds,
+                        "service_start_seconds": step.service_start_seconds,
+                        "departure_seconds": step.departure_seconds,
+                        "service_duration_seconds": step.service_duration_seconds,
+                        "charging_duration_seconds": step.charging_duration_seconds,
+                        "travel_time_seconds": step.travel_time_seconds,
                     }
                 )
             delivered = list(
@@ -185,6 +199,7 @@ def project_result(instance, config, native):
                     if valid and all(v is not None for v in known_distances)
                     else None,
                     "energy_kwh": route.net_energy_kwh if valid else None,
+                    "duration_seconds": route.duration_seconds,
                 }
             )
     if any(r["geometry"] is None and r["served_visit_ids"] for r in routes):
@@ -203,6 +218,7 @@ def project_result(instance, config, native):
     assumptions = instance.provenance.get("assumptions", [])
     if not isinstance(assumptions, list) or not all(isinstance(a, str) for a in assumptions):
         assumptions = []
+    native_times = native.get("runtime_seconds", {})
     return {
         "status": status,
         "has_solution": solution is not None,
@@ -213,9 +229,13 @@ def project_result(instance, config, native):
         "total_visits": len(instance.customer_ids),
         "unserved_visit_ids": list(solution.unserved_visit_ids) if solution is not None else [],
         "total_energy_kwh": native["kpis"].get("net_battery_energy_kwh") if valid else None,
+        "kpis": copy.deepcopy(native["kpis"]),
+        "operations": copy.deepcopy(native["operations"]),
+        "tuning": copy.deepcopy(native["tuning"]),
         "validation": {
             "feasible": report.feasible if solution is not None and report is not None else None,
             "violations": list(report.violations) if report is not None else [],
+            "checks": dict(report.checks) if report is not None else {},
             "scope": scope,
         },
         "phases": phases,
@@ -227,7 +247,8 @@ def project_result(instance, config, native):
         ],
         "network": {
             "type": network_kind,
-            "vial": not synthetic and network_kind in {"osm", "road", "graphml"},
+            "vial": not synthetic
+            and network_kind in {"osm", "road", "graphml", "directed_road_graph"},
             "geometry_source": "native_arc_geometry",
             "provenance_verified": False,
         },
@@ -238,6 +259,14 @@ def project_result(instance, config, native):
             "time_limit_reached": time_limit_reached,
             "certificate_scope": solved.message,
             "formulation": native.get("formulation"),
+            "native_solver": {
+                "requested_solver": solved.requested_solver,
+                "used_solver": solved.used_solver,
+                "solver_version": solved.solver_version,
+                "fallback_reason": solved.fallback_reason,
+                "solution_source": solved.solution_source,
+                "message": solved.message,
+            },
         },
         "raw": {
             "effective_config": {
@@ -248,10 +277,13 @@ def project_result(instance, config, native):
         },
         "runtime_seconds": {
             "preparation": None,
-            "solver": native.get("runtime_seconds", {}).get(
-                "resolution_including_model", solved.runtime_seconds
-            ),
+            "solver": native_times.get("resolution_including_model", solved.runtime_seconds),
             "total": None,
+            "validation": native_times.get("validation"),
+            "initial_solution_validation": native_times.get("initial_solution_validation"),
+            "llm": native_times.get("llm"),
+            "native_resolution_including_model": native_times.get("resolution_including_model"),
+            "native_total": native_times.get("total"),
         },
     }
 

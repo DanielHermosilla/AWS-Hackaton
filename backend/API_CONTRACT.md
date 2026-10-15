@@ -10,6 +10,11 @@ La resolución utiliza `scip-routes`, un hilo, semilla 0, gap relativo 0 y polí
 validador, energía y certificados nativos. El puente no importa proveedores desde
 otro checkout ni acepta rutas de archivos en una petición.
 
+La paridad de salida significa conservar íntegramente el resultado de esa
+ejecución nativa. No significa exponer todas las funciones del proyecto de Daniel:
+esta API mantiene sus límites locales, política estándar y backend fijo; no
+habilita AWS, otros solvers, preparación vial ni el preprocesador excluido.
+
 ## Preparación explícita de CSV
 
 `POST /prepare`, mismo origen, `Content-Type: application/json`:
@@ -92,14 +97,46 @@ El límite local de entrada es 20 000 nodos, 200 000 arcos y 8 MiB por petición
 | `has_solution` | Existencia de incumbente nativo; es independiente de su factibilidad. |
 | `nodes` | Nodos nativos, incluidos `junction`. Coordenadas emparejadas pueden ser `null`; `connector_types` es una lista. |
 | `fleet` | IDs nativos `vehicle_1`, etc.; capacidad, reserva y SoC de `parameters`. |
-| `routes` | Vehículo, entregas **explícitas**, pasos ordenados, geometría, kilómetros y energía neta nativa. Transitar por un cliente no implica atenderlo. |
-| `steps` | `position`, `node_id`, energía de llegada/salida, recarga y entregas explícitas. `energy_kwh` corresponde a `effective_arc_energy_kwh` del arco **saliente**; es `null` en el paso terminal. |
+| `routes` | Vehículo, entregas **explícitas**, pasos ordenados, geometría, kilómetros, energía neta y `duration_seconds` nativa, incluido `null`. Transitar por un cliente no implica atenderlo. |
+| `steps` | `position`, `node_id`, energía de llegada/salida, recarga y entregas explícitas. `energy_kwh` corresponde a `effective_arc_energy_kwh` del arco **saliente**; es `null` en el paso terminal. Los campos nativos de energía, destino y tiempo se conservan también con sus nombres originales, detallados abajo. |
 | `total_energy_kwh` | Energía neta efectiva de batería de los KPIs nativos cuando la solución pasa el validador; incluye regeneración saturada correctamente. No es electricidad comprada. |
-| `validation` | Resultado del validador independiente nativo, violaciones y alcance. Sin incumbente: `feasible: null`. |
+| `kpis` | Copia completa de los KPIs nativos y sus `unavailable_reasons`, sin recomputar, rellenar ausencias ni borrar métricas futuras. |
+| `operations` | Copia completa de las opciones operacionales nativas efectivamente utilizadas, incluidos sus defaults. |
+| `tuning` | Copia completa del informe nativo del controlador. La configuración actual no invoca AWS. |
+| `validation` | Resultado del validador independiente nativo, violaciones, `checks` y alcance. Sin incumbente: `feasible: null`, `checks: {}`. |
 | `phases` | Copia completa de las fases nativas: sentido, estado, terminación, incumbente, cota, gaps, prueba, tiempo y mensajes. No se combinan certificados. |
-| `metadata` | Proveedor/SHA, esquema nativo, hashes, estado nativo, `lexicographic_optimal`, alcance/formulación e indicador de límite de tiempo. |
+| `metadata` | Proveedor/SHA, esquema nativo, hashes, estado nativo, `lexicographic_optimal`, alcance/formulación, indicador de límite de tiempo y resumen `native_solver`. |
 | `raw` | `input` exacto, `instance` canónica, `effective_config` y `result` nativo completo. |
-| `runtime_seconds` | `preparation` valida la petición; `solver` toma resolución incluyendo modelo del núcleo; `total` mide el servicio completo. Los tiempos del validador y desglose original están en `raw.result`. |
+| `runtime_seconds` | `preparation` valida la petición; `solver` toma resolución incluyendo modelo del núcleo; `total` mide el servicio completo. Añade los tiempos nativos detallados abajo sin sumarlos. |
+
+La ampliación de presentación es aditiva y conserva API 3.0. Cada paso añade,
+sin conversión ni estimación, `next_node_id`, `predicted_arc_energy_kwh`,
+`effective_arc_energy_kwh`, `arrival_seconds`, `service_start_seconds`,
+`departure_seconds`, `service_duration_seconds`, `charging_duration_seconds` y
+`travel_time_seconds`. Los `null` originales permanecen `null`. La energía
+predicha expresa el potencial del arco; la efectiva puede diferir por saturación
+de regeneración. Son datos nativos, no certificados nuevos. El alias existente
+`energy_kwh` sigue omitiéndose cuando la solución no pasa el validador.
+
+`metadata.native_solver` contiene los campos nativos `requested_solver`,
+`used_solver`, `solver_version`, `fallback_reason`, `solution_source` y `message`.
+Los diagnósticos completos de búsqueda permanecen en `raw.result.solve.search`.
+No se infiere optimalidad de un mensaje, una duración o la existencia de una ruta.
+
+Los tiempos adicionales son `validation`, `initial_solution_validation`, `llm`,
+`native_resolution_including_model` y `native_total`, copiados del resultado
+nativo. `solver` y `native_resolution_including_model` describen el mismo
+intervalo. El tiempo LLM puede estar incluido en resolución; `native_total`
+abarca el pipeline y `total` el servicio HTTP, incluida la preparación y
+proyección. Estos intervalos se solapan y **no deben sumarse**.
+
+Las métricas disponibles dependen de la instancia: con opciones temporales el
+núcleo añade duración por vehículo, tiempo hasta el último retorno y suma de
+tiempos de vehículos. Con carga temporizada añade electricidad de red usando la
+eficiencia configurada. Sin esos supuestos conserva `null` y sus motivos.
+La interfaz debe consumir `kpis.charging_stops` para el contador global: no
+recontar paradas con otro umbral. No se inventa un contador por ruta, que el
+resultado nativo no proporciona.
 
 Cuando no hay incumbente se devuelve un JSON completo con HTTP 200, `routes: []`,
 `served_count: null`, `total_energy_kwh: null`, `unserved_visit_ids: []` y
@@ -127,6 +164,13 @@ las coordenadas de sus nodos, con tolerancia conservadora de `1e-6` grados por
 componente. Si faltan coordenadas, geometrías o esa correspondencia, la geometría
 de la ruta es `null`; las paradas siguen disponibles. Esto comprueba asociación y
 continuidad gráfica, no acredita conectividad vial real.
+
+`provenance.network.source: "directed_road_graph"`, producido por el preparador
+nativo de Daniel, se presenta como `network.type: "directed_road_graph"` y
+`vial: true`: identifica una procedencia declarada. `provenance_verified` sigue
+siendo `false`; no verifica datos externos, accesos, cierres ni circulación real.
+Un `network.kind` explícito prevalece y las instancias sintéticas/haversine
+mantienen `vial: false`, aunque incluyan además aquella cadena de procedencia.
 
 ## Transporte, errores y ejecución
 
@@ -157,3 +201,15 @@ Incluyen SCIP real, preparación→resolución HTTP, ejemplos nativos de recarga
 regeneración, estados sin incumbente, timeout simulado sobre una solución real,
 paridad de fases/energía, coordenadas ausentes y controles HTTP. Las fixtures son
 sintéticas; sus tiempos/run IDs prueban una ejecución, no rendimiento comparativo.
+
+`uv run python -m unittest discover -s tests -p test_native_output_parity.py -v`
+captura el JSON nativo antes del adaptador y exige igualdad completa tras POST,
+serialización y recuperación GET. Incluye recarga con operación, regeneración
+con tres vehículos, demanda parcial con IDs opacos, defaults, ausencia/error
+simulados y extensiones futuras del resultado, métricas y diagnósticos.
+
+Las fixtures `native-operations-request.json` y `native-operations-response.json`
+proceden del ejemplo sintético de recarga de Daniel con opciones temporales
+explícitas: dos entregas, 14 kWh netos, 9 kWh incorporados a batería, 10 kWh de red
+y 3.580 segundos hasta el último retorno. La respuesta procede de SCIP real a
+través del servidor local; las cifras no representan una operación real.
