@@ -238,6 +238,24 @@ class HttpTests(unittest.TestCase):
         self.assertEqual(data["result"]["raw"]["result"]["kpis"]["origen_solucion"], "milp")
         self.assertEqual(self.fetch("/solve?run_id=" + data["result"]["run_id"])[2], body)
 
+    @unittest.skipUnless(importlib.util.find_spec("evrp") and importlib.util.find_spec("highspy"), "Requires pinned provider")
+    def test_provider_no_incumbent_and_other_runtime_errors_have_distinct_http_status(self):
+        # Simulated provider termination; this does not claim a real forced timeout.
+        cases = [
+            ("No se encontró ninguna solución (ni heurística ni MILP)", 422, "no_solution_found"),
+            ("Unexpected provider failure /private/path", 502, "provider_error"),
+        ]
+        for message, expected_status, expected_code in cases:
+            with self.subTest(code=expected_code), patch("evrp.resolver_preparada", side_effect=RuntimeError(message)):
+                status, _, body = self.fetch("/solve", json.dumps(request()).encode(), {"Content-Type": "application/json"})
+            error = json.loads(body)["error"]
+            self.assertEqual(status, expected_status)
+            self.assertEqual(error["code"], expected_code)
+            self.assertNotIn("/private", error["message"])
+            if expected_code == "no_solution_found":
+                self.assertIn("no demuestra infactibilidad", error["message"])
+
+
 class RobustBoundaryTests(unittest.TestCase):
     def test_wrong_json_types_are_actionable_input_errors(self):
         for field, value in (("node_type", []), ("address", 0), ("connector_types", False)):
@@ -409,3 +427,36 @@ class RobustBoundaryTests(unittest.TestCase):
                 self.assertFalse(result["validation"]["feasible"])
                 self.assertTrue(any("reserva" in v for v in result["validation"]["violations"]))
                 self.assertEqual(result["raw"]["result"]["detalle"][active_id][0][field], invalid)
+
+
+    @unittest.skipUnless(importlib.util.find_spec("evrp") and importlib.util.find_spec("highspy"), "Requires pinned provider")
+    def test_simulated_timeout_preserves_a_validated_real_incumbent(self):
+        from evrp.api import Resultado
+        baseline = service.solve(request())["result"]
+        for phase, state in (("fase1", "Time limit reached"), ("fase2", "Time limit reached (cortes pendientes)")):
+            with self.subTest(phase=phase):
+                # Only termination metadata is simulated; routes/details came from HiGHS.
+                raw = copy.deepcopy(baseline["raw"]["result"])
+                raw["kpis"]["solver"][phase] = {"estado": state}
+                with patch("evrp.resolver_preparada", return_value=Resultado(**raw)):
+                    result = service.solve(request())["result"]
+                self.assertIs(result["metadata"]["time_limit_reached"], True)
+                self.assertEqual(result["routes"], baseline["routes"])
+                self.assertEqual(result["served_count"], baseline["served_count"])
+                self.assertEqual(result["validation"], baseline["validation"])
+                self.assertEqual(result["status"], baseline["status"])
+                self.assertEqual(result["phases"], [])
+                self.assertEqual(result["raw"]["result"], raw)
+                self.assertTrue(any("límite de tiempo" in w and "se conserva" in w for w in result["warnings"]))
+
+    @unittest.skipUnless(importlib.util.find_spec("evrp") and importlib.util.find_spec("highspy"), "Requires pinned provider")
+    def test_timeout_metadata_stays_unknown_without_explicit_phase_object(self):
+        from evrp.api import Resultado
+        baseline = service.solve(request())["result"]
+        self.assertIsNone(baseline["metadata"]["time_limit_reached"])
+        raw = copy.deepcopy(baseline["raw"]["result"])
+        raw["kpis"]["solver"] = {"fase1": "Time limit reached", "fase2": {"estado": "Optimal"}}
+        with patch("evrp.resolver_preparada", return_value=Resultado(**raw)):
+            result = service.solve(request())["result"]
+        self.assertIsNone(result["metadata"]["time_limit_reached"])
+        self.assertFalse(any("Se alcanzó" in w for w in result["warnings"]))

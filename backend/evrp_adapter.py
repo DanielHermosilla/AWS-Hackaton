@@ -259,6 +259,15 @@ def present(validated, prepared, cfg, raw, decode):
         warnings.append("Red exploratoria haversine: las líneas guardadas no son rutas viales validadas.")
     if any(r["geometry"] is None and r["served_visit_ids"] for r in routes):
         warnings.append("Geometría omitida: faltan secuencias guardadas, son discontinuas o sus extremos no corresponden a los nodos. Vuelva a preparar la instancia para dibujarla; se conserva la secuencia de paradas.")
+    time_limit_reached = None
+    trace = kpis.get("solver")
+    for phase_name in ("fase1", "fase2"):
+        phase = trace.get(phase_name) if isinstance(trace, dict) else None
+        if (isinstance(phase, dict) and isinstance(phase.get("estado"), str)
+                and phase["estado"].startswith("Time limit reached")):
+            time_limit_reached = True
+    if time_limit_reached:
+        warnings.append("Se alcanzó el límite de tiempo en una fase del solver; se conserva la solución disponible y su validación.")
     return {
         "status": "validation_failed" if feasible is False else ("partial" if unserved else "result_available"),
         "nodes": nodes, "fleet": fleet, "routes": routes, "served_count": len(served), "total_visits": len(visit_ids),
@@ -275,7 +284,8 @@ def present(validated, prepared, cfg, raw, decode):
                         "No se modelan jornada, colas, tiempos de servicio ni capacidad de paquetes."],
         "network": {"type": red_type, "vial": red_type == "osm",
                     "geometry_source": "saved_prepared_sequences", "provenance_verified": False},
-        "metadata": {"id_map": decode}, "raw": {"prepared": prepared.a_dict(), "effective_config": cfg, "result": raw},
+        "metadata": {"id_map": decode, "time_limit_reached": time_limit_reached},
+        "raw": {"prepared": prepared.a_dict(), "effective_config": cfg, "result": raw},
     }
 
 
