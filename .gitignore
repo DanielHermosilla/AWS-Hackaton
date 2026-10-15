@@ -9,3 +9,4 @@ __pycache__/
 *.pyc
 *.graphml
 !src/evrp/assets/osm/*.graphml.gz
+experimentos/**/_tmp/
