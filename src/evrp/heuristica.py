@@ -89,8 +89,10 @@ def _costo_tour(t: list[str], e) -> float:
     return sum(e(a, b) for a, b in zip(t, t[1:]))
 
 
-def tour_gigante(inst: Instancia, clientes: list[str], dt: DatosTipo) -> list[str]:
+def tour_gigante(inst: Instancia, clientes: list[str], dt: DatosTipo, tiempo_max_s: float = 10.0) -> list[str]:
     """Vecino más cercano desde la base + 2-opt, con ê del tipo dado (sin batería)."""
+    import time as _time
+
     def e(a, b):
         s = dt.arcos.get((a, b))
         return s.e if s is not None else 1e9
@@ -102,16 +104,24 @@ def tour_gigante(inst: Instancia, clientes: list[str], dt: DatosTipo) -> list[st
         pend.remove(nxt)
         actual = nxt
     completo = [inst.ini, *tour, inst.fin]
+    # 2-opt con evaluación incremental (delta de las 2 aristas que cambian): O(n^2)
+    # por pasada en vez de O(n^3). Resultado idéntico; solo acelera. Tope de tiempo
+    # para no consumir el presupuesto del MILP en instancias grandes.
+    t0 = _time.perf_counter()
     mejora = True
     while mejora:
         mejora = False
-        base = _costo_tour(completo, e)
+        if _time.perf_counter() - t0 > tiempo_max_s:
+            break
         for i in range(1, len(completo) - 2):
+            a, b = completo[i - 1], completo[i]
             for k in range(i + 1, len(completo) - 1):
-                cand = completo[:i] + completo[i:k + 1][::-1] + completo[k + 1:]
-                c = _costo_tour(cand, e)
-                if c < base - 1e-9:
-                    completo, base, mejora = cand, c, True
+                c, d = completo[k], completo[k + 1]
+                delta = (e(a, c) + e(b, d)) - (e(a, b) + e(c, d))
+                if delta < -1e-9:
+                    completo[i:k + 1] = completo[i:k + 1][::-1]
+                    b = completo[i]
+                    mejora = True
     return completo[1:-1]
 
 
