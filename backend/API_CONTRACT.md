@@ -12,7 +12,8 @@ La beta mantiene el envoltorio `api_version/result` y cambia explícitamente de 
 El servidor se ejecuta con el Python del entorno del proveedor fijado, desde este
 checkout: `python -m backend.local_server --port 8000`. El frontend y la API se
 sirven en `http://127.0.0.1:8000`. Solo admite loopback y el mismo origen; no usa
-CORS, autenticación, AWS, mapas descargados, base de datos ni despliegue.
+CORS, autenticación, AWS, base de datos ni despliegue. El servidor no descarga
+redes viales; la cartografía de fondo del navegador puede consultar OpenFreeMap.
 El proveedor permanece instalado por separado mediante su `uv sync --locked --group dev`.
 El servidor verifica SHA, cambios en código/lock y versión de HiGHS al cargarlo.
 
@@ -101,7 +102,7 @@ libres del solver, tipos heterogéneos y configuración AWS.
 | `runtime_seconds` | `preparation`, `solver`, `total`. `solver` mide la llamada completa `resolver_preparada`, incluida construcción/validación upstream; no es tiempo puro de HiGHS. `total` es extremo a extremo del servicio. No sumar el total a sus etapas. |
 | `network` | `{type,vial,geometry_source,provenance_verified:false}`. `vial` refleja el tipo declarado por la preparada, no una auditoría de su red. |
 | `raw` | `input` original, `prepared`, `effective_config`, `result` del proveedor. La configuración se pasa al proveedor; la reducción de presupuesto interna consta en `result.bitacora` (`presupuesto`). |
-| `metadata` | Proveedor/SHA, hashes SHA-256 de input/config/red, `id_map` de ID interno→original, `unavailable_statistics`. El hash de red excluye tiempos de preparación y origen de archivo. |
+| `metadata` | Proveedor/SHA, hashes SHA-256 de input/config/red, `id_map` de ID interno→original, `unavailable_statistics`, `time_limit_reached`. El hash de red excluye tiempos de preparación y origen de archivo. |
 
 El adapter usa códigos internos únicos antes de preparar/resolver para no activar
 las colisiones `|`/`#fin` del proveedor. Los objetos preparados/raw mantienen esos
@@ -135,6 +136,11 @@ explica la inconsistencia. Las violaciones físicas/estructurales explícitas de
 `feasible: false`. Un resultado coherente y aprobado por el validador upstream
 puede informar `true` dentro del alcance textual, nunca garantía de consumos reales.
 La beta no implementa otro estimador energético.
+
+`metadata.time_limit_reached` es `true` solo cuando una fase del proveedor informa
+explícitamente `Time limit reached`; en ausencia de esa evidencia es `null`.
+La interfaz muestra el límite alcanzado y conserva el resultado validado disponible.
+No convierte una traza desconocida en éxito ni en un certificado.
 
 El detalle upstream redondea llegada, salida y recarga a cuatro decimales de kWh.
 La capacidad y reserva configuradas conservan su precisión. Si ese redondeo deja

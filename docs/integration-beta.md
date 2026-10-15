@@ -65,6 +65,8 @@ Una respuesta tardía no puede reemplazar la revisión vigente. La selección de
 Plan depende del `run_id` y de la ocurrencia de la parada. El regreso por BFCache
 comprueba si cambió la ejecución. **Dejar de esperar** aborta la espera del navegador;
 no promete cancelar el solver. Un 422 sin incumbente no significa infactibilidad.
+Cuando una fase informa explícitamente el límite de tiempo, la interfaz lo señala
+y conserva el resultado disponible. Una traza desconocida no permite deducirlo.
 
 ## Energía, alcance y límites
 
@@ -109,6 +111,9 @@ Las pruebas Python reales necesitan el entorno fijado. Sus omisiones se reportan
 como `skip`; una corrida sin ese entorno no demuestra conexión MILP.
 `backend/fixtures/tiny-request.json` y `tiny-response.json` son un caso sintético
 realmente ejecutado y su salida completa; sus tiempos no son un benchmark.
+Las terminaciones por límite de tiempo y la excepción sin incumbente se prueban
+con dobles explícitos sobre el contrato del proveedor; no se presentan como
+timeouts observados en una búsqueda real.
 
 La evidencia local de esta entrega queda en `.local/integration-beta/`: baseline
 de la UI publicada, revisión independiente, capturas del recorrido HTTP/MILP y

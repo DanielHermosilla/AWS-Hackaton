@@ -63,7 +63,7 @@ export function initRunPanel() {
       $('run-source').textContent = result.validation?.feasible === true ? 'Resultado del motor · comprobado'
         : result.validation?.feasible === false ? 'Resultado del motor · validación fallida'
           : 'Resultado del motor · verificación pendiente';
-      $('run-description').textContent = `${result.served_count}/${result.total_visits} entregas planificadas · ${result.network?.vial ? 'Red vial declarada' : 'Red no vial'} · ${result.run_id.slice(0, 8)}`;
+      $('run-description').textContent = `${result.metadata?.time_limit_reached === true ? 'Límite de tiempo · ' : ''}${result.served_count}/${result.total_visits} entregas planificadas · ${result.network?.vial ? 'Red vial declarada' : 'Red no vial'} · ${result.run_id.slice(0, 8)}`;
     } else if (saved) {
       $('run-source').textContent = 'Sin resultado del motor';
       $('run-description').textContent = 'Carga una instancia o vuelve al ejemplo de diseño.';
