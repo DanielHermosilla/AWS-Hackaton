@@ -5,6 +5,13 @@ Incluye pricing/Farkas de recursos continuos, cortes compatibles y reducción
 certificada a DFJ cuando se verifican sus hipótesis. Una llamada Bedrock previa
 es opcional (`adaptive`); los callbacks son locales.
 Ver [formulación, presupuesto y certificados](dantzig-wolfe.md).
+El pricing admite conexiones paralelas con perfiles de batería y tiempo del
+[preprocesador de recursos](resource-paths.md). El contrato `arc_id` conserva
+la alternativa elegida. La preparación sigue fuera de SCIP; el pricing decide
+su factibilidad según batería, tiempo, servicio y recarga. Los perfiles solo
+se aceptan en `scip-routes`; los backends posicionales fallan con un diagnóstico
+explícito. La reducción DFJ se desactiva para `resource_paths`, aun cuando
+alguna suma nominal sea no negativa.
 Las secciones Gurobi/SCIP siguientes describen los adaptadores posicionales
 heredados, que solo se ejecutan al seleccionarlos explícitamente.
 

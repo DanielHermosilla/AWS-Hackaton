@@ -8,7 +8,7 @@ from scipy.sparse import csr_matrix
 from scipy.sparse.csgraph import connected_components
 
 from ev_routing.contracts import ProblemInstance
-from ev_routing.service_graph import REPRESENTATION, fingerprint
+from ev_routing.service_graph import SERVICE_REPRESENTATIONS, fingerprint
 
 
 def simulate_customers(
@@ -24,7 +24,7 @@ def simulate_customers(
         raise ValueError("El total de clientes debe ser un entero")
     if isinstance(seed, bool) or not isinstance(seed, int) or seed < 0:
         raise ValueError("La semilla de simulación debe ser un entero no negativo")
-    if road.provenance.get("representation", {}).get("kind") == REPRESENTATION:
+    if road.provenance.get("representation", {}).get("kind") in SERVICE_REPRESENTATIONS:
         raise ValueError("La simulación requiere la red vial original, no el grafo de servicios")
     customers = [node for node in road.nodes if node.node_type == "visit"]
     if total_customers <= len(customers):

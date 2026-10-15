@@ -28,13 +28,14 @@ if [[ ! -f "$run_dir/instance.json" ]]; then
     exit 2
 fi
 
-printf 'Variante: todos los servicios, caminos fijos y optimización sin H.\n'
-printf 'El certificado corresponde a los caminos disponibles.\n'
+printf 'Variante: servicios y caminos con recursos, optimización sin H.\n'
+printf 'El JSON distingue la equivalencia de la reducción y la prueba del solver.\n'
 printf 'Preparando caminos. Log: %s/service-prepare.log\n' "$run_dir"
 if uv run --locked ev-routing service-graph \
     "${config_args[@]}" "${reuse_args[@]}" \
     --road-instance "$run_dir/instance.json" \
     --service-movements "$movements" \
+    --cache-directory "$run_dir/preprocessing-cache" \
     --output "$run_dir/service-instance.json" \
     --path-archive "$run_dir/service-paths.json" >"$run_dir/service-prepare.log" 2>&1; then
     # Cantidades exactas; un resumen no debe cambiar la evidencia numérica.

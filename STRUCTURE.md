@@ -6,7 +6,7 @@ Pyomo/Gurobi/SCIP y GCG posicional se conservan como referencias explícitas.
 | Archivo | Funciones principales / propósito |
 |---|---|
 | `modelamiento.pdf` | Modelo matemático que implementamos. |
-| `modelamiento.tex` | Fuente editable: referencia posicional (1)–(24) y maestro sin H (25)–(29). |
+| `modelamiento.tex` | Fuente editable: referencia posicional (1)–(24), maestro sin H (25)–(29) y perfiles (30)–(31). |
 | `diccionario.md` | Significado y unidades de los datos eVED. |
 | `config/default.json` | Parámetros físicos y recursos del solver. |
 | `config/operations.example.json` | Escenario operacional ilustrativo, explícitamente parametrizado. |
@@ -16,6 +16,7 @@ Pyomo/Gurobi/SCIP y GCG posicional se conservan como referencias explícitas.
 | `src/ev_routing/energy.py` | `integrate_eved_csv`, `fit_distance_rate`: integra energía y estima kWh/km. |
 | `src/ev_routing/network.py` | `build_osm_instance`, `build_instance_from_graph`: calles y accesos de servicio. |
 | `src/ev_routing/service_graph.py` | `build_service_graph`: Dijkstra de SciPy/CSR entre servicios; `expand_and_validate`: auditoría de las calles originales. |
+| `src/ev_routing/resource_graph.py` | `prepare_service_graph`: selecciona Dijkstra seguro o contracción con perfiles, conserva alternativas y nodos pendientes, caché por contenido. |
 | `src/ev_routing/simulation.py` | Añade clientes sintéticos reproducibles en nodos viales conectados al depósito, preservando la red, energía y servicios originales. |
 | `src/ev_routing/heuristics.py` | `analyze_horizon`, `build_initial_solution`, `build_greedy_start`: certificado de H cuando aplica e incumbentes validados, sin MILP. |
 | `src/ev_routing/operations.py` | Margen de energía, tiempos y calendario más temprano de rutas fijas. |
@@ -44,6 +45,8 @@ Pyomo/Gurobi/SCIP y GCG posicional se conservan como referencias explícitas.
 | `tests/oracle.py` | Enumeración independiente de casos pequeños para contrastar el MILP. |
 | `docs/model.md` | Correspondencia entre ecuaciones del PDF y código Pyomo. |
 | `docs/service-graph.md` | Variante para las 81 ubicaciones: supuestos, límite de traslados y certificados. |
+| `docs/resource-paths.md` | Perfiles de batería, dominancia, presupuesto de compresión y alcance de equivalencia vial sin H. |
+| `scripts/benchmark_resource_paths.py` | A/B de preparación y pricing, casos sintéticos y red local opcional, sin AWS. |
 | `docs/heuristics.md` | H automático, condiciones de la prueba y arranque de Gurobi/SCIP. |
 | `docs/solvers.md` | Licencias, fallback, tiempos y certificados por fase. |
 | `docs/dantzig-wolfe.md` | Formulación descompuesta, decisiones admitidas, presupuesto y benchmark. |

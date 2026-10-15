@@ -17,6 +17,8 @@ from ev_routing.operations import arc_energy, schedule_solution, travel_seconds
 
 def build_model(instance: ProblemInstance) -> pyo.ConcreteModel:
     """Construir la fase de entregas del MILP sin recortar la red recibida."""
+    if instance.provenance.get("representation", {}).get("kind") == "resource_paths":
+        raise ValueError("Los caminos con perfiles requieren scip-routes; Pyomo espera calles elementales")
     parameters = instance.parameters
     depot = instance.depot_id
     horizon = parameters.movement_limit

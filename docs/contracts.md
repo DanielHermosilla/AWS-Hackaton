@@ -12,7 +12,8 @@ desconocidos y valores numéricos no finitos.
 | Objeto | Contenido y función |
 |---|---|
 | `Node` | ID opaco, tipo y ubicación; puede ser intersección, depósito, cliente o cargador. |
-| `Arc` | Tramo dirigido elemental, energía firmada en kWh y distancia en metros. |
+| `Arc` | Calle elemental o conexión 1.1 con `arc_id` único y `battery_profile`, energía nominal firmada, tiempo y distancia. |
+| `BatteryProfile` | Dominio desde `minimum_departure_kwh`; llegada `min(b-consumption_kwh, maximum_arrival_kwh)`. Incluye el margen por calle. |
 | `ModelParameters` | Flota, capacidad útil, reserva, SoC inicial, conectores y `movement_limit` (H). |
 | `ProblemInstance` | Nodos, arcos, parámetros, compatibilidad y procedencia. Es el JSON de entrada al solver. |
 | `SolverConfig` | Backend, segundos, threads, semilla y gap solicitado; no cambia el problema. |
@@ -27,7 +28,7 @@ configuración, procedencia, hash de instancia y tiempos. Tiene
 `schema_version="1.0"`; sin política adaptativa, `tuning.status="disabled"`. Los campos desconocidos
 por falta de datos se expresan como `null`, nunca como `NaN` o un ahorro cero.
 
-Cada ruta conserva **H+1 posiciones**, incluidas permanencias en el depósito.
+En la referencia posicional cada ruta conserva **H+1 posiciones**, incluidas permanencias en el depósito.
 La última posición no tiene recarga, arco siguiente ni consumo de movimiento.
 Las entregas están en `delivered_visit_ids`; visitar físicamente el nodo no
 alcanza para considerarlo atendido.
@@ -49,6 +50,28 @@ El pipeline exige la red original y ese archivo para resolver la variante.
 La salida añade `road_validation` con la auditoría sobre calles, los recorridos
 expandidos y el cumplimiento separado del `H` vial original; en el modelo base
 ese campo es `null`.
+
+El nuevo preprocesador selecciona esa reducción solo cuando es suficiente sin
+H. Para regeneración o jornada usa `schema_version="1.1"` y
+`provenance.representation.kind="resource_paths"`. Conserva todos los servicios
+y puede conservar intersecciones. Admite conexiones paralelas y autoarcos
+físicos, cada uno con `Arc.arc_id` único. `RoadPath.arc_id` y
+`RouteStep.arc_id` seleccionan inequívocamente la conexión; `null` en un paso
+base-base sigue identificando la permanencia artificial.
+
+`Arc.energy_kwh` conserva la suma nominal. El perfil contiene la energía
+posterior al margen **por segmento**; `arc_energy` no vuelve a aplicar el
+margen. Su techo y dominio conservan saturación y déficits interiores.
+El perfil no depende solo del SoC inicial del vehículo. Los snapshots y hashes
+antiguos se preservan omitiendo los nuevos campos nulos al calcular su huella.
+
+`representation.road_optimum_preserved` informa suficiencia de la reducción
+para el escenario sin H; no es un estado de optimalidad del solver.
+`contracted_junctions`, `retained_junctions`, `generated_connections`,
+`dominated_connections` y `budget_reached` permiten auditar el trabajo.
+`preprocessing_cache` incluye clave e indicador de reutilización.
+Cambiar operaciones requiere regenerar perfiles. Ver
+[derivación y reglas de caché](resource-paths.md).
 
 La preparación de servicios añade `provenance.horizon_selection`: modo,
 H efectivo, suficiencia, minimalidad y análisis de la heurística. El archivo

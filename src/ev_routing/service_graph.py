@@ -31,16 +31,18 @@ from ev_routing.contracts import (
     ValidationReport,
     VehicleRoute,
 )
-from ev_routing.operations import arc_energy, schedule_solution, travel_seconds
+from ev_routing.operations import arc_energy, arc_key, schedule_solution, step_key, travel_seconds
 from ev_routing.validation import validate_solution
 
 REPRESENTATION = "service_paths_nonnegative"
+SERVICE_REPRESENTATIONS = {REPRESENTATION, "resource_paths"}
 
 
 class RoadPath(Contract):
     from_node_id: str
     to_node_id: str
     node_ids: list[str] = Field(min_length=2)
+    arc_id: str | None = None
 
 
 class PathArchive(Contract):
@@ -54,7 +56,12 @@ class PathArchive(Contract):
 
 def fingerprint(instance: ProblemInstance) -> str:
     """Huella reproducible de los valores normalizados del snapshot."""
-    return hashlib.sha256(instance.model_dump_json().encode()).hexdigest()
+    # Los campos opcionales nuevos no invalidan hashes de snapshots 1.0.
+    legacy = all(a.arc_id is None and a.battery_profile is None for a in instance.arcs)
+    # Un diccionario con un índice por arco hace cuadrática la exclusión en
+    # Pydantic. __all__ mantiene el esquema original con costo lineal.
+    excluded = {"arcs": {"__all__": {"arc_id", "battery_profile"}}} if legacy else None
+    return hashlib.sha256(instance.model_dump_json(exclude=excluded).encode()).hexdigest()
 
 
 def build_service_graph(
@@ -73,7 +80,7 @@ def build_service_graph(
         raise ValueError("service_movements debe ser un entero positivo")
     if service_movements < 1:
         raise ValueError("service_movements debe ser positivo")
-    if road.provenance.get("representation", {}).get("kind") == REPRESENTATION:
+    if road.provenance.get("representation", {}).get("kind") in SERVICE_REPRESENTATIONS:
         raise ValueError("La entrada debe ser la red vial original, no otra reducción")
     if any(arc.energy_kwh < 0 for arc in road.arcs):
         raise ValueError("Esta variante no admite energía negativa ni perfiles de regeneración")
@@ -181,7 +188,8 @@ def check_service_context(
     compact: ProblemInstance, road: ProblemInstance, archive: PathArchive
 ) -> None:
     """Evitar validar caminos contra un problema o una batería distintos."""
-    if compact.provenance.get("representation", {}).get("kind") != REPRESENTATION:
+    kind = compact.provenance.get("representation", {}).get("kind")
+    if kind not in SERVICE_REPRESENTATIONS:
         raise ValueError("La instancia no declara la variante de caminos entre servicios")
     if fingerprint(road) != archive.road_instance_sha256:
         raise ValueError(
@@ -200,17 +208,67 @@ def check_service_context(
         exclude={"movement_limit"}
     ):
         raise ValueError("La reducción cambió parámetros físicos de la flota")
-    if compact.nodes != [node for node in road.nodes if node.node_type != "junction"]:
+    if kind == "resource_paths":
+        kept = {n.node_id for n in compact.nodes}
+        if compact.nodes != [n for n in road.nodes if n.node_id in kept] or any(
+            n.node_id not in kept for n in road.nodes if n.node_type != "junction"
+        ):
+            raise ValueError("La reducción debe conservar los servicios y solo nodos originales")
+    elif compact.nodes != [node for node in road.nodes if node.node_type != "junction"]:
         raise ValueError("La reducción debe conservar todas las ubicaciones de servicio")
     if compact.compatible_chargers != road.compatible_chargers:
         raise ValueError("La reducción cambió la compatibilidad de cargadores")
-    if any(a.energy_kwh < 0 for a in road.arcs):
+    if kind == REPRESENTATION and any(a.energy_kwh < 0 for a in road.arcs):
         raise ValueError("Esta variante requiere consumos viales no negativos")
-    pairs = [(path.from_node_id, path.to_node_id) for path in archive.paths]
+    pairs = [(path.from_node_id, path.to_node_id, path.arc_id) for path in archive.paths]
     if len(pairs) != len(set(pairs)) or set(pairs) != {
-        (arc.from_node_id, arc.to_node_id) for arc in compact.arcs
+        arc_key(arc) for arc in compact.arcs
     }:
         raise ValueError("Faltan caminos, sobran o están duplicados")
+    if kind == "resource_paths":
+        _check_resource_profiles(compact, road, archive)
+
+
+def _check_resource_profiles(compact, road, archive):
+    """Auditar perfiles por prefijos viales, sin reutilizar su composición."""
+    road_arcs = {(a.from_node_id, a.to_node_id): a for a in road.arcs}
+    paths = {(p.from_node_id, p.to_node_id, p.arc_id): p.node_ids for p in archive.paths}
+    kept = {n.node_id for n in compact.nodes}
+    capacity, reserve = compact.parameters.battery_capacity_kwh, compact.parameters.reserve_kwh
+    for arc in compact.arcs:
+        sequence = paths[arc_key(arc)]
+        if sequence[0] != arc.from_node_id or sequence[-1] != arc.to_node_id:
+            raise ValueError("Extremos incorrectos del camino con recursos")
+        if any(node in kept for node in sequence[1:-1]):
+            raise ValueError("Un camino no puede ocultar una parada o intersección conservada")
+        try:
+            segments = [road_arcs[pair] for pair in zip(sequence, sequence[1:])]
+        except KeyError as error:
+            raise ValueError("El camino usa una calle inexistente") from error
+        prefix = low = high = drawdown = 0.0
+        for segment in segments:
+            prefix += arc_energy(segment, compact.operations)
+            high, low = max(high, prefix), min(low, prefix)
+            drawdown = max(drawdown, prefix - low)
+        profile = arc.battery_profile
+        expected = (
+            prefix, reserve + high, capacity - prefix + low,
+            sum(a.energy_kwh for a in segments), sum(a.distance_m for a in segments),
+        )
+        actual = (
+            profile.consumption_kwh, profile.minimum_departure_kwh,
+            profile.maximum_arrival_kwh, arc.energy_kwh, arc.distance_m,
+        )
+        if drawdown > capacity - reserve + 1e-8 or any(
+            not isclose(a, b, rel_tol=1e-9, abs_tol=1e-8) for a, b in zip(actual, expected)
+        ):
+            raise ValueError("El perfil de batería no coincide con sus calles y escenario")
+        if compact.operations.timing_enabled and not isclose(
+            travel_seconds(arc, compact.operations),
+            sum(travel_seconds(a, compact.operations) for a in segments),
+            rel_tol=1e-9, abs_tol=1e-7,
+        ):
+            raise ValueError("El tiempo del camino no coincide")
 
 
 def expand_and_validate(
@@ -226,24 +284,24 @@ def expand_and_validate(
     """
     check_service_context(compact, road, archive)
     arc_lookup = {(a.from_node_id, a.to_node_id): a for a in road.arcs}
-    compact_arcs = {(a.from_node_id, a.to_node_id): a for a in compact.arcs}
-    path_lookup = {(p.from_node_id, p.to_node_id): p.node_ids for p in archive.paths}
+    compact_arcs = {arc_key(a): a for a in compact.arcs}
+    path_lookup = {(p.from_node_id, p.to_node_id, p.arc_id): p.node_ids for p in archive.paths}
     routes, counts = [], {}
     for route in solution.routes:
         steps = []
         battery = road.parameters.initial_energy_kwh
         for step in route.steps[:-1]:
             pair = (step.node_id, step.next_node_id)
-            if pair == (road.depot_id, road.depot_id):
+            if pair == (road.depot_id, road.depot_id) and step.arc_id is None:
                 continue  # Quitar relleno artificial antes de contar calles.
-            sequence = path_lookup[pair]
+            sequence = path_lookup[step_key(step)]
             if sequence[0] != pair[0] or sequence[-1] != pair[1]:
                 raise ValueError(f"Extremos incorrectos del camino {pair}")
             try:
                 segments = [arc_lookup[p] for p in zip(sequence, sequence[1:])]
             except KeyError as exc:
                 raise ValueError(f"El camino {pair} usa una calle inexistente") from exc
-            aggregate = compact_arcs[pair]
+            aggregate = compact_arcs[step_key(step)]
             if not isclose(sum(a.energy_kwh for a in segments), aggregate.energy_kwh, abs_tol=1e-7):
                 raise ValueError(f"La energía del camino {pair} no coincide")
             if not isclose(sum(a.distance_m for a in segments), aggregate.distance_m, abs_tol=1e-5):
@@ -258,7 +316,7 @@ def expand_and_validate(
                 charge = step.charged_to_battery_kwh if index == 0 else 0.0
                 departure = battery + charge
                 energy = arc_energy(arc, compact.operations)
-                arrival = departure - energy
+                arrival = min(road.parameters.battery_capacity_kwh, departure - energy)
                 steps.append(
                     RouteStep(
                         position=len(steps),
@@ -269,7 +327,7 @@ def expand_and_validate(
                         delivered_visit_ids=step.delivered_visit_ids if index == 0 else [],
                         next_node_id=arc.to_node_id,
                         predicted_arc_energy_kwh=energy,
-                        effective_arc_energy_kwh=energy,
+                        effective_arc_energy_kwh=departure - arrival,
                     )
                 )
                 battery = arrival

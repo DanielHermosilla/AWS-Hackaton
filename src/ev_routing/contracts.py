@@ -6,7 +6,7 @@ validados, no modelos de optimización. Se serializan directamente a JSON.
 
 from __future__ import annotations
 
-from math import isfinite
+from math import isfinite, ulp
 from typing import Annotated, Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
@@ -41,11 +41,23 @@ class Node(Contract):
         return self
 
 
-class Arc(Contract):
-    """Tramo elemental; energía negativa significa regeneración potencial.
+class BatteryProfile(Contract):
+    """Camino sin actividades: F(b)=min(b-consumption, maximum_arrival).
 
-    No puede ocultar una descarga seguida de regeneración: esos cambios de
-    signo se representan mediante tramos separados, como exige el PDF.
+    El dominio es [minimum_departure, B]. Incluye el margen aplicado calle
+    por calle, los déficits intermedios y la regeneración desperdiciada.
+    """
+
+    consumption_kwh: float
+    minimum_departure_kwh: float = Field(ge=0)
+    maximum_arrival_kwh: float = Field(ge=0)
+
+
+class Arc(Contract):
+    """Calle elemental o camino identificado con perfil explícito de batería.
+
+    Sin battery_profile no puede ocultar cambios de signo. Los perfiles solo
+    se admiten en resource_paths 1.1, con calles archivadas para su auditoría.
     """
 
     from_node_id: str
@@ -55,6 +67,8 @@ class Arc(Contract):
     travel_time_seconds: float | None = Field(default=None, ge=0)
     geometry: list[tuple[float, float]] = Field(default_factory=list)
     source_id: str | None = None
+    arc_id: str | None = Field(default=None, min_length=1)
+    battery_profile: BatteryProfile | None = None
 
 
 Nonnegative = Annotated[float, Field(ge=0)]
@@ -142,9 +156,9 @@ class ModelParameters(Contract):
 
 
 class ProblemInstance(Contract):
-    """Instancia completa: nodos, arcos elementales y parámetros del escenario."""
+    """Instancia completa: red elemental o caminos con perfiles y escenario."""
 
-    schema_version: Literal["1.0"] = "1.0"
+    schema_version: Literal["1.0", "1.1"] = "1.0"
     name: str = "instance"
     nodes: list[Node]
     arcs: list[Arc]
@@ -165,13 +179,33 @@ class ProblemInstance(Contract):
             raise ValueError("se requiere exactamente un nodo base")
         known = set(ids)
         pairs: set[tuple[str, str]] = set()
+        arc_ids: set[str] = set()
+        profiles = self.provenance.get("representation", {}).get("kind") == "resource_paths"
+        if profiles and self.schema_version != "1.1":
+            raise ValueError("resource_paths requiere schema_version 1.1")
         for arc in self.arcs:
             pair = (arc.from_node_id, arc.to_node_id)
             if not set(pair) <= known:
                 raise ValueError(f"arco referencia nodos inexistentes: {pair}")
-            if pair in pairs:
+            if profiles:
+                if arc.arc_id is None or arc.arc_id in arc_ids or arc.battery_profile is None:
+                    raise ValueError("Cada camino requiere arc_id único y battery_profile")
+                arc_ids.add(arc.arc_id)
+                profile, params = arc.battery_profile, self.parameters
+                if not (
+                    params.reserve_kwh <= profile.minimum_departure_kwh <= params.battery_capacity_kwh
+                    # Un techo calculado como 24-21.6 puede redondear unas ulp
+                    # bajo 2.4. Solo tolerar representación; no alterar valores
+                    # ni usar esta holgura en la dominancia o en el pricing.
+                    and params.reserve_kwh - 8 * ulp(params.battery_capacity_kwh)
+                    <= profile.maximum_arrival_kwh <= params.battery_capacity_kwh
+                ):
+                    raise ValueError("Perfil de batería fuera de capacidad/reserva")
+            elif arc.battery_profile is not None or arc.arc_id is not None:
+                raise ValueError("Los perfiles y arc_id requieren la representación resource_paths")
+            if pair in pairs and not profiles:
                 raise ValueError(f"arco duplicado: {pair}; subdividir arcos paralelos")
-            if pair[0] == pair[1]:
+            if pair[0] == pair[1] and not profiles:
                 raise ValueError("no incluir autoarcos: el modelo añade (base, base)")
             pairs.add(pair)
         if self.compatible_chargers is not None:
@@ -285,6 +319,7 @@ class RouteStep(Contract):
     battery_departure_kwh: float
     delivered_visit_ids: list[str] = Field(default_factory=list)
     next_node_id: str | None = None
+    arc_id: str | None = None
     predicted_arc_energy_kwh: float | None = None
     effective_arc_energy_kwh: float | None = None
     arrival_seconds: float | None = Field(default=None, ge=0)

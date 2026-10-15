@@ -29,6 +29,7 @@ from ev_routing.inputs import load_instance, load_routing_nodes, save_instance
 from ev_routing.network import build_osm_instance
 from ev_routing.operations import travel_seconds
 from ev_routing.pipeline import run_instance
+from ev_routing.resource_graph import prepare_service_graph
 from ev_routing.search_policy import BedrockConfig, SearchConfig
 from ev_routing.service_graph import (
     PathArchive,
@@ -80,7 +81,7 @@ def build_parser() -> argparse.ArgumentParser:
     prepare.add_argument("--max-gap-seconds", type=float, default=10.0)
 
     service = commands.add_parser(
-        "service-graph", help="Variante: caminos viales no negativos entre todos los servicios"
+        "service-graph", help="Preprocesar caminos: Dijkstra seguro o perfiles de batería y tiempo"
     )
     service.add_argument("--road-instance", required=True, type=Path)
     service.add_argument(
@@ -92,6 +93,15 @@ def build_parser() -> argparse.ArgumentParser:
     service.add_argument("--config", type=Path, help="Aplicar operations; no cambiar batería ni flota")
     service.add_argument("--reuse-instance", type=Path, help="Reutilizar un grafo de Dijkstra existente")
     service.add_argument("--reuse-path-archive", type=Path, help="Archivo de sus caminos originales")
+    service.add_argument("--cache-directory", type=Path, help="Caché por red, escenario y versión")
+    service.add_argument(
+        "--max-pair-expansions", type=int, default=64,
+        help="Máximo trabajo entrada×salida por intersección; conservar las más costosas",
+    )
+    service.add_argument(
+        "--preprocessing-seconds", type=float, default=10,
+        help="Presupuesto blando de contracción; al agotarlo se conserva el grafo restante",
+    )
 
     run = commands.add_parser("run", help="Resolver instancia JSON y comprobar resultado")
     run.add_argument("--instance", required=True, type=Path)
@@ -266,14 +276,27 @@ def _service_graph(args: argparse.Namespace) -> int:
         archive = PathArchive.model_validate_json(args.reuse_path_archive.read_text())
         check_service_context(compact, road, archive)
     else:
-        compact, archive = build_service_graph(
-            road, road.parameters.movement_limit if without_h else
-            1 if automatic else args.service_movements,
-        )
+        if without_h:
+            compact, archive = prepare_service_graph(
+                road, operations=load_config(args.config).operations if args.config else None,
+                cache_directory=args.cache_directory,
+                max_pair_expansions=args.max_pair_expansions,
+                preprocessing_seconds=args.preprocessing_seconds,
+            )
+        else:
+            compact, archive = build_service_graph(road, 1 if automatic else args.service_movements)
     options = load_config(args.config).operations if args.config is not None else compact.operations
+    resource_paths = compact.provenance.get("representation", {}).get("kind") == "resource_paths"
+    if resource_paths:
+        if not without_h:
+            raise ValueError("Los perfiles requieren --service-movements none y scip-routes")
+        if options != compact.operations:
+            raise ValueError("Cambiar el escenario requiere regenerar perfiles; usar --cache-directory")
+    elif options.max_route_seconds is not None:
+        compact.provenance["representation"]["road_optimum_preserved"] = False
     # Los tiempos explícitos de cada calle prevalecen sobre la velocidad asumida.
     # Completar arcos sin tiempo sobre los mismos caminos, sin ejecutar Dijkstra.
-    if options.timing_enabled:
+    if options.timing_enabled and not resource_paths:
         segments = {(a.from_node_id, a.to_node_id): a for a in road.arcs}
         paths = {(p.from_node_id, p.to_node_id): p.node_ids for p in archive.paths}
         completed = []
@@ -284,7 +307,7 @@ def _service_graph(args: argparse.Namespace) -> int:
             )
             completed.append(arc.model_copy(update={"travel_time_seconds": duration}))
         compact = compact.model_copy(update={"arcs": completed})
-    elif args.config is not None:
+    elif args.config is not None and not resource_paths:
         # Evitar conservar tiempos derivados de la velocidad de otro escenario.
         segments = {(a.from_node_id, a.to_node_id): a for a in road.arcs}
         paths = {(p.from_node_id, p.to_node_id): p.node_ids for p in archive.paths}
@@ -300,9 +323,10 @@ def _service_graph(args: argparse.Namespace) -> int:
         compact.provenance["horizon_selection"] = {
             "mode": "none", "effective_horizon": None, "movement_limit_used": None,
         }
-        compact.provenance["representation"]["optimality_scope"] = (
-            "Rutas sin H sobre los caminos fijos disponibles; no toda la red vial."
-        )
+        if not compact.provenance["representation"].get("road_optimum_preserved"):
+            compact.provenance["representation"]["optimality_scope"] = (
+                "Rutas sin H sobre los caminos fijos disponibles; no toda la red vial."
+            )
         archive.service_instance_sha256 = fingerprint(compact)
         save_instance(compact, args.output)
         args.path_archive.parent.mkdir(parents=True, exist_ok=True)
@@ -319,6 +343,8 @@ def _service_graph(args: argparse.Namespace) -> int:
             "formulation": "complete_routes_without_h", "preprocessing_seconds": preprocessing_seconds,
             "reused_service_graph": args.reuse_instance is not None,
             "initial_solution_path": str(initial_path),
+            "preprocessing": compact.provenance["representation"],
+            "cache": compact.provenance.get("preprocessing_cache"),
         }, ensure_ascii=False))
         return 0
     analysis = analyze_horizon(compact)

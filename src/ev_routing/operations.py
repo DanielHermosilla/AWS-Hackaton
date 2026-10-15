@@ -11,7 +11,17 @@ from ev_routing.contracts import Arc, Operations, ProblemInstance, Solution
 
 def arc_energy(arc: Arc, options: Operations) -> float:
     """Incrementar descargas; nunca aumentar el crédito de regeneración."""
+    if arc.battery_profile is not None:
+        return arc.battery_profile.consumption_kwh
     return arc.energy_kwh + options.energy_margin_fraction * max(arc.energy_kwh, 0.0)
+
+
+def arc_key(arc: Arc) -> tuple[str, str, str | None]:
+    return arc.from_node_id, arc.to_node_id, arc.arc_id
+
+
+def step_key(step) -> tuple[str, str | None, str | None]:
+    return step.node_id, step.next_node_id, step.arc_id
 
 
 def travel_seconds(arc: Arc, options: Operations) -> float:
@@ -41,7 +51,7 @@ def schedule_solution(instance: ProblemInstance, solution: Solution) -> Solution
     if not instance.operations.timing_enabled:
         return solution
     result = solution.model_copy(deep=True)
-    arcs = {(a.from_node_id, a.to_node_id): a for a in instance.arcs}
+    arcs = {arc_key(a): a for a in instance.arcs}
     ops = instance.operations
     for route in result.routes:
         arrival = 0.0
@@ -54,10 +64,11 @@ def schedule_solution(instance: ProblemInstance, solution: Solution) -> Solution
                     if window is not None:
                         start = max(start, window.open_seconds)
             charge = charge_seconds(step.charged_to_battery_kwh, step.node_id, ops)
-            pair = (step.node_id, step.next_node_id)
+            key = step_key(step)
             travel = (
-                travel_seconds(arcs[pair], ops)
-                if step.next_node_id is not None and pair != (instance.depot_id, instance.depot_id)
+                travel_seconds(arcs[key], ops)
+                if step.next_node_id is not None
+                and key != (instance.depot_id, instance.depot_id, None)
                 else 0.0
             )
             step.arrival_seconds = arrival

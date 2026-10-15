@@ -15,7 +15,7 @@ from ev_routing.contracts import ProblemInstance, Solution, SolverConfig
 from ev_routing.metrics import compute_metrics
 from ev_routing.search_policy import SearchConfig
 from ev_routing.service_graph import (
-    REPRESENTATION,
+    SERVICE_REPRESENTATIONS,
     PathArchive,
     check_service_context,
     expand_and_validate,
@@ -38,7 +38,7 @@ def run_instance(
     started = time.perf_counter()
     config = config or SolverConfig()
     without_h = config.solver == "scip-routes"
-    is_service_graph = instance.provenance.get("representation", {}).get("kind") == REPRESENTATION
+    is_service_graph = instance.provenance.get("representation", {}).get("kind") in SERVICE_REPRESENTATIONS
     if is_service_graph:
         if road_instance is None or path_archive is None:
             raise ValueError("Esta variante requiere --road-instance y --path-archive para validarse")
@@ -71,7 +71,7 @@ def run_instance(
         validate_solution(instance, solved.solution, enforce_movement_limit=not without_h)
         if solved.solution is not None else None
     )
-    road_audit = None
+    road_audit = expanded = None
     if is_service_graph and validation is not None and validation.feasible:
         try:
             expanded, report, counts = expand_and_validate(
@@ -127,7 +127,11 @@ def run_instance(
             "deliveries": len(initial_solution.served_visit_ids) if initial_solution else None,
             "energy_kwh": initial_solution.net_energy_kwh if initial_solution else None,
         },
-        "kpis": compute_metrics(instance, solved.solution, validation),
+        "kpis": compute_metrics(
+            road_instance.model_copy(update={"operations": instance.operations})
+            if expanded is not None else instance,
+            expanded if expanded is not None else solved.solution, validation,
+        ),
         "tuning": solved.search["controller"] if solved.search else {
             "status": "disabled",
             "reason": "El backend seleccionado resuelve sin LLM ni llamadas a AWS.",

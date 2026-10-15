@@ -18,9 +18,14 @@ con búsquedas de conexiones anidadas en el pricing sea superior. Un catálogo
 limitado de candidatos es heurístico; solo una representación completa o una
 prueba adicional permite certificar el problema vial.
 
-Esta rama contiene investigación y reproducciones sintéticas. No implementa
-todavía ese cambio de producción. Los cambios locales que estaban pendientes
-en `modelamiento` no se incorporaron a esta rama.
+**Implementación posterior en esta rama:** la preparación separada usa
+contracción de intersecciones con perfiles y alternativas, conservando nodos
+cuando la eliminación sea costosa. Así no necesita enumerar toda la frontera
+entre todos los pares antes de empezar el pricing. La vía Dijkstra segura sigue
+disponible. Ver [diseño, garantías y comprobaciones](resource-paths.md).
+Los cambios locales que estaban pendientes en `modelamiento` no se incorporaron
+a esta rama. Los diagnósticos y experimentos de las secciones siguientes
+describen el código anterior al cambio.
 
 ## 1. Diagnóstico del código y del modelo
 

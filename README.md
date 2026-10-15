@@ -85,14 +85,14 @@ supuesto del problema.
 
 ### Probar los 20 locales y 60 cargadores completos
 
-Para una primera ejecución en un portátil, incorporamos una **variante opcional
-sobre las 81 ubicaciones de servicio**, conectadas mediante caminos viales
-de mínima energía precalculados con Dijkstra de SciPy. Se adapta únicamente el
-preprocesamiento de `codex/optimizacion-contraida`; el modelo de optimización
-es nuestro maestro por rutas sin H. El solver recibe depósito,
-clientes y cargadores, y la validación recupera las calles de cada conexión.
-Conserva los dos vehículos y las restricciones de batería.
-La optimalidad corresponde a los caminos fijos disponibles, sin límite de traslados.
+La preparación conserva todas las ubicaciones de servicio. Usa **Dijkstra**
+cuando las energías son no negativas y no hay plazos; con regeneración o
+restricciones temporales construye **perfiles de batería y alternativas**,
+conservando las intersecciones que no convenga comprimir.
+Nuestro maestro por rutas sin H y el pricing de SCIP eligen entre esas
+conexiones. Se conservan los dos vehículos y la física de batería.
+La preparación preserva el óptimo vial bajo las hipótesis verificadas;
+probarlo sigue requiriendo completar la resolución de ambas fases.
 
 ```bash
 # Solo si todavía no está preparada la instancia vial:
@@ -104,9 +104,10 @@ bash scripts/run_pptx.sh 120
 
 El JSON queda en `artifacts/hackathon/service-result.json` y el log en
 `artifacts/hackathon/service-solve.log`. Cada resultado se expande y comprueba
-calle por calle. Solo se admite energía no negativa; no se oculta regeneración
-sumándola dentro de caminos. Ver [alcance, comandos y lectura del resultado](docs/service-graph.md),
-incluida la distinción entre factibilidad física y cumplimiento del `H` vial original.
+calle por calle. Los perfiles representan déficits intermedios, saturación y
+tiempos; no sustituyen esas condiciones por una suma energética.
+Ver [preprocesamiento, caché y garantías](docs/resource-paths.md) y
+[referencia de Dijkstra y ensayos anteriores](docs/service-graph.md).
 
 Si se verifica que una ruta completa cabe en la batería inicial y la matriz
 es métrica no negativa sin restricciones temporales, se aplica una reducción
@@ -136,18 +137,20 @@ Las ventanas quedan desactivadas hasta introducir horarios del cliente.
 
 La jornada y reserva final adicional se representan en las rutas factibles,
 sin elegir H. Pueden impedir la reducción a un solo tour y requerir pricing.
-Los caminos permanecen fijos; las restricciones temporales no habilitan
-automáticamente caminos alternativos más rápidos.
+El escenario se aplica antes de preparar: con plazos se conservan alternativas
+temporales. El pricing decide servicios, espera y recarga continua.
 
-Para reutilizar caminos generados con esta versión, sin ejecutar Dijkstra:
+Para reutilizar caminos del **mismo escenario**, sin recalcularlos:
 
 ```bash
 HACKATHON_REUSE_SERVICE_GRAPH=1 \
   bash scripts/run_pptx.sh 60 none config/operations.example.json
 ```
 
-Al actualizar desde contratos antiguos, regenerar una vez los artefactos:
-las nuevas opciones forman parte del hash. Ver [todos los parámetros,
+Para cambiar de escenario con regeneración o tiempos, regenerar los perfiles.
+El comando `service-graph --cache-directory DIR` reutiliza preparaciones por
+contenido y configuración. Los snapshots 1.0 y sus hashes siguen admitidos;
+los perfiles usan la versión 1.1. Ver [todos los parámetros,
 validaciones y comandos para conservar el baseline](docs/operations.md).
 
 ## Pruebas
@@ -253,7 +256,7 @@ usan el tiempo de servicio común y no reciben ventanas inventadas.
 
 La semilla de ubicaciones (`--simulation-seed`) es independiente de la semilla
 del solver (`--seed`). La misma red, total y semilla generan los mismos clientes.
-El preprocesamiento recalcula Dijkstra para los nuevos servicios, sin descargar
+El preprocesamiento prepara caminos para los nuevos servicios, sin descargar
 mapas, y escribe copias en `artifacts/test-40c-60s/<ejecución>/` (o el total elegido):
 `instance.json`, `service-instance.json`, `service-paths.json` y `simulation.json`,
 además de los logs y resultados anteriores. El informe de simulación identifica

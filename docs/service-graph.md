@@ -2,9 +2,13 @@
 
 **Flujo vigente:** `service-graph` prepara por defecto con
 `--service-movements none`; `run` usa `scip-routes`, sin elegir H.
-Los caminos, hashes y auditoría vial descritos aquí se mantienen.
-Las descripciones de H y ensayos posicionales siguientes son la referencia
-anterior. Ver [maestro sin H y resultados actuales](dantzig-wolfe.md).
+La preparación automática usa ahora `resource_graph.prepare_service_graph`:
+Dijkstra seguro sin plazos ni energías negativas, o contracción con perfiles
+y alternativas en los demás casos. Ver [preprocesamiento vigente](resource-paths.md).
+Los caminos, hashes y auditoría vial se mantienen.
+**Las secciones siguientes documentan la variante original de Dijkstra,
+sus ensayos y la referencia posicional**, no las limitaciones del nuevo
+preprocesador. Ver [maestro sin H](dantzig-wolfe.md).
 
 La instancia de competición tiene un depósito, 20 locales y 60 cargadores,
 con dos vehículos. Esas **81 ubicaciones** se conservan completas.

@@ -16,8 +16,9 @@ from uuid import uuid4
 from ev_routing.contracts import SolverConfig
 from ev_routing.heuristics import InitialSolution
 from ev_routing.inputs import load_instance, save_instance
+from ev_routing.resource_graph import prepare_service_graph
 from ev_routing.search_policy import BedrockConfig, SearchConfig
-from ev_routing.service_graph import REPRESENTATION, build_service_graph, fingerprint
+from ev_routing.service_graph import SERVICE_REPRESENTATIONS, fingerprint
 from ev_routing.simulation import simulate_customers
 
 PROJECT = Path(__file__).resolve().parents[1]
@@ -89,7 +90,7 @@ def run(args) -> int:
     counts = {"customers": len(instance.customer_ids), "chargers": len(instance.charger_ids)}
     if counts["customers"] < 1 or counts["chargers"] != 60:
         raise ValueError(f"Este ensayo exige clientes y 60 estaciones; la entrada contiene {counts}")
-    if not simulating and instance.provenance.get("representation", {}).get("kind") != REPRESENTATION:
+    if not simulating and instance.provenance.get("representation", {}).get("kind") not in SERVICE_REPRESENTATIONS:
         raise ValueError("--instance debe ser el grafo de servicios, vinculado a su red y caminos")
     if "initial_solution" in inputs:
         initial = InitialSolution.model_validate_json(inputs["initial_solution"].read_text())
@@ -109,16 +110,13 @@ def run(args) -> int:
             ("road_instance", "instance.json"), ("instance", "service-instance.json"),
             ("path_archive", "service-paths.json"),
         )}
-        print("Precalculando caminos de energía mínima para los nuevos servicios…", flush=True)
+        print("Preprocesando caminos y perfiles para los nuevos servicios…", flush=True)
         road = instance
-        instance, archive = build_service_graph(road, road.parameters.movement_limit)
+        instance, archive = prepare_service_graph(road)
         # Igual que service-graph --service-movements none: no elegir ni utilizar H.
         instance.provenance["horizon_selection"] = {
             "mode": "none", "effective_horizon": None, "movement_limit_used": None,
         }
-        instance.provenance["representation"]["optimality_scope"] = (
-            "Rutas sin H sobre los caminos fijos disponibles; no toda la red vial."
-        )
         archive.service_instance_sha256 = fingerprint(instance)
         save_instance(road, inputs["road_instance"])
         save_instance(instance, inputs["instance"])

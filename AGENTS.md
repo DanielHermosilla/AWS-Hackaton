@@ -28,11 +28,12 @@ seleccionable explícitamente. No cambiar de backend por infactibilidad o timeou
 Documentar interfaz y certificados en `docs/solvers.md`; no guardar licencias.
 
 Para ejecutar la instancia completa se usa la variante `service-graph`:
-red vial/energía → caminos mínimos entre servicios → **nuestro maestro por rutas
+red vial/energía → caminos y perfiles preprocesados → **nuestro maestro por rutas
 sin H** → expansión y validación sobre las calles.
 De `codex/optimizacion-contraida` se adapta **solo el preprocesamiento**,
 nunca su modelo, solver ni heurísticas de resolución. La formulación vial
-elemental permanece disponible. Ver las condiciones de la sección 6.1.
+elemental permanece disponible. Ver las condiciones de la sección 6.1 y
+`docs/resource-paths.md`.
 
 **La variante experimental Dantzig–Wolfe está autorizada por el usuario.**
 Usar SCIP desde Python, con cortes compatibles y políticas `standard`,
@@ -269,6 +270,25 @@ Si el solver alcanza su límite con una solución factible, conservarla y valida
 Las metaheurísticas pueden servir después como referencia o para producir incumbentes compatibles, si hay evidencia de necesidad. No reemplazan el flujo principal Pyomo + solver solicitado ni justifican implementar otro solver desde cero.
 
 ### 6.1. Preprocesamiento por caminos mínimos de energía
+
+**Alcance actualizado en `codex/investigacion-caminos-recursos`:**
+`resource_graph.prepare_service_graph` es la preparación predeterminada sin H.
+Usa Dijkstra únicamente con energías no negativas y sin jornada/ventanas.
+En los demás escenarios elimina intersecciones componiendo perfiles exactos de
+batería y conservando alternativas temporales. Depósito, clientes y cargadores
+permanecen. Los límites de trabajo conservan intersecciones, nunca truncan
+caminos o etiquetas. Los ciclos regenerativos útiles permanecen disponibles.
+El pricing existente consume el multigrafo con `arc_id` y recursos continuos;
+el maestro SCIP no cambia. Validar perfiles contra prefijos y expandir calles.
+No aplicar dos veces el margen ni reutilizar perfiles de otro escenario.
+Los snapshots 1.1 de `resource_paths` requieren `scip-routes`; la referencia
+posicional los rechaza. Actualizar fuente y PDF (30)–(31) junto con cambios
+físicos. `road_optimum_preserved` no reemplaza la prueba de ambas fases.
+La caché y sus límites están en `docs/resource-paths.md`. No añadir llamadas LLM
+por preparación o callback sin un ensayo que justifique su costo.
+
+**El resto de esta sección describe la reducción original de Dijkstra y
+continúa rigiendo cuando se selecciona esa variante.**
 
 La implementación está en `src/ev_routing/service_graph.py` y su alcance en
 `docs/service-graph.md`. Referencia: rama `codex/optimizacion-contraida`,

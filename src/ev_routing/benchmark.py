@@ -146,7 +146,9 @@ def run_benchmark(args) -> int:
         road = load_instance(paths["road_instance"])
         archive = PathArchive.model_validate_json(paths["path_archive"].read_text())
         check_service_context(instance, road, archive)
-    elif instance.provenance.get("representation", {}).get("kind") == "service_paths_nonnegative":
+    elif instance.provenance.get("representation", {}).get("kind") in {
+        "service_paths_nonnegative", "resource_paths",
+    }:
         raise ValueError("La variante de servicios requiere su red y archivo de caminos")
     if "initial_solution" in paths:
         initial = InitialSolution.model_validate_json(paths["initial_solution"].read_text())
@@ -157,7 +159,9 @@ def run_benchmark(args) -> int:
             if not validation.feasible:
                 raise ValueError(f"Solución inicial inválida: {validation.violations}")
             if road is not None:
-                _, validation, _ = expand_and_validate(instance, road, archive, initial.solution)
+                _, validation, _ = expand_and_validate(
+                    instance, road, archive, initial.solution, without_h=True,
+                )
                 if not validation.feasible:
                     raise ValueError(f"Solución inicial vial inválida: {validation.violations}")
     del road, archive  # No retener toda la red vial mientras corre cada proceso hijo.

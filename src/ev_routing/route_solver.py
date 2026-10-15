@@ -51,6 +51,8 @@ def certify_single_tour(instance: ProblemInstance, deadline: float):
     ops, params = instance.operations, instance.parameters
     certificate = {"applicable": False, "reason": "hypotheses_not_verified"}
     if (
+        any(a.battery_profile is not None for a in instance.arcs)
+        or
         any(n.node_type == "junction" for n in instance.nodes)
         or ops.max_route_seconds is not None or ops.use_customer_time_windows
         or (ops.final_reserve_soc or 0) * params.battery_capacity_kwh > params.reserve_kwh
