@@ -1,79 +1,73 @@
-# Planificación de rutas y recargas para vehículos eléctricos
+# Planificación de entregas para vehículos eléctricos
 
-Proyecto para la hackatón AWS Breaking Barriers Chile 2026 y el desafío de CASE, Centro de Aceleración Sostenible de Electromovilidad de la FCFM de la Universidad de Chile.
+Proyecto para la hackatón AWS Breaking Barriers Chile 2026 y el desafío de CASE,
+Centro de Aceleración Sostenible de Electromovilidad de la FCFM de la Universidad
+de Chile. El escenario oficial considera dos Nissan Leaf 2013 al 60 % inicial.
+El objetivo es maximizar entregas factibles y después minimizar energía neta de
+batería, con regreso al depósito y reserva suficiente.
 
-Queremos ayudar a un operador a planificar entregas sin quedarse sin batería: cargar un archivo de nodos o configurar destinos, cargadores y flota desde una interfaz, obtener rutas factibles y consultar sus resultados en un mapa y un JSON.
+Esta rama conecta la **webapp HTML/CSS/JavaScript** con el solver de
+**Daniel Hermosilla**, importado desde `modelamiento@6242035`.
+Usa SCIP/PySCIPOpt, formulación por rutas sin H, contratos nativos y comprobador
+independiente. Se excluye el preprocesamiento que adapta trabajo de Lucas Zulueta
+y se retira el anterior proveedor `evrp`. Los cambios quedan locales para revisión
+y merge posterior.
 
-El escenario del desafío considera dos Nissan Leaf 2013 con un 60 % de carga inicial. Las entradas actuales contienen un depósito, 20 locales y 60 cargadores. El mismo código deberá aceptar nuevas instancias y flotas parametrizadas.
+## Ejecutar la webapp
 
-**Estado de esta rama:** interfaz vigente con integración beta local al proveedor
-`evrp`/HiGHS, probada con entradas sintéticas. Su contrato, instalación y límites
-están en [docs/integration-beta.md](docs/integration-beta.md). La arquitectura
-Pyomo–AWS descrita más abajo sigue siendo el objetivo del proyecto; esta beta
-no acredita esa integración completa ni equivalencia del motor con el PDF.
+Con Python 3.12 o 3.13 y `uv`, desde la raíz:
 
-## Interfaz web
-
-La interfaz funcional de demostración está en **[webapp/](webapp/README.md)**, con Inicio, mapa del Plan, vehículos, paradas y batería ilustrativa.
-
-Desde la raíz del repositorio:
-
-```bash
-python3 -m http.server 4173 --bind 127.0.0.1 --directory webapp
+```sh
+uv sync --locked
+uv run --locked python -m backend.local_server --port 4294
 ```
 
-Abrir `http://127.0.0.1:4173/` para el ejemplo sintético. Para cargar y calcular
-instancias, usar el servidor beta indicado en la guía. Los datos reales se
-mantienen locales e ignorados. La guía de `webapp/` explica las vistas, la
-procedencia y las dependencias cartográficas.
+Abrir `http://127.0.0.1:4294/` y pulsar **Cargar y calcular**. Se puede cargar una
+instancia JSON nativa o preparar un CSV con parámetros explícitos. La preparación
+geodésica desde CSV es sintética y debe confirmarse; no acredita una red vial.
+Inicio y Plan comparten la ejecución, rutas, batería, resultados y descargas.
 
-## Nuestro modelamiento
+[Guía de integración](docs/integration-beta.md) ·
+[Contrato HTTP](backend/API_CONTRACT.md) ·
+[Guía del frontend](webapp/README.md)
 
-**La formulación que implementaremos está en [modelamiento.pdf](modelamiento.pdf).** Es un modelo de programación lineal entera mixta (MILP) sobre una **red vial dirigida**, cuyas decisiones incluyen las calles recorridas, las entregas realizadas y la energía recargada.
+## CLI y verificación
 
-Su objetivo es lexicográfico:
+La CLI usa el mismo `ProblemInstance` y pipeline que la web:
 
-$$
-\text{lexmin}\left(-\sum_{i\in C}y_i,\ E_{\mathrm{total}}\right).
-$$
+```sh
+uv run --locked ev-routing run \
+  --instance examples/toy_recharge.json \
+  --time-limit-seconds 30 \
+  --output artifacts/toy-result.json
 
-Primero se maximiza el número de entregas factibles. Después se minimiza el consumo neto efectivo de batería manteniendo ese cumplimiento. El tiempo de cómputo se mide como rendimiento del método.
+uv run --locked pytest -q
+node --test webapp/tests/*.test.mjs
+```
 
-El modelo:
+El caso de recarga espera dos entregas, 14 kWh netos de batería y 9 kWh recargados.
+Los ejemplos son sintéticos; no constituyen resultados del concurso.
+Los datos reales, credenciales, entornos y artefactos permanecen fuera de Git.
 
-- Exige salida y regreso al depósito, continuidad del recorrido y batería dentro de su capacidad y reserva.
-- Permite repetir calles, intersecciones y cargadores, pero atender cada cliente como máximo una vez. Pasar por un cliente no implica realizar su entrega.
-- Decide recargas parciales en estaciones compatibles y representa la regeneración, incluyendo la energía que no puede almacenarse cuando la batería está llena.
-- Usa `H` como cota del número de movimientos, no como duración de jornada. Esa cota limita el alcance del certificado de optimalidad.
-- Supone consumos deterministas y tramos viales elementales. La versión base no incluye carga en el depósito, jornada, tiempos de servicio, capacidad de paquetes ni colas.
+## Modelo y contratos
 
-Los nodos de los CSV no constituyen por sí solos la red de calles. Habrá que construir esa red y estimar su consumo usando eVED, integrando las señales con sus intervalos reales de tiempo.
+El [PDF de Daniel](modelamiento.pdf) contiene la formulación vigente sin H,
+ecuaciones (25)–(29), y la referencia posicional Pyomo, ecuaciones (1)–(24).
+[docs/model.md](docs/model.md) explica el alcance de esta importación.
+La batería, recargas parciales, regeneración, compatibilidad, retorno y servicios
+se conservan en el motor original.
 
-## Enfoque de solución
+La comunicación usa [contratos versionados](docs/contracts.md).
+Cambios internos del solver se adaptan en el puente; no se trasladan sus detalles
+a la UI. Se conserva el resultado nativo completo, con estados y certificados
+por fase. Sin evidencia no se inventan optimalidad, ahorros ni emisiones.
+El [registro de procedencia](docs/solver-source.json) permite contrastar una
+actualización futura con el commit importado.
 
-1. **Entrada común.** Normalizar el CSV o los datos del formulario en una misma instancia validada.
-2. **Modelo parametrizable.** Construir en Pyomo la formulación del PDF, con los parámetros de la instancia.
-3. **Interpretación con un LLM.** Analizar la estructura del modelo y proponer ajustes de búsqueda para el solver, reutilizando y adaptando material de [LLM4MIP](https://llm4mip.github.io/).
-4. **Tuning mediante AWS.** Invocar el LLM a través de **Amazon Bedrock**, usando un modelo habilitado para la cuenta, región y plan/créditos de la hackatón. Validar sus propuestas contra opciones realmente admitidas por el solver.
-5. **Resolución y comprobación.** Resolver las dos prioridades y verificar las rutas con un comprobador independiente.
-6. **Resultados.** Mostrar mapa, entregas, batería, recargas, energía, tiempos y estado/gap por fase; exportar un JSON reproducible.
+La ejecución web es local, sin autenticación ni base de datos. La política
+estándar no llama a AWS. El código de Bedrock de Daniel se conserva con su
+[procedencia LLM4MIP](docs/llm4mip-adaptation.md); esta entrega no acredita acceso
+a la cuenta AWS ni una mejora de tuning.
 
-**El LLM ajusta parámetros del solver; no cambia el modelo, sus restricciones ni sus objetivos.** Compararemos su configuración con una configuración estándar bajo condiciones equivalentes. LLM4MIP aporta procedimientos, prompts y herramientas auxiliares; la integración Pyomo–AWS–solver se desarrollará en este repositorio.
-
-## Resultados y desarrollo
-
-Los KPI principales son factibilidad, entregas cumplidas, consumo energético y tiempo de cómputo. También evaluaremos escalabilidad. Los ahorros de tiempo y emisiones se mostrarán únicamente con una referencia comparable y supuestos documentados.
-
-Trabajaremos con un backend Python modular, Pyomo, un único solver inicial, una UI en Streamlit y un cliente AWS centralizado. Priorizamos código simple y bibliotecas existentes, sin overkill ni reinventar herramientas.
-
-Los equipos de datos, optimización, UI/UX y LLM trabajan con contratos compartidos,
-ramas y worktrees separados. La consolidación vigente parte de `codex/webapp`;
-esta rama beta conserva sus cambios para revisión, sin iniciar una migración a
-`master` ni integrar historias de otras ramas.
-
-Documentos de referencia:
-
-- [modelamiento.pdf](modelamiento.pdf): formulación matemática a implementar.
-- [presentation.pptx](presentation.pptx): enunciado, reglas y KPI de la hackatón.
-- [README.es.md](README.es.md): diccionario de los históricos eVED.
-- [AGENTS.md](AGENTS.md): arquitectura, contratos, reglas de implementación y trabajo en paralelo.
+Las reglas de trabajo están en [AGENTS.md](AGENTS.md), y el diccionario de los
+históricos eVED permanece en [diccionario.md](diccionario.md).

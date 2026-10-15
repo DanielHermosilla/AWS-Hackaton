@@ -1,137 +1,136 @@
-# Integración beta UI–evrp
+# Integración local con el solver de Daniel
 
-Esta rama conecta Inicio y Plan con una ejecución real del proveedor `evrp`.
-Conserva la interfaz publicada de `codex/webapp` (`bb08a4a`) y adapta explícitamente
-el motor de `codex/optimizacion-contraida`
-(`f88d0120c0b80087d718224b46b2613735cee69c`). No integra las historias de ambas
-ramas ni modifica el motor. El proveedor utiliza HiGHS directamente; esta beta no
-demuestra equivalencia con la formulación Pyomo de `modelamiento.pdf`.
+El frontend de `codex/webapp` se conecta al solver de Daniel Hermosilla importado
+desde `origin/modelamiento`, commit
+`624203573bffdeec334a9e07a64b361a515f9725` del 15 de octubre de 2026.
+Se usa **SCIP/PySCIPOpt, `scip-routes`**, con su comprobador independiente.
 
-## Ejecución local
+Se excluye `service_graph.py`, cuyo origen documentado adapta trabajo de Lucas
+Zulueta, y los módulos que dependen de ese preprocesador. El antiguo puente
+`evrp` se retira. [solver-source.json](solver-source.json) registra el commit,
+los archivos, sus huellas y las adaptaciones locales. Es una importación acotada
+de código; no fusiona las ramas ni reescribe su historia.
 
-Se necesita un checkout limpio del proveedor en ese SHA y su entorno:
+## Ejecutar
+
+Desde la raíz de esta rama, con Python 3.12 o 3.13 y `uv`:
 
 ```sh
-# En un checkout separado y verificado de codex/optimizacion-contraida:
-uv sync --locked --group dev
-
-# Desde la raíz de esta rama, usando el Python de aquel entorno:
-/ruta/al/proveedor/.venv/bin/python -m backend.local_server --port 8000
+uv sync --locked
+uv run --locked python -m backend.local_server --port 4294
 ```
 
-Abrir `http://127.0.0.1:8000/`. El servidor sirve exclusivamente el frontend y la API
-local. Verifica SHA, cambios del proveedor y versión HiGHS `1.11.0`. No requiere
-otro lockfile, instalación de paquetes JavaScript, AWS, autenticación ni una base
-de datos. El comando estático de `webapp/README.md` sigue sirviendo el ejemplo,
-pero no ejecuta el motor.
+Abrir `http://127.0.0.1:4294/` y pulsar **Cargar y calcular**. El servidor sirve
+la interfaz y la API en el mismo origen. El entorno y el único lockfile están
+en este repositorio; no se necesita otro checkout del proveedor.
+La cartografía de fondo necesita internet; resolver un JSON completo no descarga
+mapas ni llama a AWS.
 
-1. Pulsar **Cargar y calcular**; seleccionar CSV de nodos, preparada
-   `evrp.instancia_preparada/1` o una instancia/resultado descargado de la beta.
-2. Revisar el resumen y configurar capacidad útil, reserva y consumo.
-   Dos vehículos al 60 % es el perfil oficial; los demás valores son supuestos.
-3. Confirmar el alcance y calcular. **Usar caso sintético pequeño** completa un
-   caso de prueba expresamente identificado; también se resuelve con HiGHS real.
-4. Consultar el mismo `run_id` en Inicio y Plan, vehículos, paradas y pendientes.
-5. Descargar instancia o resultado completo. Ante error HTTP se puede descargar
-   el intento fallido con su entrada y error, sin inventar un resultado.
-
-La entrada CSV no trae calles. En esta beta se admite como referencia explícita
-`haversine`, plana y sin conectividad vial certificada. Una preparada conserva su
-red declarada y geometrías guardadas. Sin geometría, las paradas siguen disponibles.
-No se descarga una red ni se transforma un fallo del motor en un ejemplo.
-
-## Contrato y estado compartido
-
-La definición HTTP está en [backend/API_CONTRACT.md](../backend/API_CONTRACT.md).
-Reutiliza `/health`, `/solve` y el envoltorio `api_version/result` del servicio
-`deploy-aws` (`9f1389c`), con versión nueva **`2.0-beta.1`**. Su contrato antiguo
-`ev_routing`, el de `modelamiento` y el `Resultado` nativo de `evrp` son distintos.
-Las opciones antiguas `movement_limit` y `network` se rechazan; no se ignoran.
-
-El adapter recibe preparada + configuración efectiva + resultado + metadatos.
-Los IDs originales permanecen en la presentación; una tabla reversible registra
-los IDs internos usados para evitar colisiones upstream con `|` y `#fin`.
-El servicio añade el origen que omite el detalle nativo y convierte geometría
-`[lat,lon]` a GeoJSON `[lon,lat]`. JavaScript convierte kWh a porcentaje por
-capacidad, comprueba la estructura y presenta servicio explícito; no estima energía.
-
-El servidor conserva como máximo cuatro corridas y 32 MiB en memoria. Las
-referencias expiran con el reinicio o reemplazo. `sessionStorage` guarda únicamente
-el ID, revisión y estado mínimo de la ejecución; no almacena preparadas ni respuestas.
-No es persistencia de una organización ni aislamiento entre usuarios.
-
-Editar marca **Cambios sin calcular** y mantiene identificado el resultado anterior.
-Una respuesta tardía no puede reemplazar la revisión vigente. La selección del
-Plan depende del `run_id` y de la ocurrencia de la parada. El regreso por BFCache
-comprueba si cambió la ejecución. **Dejar de esperar** aborta la espera del navegador;
-no promete cancelar el solver. Un 422 sin incumbente no significa infactibilidad.
-Cuando una fase informa explícitamente el límite de tiempo, la interfaz lo señala
-y conserva el resultado disponible. Una traza desconocida no permite deducirlo.
-
-## Energía, alcance y límites
-
-El proveedor tiene una discrepancia reproducida entre su política de recarga del
-detalle y la simulación de consumo efectivo de KPIs. En el caso regenerativo
-sintético, inicial 6 + recarga 5 − final 8 = 3 kWh, mientras el KPI dice −1 kWh.
-Se conservan ambas fuentes en `raw`, se deja consumo efectivo `null` y se retira
-la afirmación de factibilidad cuando esos datos se contradicen. No se corrige con
-una matemática alternativa en JavaScript.
-
-El detalle upstream redondea la batería a cuatro decimales. Si ese redondeo cruza
-capacidad o reserva dentro de su precisión conocida, la lectura de presentación
-y la factibilidad se dejan sin certificar, con advertencia y valor original en
-`raw`. No se recorta silenciosamente una lectura a sus límites.
-
-La factibilidad `true` significa comprobación del proveedor con el alcance
-descrito en la respuesta; no garantiza consumo real ni valida externamente la red.
-Las cotas, gap y optimalidad no se publican como certificados porque el proveedor
-no ofrece evidencia homogénea suficiente. `phases` queda vacío y la traza original
-se descarga. Los valores desconocidos se muestran como `—`, no como cero.
-
-`runtime_seconds.solver` mide `resolver_preparada` completo, incluida construcción,
-heurística, MILP y validación del proveedor. La interfaz lo denomina **Resolución
-(incluye modelo y validación)**. `total` mide el servicio completo; no se suman
-intervalos contenidos ni se presenta como tiempo puro HiGHS. El presupuesto
-solicitado limita la búsqueda, no toda la latencia de preparación/serialización.
-
-Límites locales: una flota homogénea de 1–20 vehículos, hasta 200 nodos, petición
-de 8 MiB y presupuesto solver de 1–120 s. No son reglas del concurso. Esta beta
-no incorpora auth, DB, geocodificación, tuning AWS, despliegue ni integración de
-las ramas exploratorias de login.
-
-## Comprobación
+La CLI consume el mismo contrato y llama al mismo pipeline:
 
 ```sh
+uv run --locked ev-routing run \
+  --instance examples/toy_recharge.json \
+  --time-limit-seconds 30 \
+  --output artifacts/toy-result.json
+```
+
+## Comunicación estable
+
+La frontera pública está en [backend/API_CONTRACT.md](../backend/API_CONTRACT.md).
+La instancia nativa se define una sola vez en
+[`ProblemInstance`](../src/ev_routing/contracts.py), con `schema_version: "1.0"`.
+El transporte web tiene `api_version: "3.0"`:
+
+```text
+CSV/formulario → POST /prepare → ProblemInstance
+JSON nativo ──────────────────→ ProblemInstance
+ProblemInstance → POST /solve → pipeline de Daniel → resultado y validación
+                                         ↓
+                             proyección de presentación → Inicio y Plan
+```
+
+`/solve` recibe `instance` y el presupuesto `solver.time_limit_seconds`.
+La web no construye restricciones ni estima resultados. Conserva los IDs opacos.
+La instancia exportada sirve directamente para otra ejecución o para la CLI.
+
+El resultado conserva el JSON nativo completo en `raw.result`, la instancia
+normalizada en `raw.instance`, la petición en `raw.input` y la configuración
+efectiva. La proyección web mantiene sus campos aunque cambie el algoritmo.
+Estados, cotas, gaps, mensajes y tiempos por fase proceden del motor.
+`metadata.provider_commit` identifica el código importado.
+
+Antes de actualizar el solver, comparar el commit con `docs/solver-source.json`,
+comprobar cambios en contratos y ejecutar las pruebas con los ejemplos compartidos.
+No copiar de nuevo los módulos excluidos. Los campos nuevos opcionales pueden
+evolucionar sin cambiar significado; cambiar unidades, campos obligatorios o
+semántica requiere una versión nueva y una adaptación explícita. Compartir un
+número de versión no demuestra compatibilidad.
+
+## Entradas y alcance
+
+- **JSON nativo**: conserva nodos, arcos dirigidos, flota, compatibilidad,
+  operaciones y procedencia. No se completan calles ausentes ni se recalcula
+  energía desde coordenadas. El formulario no sobrescribe los parámetros físicos
+  del archivo; permite cambiar el presupuesto de resolución.
+- **CSV/formulario**: requiere confirmar una red geodésica **sintética**, con
+  consumo por kilómetro explícito. `/prepare` construye la instancia en Python.
+  Los puntos no acreditan conectividad vial. No se usa el preprocesador excluido.
+- Los formatos `evrp.instancia_preparada/1` y API `2.0-beta.1` se rechazan.
+  Tampoco se admite `service_paths_nonnegative`, que necesita una expansión vial
+  excluida de esta integración.
+- Las coordenadas pueden faltar en el contrato nativo. Las rutas y baterías
+  siguen disponibles; no se inventan ubicaciones ni trazados para el mapa.
+  `Arc.geometry` nativa usa `[latitud, longitud]`; el puente convierte a GeoJSON
+  `[longitud, latitud]` solo al presentar una geometría completa y anclada.
+
+La referencia oficial sigue siendo dos vehículos al 60 % inicial. Capacidad
+útil, reserva, consumo, jornada y extensiones son entradas o supuestos.
+`scip-routes` implementa la formulación sin H de Daniel: `movement_limit`
+se conserva por compatibilidad, pero no limita esta resolución.
+Ver [model.md](model.md) y el PDF importado junto al motor.
+
+## Estados y datos disponibles
+
+La factibilidad requiere el comprobador independiente favorable. Sin incumbente,
+la respuesta conserva estados y fases, con rutas vacías y métricas desconocidas
+como `null`. Un límite de tiempo no demuestra infactibilidad. Una solución parcial
+o factible al agotar presupuesto se conserva y se valida. Solo las pruebas de
+ambas fases permiten afirmar optimalidad lexicográfica para el grafo y modelo
+energético recibidos.
+
+La energía mostrada es **energía neta efectiva de batería** del motor. Puede
+ser negativa con regeneración. Se distingue de energía recargada y de energía
+comprada. Ahorros y emisiones permanecen sin dato cuando faltan referencias.
+El tiempo de resolución incluye el modelo y la búsqueda; la validación se
+conserva separada. Los intervalos contenidos no se suman dos veces.
+
+Editar marca el resultado anterior como pendiente de recalcular. Las respuestas
+tardías no reemplazan una revisión nueva. Inicio y Plan comparten `run_id`;
+el navegador guarda solo una referencia y estado mínimo. **Dejar de esperar**
+no cancela la búsqueda del servidor. Un error no activa datos de ejemplo.
+
+El servidor conserva hasta cuatro resultados y 32 MiB en memoria; expiran
+al reiniciarlo o reemplazarse. Es una ejecución local sin autenticación,
+base de datos, despliegue ni tuning AWS. La política es `standard`, sin llamadas
+a Bedrock. No acredita acceso AWS ni rendimiento del concurso.
+Los límites de la API se detallan en su contrato; no son reglas oficiales.
+
+## Verificar antes del merge
+
+```sh
+uv run --locked pytest -q
 node --test webapp/tests/*.test.mjs
-/ruta/al/proveedor/.venv/bin/python -m unittest discover -s tests -p test_web_bridge.py -v
 git diff --check
 ```
 
-Las pruebas Python reales necesitan el entorno fijado. Sus omisiones se reportan
-como `skip`; una corrida sin ese entorno no demuestra conexión MILP.
-`backend/fixtures/tiny-request.json` y `tiny-response.json` son un caso sintético
-realmente ejecutado y su salida completa; sus tiempos no son un benchmark.
-Las terminaciones por límite de tiempo y la excepción sin incumbente se prueban
-con dobles explícitos sobre el contrato del proveedor; no se presentan como
-timeouts observados en una búsqueda real.
+Los ejemplos `toy_recharge.json` y `toy_regeneration.json` provienen de Daniel.
+Sus cuentas manuales esperan 2 entregas/14 kWh/9 kWh de recarga y 1 entrega/2 kWh.
+Se comprueban con SCIP real, JSON finito y sin importar `evrp` ni el preprocesador
+excluido. Los tests del puente cubren HTTP, conversión a presentación, rechazo de
+entradas y preservación del contrato. Estados forzados mediante dobles se
+distinguen de ejecuciones reales.
 
-La evidencia local de esta entrega queda en `.local/integration-beta/`: baseline
-de la UI publicada, revisión independiente, capturas del recorrido HTTP/MILP y
-matriz visual. No se versionan screenshots, datos de CASE, entornos ni cachés.
-La rama se entrega con commits locales revisables; no se fusiona, publica ni
-despliega automáticamente.
-
-## Pendientes del proveedor
-
-Para Daniel/Lucas, sin modificar su rama:
-
-- Unificar detalle, política de recarga y energía efectiva; ofrecer una única
-  contabilidad verificable, incluyendo regeneración saturada.
-- Hacer segura la serialización de pares con IDs opacos y el depósito `#fin`.
-- Validar todas las referencias, exclusiones y números finitos de preparadas.
-- Comprobar todos los parámetros/tipos energéticos antes de reusar preparación.
-- Ofrecer estados estables con/sin incumbente y certificados por fase completos.
-- Documentar equivalencia o diferencias entre modelo contraído y PDF vial base.
-
-La aceptación AWS y una prueba con red vial de procedencia verificada siguen
-pendientes; las pruebas locales de esta entrega no las simulan.
+La evidencia de la antigua beta con HiGHS es histórica y no valida esta entrega.
+Los cambios se mantienen en commits locales para revisión y merge posterior.
+No se hace push ni despliegue automáticamente.
