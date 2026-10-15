@@ -25,6 +25,25 @@ def test_adaptive_without_applied_policy_is_ineligible():
     assert row["llm_totalTokens"] is None
 
 
+def test_planning_decisions_are_not_counted_as_updates_during_native_search():
+    result = {
+        "tuning": {
+            "calls": 4,
+            "applied_decisions": 3,
+            "decisions": [
+                {"event": "before_search", "status": "applied"},
+                {"event": "after_seed", "status": "applied"},
+                {"event": "search_stagnation", "status": "applied"},
+                {"event": "search_stagnation", "status": "rejected"},
+            ],
+        },
+    }
+    row = summarize_run("adaptive", 0, 0, 1, 0, result)
+    assert row["llm_updates_during_solve"] == 1
+    assert row["llm_applied"] == 3
+    assert row["llm_totalTokens"] is None
+
+
 @pytest.mark.solver
 def test_process_benchmark_service_validation_resume_and_integrity(tmp_path):
     pytest.importorskip("pygcgopt")

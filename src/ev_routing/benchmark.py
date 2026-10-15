@@ -91,7 +91,8 @@ def summarize_run(policy, seed, repetition, elapsed, returncode, result):
         "llm_calls": tuning.get("calls", 0),
         "llm_applied": tuning.get("applied_decisions", 0),
         "llm_updates_during_solve": sum(
-            d["status"] == "applied" and d["event"] != "before_decomposition"
+            d["status"] == "applied"
+            and d["event"] not in {"before_decomposition", "before_search", "after_seed"}
             for d in tuning.get("decisions", [])
         ),
         "llm_comparison_eligible": policy != "adaptive" or tuning.get("applied_decisions", 0) > 0,
