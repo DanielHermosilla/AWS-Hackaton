@@ -60,6 +60,27 @@ def test_invalid_response_is_still_available_for_diagnosis(tmp_path):
     assert json.loads((tmp_path / "llm-response.json").read_text())["usage"]["totalTokens"] == 25
 
 
+def test_reasoning_model_omits_sampling_temperature_and_parses_only_final_text(tmp_path):
+    class ReasoningDouble(BedrockDouble):
+        def converse(self, **kwargs):
+            response = super().converse(**kwargs)
+            response["output"]["message"]["content"].insert(
+                0, {"reasoningContent": {"reasoningText": {"text": "not policy JSON"}}},
+            )
+            return response
+
+    native = ReasoningDouble('{"branching":"mostinf"}')
+    client = BedrockPolicyClient(
+        BedrockConfig(model_id="us.anthropic.claude-fable-5", reasoning_effort="max"),
+        client=native, temperature=0, trace_directory=str(tmp_path),
+    )
+    response = client({"event": "before_search"})
+    assert response["policy"] == {"branching": "mostinf"}
+    payload = json.loads((tmp_path / "llm-request.json").read_text())
+    assert "temperature" not in payload["inferenceConfig"]
+    assert payload["additionalModelRequestFields"] == {"output_config": {"effort": "max"}}
+
+
 def test_only_changes_applicable_to_selected_algorithm_are_reported(tmp_path, capsys):
     config = SearchConfig(
         policy="adaptive", bedrock={"model_id": "test-model"}, log_directory=str(tmp_path),
@@ -139,11 +160,12 @@ def test_script_streams_raw_solver_output_and_propagates_exit_status(script, inp
         return SimpleNamespace(stdout=io.StringIO("SCIP node log\nexact raw line\n"), wait=lambda: 1)
 
     monkeypatch.setattr(script.subprocess, "Popen", popen)
-    assert script.main(inputs) == 1
+    assert script.main([*inputs, "--llm-reasoning-effort", "max"]) == 1
     command = seen[0]
     assert "--tee" in command and "--show-llm-trace" in command
     assert command[command.index("--solver") + 1] == "scip-routes"
     assert command[command.index("--llm-max-calls") + 1] == "4"
+    assert command[command.index("--llm-reasoning-effort") + 1] == "max"
     assert (tmp_path / "output/run.log").read_text() == "SCIP node log\nexact raw line\n"
     assert "SCIP node log\nexact raw line\n" in capsys.readouterr().out
     manifest = json.loads((tmp_path / "output/run-config.json").read_text())

@@ -45,6 +45,7 @@ def parser() -> argparse.ArgumentParser:
     result.add_argument("--llm-timeout-seconds", type=float, default=8)
     result.add_argument("--llm-max-calls", type=int, default=4)
     result.add_argument("--llm-max-output-tokens", type=int, default=2048)
+    result.add_argument("--llm-reasoning-effort", choices=["low", "medium", "high", "xhigh", "max"])
     result.add_argument("--llm-time-fraction", type=float, default=.25)
     return result
 
@@ -66,6 +67,7 @@ def run(args) -> int:
             model_id=args.bedrock_model, region=args.aws_region,
             profile=args.aws_profile or None, timeout_seconds=args.llm_timeout_seconds,
             max_output_tokens=args.llm_max_output_tokens,
+            reasoning_effort=args.llm_reasoning_effort,
         ),
     )
     simulating = args.simulate_customers is not None
@@ -150,6 +152,8 @@ def run(args) -> int:
     ]
     if search.bedrock.model_id:
         command.extend(["--bedrock-model", search.bedrock.model_id])
+    if search.bedrock.reasoning_effort:
+        command.extend(["--llm-reasoning-effort", search.bedrock.reasoning_effort])
     for key, path in inputs.items():
         command.extend([f"--{key.replace('_', '-')}", str(path)])
     manifest = {

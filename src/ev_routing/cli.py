@@ -114,6 +114,8 @@ def build_parser() -> argparse.ArgumentParser:
     run.add_argument("--llm-max-calls", type=int, default=4)
     run.add_argument("--llm-timeout-seconds", type=float, default=8)
     run.add_argument("--llm-max-output-tokens", type=int, default=2048)
+    run.add_argument("--llm-reasoning-effort", choices=["low", "medium", "high", "xhigh", "max"],
+                     help="Esfuerzo Anthropic; exige un modelo compatible con output_config")
     run.add_argument("--llm-time-fraction", type=float, default=.25)
     run.add_argument("--decision-interval-seconds", type=float, default=15)
     run.add_argument("--solver-log-directory", type=Path)
@@ -219,6 +221,7 @@ def _run(args: argparse.Namespace) -> int:
                 model_id=args.bedrock_model, region=args.aws_region,
                 profile=args.aws_profile or None, timeout_seconds=args.llm_timeout_seconds,
                 max_output_tokens=args.llm_max_output_tokens,
+                reasoning_effort=args.llm_reasoning_effort,
             ),
             max_llm_calls=args.llm_max_calls,
             llm_time_fraction=args.llm_time_fraction,

@@ -30,6 +30,8 @@ class BedrockConfig(Contract):
     profile: str | None = "hackathon"
     timeout_seconds: float = Field(default=8, gt=0, le=60)
     max_output_tokens: int = Field(default=700, ge=128, le=4096)
+    # Parámetro Anthropic explícito; el modelo/perfil debe admitir output_config.
+    reasoning_effort: Literal["low", "medium", "high", "xhigh", "max"] | None = None
 
     @field_validator("model_id", mode="before")
     @classmethod

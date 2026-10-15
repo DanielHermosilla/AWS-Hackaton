@@ -81,6 +81,7 @@ class RouteOrchestrator:
         record = {
             "event": event, "phase": request["phase"], "elapsed_seconds": now - self.started,
             "model_id": self.config.bedrock.model_id, "region": self.config.bedrock.region,
+            "reasoning_effort": self.config.bedrock.reasoning_effort,
             "state": state, "before_policy": before, "usage": None,
         }
         directory = None

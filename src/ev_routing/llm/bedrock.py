@@ -63,14 +63,21 @@ class BedrockPolicyClient:
         if len(text.encode("utf-8")) > 40_000:
             raise ValueError("El perfil excede el límite de entrada de Bedrock")
         inference = {"maxTokens": self.config.max_output_tokens}
-        if self.temperature is not None:
+        # El razonamiento adaptativo de Claude Fable no admite temperature=0.
+        # Al solicitar esfuerzo explícito se conserva el muestreo del proveedor.
+        if self.temperature is not None and self.config.reasoning_effort is None:
             inference["temperature"] = self.temperature
-        return {
+        payload = {
             "modelId": self.config.model_id,
             "system": [{"text": self.system_prompt}],
             "messages": [{"role": "user", "content": [{"text": text}]}],
             "inferenceConfig": inference,
         }
+        if self.config.reasoning_effort is not None:
+            payload["additionalModelRequestFields"] = {
+                "output_config": {"effort": self.config.reasoning_effort},
+            }
+        return payload
 
     def _trace(self, name: str, data: dict) -> None:
         if self.trace_directory:
