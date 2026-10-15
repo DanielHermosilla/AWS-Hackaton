@@ -52,28 +52,19 @@ def filtrar_ajustes(propuesta: dict) -> dict:
 
 
 class AsesorBedrock(Asesor):
-    """Amazon Bedrock vía la API Converse de boto3 (requirements-ia.txt).
+    """Amazon Bedrock vía el cliente central `evrp.ia.ClienteBedrock` (extra "ia").
 
     Credenciales: la cadena estándar de AWS (perfil/SSO, variables de entorno o rol).
+    El asesor nunca rompe el motor: cualquier fallo degrada a vacío/None.
     """
 
     nombre = "bedrock"
 
-    def __init__(self, region: str, modelo: str, perfil: str | None = None):
-        import boto3  # dependencia opcional (extra "ia")
+    def __init__(self, region: str, modelo: str, perfil: str | None = None, cliente=None):
+        from .ia import ClienteBedrock  # dependencia opcional (extra "ia")
 
-        sesion = boto3.Session(profile_name=perfil) if perfil else boto3.Session()
-        self.cliente = sesion.client("bedrock-runtime", region_name=region)
+        self.cliente = cliente or ClienteBedrock(region=region, modelo=modelo, perfil=perfil)
         self.modelo = modelo
-
-    def _preguntar(self, sistema: str, texto: str, max_tokens: int = 800) -> str:
-        r = self.cliente.converse(
-            modelId=self.modelo,
-            system=[{"text": sistema}],
-            messages=[{"role": "user", "content": [{"text": texto}]}],
-            inferenceConfig={"maxTokens": max_tokens, "temperature": 0.2},
-        )
-        return "".join(b.get("text", "") for b in r["output"]["message"]["content"])
 
     def sugerir_config(self, resumen_instancia, cfg):
         sistema = ("Eres un experto en ruteo de vehículos eléctricos y MILP. Responde SOLO con un objeto "
@@ -83,9 +74,8 @@ class AsesorBedrock(Asesor):
             "pipeline": cfg["pipeline"], "cargadores": cfg["cargadores"], "solver": cfg["solver"]}},
             ensure_ascii=False)
         try:
-            crudo = self._preguntar(sistema, texto, 300)
-            ini, fin = crudo.find("{"), crudo.rfind("}")
-            return filtrar_ajustes(json.loads(crudo[ini:fin + 1])) if ini >= 0 else {}
+            propuesta, _ = self.cliente.preguntar_json(texto, sistema=sistema, max_tokens=300)
+            return filtrar_ajustes(propuesta if isinstance(propuesta, dict) else {})
         except Exception as exc:  # el asesor nunca debe romper el motor
             log.warning("Asesor Bedrock no disponible para sugerir: %s", exc)
             return {}
@@ -95,7 +85,8 @@ class AsesorBedrock(Asesor):
                    "cada vehículo, dónde recarga y por qué, y qué entregas quedan pendientes. No inventes "
                    "datos: usa solo el JSON entregado.")
         try:
-            return self._preguntar(sistema, json.dumps(resultado, ensure_ascii=False))
+            resp = self.cliente.preguntar(json.dumps(resultado, ensure_ascii=False), sistema=sistema)
+            return resp.texto or None
         except Exception as exc:
             log.warning("Asesor Bedrock no disponible para explicar: %s", exc)
             return None
