@@ -1,4 +1,13 @@
 import { initShell } from './app-shell.js?v=home-v3';
+import { exigirSesion } from './auth.js';
+
+// Páginas protegidas: verifica la sesión real contra el servidor antes de montar.
+// El backend ya redirige sin cookie; esto sincroniza la UI y evita parpadeos.
+const autorizado = await exigirSesion('./login.html');
+if (!autorizado) {
+  // exigirSesion ya redirige; detener el arranque.
+  throw new Error('redirigiendo-a-login');
+}
 
 const page = document.body.dataset.page;
 initShell(page);

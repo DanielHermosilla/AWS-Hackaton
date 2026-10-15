@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'">
+  <meta name="referrer" content="no-referrer">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <link rel="icon" href="./assets/brand/icons/favicon.ico" sizes="16x16 32x32 48x48">
+  <link rel="icon" href="./assets/brand/icons/favicon.svg" type="image/svg+xml" sizes="any">
+  <link rel="apple-touch-icon" href="./assets/brand/icons/apple-touch-icon.png" sizes="180x180">
+  <title>Acceso · ZMD Mobility</title>
+  <link rel="stylesheet" href="./shared/base.css">
+  <link rel="stylesheet" href="material.css">
+  <link rel="stylesheet" href="app.css?v=brand-v1">
+  <link rel="stylesheet" href="login.css">
+</head>
+<body class="page-login">
+  <header class="topbar">
+    <a class="zmd-brand" href="login.html" aria-label="ZMD Mobility, acceso">
+      <img class="zmd-brand__logo" src="./assets/brand/svg/logo.svg" width="272" height="64" alt="">
+    </a>
+    <div class="top-actions">
+      <span class="demo-tag"><span class="sr-only">Demostración</span><span aria-hidden="true">Demostración</span></span>
+    </div>
+  </header>
+
+  <main class="login-main" id="login-main" tabindex="-1">
+    <section class="login-aside" aria-hidden="true">
+      <p class="eyebrow">Planificación de flota eléctrica</p>
+      <h1>Entra a tu<br>espacio de planificación.</h1>
+      <p class="aside-lead">Revisa el escenario, el reparto y la energía de la operación.</p>
+      <ul class="login-points">
+        <li><span class="pt base"></span>Escenario y flota de un vistazo</li>
+        <li><span class="pt charge"></span>Mapa del plan con paradas y recargas</li>
+        <li><span class="pt check"></span>Resultados pendientes de validación del motor</li>
+      </ul>
+    </section>
+
+    <section class="login-panel" aria-labelledby="login-title">
+      <div class="login-card">
+        <p class="eyebrow">Acceso al panel</p>
+        <h2 id="login-title">Inicia sesión</h2>
+        <p class="card-lead">Usa tu cuenta de operación de flota para continuar.</p>
+
+        <form id="login-form" novalidate>
+          <div class="field">
+            <label for="email">Correo de la cuenta</label>
+            <input type="email" id="email" name="email" autocomplete="username" maxlength="254"
+                   spellcheck="false" autocapitalize="off"
+                   placeholder="nombre@case.cl" required aria-describedby="email-error">
+            <small class="field-error" id="email-error" hidden></small>
+          </div>
+
+          <div class="field">
+            <div class="label-row">
+              <label for="password">Contraseña</label>
+              <button type="button" class="link-quiet" id="toggle-pass" aria-pressed="false">Mostrar</button>
+            </div>
+            <input type="password" id="password" name="password" autocomplete="current-password" maxlength="128"
+                   placeholder="········" required minlength="8" aria-describedby="password-error">
+            <small class="field-error" id="password-error" hidden></small>
+          </div>
+
+          <div class="field-row">
+            <label class="check">
+              <input type="checkbox" id="remember" name="remember">
+              <span>Mantener la sesión</span>
+            </label>
+            <a href="#" class="link-quiet" id="forgot">¿Olvidaste tu contraseña?</a>
+          </div>
+
+          <button type="submit" class="primary block" id="submit">Entrar al panel</button>
+          <p class="form-note" id="form-note" role="status" aria-live="polite" hidden></p>
+        </form>
+
+        <div class="divider"><span>o</span></div>
+        <p class="switch">¿Aún no tienes cuenta? <a href="register.html" id="to-register">Crear cuenta</a></p>
+        <p class="demo-hint">Acceso con cuenta real: el servidor valida y guarda la sesión en una cookie segura.</p>
+      </div>
+    </section>
+  </main>
+
+  <noscript><p class="load-error">Esta demostración necesita JavaScript para validar el acceso.</p></noscript>
+  <script type="module" src="login.js"></script>
+</body>
+</html>
