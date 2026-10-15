@@ -140,7 +140,8 @@ export function initRunPanel() {
   function setInput(value, name) {
     input = value;
     const nodes = inputNodes(value);
-    $('input-summary').textContent = `${name} · ${nodes.filter(n => n.node_type === 'base').length} depósito · ${nodes.filter(n => n.node_type === 'visit').length} destinos · ${nodes.filter(n => n.node_type === 'charger').length} cargadores`;
+    const excludedCount = value.request?.exclude_node_ids?.length || 0;
+    $('input-summary').textContent = `${name} · ${nodes.filter(n => n.node_type === 'base').length} depósito · ${nodes.filter(n => n.node_type === 'visit').length} destinos · ${nodes.filter(n => n.node_type === 'charger').length} cargadores${excludedCount ? ` · ${excludedCount} nodos excluidos por el archivo` : ''}`;
     $('network-note').textContent = value.prepared
       ? `Red preparada: ${value.prepared.red?.tipo || 'sin tipo declarado'}. La compatibilidad energética y cobertura se revisan en el servidor; no se descargarán mapas.`
       : 'Aproximación por distancia, sin red vial ni pendiente. Las coordenadas no acreditan conectividad por calles.';
@@ -261,6 +262,7 @@ export function initRunPanel() {
           `Alcance de la comprobación: ${result.validation?.scope || 'No disponible'}`,
           `Preparación: ${result.runtime_seconds?.preparation ?? '—'} s · resolución (incluye modelo y validación): ${result.runtime_seconds?.solver ?? '—'} s · total del servicio: ${result.runtime_seconds?.total ?? '—'} s`,
           'Optimalidad: sin certificado verificable en esta beta.',
+          ...(request.exclude_node_ids?.length ? [`Nodos excluidos de la demanda activa: ${request.exclude_node_ids.join(', ')}.`] : []),
           ...(result.assumptions || []), ...(result.warnings || []), ...(result.validation?.violations || []),
         ];
         for (const fact of facts) {

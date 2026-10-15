@@ -73,7 +73,8 @@ geometría, plano y factor de distancia 1. Es una referencia sin red vial. No ha
 fallback silencioso a líneas rectas. `consumption_kwh_km`, capacidad útil y reserva
 son obligatorios. Para ambas entradas se exige reserva positiva ≤ energía inicial.
 
-Defaults de interfaz: dos vehículos, SoC 0.6, presupuesto 30 s. Límites de esta
+Defaults del servicio: dos vehículos, SoC 0.6, presupuesto 30 s. El formulario
+comienza con un presupuesto explícito de 10 s. Límites de esta
 beta local: 200 nodos, 20 vehículos, 1–120 s y 200 000 segmentos/puntos guardados.
 No son reglas del concurso. Las exclusiones deben existir, no repetirse ni incluir
 la base; se retiran de la demanda activa y permanecen en la entrada exportada.

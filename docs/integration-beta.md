@@ -75,6 +75,11 @@ Se conservan ambas fuentes en `raw`, se deja consumo efectivo `null` y se retira
 la afirmación de factibilidad cuando esos datos se contradicen. No se corrige con
 una matemática alternativa en JavaScript.
 
+El detalle upstream redondea la batería a cuatro decimales. Si ese redondeo cruza
+capacidad o reserva dentro de su precisión conocida, la lectura de presentación
+y la factibilidad se dejan sin certificar, con advertencia y valor original en
+`raw`. No se recorta silenciosamente una lectura a sus límites.
+
 La factibilidad `true` significa comprobación del proveedor con el alcance
 descrito en la respuesta; no garantiza consumo real ni valida externamente la red.
 Las cotas, gap y optimalidad no se publican como certificados porque el proveedor

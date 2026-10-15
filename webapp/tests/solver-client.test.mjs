@@ -115,3 +115,14 @@ test('nullable optional CSV-schema fields roundtrip and fleet limits match the s
   assert.doesNotThrow(() => parseInstanceFile(JSON.stringify(request), 'x.json'));
   assert.throws(() => makeSolveRequest(parseInstanceFile(csv, 'x.csv'), {...fleet, num_vehicles: 21}, 10), /20/);
 });
+
+test('numeric CSV fields in API downloads remain reusable without changing original input', () => {
+  const request = makeSolveRequest(parseInstanceFile(csv, 'x.csv'), fleet, 10);
+  request.nodes[0].latitude = '42';
+  request.nodes[0].total_ports = '';
+  request.nodes[1].max_power_kw = '0';
+  const input = parseInstanceFile(JSON.stringify(request), 'x.json');
+  assert.equal(input.request.nodes[0].latitude, '42');
+  request.nodes[0].latitude = true;
+  assert.throws(() => parseInstanceFile(JSON.stringify(request), 'x.json'), /latitud/i);
+});

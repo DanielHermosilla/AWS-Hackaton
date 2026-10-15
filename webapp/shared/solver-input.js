@@ -3,6 +3,9 @@ import { API_VERSION } from './solver-client.js';
 const columns = ['node_id', 'node_type', 'latitude', 'longitude', 'address', 'network',
   'total_ports', 'dc_fast_ports', 'level2_ports', 'connector_types', 'max_power_kw'];
 const numericColumns = new Set(['latitude', 'longitude', 'total_ports', 'dc_fast_ports', 'level2_ports', 'max_power_kw']);
+const inputNumber = value => typeof value === 'number' || (typeof value === 'string' && value.trim())
+  ? Number(value) : NaN;
+const absent = value => value == null || value === '';
 
 // RFC 4180 fields, including quoted newlines; no delimiter or numeric coercion guesses.
 function csvRows(text) {
@@ -41,15 +44,15 @@ export function validateNodes(nodes) {
     if (ids.has(node.node_id)) throw new Error(`ID repetido: ${node.node_id}.`);
     ids.add(node.node_id);
     if (!['base', 'visit', 'charger'].includes(node.node_type)) throw new Error(`Tipo inválido en ${node.node_id}: usa base, visit o charger.`);
-    if (!Number.isFinite(node.latitude) || Math.abs(node.latitude) > 90) throw new Error(`Latitud inválida en ${node.node_id}.`);
-    if (!Number.isFinite(node.longitude) || Math.abs(node.longitude) > 180) throw new Error(`Longitud inválida en ${node.node_id}.`);
+    if (!Number.isFinite(inputNumber(node.latitude)) || Math.abs(inputNumber(node.latitude)) > 90) throw new Error(`Latitud inválida en ${node.node_id}.`);
+    if (!Number.isFinite(inputNumber(node.longitude)) || Math.abs(inputNumber(node.longitude)) > 180) throw new Error(`Longitud inválida en ${node.node_id}.`);
     for (const key of ['total_ports', 'dc_fast_ports', 'level2_ports']) {
-      if (node[key] != null && (!Number.isInteger(node[key]) || node[key] < 0))
+      if (!absent(node[key]) && (!Number.isInteger(inputNumber(node[key])) || inputNumber(node[key]) < 0))
         throw new Error(`${key} debe ser un entero no negativo en ${node.node_id}.`);
     }
-    if (node.max_power_kw != null && (!Number.isFinite(node.max_power_kw) || node.max_power_kw < 0))
+    if (!absent(node.max_power_kw) && (!Number.isFinite(inputNumber(node.max_power_kw)) || inputNumber(node.max_power_kw) < 0))
       throw new Error(`Potencia inválida en ${node.node_id}.`);
-    if (node.total_ports != null && (node.dc_fast_ports ?? 0) + (node.level2_ports ?? 0) > node.total_ports)
+    if (!absent(node.total_ports) && Number(node.dc_fast_ports ?? 0) + Number(node.level2_ports ?? 0) > Number(node.total_ports))
       throw new Error(`Puertos inconsistentes en ${node.node_id}: DC + nivel 2 supera el total.`);
   }
   if (nodes.filter(node => node.node_type === 'base').length !== 1) throw new Error('La instancia necesita exactamente un depósito (base).');
@@ -116,7 +119,7 @@ export function parseInstanceFile(text, filename = '') {
 }
 
 function positive(value, name) {
-  if (value === '' || !Number.isFinite(Number(value)) || Number(value) <= 0)
+  if (!Number.isFinite(inputNumber(value)) || inputNumber(value) <= 0)
     throw new Error(`${name} debe ser un número positivo.`);
   return Number(value);
 }
