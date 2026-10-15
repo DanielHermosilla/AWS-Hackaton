@@ -1,0 +1,190 @@
+{
+  "1": [
+    {
+      "nodo": "V3",
+      "tipo": "cliente",
+      "energia_tramo_kwh": 0.3178,
+      "bateria_llegada_kwh": 9.2822,
+      "carga_kwh": 0.0,
+      "bateria_salida_kwh": 9.2822
+    },
+    {
+      "nodo": "V16",
+      "tipo": "cliente",
+      "energia_tramo_kwh": 0.2347,
+      "bateria_llegada_kwh": 9.0475,
+      "carga_kwh": 0.0,
+      "bateria_salida_kwh": 9.0475
+    },
+    {
+      "nodo": "V5",
+      "tipo": "cliente",
+      "energia_tramo_kwh": 0.5065,
+      "bateria_llegada_kwh": 8.541,
+      "carga_kwh": 0.0,
+      "bateria_salida_kwh": 8.541
+    },
+    {
+      "nodo": "V15",
+      "tipo": "cliente",
+      "energia_tramo_kwh": 0.6463,
+      "bateria_llegada_kwh": 7.8947,
+      "carga_kwh": 0.0,
+      "bateria_salida_kwh": 7.8947
+    },
+    {
+      "nodo": "V7",
+      "tipo": "cliente",
+      "energia_tramo_kwh": 1.1822,
+      "bateria_llegada_kwh": 6.7124,
+      "carga_kwh": 0.0,
+      "bateria_salida_kwh": 6.7124
+    },
+    {
+      "nodo": "V11",
+      "tipo": "cliente",
+      "energia_tramo_kwh": 0.0121,
+      "bateria_llegada_kwh": 6.7003,
+      "carga_kwh": 0.0,
+      "bateria_salida_kwh": 6.7003
+    },
+    {
+      "nodo": "V4",
+      "tipo": "cliente",
+      "energia_tramo_kwh": 0.7272,
+      "bateria_llegada_kwh": 5.9731,
+      "carga_kwh": 0.0,
+      "bateria_salida_kwh": 5.9731
+    },
+    {
+      "nodo": "V14",
+      "tipo": "cliente",
+      "energia_tramo_kwh": 0.4647,
+      "bateria_llegada_kwh": 5.5083,
+      "carga_kwh": 0.0,
+      "bateria_salida_kwh": 5.5083
+    },
+    {
+      "nodo": "V18",
+      "tipo": "cliente",
+      "energia_tramo_kwh": 0.4451,
+      "bateria_llegada_kwh": 5.0633,
+      "carga_kwh": 0.0,
+      "bateria_salida_kwh": 5.0633
+    },
+    {
+      "nodo": "V6",
+      "tipo": "cliente",
+      "energia_tramo_kwh": 0.1579,
+      "bateria_llegada_kwh": 4.9053,
+      "carga_kwh": 0.0,
+      "bateria_salida_kwh": 4.9053
+    },
+    {
+      "nodo": "V1",
+      "tipo": "cliente",
+      "energia_tramo_kwh": 0.183,
+      "bateria_llegada_kwh": 4.7223,
+      "carga_kwh": 0.0,
+      "bateria_salida_kwh": 4.7223
+    },
+    {
+      "nodo": "V20",
+      "tipo": "cliente",
+      "energia_tramo_kwh": 0.2722,
+      "bateria_llegada_kwh": 4.4502,
+      "carga_kwh": 0.0,
+      "bateria_salida_kwh": 4.4502
+    },
+    {
+      "nodo": "V8",
+      "tipo": "cliente",
+      "energia_tramo_kwh": 0.0149,
+      "bateria_llegada_kwh": 4.4353,
+      "carga_kwh": 0.0,
+      "bateria_salida_kwh": 4.4353
+    },
+    {
+      "nodo": "V10",
+      "tipo": "cliente",
+      "energia_tramo_kwh": 0.1878,
+      "bateria_llegada_kwh": 4.2475,
+      "carga_kwh": 0.0,
+      "bateria_salida_kwh": 4.2475
+    },
+    {
+      "nodo": "V13",
+      "tipo": "cliente",
+      "energia_tramo_kwh": 0.9392,
+      "bateria_llegada_kwh": 3.3083,
+      "carga_kwh": 0.0,
+      "bateria_salida_kwh": 3.3083
+    },
+    {
+      "nodo": "V17",
+      "tipo": "cliente",
+      "energia_tramo_kwh": 1.1202,
+      "bateria_llegada_kwh": 2.1881,
+      "carga_kwh": 0.0,
+      "bateria_salida_kwh": 2.1881
+    },
+    {
+      "nodo": "C46",
+      "tipo": "cargador",
+      "energia_tramo_kwh": 0.585,
+      "bateria_llegada_kwh": 1.6031,
+      "carga_kwh": 14.3969,
+      "bateria_salida_kwh": 16.0
+    },
+    {
+      "nodo": "V12",
+      "tipo": "cliente",
+      "energia_tramo_kwh": 0.0127,
+      "bateria_llegada_kwh": 15.9873,
+      "carga_kwh": 0.0,
+      "bateria_salida_kwh": 15.9873
+    },
+    {
+      "nodo": "V9",
+      "tipo": "cliente",
+      "energia_tramo_kwh": 0.3758,
+      "bateria_llegada_kwh": 15.6115,
+      "carga_kwh": 0.0,
+      "bateria_salida_kwh": 15.6115
+    },
+    {
+      "nodo": "V19",
+      "tipo": "cliente",
+      "energia_tramo_kwh": 0.438,
+      "bateria_llegada_kwh": 15.1735,
+      "carga_kwh": 0.0,
+      "bateria_salida_kwh": 15.1735
+    },
+    {
+      "nodo": "V2",
+      "tipo": "cliente",
+      "energia_tramo_kwh": 0.3631,
+      "bateria_llegada_kwh": 14.8104,
+      "carga_kwh": 0.0,
+      "bateria_salida_kwh": 14.8104
+    },
+    {
+      "nodo": "BASE",
+      "tipo": "base",
+      "energia_tramo_kwh": 0.506,
+      "bateria_llegada_kwh": 14.3044,
+      "carga_kwh": 0.0,
+      "bateria_salida_kwh": 14.3044
+    }
+  ],
+  "2": [
+    {
+      "nodo": "BASE",
+      "tipo": "base",
+      "energia_tramo_kwh": 0.0,
+      "bateria_llegada_kwh": 9.6,
+      "carga_kwh": 0.0,
+      "bateria_salida_kwh": 9.6
+    }
+  ]
+}

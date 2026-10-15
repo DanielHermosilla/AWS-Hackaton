@@ -1,0 +1,785 @@
+[
+  {
+    "nombre": "competition",
+    "entregas_plano": 20,
+    "clientes": 20,
+    "energia_plano_kwh": 11.1466,
+    "recalculo_energia_rutas_plano": {
+      "pendiente_nominal": {
+        "factible": true,
+        "errores": [],
+        "energia_total_kwh": 12.0884,
+        "entregas": 20,
+        "margen_min_kwh": 3.1045,
+        "b_min": 1.6,
+        "B": 16.0
+      },
+      "pendiente_calibrado_eved": {
+        "factible": true,
+        "errores": [],
+        "energia_total_kwh": 9.805,
+        "entregas": 20,
+        "margen_min_kwh": 5.3279,
+        "b_min": 1.6,
+        "B": 16.0
+      },
+      "temp_frio_<0": {
+        "factible": false,
+        "errores": [
+          "1: Batería 1.584 < reserva 1.600 en el tramo V5→V11",
+          "1: Batería 1.579 < reserva 1.600 en el tramo V11→V13",
+          "1: Batería 1.574 < reserva 1.600 en el tramo V13→BASE"
+        ],
+        "energia_total_kwh": 15.3942,
+        "entregas": 20,
+        "margen_min_kwh": null,
+        "b_min": 1.6,
+        "B": 16.0
+      },
+      "temp_templado_20_30": {
+        "factible": true,
+        "errores": [],
+        "energia_total_kwh": 9.0745,
+        "entregas": 20,
+        "margen_min_kwh": 5.8466,
+        "b_min": 1.6,
+        "B": 16.0
+      }
+    },
+    "reoptimizacion_pendiente": {
+      "entregas": 20,
+      "dif_arcos_vs_plano": {
+        "pct_distintos": 0.0,
+        "n_union": 22,
+        "n_comunes": 22,
+        "solo_a": 0,
+        "solo_b": 0
+      },
+      "energia_rutas_plano_bajo_pendiente": 12.0884,
+      "energia_rutas_pend_bajo_pendiente": 12.0884,
+      "delta_energia_kwh": 0.0,
+      "delta_energia_pct": 0.0
+    }
+  },
+  {
+    "nombre": "evaluation",
+    "entregas_plano": 20,
+    "clientes": 20,
+    "energia_plano_kwh": 12.0478,
+    "recalculo_energia_rutas_plano": {
+      "pendiente_nominal": {
+        "factible": true,
+        "errores": [],
+        "energia_total_kwh": 13.0634,
+        "entregas": 20,
+        "margen_min_kwh": 2.1628,
+        "b_min": 1.6,
+        "B": 16.0
+      },
+      "pendiente_calibrado_eved": {
+        "factible": true,
+        "errores": [],
+        "energia_total_kwh": 10.5902,
+        "entregas": 20,
+        "margen_min_kwh": 4.5772,
+        "b_min": 1.6,
+        "B": 16.0
+      },
+      "temp_frio_<0": {
+        "factible": false,
+        "errores": [
+          "1: Batería 1.595 < reserva 1.600 en el tramo V1→V13",
+          "1: Batería 1.571 < reserva 1.600 en el tramo V13→V9",
+          "1: Batería 1.510 < reserva 1.600 en el tramo V9→V12",
+          "1: Batería 1.503 < reserva 1.600 en el tramo V12→BASE"
+        ],
+        "energia_total_kwh": 15.5029,
+        "entregas": 20,
+        "margen_min_kwh": null,
+        "b_min": 1.6,
+        "B": 16.0
+      },
+      "temp_templado_20_30": {
+        "factible": true,
+        "errores": [],
+        "energia_total_kwh": 9.8081,
+        "entregas": 20,
+        "margen_min_kwh": 5.133,
+        "b_min": 1.6,
+        "B": 16.0
+      }
+    },
+    "reoptimizacion_pendiente": {
+      "entregas": 20,
+      "dif_arcos_vs_plano": {
+        "pct_distintos": 0.0,
+        "n_union": 22,
+        "n_comunes": 22,
+        "solo_a": 0,
+        "solo_b": 0
+      },
+      "energia_rutas_plano_bajo_pendiente": 13.0634,
+      "energia_rutas_pend_bajo_pendiente": 13.0634,
+      "delta_energia_kwh": 0.0,
+      "delta_energia_pct": 0.0
+    }
+  },
+  {
+    "nombre": "syn_s1",
+    "entregas_plano": 20,
+    "clientes": 20,
+    "energia_plano_kwh": 9.6925,
+    "recalculo_energia_rutas_plano": {
+      "pendiente_nominal": {
+        "factible": false,
+        "errores": [
+          "1: Batería 1.596 < reserva 1.600 en el tramo V13→V17",
+          "1: Batería 1.546 < reserva 1.600 en el tramo V17→C46"
+        ],
+        "energia_total_kwh": 9.9804,
+        "entregas": 20,
+        "margen_min_kwh": null,
+        "b_min": 1.6,
+        "B": 16.0
+      },
+      "pendiente_calibrado_eved": {
+        "factible": true,
+        "errores": [],
+        "energia_total_kwh": 8.6792,
+        "entregas": 20,
+        "margen_min_kwh": 0.9783,
+        "b_min": 1.6,
+        "B": 16.0
+      },
+      "temp_frio_<0": {
+        "factible": false,
+        "errores": [
+          "1: Batería 1.588 < reserva 1.600 en el tramo V8→V10",
+          "1: Batería 1.565 < reserva 1.600 en el tramo V10→V13",
+          "1: Batería 1.551 < reserva 1.600 en el tramo V13→V17",
+          "1: Batería 1.528 < reserva 1.600 en el tramo V17→C46"
+        ],
+        "energia_total_kwh": 10.637,
+        "entregas": 20,
+        "margen_min_kwh": null,
+        "b_min": 1.6,
+        "B": 16.0
+      },
+      "temp_templado_20_30": {
+        "factible": true,
+        "errores": [],
+        "energia_total_kwh": 7.8907,
+        "entregas": 20,
+        "margen_min_kwh": 1.4897,
+        "b_min": 1.6,
+        "B": 16.0
+      }
+    },
+    "reoptimizacion_pendiente": {
+      "entregas": 20,
+      "dif_arcos_vs_plano": {
+        "pct_distintos": 50.0,
+        "n_union": 30,
+        "n_comunes": 15,
+        "solo_a": 7,
+        "solo_b": 8
+      },
+      "energia_rutas_plano_bajo_pendiente": 9.9804,
+      "energia_rutas_pend_bajo_pendiente": 10.662,
+      "delta_energia_kwh": -0.6816,
+      "delta_energia_pct": -6.83
+    }
+  },
+  {
+    "nombre": "syn_s2",
+    "entregas_plano": 20,
+    "clientes": 20,
+    "energia_plano_kwh": 7.5114,
+    "recalculo_energia_rutas_plano": {
+      "pendiente_nominal": {
+        "factible": false,
+        "errores": [
+          "1: Batería 1.551 < reserva 1.600 en el tramo V8→V20",
+          "1: Batería 1.536 < reserva 1.600 en el tramo V20→BASE"
+        ],
+        "energia_total_kwh": 8.0637,
+        "entregas": 20,
+        "margen_min_kwh": null,
+        "b_min": 1.6,
+        "B": 16.0
+      },
+      "pendiente_calibrado_eved": {
+        "factible": true,
+        "errores": [],
+        "energia_total_kwh": 6.9941,
+        "entregas": 20,
+        "margen_min_kwh": 0.9996,
+        "b_min": 1.6,
+        "B": 16.0
+      },
+      "temp_frio_<0": {
+        "factible": false,
+        "errores": [
+          "1: Batería 1.590 < reserva 1.600 en el tramo V6→V13",
+          "1: Batería 1.573 < reserva 1.600 en el tramo V13→V10",
+          "1: Batería 1.562 < reserva 1.600 en el tramo V10→V19",
+          "1: Batería 1.549 < reserva 1.600 en el tramo V19→V5",
+          "1: Batería 1.527 < reserva 1.600 en el tramo V5→V8",
+          "1: Batería 1.504 < reserva 1.600 en el tramo V8→V20",
+          "1: Batería 1.491 < reserva 1.600 en el tramo V20→BASE"
+        ],
+        "energia_total_kwh": 8.1089,
+        "entregas": 20,
+        "margen_min_kwh": null,
+        "b_min": 1.6,
+        "B": 16.0
+      },
+      "temp_templado_20_30": {
+        "factible": true,
+        "errores": [],
+        "energia_total_kwh": 6.1151,
+        "entregas": 20,
+        "margen_min_kwh": 1.8849,
+        "b_min": 1.6,
+        "B": 16.0
+      }
+    },
+    "reoptimizacion_pendiente": {
+      "entregas": 20,
+      "dif_arcos_vs_plano": {
+        "pct_distintos": 13.0,
+        "n_union": 23,
+        "n_comunes": 20,
+        "solo_a": 1,
+        "solo_b": 2
+      },
+      "energia_rutas_plano_bajo_pendiente": 8.0637,
+      "energia_rutas_pend_bajo_pendiente": 8.3479,
+      "delta_energia_kwh": -0.2842,
+      "delta_energia_pct": -3.52
+    }
+  },
+  {
+    "nombre": "syn_s3",
+    "entregas_plano": 20,
+    "clientes": 20,
+    "energia_plano_kwh": 7.9971,
+    "recalculo_energia_rutas_plano": {
+      "pendiente_nominal": {
+        "factible": false,
+        "errores": [
+          "1: Batería 1.598 < reserva 1.600 en el tramo V6→V3",
+          "1: Batería 1.596 < reserva 1.600 en el tramo V3→V14",
+          "1: Batería 1.580 < reserva 1.600 en el tramo V14→V9",
+          "1: Batería 1.559 < reserva 1.600 en el tramo V9→BASE"
+        ],
+        "energia_total_kwh": 8.0414,
+        "entregas": 20,
+        "margen_min_kwh": null,
+        "b_min": 1.6,
+        "B": 16.0
+      },
+      "pendiente_calibrado_eved": {
+        "factible": true,
+        "errores": [],
+        "energia_total_kwh": 6.9715,
+        "entregas": 20,
+        "margen_min_kwh": 1.0285,
+        "b_min": 1.6,
+        "B": 16.0
+      },
+      "temp_frio_<0": {
+        "factible": false,
+        "errores": [
+          "1: Batería 1.595 < reserva 1.600 en el tramo V18→V7",
+          "1: Batería 1.586 < reserva 1.600 en el tramo V7→V11",
+          "1: Batería 1.567 < reserva 1.600 en el tramo V11→V16",
+          "1: Batería 1.551 < reserva 1.600 en el tramo V16→V8",
+          "1: Batería 1.542 < reserva 1.600 en el tramo V8→V17",
+          "1: Batería 1.493 < reserva 1.600 en el tramo V17→V6",
+          "1: Batería 1.395 < reserva 1.600 en el tramo V6→V3",
+          "1: Batería 1.392 < reserva 1.600 en el tramo V3→V14",
+          "1: Batería 1.367 < reserva 1.600 en el tramo V14→V9",
+          "1: Batería 1.335 < reserva 1.600 en el tramo V9→BASE"
+        ],
+        "energia_total_kwh": 8.2654,
+        "entregas": 20,
+        "margen_min_kwh": null,
+        "b_min": 1.6,
+        "B": 16.0
+      },
+      "temp_templado_20_30": {
+        "factible": true,
+        "errores": [],
+        "energia_total_kwh": 6.5105,
+        "entregas": 20,
+        "margen_min_kwh": 1.4895,
+        "b_min": 1.6,
+        "B": 16.0
+      }
+    },
+    "reoptimizacion_pendiente": {
+      "entregas": 20,
+      "dif_arcos_vs_plano": {
+        "pct_distintos": 28.0,
+        "n_union": 25,
+        "n_comunes": 18,
+        "solo_a": 3,
+        "solo_b": 4
+      },
+      "energia_rutas_plano_bajo_pendiente": 8.0414,
+      "energia_rutas_pend_bajo_pendiente": 8.6716,
+      "delta_energia_kwh": -0.6302,
+      "delta_energia_pct": -7.84
+    }
+  },
+  {
+    "nombre": "syn_s4",
+    "entregas_plano": 20,
+    "clientes": 20,
+    "energia_plano_kwh": 7.5485,
+    "recalculo_energia_rutas_plano": {
+      "pendiente_nominal": {
+        "factible": false,
+        "errores": [
+          "1: Batería 1.579 < reserva 1.600 en el tramo V16→BASE"
+        ],
+        "energia_total_kwh": 8.0211,
+        "entregas": 20,
+        "margen_min_kwh": null,
+        "b_min": 1.6,
+        "B": 16.0
+      },
+      "pendiente_calibrado_eved": {
+        "factible": true,
+        "errores": [],
+        "energia_total_kwh": 7.1076,
+        "entregas": 20,
+        "margen_min_kwh": 0.8924,
+        "b_min": 1.6,
+        "B": 16.0
+      },
+      "temp_frio_<0": {
+        "factible": false,
+        "errores": [
+          "1: Batería 1.568 < reserva 1.600 en el tramo V3→V5",
+          "1: Batería 1.567 < reserva 1.600 en el tramo V5→V14",
+          "1: Batería 1.562 < reserva 1.600 en el tramo V14→V6",
+          "1: Batería 1.531 < reserva 1.600 en el tramo V6→V17",
+          "1: Batería 1.488 < reserva 1.600 en el tramo V17→V9",
+          "1: Batería 1.484 < reserva 1.600 en el tramo V9→V13",
+          "1: Batería 1.453 < reserva 1.600 en el tramo V13→V16",
+          "1: Batería 1.429 < reserva 1.600 en el tramo V16→BASE"
+        ],
+        "energia_total_kwh": 8.1707,
+        "entregas": 20,
+        "margen_min_kwh": null,
+        "b_min": 1.6,
+        "B": 16.0
+      },
+      "temp_templado_20_30": {
+        "factible": true,
+        "errores": [],
+        "energia_total_kwh": 6.1453,
+        "entregas": 20,
+        "margen_min_kwh": 1.8547,
+        "b_min": 1.6,
+        "B": 16.0
+      }
+    },
+    "reoptimizacion_pendiente": {
+      "entregas": 20,
+      "dif_arcos_vs_plano": {
+        "pct_distintos": 61.3,
+        "n_union": 31,
+        "n_comunes": 12,
+        "solo_a": 9,
+        "solo_b": 10
+      },
+      "energia_rutas_plano_bajo_pendiente": 8.0211,
+      "energia_rutas_pend_bajo_pendiente": 8.4161,
+      "delta_energia_kwh": -0.395,
+      "delta_energia_pct": -4.92
+    }
+  },
+  {
+    "nombre": "syn_s5",
+    "entregas_plano": 20,
+    "clientes": 20,
+    "energia_plano_kwh": 9.8635,
+    "recalculo_energia_rutas_plano": {
+      "pendiente_nominal": {
+        "factible": true,
+        "errores": [],
+        "energia_total_kwh": 10.7253,
+        "entregas": 20,
+        "margen_min_kwh": 4.5245,
+        "b_min": 1.6,
+        "B": 16.0
+      },
+      "pendiente_calibrado_eved": {
+        "factible": true,
+        "errores": [],
+        "energia_total_kwh": 8.7359,
+        "entregas": 20,
+        "margen_min_kwh": 6.4332,
+        "b_min": 1.6,
+        "B": 16.0
+      },
+      "temp_frio_<0": {
+        "factible": true,
+        "errores": [],
+        "energia_total_kwh": 14.9218,
+        "entregas": 20,
+        "margen_min_kwh": 0.5367,
+        "b_min": 1.6,
+        "B": 16.0
+      },
+      "temp_templado_20_30": {
+        "factible": true,
+        "errores": [],
+        "energia_total_kwh": 8.0299,
+        "entregas": 20,
+        "margen_min_kwh": 6.9396,
+        "b_min": 1.6,
+        "B": 16.0
+      }
+    },
+    "reoptimizacion_pendiente": {
+      "entregas": 20,
+      "dif_arcos_vs_plano": {
+        "pct_distintos": 77.8,
+        "n_union": 36,
+        "n_comunes": 8,
+        "solo_a": 14,
+        "solo_b": 14
+      },
+      "energia_rutas_plano_bajo_pendiente": 10.7253,
+      "energia_rutas_pend_bajo_pendiente": 10.6373,
+      "delta_energia_kwh": 0.088,
+      "delta_energia_pct": 0.82
+    }
+  },
+  {
+    "nombre": "syn_s6",
+    "entregas_plano": 20,
+    "clientes": 20,
+    "energia_plano_kwh": 9.6555,
+    "recalculo_energia_rutas_plano": {
+      "pendiente_nominal": {
+        "factible": false,
+        "errores": [
+          "1: Batería 1.579 < reserva 1.600 en el tramo V16→C31"
+        ],
+        "energia_total_kwh": 10.4681,
+        "entregas": 20,
+        "margen_min_kwh": null,
+        "b_min": 1.6,
+        "B": 16.0
+      },
+      "pendiente_calibrado_eved": {
+        "factible": true,
+        "errores": [],
+        "energia_total_kwh": 8.4765,
+        "entregas": 20,
+        "margen_min_kwh": 1.5613,
+        "b_min": 1.6,
+        "B": 16.0
+      },
+      "temp_frio_<0": {
+        "factible": false,
+        "errores": [
+          "1: Batería 1.519 < reserva 1.600 en el tramo V2→V20",
+          "1: Batería 1.492 < reserva 1.600 en el tramo V20→V8",
+          "1: Batería 1.468 < reserva 1.600 en el tramo V8→V11",
+          "1: Batería 1.456 < reserva 1.600 en el tramo V11→V14",
+          "1: Batería 1.450 < reserva 1.600 en el tramo V14→V16",
+          "1: Batería 1.445 < reserva 1.600 en el tramo V16→C31"
+        ],
+        "energia_total_kwh": 11.4903,
+        "entregas": 20,
+        "margen_min_kwh": null,
+        "b_min": 1.6,
+        "B": 16.0
+      },
+      "temp_templado_20_30": {
+        "factible": true,
+        "errores": [],
+        "energia_total_kwh": 7.8605,
+        "entregas": 20,
+        "margen_min_kwh": 1.9341,
+        "b_min": 1.6,
+        "B": 16.0
+      }
+    },
+    "reoptimizacion_pendiente": {
+      "entregas": 20,
+      "dif_arcos_vs_plano": {
+        "pct_distintos": 84.2,
+        "n_union": 38,
+        "n_comunes": 6,
+        "solo_a": 16,
+        "solo_b": 16
+      },
+      "energia_rutas_plano_bajo_pendiente": 10.4681,
+      "energia_rutas_pend_bajo_pendiente": 10.4717,
+      "delta_energia_kwh": -0.0036,
+      "delta_energia_pct": -0.03
+    }
+  },
+  {
+    "nombre": "syn_s7",
+    "entregas_plano": 20,
+    "clientes": 20,
+    "energia_plano_kwh": 8.0787,
+    "recalculo_energia_rutas_plano": {
+      "pendiente_nominal": {
+        "factible": true,
+        "errores": [],
+        "energia_total_kwh": 8.7624,
+        "entregas": 20,
+        "margen_min_kwh": 2.1634,
+        "b_min": 1.6,
+        "B": 16.0
+      },
+      "pendiente_calibrado_eved": {
+        "factible": true,
+        "errores": [],
+        "energia_total_kwh": 7.066,
+        "entregas": 20,
+        "margen_min_kwh": 3.389,
+        "b_min": 1.6,
+        "B": 16.0
+      },
+      "temp_frio_<0": {
+        "factible": false,
+        "errores": [
+          "1: Batería 1.572 < reserva 1.600 en el tramo V1→C10"
+        ],
+        "energia_total_kwh": 11.9581,
+        "entregas": 20,
+        "margen_min_kwh": null,
+        "b_min": 1.6,
+        "B": 16.0
+      },
+      "temp_templado_20_30": {
+        "factible": true,
+        "errores": [],
+        "energia_total_kwh": 6.5769,
+        "entregas": 20,
+        "margen_min_kwh": 3.5381,
+        "b_min": 1.6,
+        "B": 16.0
+      }
+    },
+    "reoptimizacion_pendiente": {
+      "entregas": 20,
+      "dif_arcos_vs_plano": {
+        "pct_distintos": 0.0,
+        "n_union": 22,
+        "n_comunes": 22,
+        "solo_a": 0,
+        "solo_b": 0
+      },
+      "energia_rutas_plano_bajo_pendiente": 8.7624,
+      "energia_rutas_pend_bajo_pendiente": 8.7624,
+      "delta_energia_kwh": 0.0,
+      "delta_energia_pct": 0.0
+    }
+  },
+  {
+    "nombre": "syn_s8",
+    "entregas_plano": 20,
+    "clientes": 20,
+    "energia_plano_kwh": 9.0245,
+    "recalculo_energia_rutas_plano": {
+      "pendiente_nominal": {
+        "factible": false,
+        "errores": [
+          "1: Batería 1.591 < reserva 1.600 en el tramo V15→V6",
+          "1: Batería 1.590 < reserva 1.600 en el tramo V6→C29"
+        ],
+        "energia_total_kwh": 9.2681,
+        "entregas": 20,
+        "margen_min_kwh": null,
+        "b_min": 1.6,
+        "B": 16.0
+      },
+      "pendiente_calibrado_eved": {
+        "factible": true,
+        "errores": [],
+        "energia_total_kwh": 8.3438,
+        "entregas": 20,
+        "margen_min_kwh": 0.5953,
+        "b_min": 1.6,
+        "B": 16.0
+      },
+      "temp_frio_<0": {
+        "factible": false,
+        "errores": [
+          "1: Batería 1.585 < reserva 1.600 en el tramo V20→V14",
+          "1: Batería 1.528 < reserva 1.600 en el tramo V14→V5",
+          "1: Batería 1.511 < reserva 1.600 en el tramo V5→V11",
+          "1: Batería 1.504 < reserva 1.600 en el tramo V11→V15",
+          "1: Batería 1.490 < reserva 1.600 en el tramo V15→V6",
+          "1: Batería 1.484 < reserva 1.600 en el tramo V6→C29"
+        ],
+        "energia_total_kwh": 9.9984,
+        "entregas": 20,
+        "margen_min_kwh": null,
+        "b_min": 1.6,
+        "B": 16.0
+      },
+      "temp_templado_20_30": {
+        "factible": true,
+        "errores": [],
+        "energia_total_kwh": 7.3468,
+        "entregas": 20,
+        "margen_min_kwh": 1.6664,
+        "b_min": 1.6,
+        "B": 16.0
+      }
+    },
+    "reoptimizacion_pendiente": {
+      "entregas": 20,
+      "dif_arcos_vs_plano": {
+        "pct_distintos": 66.7,
+        "n_union": 33,
+        "n_comunes": 11,
+        "solo_a": 11,
+        "solo_b": 11
+      },
+      "energia_rutas_plano_bajo_pendiente": 9.2681,
+      "energia_rutas_pend_bajo_pendiente": 9.8119,
+      "delta_energia_kwh": -0.5438,
+      "delta_energia_pct": -5.87
+    }
+  },
+  {
+    "nombre": "syn_s9",
+    "entregas_plano": 20,
+    "clientes": 20,
+    "energia_plano_kwh": 8.1128,
+    "recalculo_energia_rutas_plano": {
+      "pendiente_nominal": {
+        "factible": false,
+        "errores": [
+          "1: Batería 1.598 < reserva 1.600 en el tramo V10→V1",
+          "1: Batería 1.567 < reserva 1.600 en el tramo V1→C42"
+        ],
+        "energia_total_kwh": 8.7206,
+        "entregas": 20,
+        "margen_min_kwh": null,
+        "b_min": 1.6,
+        "B": 16.0
+      },
+      "pendiente_calibrado_eved": {
+        "factible": true,
+        "errores": [],
+        "energia_total_kwh": 7.1277,
+        "entregas": 20,
+        "margen_min_kwh": 1.4923,
+        "b_min": 1.6,
+        "B": 16.0
+      },
+      "temp_frio_<0": {
+        "factible": false,
+        "errores": [
+          "1: Batería 1.583 < reserva 1.600 en el tramo V15→V8",
+          "1: Batería 1.580 < reserva 1.600 en el tramo V8→V17",
+          "1: Batería 1.576 < reserva 1.600 en el tramo V17→V4",
+          "1: Batería 1.527 < reserva 1.600 en el tramo V4→V9",
+          "1: Batería 1.525 < reserva 1.600 en el tramo V9→V10",
+          "1: Batería 1.507 < reserva 1.600 en el tramo V10→V1",
+          "1: Batería 1.495 < reserva 1.600 en el tramo V1→C42"
+        ],
+        "energia_total_kwh": 8.9769,
+        "entregas": 20,
+        "margen_min_kwh": null,
+        "b_min": 1.6,
+        "B": 16.0
+      },
+      "temp_templado_20_30": {
+        "factible": true,
+        "errores": [],
+        "energia_total_kwh": 6.6046,
+        "entregas": 20,
+        "margen_min_kwh": 1.8644,
+        "b_min": 1.6,
+        "B": 16.0
+      }
+    },
+    "reoptimizacion_pendiente": {
+      "entregas": 20,
+      "dif_arcos_vs_plano": {
+        "pct_distintos": 24.0,
+        "n_union": 25,
+        "n_comunes": 19,
+        "solo_a": 3,
+        "solo_b": 3
+      },
+      "energia_rutas_plano_bajo_pendiente": 8.7206,
+      "energia_rutas_pend_bajo_pendiente": 8.8093,
+      "delta_energia_kwh": -0.0887,
+      "delta_energia_pct": -1.02
+    }
+  },
+  {
+    "nombre": "syn_s10",
+    "entregas_plano": 20,
+    "clientes": 20,
+    "energia_plano_kwh": 9.5133,
+    "recalculo_energia_rutas_plano": {
+      "pendiente_nominal": {
+        "factible": true,
+        "errores": [],
+        "energia_total_kwh": 10.2316,
+        "entregas": 20,
+        "margen_min_kwh": 4.42,
+        "b_min": 1.6,
+        "B": 16.0
+      },
+      "pendiente_calibrado_eved": {
+        "factible": true,
+        "errores": [],
+        "energia_total_kwh": 8.1845,
+        "entregas": 20,
+        "margen_min_kwh": 6.3761,
+        "b_min": 1.6,
+        "B": 16.0
+      },
+      "temp_frio_<0": {
+        "factible": true,
+        "errores": [],
+        "energia_total_kwh": 14.392,
+        "entregas": 20,
+        "margen_min_kwh": 0.4067,
+        "b_min": 1.6,
+        "B": 16.0
+      },
+      "temp_templado_20_30": {
+        "factible": true,
+        "errores": [],
+        "energia_total_kwh": 7.7448,
+        "entregas": 20,
+        "margen_min_kwh": 6.8697,
+        "b_min": 1.6,
+        "B": 16.0
+      }
+    },
+    "reoptimizacion_pendiente": {
+      "entregas": 20,
+      "dif_arcos_vs_plano": {
+        "pct_distintos": 0.0,
+        "n_union": 22,
+        "n_comunes": 22,
+        "solo_a": 0,
+        "solo_b": 0
+      },
+      "energia_rutas_plano_bajo_pendiente": 10.2316,
+      "energia_rutas_pend_bajo_pendiente": 10.2316,
+      "delta_energia_kwh": 0.0,
+      "delta_energia_pct": 0.0
+    }
+  }
+]
