@@ -34,9 +34,21 @@ DEFAULTS: dict[str, Any] = {
         "osm_permitir_descarga": True,    # si el mapa local no cubre los nodos
         "max_acceso_m": None,             # distancia máxima punto→calle; None = sin límite
         "respaldo_linea_recta": False,    # si OSM falla: usar línea recta × factor_vial
+        "algoritmo_caminos": None,        # None = scipy (más rápido medido); multi_destino|bidireccional|a_estrella|alt|networkx
+        "cache_adyacencia": True,         # caché .npz de la adyacencia con hash del grafo
+    },
+    "escala": {
+        "k_vecinos": "auto",              # arcos cliente→cliente por cliente; 0 = todos (exacto); "auto"
+        "umbral_exacto": 25,              # auto: exacto hasta este nº de clientes
+        "k_auto": 10,                     # auto: k usado sobre el umbral (heurístico)
+        "min_s": 10.0,                    # piso de tiempo del MILP
+        "overshoot_margen_s": 2.0,        # margen para extracción/validación
+        "mip_heuristic_effort": None,
+        "presolve": None,
     },
     "cargadores": {"top_r": 3},
-    "solver": {"tiempo_limite_s": 60.0, "formulacion": "compacta", "usar_todos_vehiculos": False,
+    "solver": {"tiempo_limite_s": 60.0, "presupuesto_total_s": 55.0, "formulacion": "compacta",
+               "usar_todos_vehiculos": False,
                "cargadores_por_arco": 3, "conectividad": "cortes", "gap_relativo": 0.0, "hilos": 0,
                "mostrar_log": False},
     "asesor": {

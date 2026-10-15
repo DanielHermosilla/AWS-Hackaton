@@ -72,7 +72,14 @@ def ejecutar(ruta_nodos: str, cfg: dict, salida: str | Path | None = "results") 
             red.preparar(nodos, energia_ref)
         else:
             raise
-    bit.paso("red", tipo=red.nombre)
+    bit.paso("red", tipo=red.nombre, tiempos=getattr(red, "tiempos", None))
+
+    # Escala: k-vecinos "auto" = exacto (0) hasta umbral_exacto clientes; si no, k_auto.
+    esc = dict(cfg.get("escala", {}))
+    n_cli = sum(n.tipo == "cliente" for n in nodos)
+    if esc.get("k_vecinos") == "auto":
+        esc["k_vecinos"] = 0 if n_cli <= int(esc.get("umbral_exacto", 25)) else int(esc.get("k_auto", 10))
+    cfg = {**cfg, "escala": esc}
 
     inst = construir(nodos, red, cfg)
     for dt in inst.tipos:
@@ -87,14 +94,22 @@ def ejecutar(ruta_nodos: str, cfg: dict, salida: str | Path | None = "results") 
     sol, traza = inicial, {}
     if cfg["pipeline"]["solver"] == "milp":
         certificado = inicial is not None and len(inicial.atendidos) == len(inst.clientes)
+        # Presupuesto: si hay presupuesto_total_s, el MILP recibe lo que queda del reloj total.
+        cfg_solver = {**cfg["solver"], "escala": cfg["escala"]}
+        total = cfg["solver"].get("presupuesto_total_s")
+        if total:
+            restante = float(total) - (time.perf_counter() - bit.t0) - float(cfg["escala"].get("overshoot_margen_s", 2.0))
+            cfg_solver["tiempo_limite_s"] = max(float(cfg["escala"].get("min_s", 1.0)),
+                                                min(float(cfg["solver"]["tiempo_limite_s"]), restante))
+        bit.paso("presupuesto", milp_s=round(cfg_solver["tiempo_limite_s"], 2))
         if cfg["solver"].get("formulacion", "compacta") == "compacta":
             from .milp_compacto import ModeloCompacto  # importa highspy solo si se usa
 
-            modelo = ModeloCompacto(inst, cfg["solver"], inicial)
+            modelo = ModeloCompacto(inst, cfg_solver, inicial)
         else:
             from .milp import ModeloMILP
 
-            modelo = ModeloMILP(inst, cfg["solver"])
+            modelo = ModeloMILP(inst, cfg_solver)
         sol_milp, traza = modelo.optimizar(inicial, certificado)
         # La formulación compacta no encadena cargadores (F→F). Si deja clientes sin
         # atender, se intenta la completa con el mismo presupuesto y se queda la mejor.
@@ -102,7 +117,7 @@ def ejecutar(ruta_nodos: str, cfg: dict, salida: str | Path | None = "results") 
                 and (sol_milp is None or len(sol_milp.atendidos) < len(inst.clientes))):
             from .milp import ModeloMILP
 
-            sol_c, traza_c = ModeloMILP(inst, cfg["solver"]).optimizar(sol_milp or inicial, False)
+            sol_c, traza_c = ModeloMILP(inst, cfg_solver).optimizar(sol_milp or inicial, False)
             traza = {"compacta": traza, "completa": traza_c}
             if sol_c is not None and (sol_milp is None or (len(sol_c.atendidos), -sol_c.energia) >
                                       (len(sol_milp.atendidos), -sol_milp.energia)):

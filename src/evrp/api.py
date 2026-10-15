@@ -76,6 +76,7 @@ class MotorEvrp(Motor):
         }.items() if v is not None}
         extra: dict = {"tipos_vehiculo": {"leaf2013": tipo},
                        "solver": {"tiempo_limite_s": float(escenario.get("presupuesto_s", 60)),
+                                  "presupuesto_total_s": float(escenario.get("presupuesto_s", 60)),
                                   "hilos": int(escenario.get("hilos", 0))}}
         if escenario.get("flota", {}).get("vehiculos"):
             extra["flota"] = [{"tipo": "leaf2013", "cantidad": int(escenario["flota"]["vehiculos"])}]

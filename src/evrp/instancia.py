@@ -87,6 +87,14 @@ class Instancia:
         return self.base if k == self.fin else k
 
 
+def k_vecinos_efectivo(esc: dict, n_clientes: int) -> int:
+    """"auto": exacto (0) hasta `umbral_exacto` clientes; sobre eso, `k_auto` (heurístico)."""
+    k = (esc or {}).get("k_vecinos", 0)
+    if k == "auto":
+        return 0 if n_clientes <= int(esc.get("umbral_exacto", 25)) else int(esc.get("k_auto", 10))
+    return int(k or 0)
+
+
 def tipos_desde_config(cfg: dict) -> list[TipoVehiculo]:
     pendiente = cfg["pipeline"]["energia"] == "pendiente"
     tipos = []
@@ -199,7 +207,7 @@ def construir(nodos: list[Nodo], red: Red, cfg: dict) -> Instancia:
         # para escalar; PUEDE perder el óptimo exacto, por eso es opcional (k>0).
         # Se preserva simetría (si i->j sobrevive, se intenta mantener j->i) y los
         # arcos usados por la solución inicial, cuando se proporciona.
-        k_vec = int(cfg.get("escala", {}).get("k_vecinos", 0))
+        k_vec = k_vecinos_efectivo(cfg.get("escala", {}), len(clientes))
         if k_vec > 0 and len(clientes) > k_vec:
             arcos = _podar_k_vecinos(arcos, clientes, k_vec)
         inst.tipos.append(DatosTipo(t, F, arcos, incompatibles, podados))
