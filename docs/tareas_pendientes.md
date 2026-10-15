@@ -57,6 +57,15 @@ Se corre después de las oleadas de IA y de elevación, en paralelo por su cuent
 - **Cómputo:** cada corrida usa 1 núcleo (`solver.hilos: 1`) para poder paralelizar con procesos independientes, `uv run python -m experimentos.topk --worker i/N`. Necesita unos 2 GB de RAM por proceso (estimado; medirlo en la primera corrida). Se puede mover a otra máquina clonando `evrp-lab` y ejecutando `uv sync`. Los resultados se guardan en JSONL y se agregan al final.
 - **Decisión:** si k = 10 no gana de forma consistente, `k_vecinos` vuelve a 0 por defecto.
 
+## Separación preparar/resolver: HECHA (15-10-2026, commit 3e1614d)
+
+- Comandos: `evrp preparar` (etapa 1: red → instancia preparada), `evrp resolver` (etapa 2: solver sobre la instancia preparada) y `evrp solve` (las dos etapas). Las firmas en Python están en el README.
+- Resultados medidos: preparar ~5 s, archivo de 0,31 MB (0,88 MB con geometría); resolver ~1,3–2,3 s frente a ~7 s del flujo completo; rutas idénticas.
+- **Pendiente:**
+  - Probar en la arena el modelo del PDF de `ev_routing` sobre la instancia preparada: los 81 nodos clave como grafo y cada par `tramos["i|j"]` como tramo elemental. Ver si con H ≈ 30 resuelve la instancia completa.
+  - Hace falta un adaptador en `arena/` que transforme la instancia preparada a su `ProblemInstance`, sin modificar su código.
+  - Acordar con su autor si ese uso es aceptable según su `AGENTS.md`, que pide justificar que la agregación preserva las opciones de recorrido. Cuando todos los arcos tienen energía no negativa, la preservación está argumentada.
+
 ## Arena
 
 - El ejecutable de SCIP 9.2.4 quedó instalado en `externos/scip-9.2.4/bin` (fuera de git, solo para el proyecto). Pyomo lo detecta (`SolverFactory('scip')` → 9.2.4) si se agrega esa carpeta al PATH del subproceso. Hay que repetir `ev_routing` con **su** flujo de solver (SCIP) y con H = 30 o mayor, en vez de `appsi_highs` con H = 10.
