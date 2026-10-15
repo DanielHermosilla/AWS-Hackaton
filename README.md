@@ -10,8 +10,8 @@ Esta rama conecta la **webapp HTML/CSS/JavaScript** con el solver de
 **Daniel Hermosilla**, importado desde `modelamiento@6242035`.
 Usa SCIP/PySCIPOpt, formulación por rutas sin H, contratos nativos y comprobador
 independiente. Se excluye el preprocesamiento que adapta trabajo de Lucas Zulueta
-y se retira el anterior proveedor `evrp`. Los cambios quedan locales para revisión
-y merge posterior.
+y se retira el anterior proveedor `evrp`. Las mejoras de interfaz y su integración
+se comparten en `codex/webapp`.
 
 ## Ejecutar la webapp
 

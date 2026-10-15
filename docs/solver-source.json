@@ -12,7 +12,8 @@
   ],
   "local_adaptations": {
     "src/ev_routing/pipeline.py": "Remove service_graph imports/expansion and reject service_paths_nonnegative; preserve native result schema and solver/checker/metrics.",
-    "src/ev_routing/cli.py": "Local JSON entry point for the shared pipeline, replacing upstream CLI that imports excluded preprocessing."
+    "src/ev_routing/cli.py": "Local JSON entry point for the shared pipeline, replacing upstream CLI that imports excluded preprocessing.",
+    "docs/llm4mip-adaptation.md": "Clarify that upstream benchmark/GCG references are not verified features of the local standard-policy web integration."
   },
   "files": {
     "config/default.json": {
@@ -32,8 +33,8 @@
     },
     "docs/llm4mip-adaptation.md": {
       "upstream_blob": "010faca72b28440b2d33b98aee75f4c7c654dd68",
-      "import_sha256": "ac283a12bb1c4436bebad53e9247fbac8b5df313fa8df5d07558ccddd2be7ede",
-      "modified": false
+      "import_sha256": "ad428a9b317f1b51cff726c40b48c440fe5639065448eb1323006f7ffd44ef92",
+      "modified": true
     },
     "examples/toy_recharge.json": {
       "upstream_blob": "18ad165f0c9aad37fec66d78b5704c95c5a7a8f1",

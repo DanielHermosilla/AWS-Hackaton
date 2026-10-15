@@ -9,10 +9,11 @@ conforme al PDF importado en esa revisión. Esta decisión explícita prevalece
 sobre las propuestas históricas de solver/interfaz de esta guía. Conservar la
 frontera de datos ante cambios internos del solver. Fuentes actuales:
 `docs/integration-beta.md`, `docs/contracts.md`, `backend/API_CONTRACT.md` y
-`docs/solver-source.json`. Mantener los cambios locales para revisión y merge
-posterior; no hacer push ni despliegue.
+`docs/solver-source.json`. Diego autorizó consolidar y publicar las mejoras de
+producto en `origin/codex/webapp` el 15-10-2026, dejando fuera la investigación
+de features y los recursos locales.
 
-**Organización de la webapp, solicitada por Diego el 15-10-2026:** esta carpeta `AWS-Hackaton/` es el repositorio principal. El frontend vigente está en `webapp/`; leer `webapp/README.md` para ejecutarlo y conocer el origen de sus datos. La consolidación parte de `main` actualizado y se prepara en `codex/webapp`. Conserva el motor y la historia de las otras ramas; no inicia una migración a `master`. La interfaz actual es una aplicación HTML/CSS/JavaScript con datos de ejemplo, aún sin conexión al solver ni autenticación. Memorias, skills, herramientas y exploraciones anteriores son recursos locales ignorados: `.local/`, `.agents/`, `.claude/` y `.kiro/`. El trabajo antiguo de UI tiene una copia recuperable en `.local/archive/ui-history-2026-10-15/`; no desarrollar sobre las exploraciones archivadas. Solo incorporar cambios de producto y sus dependencias necesarias, sin datos reales, credenciales ni archivos auxiliares.
+**Organización de la webapp, solicitada por Diego el 15-10-2026:** esta carpeta `AWS-Hackaton/` es el repositorio principal. El frontend vigente está en `webapp/`; leer `webapp/README.md` para ejecutarlo y conocer el origen de sus datos. La consolidación parte de `main` actualizado y se prepara en `codex/webapp`. Conserva el motor y la historia de las otras ramas; no inicia una migración a `master`. La interfaz actual es una aplicación HTML/CSS/JavaScript conectada al solver nativo de Daniel mediante un servidor local, con un modo separado de datos de ejemplo y sin autenticación. Memorias, skills, herramientas y exploraciones anteriores son recursos locales ignorados: `.local/`, `.agents/`, `.claude/` y `.kiro/`. El trabajo antiguo de UI tiene una copia recuperable en `.local/archive/ui-history-2026-10-15/`; no desarrollar sobre las exploraciones archivadas. Solo incorporar cambios de producto y sus dependencias necesarias, sin datos reales, credenciales ni archivos auxiliares.
 
 ## 1. Propósito y fuentes de verdad
 

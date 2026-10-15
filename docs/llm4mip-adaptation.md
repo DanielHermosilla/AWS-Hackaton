@@ -46,3 +46,7 @@ infraestructura interna, generación libre de algoritmos/cortes, experimentos
 COPT ni resultados de repositorios no públicos. La integración no acredita
 mejoras de rendimiento sin medirlas con nuestro benchmark.
 
+En la integración web de `codex/webapp`, la política es `standard` y no se hacen
+llamadas a Bedrock. `benchmark.py` y el preprocesador `service_graph.py` no se
+importaron. Las referencias anteriores a benchmarks y GCG describen el trabajo
+upstream; su ejecución no forma parte de la verificación de esta entrega.

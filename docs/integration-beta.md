@@ -129,7 +129,7 @@ base de datos, despliegue ni tuning AWS. La política es `standard`, sin llamada
 a Bedrock. No acredita acceso AWS ni rendimiento del concurso.
 Los límites de la API se detallan en su contrato; no son reglas oficiales.
 
-## Verificar antes del merge
+## Verificar la integración
 
 ```sh
 uv run --locked pytest -q
@@ -145,8 +145,9 @@ entradas y preservación del contrato. Estados forzados mediante dobles se
 distinguen de ejecuciones reales.
 
 La evidencia de la antigua beta con HiGHS es histórica y no valida esta entrega.
-Los cambios se mantienen en commits locales para revisión y merge posterior.
-No se hace push ni despliegue automáticamente.
+Las mejoras de producto se consolidaron en `codex/webapp` para compartirlas con
+Daniel, según la solicitud de Diego del 15 de octubre de 2026. La investigación
+de features, datos reales y recursos locales permanecen fuera de la entrega.
 
 La paridad del output no significa importar toda la aplicación upstream.
 Permanecen excluidos el preprocesador derivado y sus dependientes; la API local
