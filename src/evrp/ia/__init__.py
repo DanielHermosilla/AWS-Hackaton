@@ -9,6 +9,7 @@ from __future__ import annotations
 from .bedrock import (
     ClienteBedrock,
     ErrorBedrock,
+    EventoStream,
     ModeloNoDisponible,
     RespuestaConverse,
     extraer_json,
@@ -17,6 +18,7 @@ from .bedrock import (
 __all__ = [
     "ClienteBedrock",
     "ErrorBedrock",
+    "EventoStream",
     "ModeloNoDisponible",
     "RespuestaConverse",
     "extraer_json",
