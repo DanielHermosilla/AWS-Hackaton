@@ -1,0 +1,11 @@
+.venv/
+.cache/
+results/
+artifacts/
+data/
+externos/
+__pycache__/
+.pytest_cache/
+*.pyc
+*.graphml
+!src/evrp/assets/osm/*.graphml.gz

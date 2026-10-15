@@ -1,0 +1,36 @@
+[build-system]
+requires = ["hatchling>=1.26"]
+build-backend = "hatchling.build"
+
+[project]
+name = "evrp"
+version = "0.2.0"
+description = "Motor E-VRP contraído (caminos de mínima energía + MILP HiGHS) y arena de comparación."
+requires-python = ">=3.12,<3.14"
+dependencies = [
+  "highspy==1.11.0",
+  "numpy==2.2.4",
+  "pyyaml==6.0.2",
+  "osmnx==2.0.1",
+]
+
+[project.optional-dependencies]
+ia = ["boto3==1.40.0"]
+
+[dependency-groups]
+dev = ["pytest==8.3.5"]
+
+[project.scripts]
+evrp = "evrp.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/evrp"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
+markers = [
+  "datos: requiere los CSV del desafío en data/",
+  "bedrock: llama a Amazon Bedrock (credenciales reales)",
+  "red: descarga datos de OpenStreetMap",
+]

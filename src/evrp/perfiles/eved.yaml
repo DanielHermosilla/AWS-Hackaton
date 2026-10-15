@@ -1,0 +1,8 @@
+# Supuestos de energía medidos en eVED (este proyecto).
+# B útil = mediana de energía integrada / ΔSOC en 49 viajes; consumo = 379 viajes > 2 km.
+tipos_vehiculo:
+  leaf2013:
+    bateria_kwh: 16.0
+    soc_inicial: 0.60
+    reserva_kwh: 1.6
+    consumo_kwh_km: 0.156
