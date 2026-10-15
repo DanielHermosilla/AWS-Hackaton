@@ -36,6 +36,10 @@ DEFAULTS: dict[str, Any] = {
         "respaldo_linea_recta": False,    # si OSM falla: usar línea recta × factor_vial
         "algoritmo_caminos": None,        # None = scipy (más rápido medido); multi_destino|bidireccional|a_estrella|alt|networkx
         "cache_adyacencia": True,         # caché .npz de la adyacencia con hash del grafo
+        "elevacion": "ninguna",           # ninguna | eved (copernicus/usgs: pendientes). Requiere pipeline.energia: pendiente
+        "elevacion_csv": "data/eVED_EV.csv",
+        "elevacion_radio_m": 120.0,
+        "elevacion_interpolacion": "idw",
     },
     "escala": {
         "k_vecinos": "auto",              # arcos cliente→cliente por cliente; 0 = todos (exacto); "auto"

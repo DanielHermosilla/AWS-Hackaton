@@ -151,6 +151,12 @@ class RedOSM(Red):
         self.tiempos["carga_grafo"] = time.perf_counter() - t0
         self.G = G
         self._pos = {n.id: (n.lat, n.lon) for n in nodos}
+        self.meta_elevacion = None
+        fuente_elev = getattr(self, "elevacion", "ninguna")
+        if energia.usar_pendiente and fuente_elev and fuente_elev != "ninguna":
+            t1 = time.perf_counter()
+            self.meta_elevacion = aplicar_elevacion(G, fuente_elev, getattr(self, "elevacion_cfg", {}))
+            self.tiempos["elevacion"] = time.perf_counter() - t1
         elev = {v: float(d.get("elevation", 0.0) or 0.0) for v, d in G.nodes(data=True)}
 
         t0 = time.perf_counter()
@@ -346,7 +352,29 @@ def crear_red(cfg: dict) -> Red:
         return RedHaversine(cfg["red"]["factor_vial"])
     if tipo == "osm":
         r = cfg["red"]
-        return RedOSM(r["osm_margen_km"], r["osm_cache"], r.get("osm_grafo"), r.get("max_acceso_m"),
-                      bool(r.get("osm_permitir_descarga", True)),
-                      r.get("algoritmo_caminos"), bool(r.get("cache_adyacencia", True)))
+        red = RedOSM(r["osm_margen_km"], r["osm_cache"], r.get("osm_grafo"), r.get("max_acceso_m"),
+                     bool(r.get("osm_permitir_descarga", True)),
+                     r.get("algoritmo_caminos"), bool(r.get("cache_adyacencia", True)))
+        red.elevacion = r.get("elevacion", "ninguna")
+        red.elevacion_cfg = {"csv": r.get("elevacion_csv", "data/eVED_EV.csv"),
+                             "radio_m": r.get("elevacion_radio_m", 120.0),
+                             "interpolacion": r.get("elevacion_interpolacion", "idw")}
+        return red
     raise ValueError(tipo)
+
+
+def aplicar_elevacion(G, fuente: str, opciones: dict) -> dict:
+    """Escribe G.nodes[v]['elevation'] con la fuente elegida. Degrada a plano si falla."""
+    try:
+        if fuente == "eved":
+            from .elevacion.eved import FuenteEved
+
+            f = FuenteEved(opciones["csv"], radio_m=float(opciones["radio_m"]),
+                           interpolacion=opciones["interpolacion"])
+        else:
+            raise ValueError(f"Fuente de elevación no implementada: {fuente!r}")
+        meta = f.aplicar(G)
+        return {"fuente": fuente, **(meta if isinstance(meta, dict) else {})}
+    except Exception as exc:  # noqa: BLE001 — la elevación es opcional
+        log.warning("Elevación %s no disponible (%s); se usa terreno plano", fuente, exc)
+        return {"fuente": fuente, "error": str(exc)[:200]}
