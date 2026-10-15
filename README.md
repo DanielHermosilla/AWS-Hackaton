@@ -20,30 +20,41 @@ Inter + titulares serif Georgia, paleta crema, acento oscuro. Páginas sueltas
 - Entrada: `v1/index.html` (índice) o `v1/interfaces/acceso/` (el login).
 - Correr: `python -m http.server 4173 --directory v1`
 
-### v2 — Login integrado en la webapp (recomendado)
-Versión final: el login vive **dentro de la webapp real** de planificación
-(la de la branch `codex/webapp`). Adopta su estética definitiva: tipografía Inter,
-azul `#1664ec`, logo de marca "Batería en marcha", reutilizando `shared/base.css`
-y `app.css`. El acceso se enlaza con el flujo real de la app.
+### v2 — Login + registro integrados en la webapp, con backend real (recomendado)
+Versión final: login y **registro** viven **dentro de la webapp real** de
+planificación, con un **backend de verdad** (FastAPI + SQLite + bcrypt) que sirve
+la web y gestiona cuentas y sesiones. Estética definitiva: Inter, azul `#1664ec`,
+logo "Batería en marcha".
 
-Flujo: `login.html` → `index.html` (Inicio) → `plan.html` (mapa) …
-y "Salir de la demostración" → `salida.html` → vuelve a `login.html`.
+Seguridad real incluida: contraseñas con **bcrypt**, sesión por **cookie
+httpOnly** con token aleatorio y expiración, validación en servidor, **rate
+limiting** por IP y **protección de rutas** (`index.html`/`plan.html` exigen
+sesión). Detalles en `v2/server/README.md`.
 
-- Entrada: `v2/login.html`
-- Correr: `python -m http.server 4173 --directory v2`
-  - En red local: añadir `--bind 0.0.0.0` y abrir el puerto 4173 en el firewall.
+Flujo: `login.html` ⇄ `register.html` → `index.html` (Inicio) → `plan.html` …
+"Salir" cierra la sesión en el servidor → `salida.html` → vuelve a `login.html`.
 
-## Demostración de acceso
+- Correr (¡con el backend, no http.server!):
+  ```
+  cd v2/server
+  python -m pip install -r requirements.txt
+  python -m uvicorn app:app --host 127.0.0.1 --port 4173
+  ```
+  Abrir `http://127.0.0.1:4173/login.html`.
+  En red local: `--host 0.0.0.0` + abrir el puerto 4173 en el firewall.
 
-En ambas versiones, cualquier **correo válido** y una **contraseña de 8+
-caracteres** entran. No se verifica nada contra un servidor.
+## Acceso
 
-## Integración de la autenticación real
+- **v1**: demo de interfaz; cualquier correo válido + contraseña 8+ "entra".
+- **v2**: cuentas **reales** gestionadas por el backend. Regístrate en
+  `register.html` (contraseña fuerte: 10+ con mayús, minús, número y símbolo) y
+  luego inicia sesión. La sesión se guarda en una cookie segura del servidor.
 
-El acceso real está aislado en una sola función:
-- v1: `v1/interfaces/acceso/app.js` → `enviarCredenciales(...)`
-- v2: `v2/login.js` → `enviarCredenciales(...)`
+## Integración / backend real
 
-Reemplazar su cuerpo por una llamada real (p. ej. `fetch` POST al endpoint de
-login) que devuelva `{ ok, token }` o `{ ok:false, error }`. La UI y la
-validación ya están listas; solo cambia esa función.
+- **v1** (solo frontend): el punto de integración está en
+  `v1/interfaces/acceso/app.js` → `enviarCredenciales(...)`.
+- **v2** (ya tiene backend): el backend FastAPI está en `v2/server/`. El cliente
+  (`v2/auth.js`) usa `API.base=''` (mismo origen). Para mover la auth a otro
+  host, cambiar `API.base` y habilitar CORS + cookies cross-site. Para producción
+  con HTTPS, poner `secure=True` en la cookie (`v2/server/app.py`).

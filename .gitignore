@@ -15,3 +15,10 @@ Thumbs.db
 *.key
 id_ed25519*
 .env
+
+# backend auth
+v2/server/data/
+*.db
+*.db-wal
+*.db-shm
+__pycache__/

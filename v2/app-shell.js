@@ -180,14 +180,14 @@ export function initShell(page) {
     preferences.solidSurfaces = false;
     persistPreference();
   });
-  $('leave-demo').addEventListener('click', () => {
+  $('leave-demo').addEventListener('click', async () => {
     document.body.dataset.leavingDemo = 'true';
     clearPlanContext();
     try {
-      // Cerrar también la sesión de acceso de la demostración.
-      localStorage.removeItem('zmd.webapp.session.v1');
-      sessionStorage.removeItem('zmd.webapp.session.v1');
-    } catch { /* La salida no depende del almacenamiento. */ }
+      const { API, cerrarSesion } = await import('./auth.js');
+      await API.cerrarSesionServidor();  // invalida el token en el servidor
+      cerrarSesion();                    // limpia la marca de sesión del cliente
+    } catch { /* La salida no depende de esto. */ }
     location.assign(new URL('./salida.html', import.meta.url));
   });
   $('about').addEventListener('click', () => $('about-dialog').showModal());

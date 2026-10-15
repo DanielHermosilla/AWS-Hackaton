@@ -1,0 +1,10 @@
+# Base de datos local (nunca versionar)
+data/
+*.db
+*.db-wal
+*.db-shm
+
+# Python
+__pycache__/
+*.pyc
+.venv/

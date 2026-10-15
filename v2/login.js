@@ -1,11 +1,5 @@
-// Acceso a la webapp — capa de interfaz y validación de formulario.
-//
-// IMPORTANTE: no autentica de verdad. La webapp no tiene backend de usuarios
-// (ver webapp/README.md). La verificación real se conectará reemplazando el
-// cuerpo de `enviarCredenciales()` por una llamada al servicio de la otra web.
-// Al "entrar", marca una sesión de demostración y abre la webapp (index.html).
-
-const SESSION_KEY = 'zmd.webapp.session.v1';
+// Acceso — usa el módulo compartido auth.js (backend real FastAPI).
+import { validarEmail, API, guardarSesion, destinoTrasLogin } from './auth.js';
 
 const $ = (id) => document.getElementById(id);
 const form = $('login-form');
@@ -13,29 +7,18 @@ const emailEl = $('email');
 const passEl = $('password');
 const note = $('form-note');
 
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
 function setError(input, msgEl, message) {
-  const hasError = Boolean(message);
-  input.classList.toggle('invalid', hasError);
-  input.setAttribute('aria-invalid', String(hasError));
+  const hay = Boolean(message);
+  input.classList.toggle('invalid', hay);
+  input.setAttribute('aria-invalid', String(hay));
   msgEl.textContent = message || '';
-  msgEl.hidden = !hasError;
-  return !hasError;
+  msgEl.hidden = !hay;
+  return !hay;
 }
 
-function validateEmail() {
-  const v = emailEl.value.trim();
-  if (!v) return setError(emailEl, $('email-error'), 'Escribe tu correo.');
-  if (!EMAIL_RE.test(v)) return setError(emailEl, $('email-error'), 'Ese correo no parece válido.');
-  return setError(emailEl, $('email-error'), '');
-}
-
-function validatePassword() {
-  const v = passEl.value;
-  if (!v) return setError(passEl, $('password-error'), 'Escribe tu contraseña.');
-  if (v.length < 8) return setError(passEl, $('password-error'), 'Debe tener al menos 8 caracteres.');
-  return setError(passEl, $('password-error'), '');
+function checkEmail() { return setError(emailEl, $('email-error'), validarEmail(emailEl.value)); }
+function checkPass() {
+  return setError(passEl, $('password-error'), passEl.value ? '' : 'Escribe tu contraseña.');
 }
 
 function showNote(kind, text) {
@@ -44,7 +27,6 @@ function showNote(kind, text) {
   note.textContent = text;
 }
 
-// Mostrar / ocultar contraseña
 $('toggle-pass').addEventListener('click', (e) => {
   const btn = e.currentTarget;
   const showing = passEl.type === 'text';
@@ -54,32 +36,16 @@ $('toggle-pass').addEventListener('click', (e) => {
   passEl.focus({ preventScroll: true });
 });
 
-emailEl.addEventListener('blur', validateEmail);
-passEl.addEventListener('blur', validatePassword);
-emailEl.addEventListener('input', () => emailEl.classList.contains('invalid') && validateEmail());
-passEl.addEventListener('input', () => passEl.classList.contains('invalid') && validatePassword());
-
-// ---- punto de integración (simulado) ----
-// Reemplazar por fetch POST al endpoint real; devolver { ok, token } o { ok:false, error }.
-async function enviarCredenciales({ email, password, remember }) {
-  await new Promise((r) => setTimeout(r, 600));
-  return { ok: true, token: 'demo-session', usuario: email };
-}
-
-function marcarSesion(usuario, remember) {
-  const payload = JSON.stringify({ usuario, desde: Date.now(), demo: true });
-  try {
-    (remember ? localStorage : sessionStorage).setItem(SESSION_KEY, payload);
-  } catch {
-    // El acceso de demostración continúa aunque el almacenamiento no esté disponible.
-  }
-}
+emailEl.addEventListener('blur', checkEmail);
+passEl.addEventListener('blur', checkPass);
+emailEl.addEventListener('input', () => emailEl.classList.contains('invalid') && checkEmail());
+passEl.addEventListener('input', () => passEl.classList.contains('invalid') && checkPass());
 
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
-  const okEmail = validateEmail();
-  const okPass = validatePassword();
-  if (!okEmail || !okPass) { (!okEmail ? emailEl : passEl).focus(); return; }
+  const okE = checkEmail();
+  const okP = checkPass();
+  if (!okE || !okP) { (!okE ? emailEl : passEl).focus(); return; }
 
   const submit = $('submit');
   submit.disabled = true;
@@ -87,27 +53,24 @@ form.addEventListener('submit', async (e) => {
   submit.textContent = 'Entrando…';
   note.hidden = true;
 
-  try {
-    const res = await enviarCredenciales({
-      email: emailEl.value.trim(),
-      password: passEl.value,
-      remember: $('remember').checked,
-    });
-    if (res.ok) {
-      marcarSesion(res.usuario, $('remember').checked);
-      showNote('ok', 'Acceso válido. Abriendo el panel…');
-      location.assign(new URL('./index.html', import.meta.url).href);
-    } else {
-      submit.disabled = false;
-      submit.textContent = original;
-      showNote('err', res.error || 'No se pudo iniciar sesión.');
-    }
-  } catch (err) {
+  const res = await API.iniciarSesion({
+    email: emailEl.value.trim(),
+    password: passEl.value,
+  });
+
+  if (res.ok) {
+    guardarSesion(res.usuario, $('remember').checked);
+    showNote('ok', 'Acceso válido. Abriendo el panel…');
+    location.assign(new URL('./' + destinoTrasLogin(), import.meta.url).href);
+  } else {
     submit.disabled = false;
     submit.textContent = original;
-    showNote('err', 'Error de conexión con el servicio de acceso.');
+    showNote('err', res.error || 'No se pudo iniciar sesión.');
+    passEl.focus();
   }
 });
 
-$('sso').addEventListener('click', () => showNote('ok', 'El acceso corporativo (SSO) se conectará con el servicio real.'));
-$('forgot').addEventListener('click', (e) => { e.preventDefault(); showNote('ok', 'La recuperación de contraseña vive en el servicio de acceso.'); });
+$('forgot').addEventListener('click', (e) => {
+  e.preventDefault();
+  showNote('ok', 'La recuperación de contraseña se habilita con el correo del servidor.');
+});

@@ -2,6 +2,8 @@
 <html lang="es">
 <head>
   <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'">
+  <meta name="referrer" content="no-referrer">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <link rel="icon" href="./assets/brand/icons/favicon.ico" sizes="16x16 32x32 48x48">
   <link rel="icon" href="./assets/brand/icons/favicon.svg" type="image/svg+xml" sizes="any">
@@ -43,7 +45,8 @@
         <form id="login-form" novalidate>
           <div class="field">
             <label for="email">Correo de la cuenta</label>
-            <input type="email" id="email" name="email" autocomplete="username"
+            <input type="email" id="email" name="email" autocomplete="username" maxlength="254"
+                   spellcheck="false" autocapitalize="off"
                    placeholder="nombre@case.cl" required aria-describedby="email-error">
             <small class="field-error" id="email-error" hidden></small>
           </div>
@@ -53,7 +56,7 @@
               <label for="password">Contraseña</label>
               <button type="button" class="link-quiet" id="toggle-pass" aria-pressed="false">Mostrar</button>
             </div>
-            <input type="password" id="password" name="password" autocomplete="current-password"
+            <input type="password" id="password" name="password" autocomplete="current-password" maxlength="128"
                    placeholder="········" required minlength="8" aria-describedby="password-error">
             <small class="field-error" id="password-error" hidden></small>
           </div>
@@ -71,8 +74,8 @@
         </form>
 
         <div class="divider"><span>o</span></div>
-        <button type="button" class="block secondary" id="sso">Continuar con acceso corporativo</button>
-        <p class="demo-hint">Demostración: cualquier correo válido y una contraseña de 8+ caracteres entran al panel.</p>
+        <p class="switch">¿Aún no tienes cuenta? <a href="register.html" id="to-register">Crear cuenta</a></p>
+        <p class="demo-hint">Acceso con cuenta real: el servidor valida y guarda la sesión en una cookie segura.</p>
       </div>
     </section>
   </main>

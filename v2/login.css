@@ -2,22 +2,22 @@
    Reutiliza shared/base.css (Inter, #192330, azul #1664ec, .primary, dialog, topbar).
    Solo añade lo propio de la pantalla de acceso. */
 
-.page-login{background:#f6f7f9;min-height:100vh;display:flex;flex-direction:column}
+.page-login{background:#f6f7f9;height:100vh;height:100dvh;overflow:hidden;display:flex;flex-direction:column}
 
 /* topbar: usa .topbar/.zmd-brand ya definidos en app.css; aquí solo el alto cómodo */
-.page-login .topbar{display:flex;align-items:center;justify-content:space-between;
+.page-login .topbar{flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;
   padding:0 24px;height:64px;background:#fff;border-bottom:1px solid #e6eaef}
 .page-login .zmd-brand__logo{height:30px;width:auto;display:block}
 .page-login .top-actions{display:flex;align-items:center;gap:12px}
 
-/* dos columnas */
-.login-main{flex:1;display:grid;grid-template-columns:1.1fr .9fr;max-width:1200px;width:100%;
-  margin:0 auto;padding:0 24px}
+/* dos columnas: ocupan el alto restante sin desbordar */
+.login-main{flex:1 1 auto;min-height:0;display:grid;grid-template-columns:1.1fr .9fr;
+  max-width:1200px;width:100%;margin:0 auto;padding:0 24px;overflow:hidden}
 .login-main:focus{outline:none}
 
 /* columna de marca */
 .login-aside{display:flex;flex-direction:column;justify-content:center;
-  padding:48px 56px 48px 0;border-right:1px solid #e6eaef}
+  padding:24px 56px 24px 0;border-right:1px solid #e6eaef;min-height:0;overflow:auto}
 .login-aside .eyebrow{font-size:11px;font-weight:650;text-transform:uppercase;
   letter-spacing:.12em;color:#697581}
 .login-aside h1{font-size:40px;line-height:1.1;letter-spacing:-1.2px;font-weight:700;
@@ -31,7 +31,8 @@
 .login-points .pt.check{background:#1664ec}
 
 /* columna del formulario */
-.login-panel{display:flex;align-items:center;justify-content:center;padding:48px 0 48px 56px}
+.login-panel{display:flex;align-items:center;justify-content:center;padding:24px 0 24px 56px;
+  min-height:0;overflow:auto}
 .login-card{width:100%;max-width:380px;background:#fff;border:1px solid #e2e7ec;border-radius:14px;
   padding:34px 30px;box-shadow:0 10px 40px #13294112}
 .login-card .eyebrow{font-size:11px;font-weight:650;text-transform:uppercase;
@@ -71,15 +72,34 @@
 
 .demo-hint{margin-top:18px;font-size:11px;color:#8893a0;line-height:1.6;text-align:center}
 
+/* medidor de fortaleza + requisitos (registro) */
+.strength{height:5px;border-radius:3px;background:#e6eaef;margin:10px 0 6px;overflow:hidden}
+.strength span{display:block;height:100%;width:0;border-radius:3px;transition:width .2s,background .2s;background:#d2443b}
+.strength span[data-nivel="2"]{background:#e0a106}
+.strength span[data-nivel="3"]{background:#2f9e44}
+.strength span[data-nivel="4"]{background:#1664ec}
+.strength-label{display:block;font-size:11px;color:#697581;margin-bottom:8px}
+.reqs{list-style:none;padding:0;margin:4px 0 0;display:grid;grid-template-columns:1fr 1fr;gap:3px 12px}
+.reqs li{font-size:11px;color:#8893a0;display:flex;align-items:center;gap:6px}
+.reqs li span{font-size:11px}
+.reqs li.ok{color:#2f9e44}
+.reqs.shake{animation:req-shake .35s}
+@keyframes req-shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+.terms{align-items:flex-start;margin:4px 0 10px}
+.terms input{margin-top:2px}
+.switch{margin-top:16px;font-size:13px;color:#566574;text-align:center}
+.switch a{color:#1664ec;font-weight:600}
+
 /* responsive */
 @media(max-width:860px){
-  .login-main{display:block;padding:28px 20px}
-  .login-aside{border-right:0;border-bottom:1px solid #e6eaef;padding:0 0 28px}
-  .login-aside h1{font-size:32px}
-  .login-panel{padding:28px 0 0}
+  .login-main{display:block;padding:20px;overflow-y:auto}
+  .login-aside{border-right:0;border-bottom:1px solid #e6eaef;padding:0 0 22px;overflow:visible}
+  .login-aside h1{font-size:30px}
+  .login-points{margin-top:18px;gap:11px}
+  .login-panel{padding:22px 0 0;overflow:visible}
 }
 @media(max-width:600px){
   .page-login .topbar{padding:0 16px}
-  .login-aside h1{font-size:27px}
-  .login-card{padding:26px 20px}
+  .login-aside h1{font-size:26px}
+  .login-card{padding:24px 18px}
 }
