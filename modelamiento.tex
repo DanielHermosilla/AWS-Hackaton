@@ -358,10 +358,41 @@ de grados y cortes DFJ de subtours. No usa posiciones, MTZ ni Big-M de batería.
 El testigo heurístico no queda probado óptimo; la resolución DFJ determina
 coste y cota. Esta reducción conserva el óptimo, no todas las rutas factibles.
 
-\subsection{Estrategia del LLM y alcance}
-Bedrock se consulta una sola vez antes de ambas fases. Puede elegir reglas de
-branching y presupuestos de cortes o lotes implementados; no cambia el modelo,
-recursos ni pruebas. Los callbacks de pricing son locales, sin llamadas remotas.
+\subsection{Incumbentes y relajación energética}
+Se generan incumbentes mediante inserción, búsqueda local, partición de un
+orden de entregas y una vecindad de recarga parcial. Cada resultado se valida
+independientemente. Estas heurísticas no restringen $\mathcal R_k$: el pricing
+exacto conserva múltiples recargas, revisitas y recursos continuos.
+Un maestro con un conjunto finito de columnas conocidas sirve como heurística
+primal; su cota nativa no certifica el maestro completo.
+
+Con servicio completo y energías no negativas, sea $d_{ij}$ el coste de un
+camino mínimo dirigido en el grafo de entrada. Concatenar los recorridos de
+la flota en el depósito y atajar entre eventos de entrega usando $d$ produce
+un tour cuyo coste no supera la energía de la flota. Así, una asignación
+dirigida y las relajaciones con cortes de subtours proporcionan cotas inferiores
+válidas al eliminar batería, recargas, tiempos y reparto entre vehículos.
+La implementación resta un margen conservador de acumulación numérica.
+Este argumento no requiere que los arcos directos ya satisfagan exactamente
+la desigualdad triangular, pues se construye su clausura por caminos mínimos.
+No se aplica con regeneración ni cuando quedan clientes sin atender.
+Un tour relajado solo se incorpora como solución después de repararlo y validar
+su factibilidad física. Se conserva la formulación (25)--(29).
+
+\subsection{Orquestación del LLM y alcance}
+Por autorización del usuario, Bedrock puede tomar decisiones en eventos
+explícitos: antes de buscar, después de observar el arranque y ante estancamiento
+entre etapas de SCIP. El límite predeterminado es cuatro llamadas y una
+asignación de inferencia del 25\,\% del presupuesto global, ambos configurables.
+El tiempo real y los tokens se registran por decisión.
+
+El LLM controla heurísticas, operadores, reparto interno de tiempo, relajaciones,
+pricing, cortes compatibles y parámetros nativos verificados. Los campos de
+etapas terminadas quedan inactivos. No cambia datos, física, tolerancias,
+presupuesto global ni criterios de prueba. Los callbacks de pricing son
+locales, sin llamadas remotas; una propuesta inválida conserva la última política
+válida y se registra como rechazo. El motor mantiene el pricing exacto ante
+fallos de AWS.
 En snapshots antiguos, \code{movement\_limit} es metadato heredado y no interviene
 en esta formulación. Las rutas resultantes tienen longitud variable.
 

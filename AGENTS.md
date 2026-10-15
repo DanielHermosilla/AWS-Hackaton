@@ -52,11 +52,17 @@ Nunca ejecutar código generado por el LLM ni aceptar sus afirmaciones como
 certificados. El motor debe conservar pricing exacto o cotas válidas,
 también ante fallos de AWS. Las llamadas reales deben estar acotadas y
 registradas; una prueba con dobles no acredita acceso a AWS.
-La política vigente está en `route_policy.py`: **una llamada Bedrock antes de
-resolver, compartida por ambas fases**, ninguna llamada remota por nodo, corte
-o ronda de pricing. Consultas excepcionales futuras requieren un evento y
-presupuesto explícitos; no están habilitadas. `RoutePolicy` solo admite cortes,
-lotes y branching implementados. `dw.py`, `dw_bridge.py`, `dw_callbacks.py`
+En `codex/solver-orchestrator`, el usuario autorizó ampliar el control del LLM
+a todo el proceso de búsqueda. `route_orchestrator.py` consulta Bedrock en
+`before_search`, `after_seed` y `search_stagnation`, fuera de los callbacks.
+El máximo predeterminado es cuatro llamadas, con asignación de inferencia del
+25 % del presupuesto global, ambos configurables. Se guardan solicitudes,
+respuestas, uso, cambios efectivos y propuestas inactivas o rechazadas.
+`RoutePolicy` controla construcción de incumbentes, búsqueda local, recargas
+heurísticas, reparto de tiempo, relajación energética, maestros restringidos,
+pricing, cortes compatibles y parámetros nativos verificados. El LLM no puede
+alterar física, tolerancias, presupuesto global ni certificados.
+`dw.py`, `dw_bridge.py`, `dw_callbacks.py`
 y su controlador conservan el experimento GCG heredado.
 `movement_limit` de snapshots 1.0 es metadato heredado en `scip-routes`, sin
 efecto en pricing, arranque ni validación. No construir `model.py` en ese flujo.

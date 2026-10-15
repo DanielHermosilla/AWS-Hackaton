@@ -8,8 +8,10 @@
 - Mantener inalterados la instancia, formulación, presupuesto y certificación.
 - Cada respuesta será JSON validado contra acciones implementadas del solver.
   Nunca ejecutar código generado ni aplicar parámetros desconocidos.
-- En el maestro sin H, usar `RoutePolicy`: una llamada antes de ambas fases,
-  ninguna llamada remota por nodo, corte o ronda de pricing.
+- En esta rama, el usuario autorizó la orquestación amplia por eventos:
+  `before_search`, `after_seed` y `search_stagnation`. Usar `RoutePolicy`,
+  límites explícitos de llamadas/inferencia y registros por decisión.
+  Ninguna llamada remota por nodo, corte o ronda de pricing.
 - El LLM puede elegir descomposiciones verificadas y políticas de cortes/pricing.
   No puede declarar infactibilidad, optimalidad ni ausencia de columnas.
 - Los tests habituales usan dobles; identificar aparte la prueba real de AWS.
