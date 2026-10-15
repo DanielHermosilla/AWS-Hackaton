@@ -54,7 +54,11 @@ DEFAULTS: dict[str, Any] = {
     "solver": {"tiempo_limite_s": 60.0, "presupuesto_total_s": 55.0, "formulacion": "compacta",
                "usar_todos_vehiculos": False,
                "cargadores_por_arco": 3, "conectividad": "cortes", "gap_relativo": 0.0, "hilos": 0,
-               "mostrar_log": False},
+               "mostrar_log": False,
+               # Regla de parada por estancamiento (solo formulación compacta, fase de energía).
+               # Se activa únicamente si el MILP no demostró el óptimo a los t_min_s; corta cuando
+               # la mejor solución incumbente lleva sin_mejora_s sin mejorar. APAGADA por defecto.
+               "parada": {"activar": False, "t_min_s": 15.0, "sin_mejora_s": 8.0}},
     "asesor": {
         "tipo": "ninguno",
         "region": "us-east-1",
