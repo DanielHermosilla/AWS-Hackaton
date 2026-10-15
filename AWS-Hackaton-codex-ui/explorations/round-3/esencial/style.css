@@ -1,0 +1,95 @@
+body{height:100vh;overflow:hidden;background:white}.topbar{height:65px;display:flex;align-items:center;padding:0 26px;border-bottom:1px solid #e2e6ec;gap:34px}.app-name{color:#5e6b79;font-size:13px;border-left:1px solid #e1e6ed;padding-left:28px}.top-actions{display:flex;align-items:center;gap:14px;margin-left:auto}.top-actions .icon-button{border:0;color:#687687;padding:6px}.all-designs{font-size:12px;color:#626d78}.workspace{height:calc(100vh - 65px);display:grid;grid-template-columns:352px 1fr}.sidebar{border-right:1px solid #dce2e8;display:flex;flex-direction:column;min-height:0;z-index:2}.scenario{padding:27px 26px 23px}.scenario p{font-size:12px;color:#697685}.file-tag{font-size:10px;color:#7a8692;border:1px solid #dce2e8;border-radius:4px;padding:3px 5px}.scenario h1{font-size:25px;letter-spacing:-.9px;margin:12px 0}.location{font-size:13px;color:#647283}.pin-dot{width:6px;height:6px;background:#6c93b4;border-radius:50%}.sidebar-tabs{display:flex;border-top:1px solid #e5e9ee;border-bottom:1px solid #e5e9ee;padding:0 24px;gap:22px}.sidebar-tabs button{border:0;border-radius:0;padding:15px 0 12px;background:none;color:#697584;font-size:13px;border-bottom:2px solid transparent}.sidebar-tabs button[aria-selected=true]{color:#192e48;border-bottom-color:#1664ec;font-weight:600}.sidebar-tabs button span{font-size:11px;margin-left:7px;color:#7b8795}.sidebar-content{overflow:auto;padding:20px;flex:1}.vehicle-card{padding:18px;border:1px solid #e0e5eb;border-radius:13px;margin-bottom:15px;position:relative;background:#fff}.vehicle-card.active{border-color:var(--route);box-shadow:0 0 0 1px var(--route)}.vehicle-card .vehicle-heading{display:flex;align-items:center;justify-content:space-between}.vehicle-name{font-size:15px;font-weight:650;display:flex;align-items:center;gap:9px}.vehicle-dot{width:9px;height:9px;border-radius:50%;background:var(--route)}.vehicle-model{font-size:12px;color:#75808d;margin-top:4px}.vehicle-card .car-drawing{width:166px;margin:13px auto 10px}.battery-track{height:6px;border-radius:5px;background:#e9edf1;overflow:hidden;margin:8px 0}.battery-track span{display:block;height:100%;background:var(--route);border-radius:5px}.soc-row{display:flex;justify-content:space-between;font-size:12px;color:#677382}.soc-row strong{color:#233346;font-weight:600}.vehicle-stats{display:grid;grid-template-columns:repeat(3,1fr);margin:17px 0 14px}.vehicle-stats strong{display:block;font-size:15px;font-weight:650;margin-bottom:4px;letter-spacing:-.3px}.vehicle-stats small{font-size:11px;color:#697989}.vehicle-stats>div+div{border-left:1px solid #e4e9ee;padding-left:12px}.route-button{width:100%;display:flex;justify-content:space-between;align-items:center;border-color:#e5e9ef;padding:9px 11px;font-size:12px;color:var(--route)}.sidebar-foot{border-top:1px solid #e5e9ee;padding:14px 24px;display:flex;align-items:center;gap:10px;color:#5f7080;font-size:11px;line-height:1.5}.sidebar-foot svg{color:#91a0ac}.map-region{position:relative;min-width:0;background:#e8ede8}#map{position:absolute;inset:0}.map-summary{position:absolute;z-index:2;top:23px;left:50%;transform:translateX(-50%);display:flex;gap:25px;background:white;border:1px solid #e0e5e9;border-radius:12px;box-shadow:0 4px 24px #12314c0c;padding:17px 23px;white-space:nowrap;pointer-events:none}.map-summary>div{display:flex;align-items:center;gap:11px}.map-summary>div+div{border-left:1px solid #e8edf0;padding-left:25px}.summary-icon{color:#5d7892;display:grid}.map-summary strong{font-size:22px;letter-spacing:-.7px;font-weight:650}.map-summary strong span{font-size:14px;color:#7a8895;font-weight:450;letter-spacing:0}.map-summary small{display:block;font-size:11px;margin-top:3px;color:#6c7b88}.map-tools{position:absolute;top:124px;right:22px;display:flex;gap:8px;z-index:2}.map-tools button{box-shadow:0 2px 12px #12304812;background:#fff;display:flex;align-items:center;gap:8px;font-size:12px}.map-tools button[aria-pressed=true]{border-color:#3d9471;color:#19794c;background:#edf9f1}.legend{position:absolute;bottom:31px;left:25px;z-index:2;background:#fff;display:flex;align-items:center;gap:18px;padding:11px 15px;border:1px solid #e0e5ea;border-radius:8px;font-size:11px;color:#64717e;box-shadow:0 3px 12px #1231480a}.legend span{display:flex;align-items:center;gap:6px}.dot{display:inline-block;width:8px;height:8px;border-radius:50%}.dot.a{background:#1664ec}.dot.b{background:#8152d9}.legend .route-note{color:#93a0ab;border-left:1px solid #e4e8ed;padding-left:16px}.selection{position:absolute;left:24px;bottom:90px;z-index:3;width:255px;background:#fff;border-radius:12px;padding:20px;box-shadow:0 8px 30px #172b4522;border:1px solid #d9e2e8}.selection h3{font-size:16px;letter-spacing:-.4px}.selection p{font-size:12px;color:#6a7986;margin:6px 0}.selection .close{float:right;border:0;padding:0;background:none}.selection .stop-battery{display:flex;justify-content:space-between;margin-top:15px;font-size:12px;line-height:1.6}.stop-battery strong{display:block;font-size:22px;color:#223b57}.stop-row{width:100%;display:flex;align-items:center;gap:12px;border:0;border-bottom:1px solid #edf0f3;border-radius:0;padding:13px 7px;text-align:left;background:#fff}.stop-row.active{background:#eef4ff}.stop-number{display:grid;place-items:center;width:27px;height:27px;background:#eef4ff;color:#1664ec;border-radius:7px;font-size:11px;font-weight:650}.stop-name{flex:1;font-size:13px}.stop-name small{display:block;font-size:11px;margin-top:4px;color:#788593}.stop-row>strong{font-size:12px;font-weight:550}.all-routes{border:0;background:none;color:#1664ec;font-size:12px;padding:3px 0 15px}.route-head{margin:0 3px 16px;font-size:16px;font-weight:650}.route-head small{display:block;color:#788593;font-weight:400;font-size:12px;margin-top:5px}.map-region .maplibregl-ctrl-bottom-left{bottom:0;left:20px}.map-region .maplibregl-ctrl-bottom-left .maplibregl-ctrl-scale{display:none}@media(max-width:1050px){.workspace{grid-template-columns:310px 1fr}.map-summary{gap:12px;padding:13px 16px}.map-summary>div+div{padding-left:12px}.map-summary .summary-icon{display:none}.map-summary strong{font-size:20px}.map-summary small{font-size:10px}.app-name{display:none}.legend .route-note{display:none}.vehicle-card{padding:14px}.scenario{padding:22px}.map-tools{top:110px}}@media(max-width:700px){body{height:auto;overflow:auto}.topbar{padding:0 18px;height:60px;gap:14px}.top-actions{gap:8px}.all-designs{display:none}.workspace{height:auto;display:flex;flex-direction:column-reverse}.map-region{height:480px}.sidebar{border:0}.sidebar-content{display:flex;gap:12px;overflow:auto;padding:16px}.vehicle-card{flex:0 0 275px;margin:0}.sidebar-content.stops{display:block}.scenario{padding:19px 22px}.map-summary{width:calc(100% - 28px);justify-content:space-between;gap:7px;top:14px;padding:13px}.map-summary>div+div{padding-left:9px}.map-summary strong{font-size:20px}.map-summary small{font-size:9px}.map-tools{right:14px;top:99px}.legend{left:14px;bottom:32px}.selection{bottom:85px;left:14px}.sidebar-tabs{padding-left:22px}}
+@media(max-width:360px){.map-summary{white-space:normal;gap:5px;padding:12px 10px}.map-summary>div{flex:1;min-width:0}.map-summary>div+div{padding-left:7px}.map-summary small{white-space:normal;line-height:1.35}.map-summary strong{white-space:nowrap;font-size:19px}.map-summary strong span{font-size:12px}}
+
+/* Esencial: same workspace, quieter hierarchy and a more compact vehicle list. */
+:root { --ease-out: cubic-bezier(.23,1,.32,1); }
+body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; color:#20262d; }
+.topbar { height:64px; padding:0 24px; }
+.brand strong { font-weight:760; }
+.app-name { font-size:12px; }
+.workspace { height:calc(100vh - 64px); grid-template-columns:352px 1fr; }
+.sidebar { background:#fafbfc; border-color:#e0e4e9; }
+.scenario { padding:28px 25px 23px; }
+.scenario h1 { font-size:26px; font-weight:660; margin:13px 0 9px; letter-spacing:-.9px; }
+.scenario p, .location { color:#61707d; }
+.file-tag { border:0; background:#edf0f3; color:#606d7a; border-radius:5px; padding:4px 6px; }
+.sidebar-tabs { margin:0 22px; padding:3px; border:1px solid #e4e7eb; border-radius:9px; background:#edf0f3; gap:2px; }
+.sidebar-tabs button { flex:1; padding:8px 5px; border:0; border-radius:6px; font-size:12px; color:#5b6673; }
+.sidebar-tabs button[aria-selected=true] { background:#fff; color:#202c38; box-shadow:0 1px 3px #172b4312; }
+.sidebar-tabs button span { font-size:10px; color:#647180; }
+.sidebar-content { padding:20px 22px; }
+.vehicle-card { padding:19px 17px 14px; border-radius:12px; margin-bottom:14px; box-shadow:0 2px 4px #1a2d4003; }
+.vehicle-card.active { border-color:var(--route); box-shadow:0 0 0 1px var(--route); }
+.vehicle-card .vehicle-heading { align-items:center; margin-bottom:26px; }
+.vehicle-card .car-drawing { width:94px; margin:0 -3px 0 7px; }
+.vehicle-name { font-size:15px; font-weight:650; gap:7px; }
+.vehicle-dot { width:7px; height:7px; flex-shrink:0; }
+.vehicle-model { font-size:11px; color:#637180; }
+.soc-row { font-size:11px; color:#637180; }
+.soc-row strong { font-variant-numeric:tabular-nums; margin-left:2px; color:#344454; }
+.battery-track { position:relative; height:5px; margin:10px 0 18px; overflow:visible; }
+.battery-track span { background:var(--route); opacity:.86; }
+.battery-track i { display:block; position:absolute; width:2px; height:9px; background:#728295; top:-2px; border-radius:2px; }
+.vehicle-stats { display:flex; justify-content:space-between; align-items:center; margin:0 0 17px; font-size:11px; color:#61707f; gap:6px; }
+.vehicle-stats strong { display:inline; font-size:12px; margin:0; font-weight:600; color:#273848; letter-spacing:0; }
+.vehicle-stats span + span { border-left:1px solid #e6eaee; padding-left:10px; }
+.route-button { border:0; border-top:1px solid #e8ecf0; border-radius:0; padding:13px 0 0; font-size:12px; font-weight:550; color:#33485d; }
+.route-button:hover:not(:disabled) { background:transparent; color:var(--route); }
+.sidebar-foot { border-top:0; font-size:10px; padding:15px 24px 21px; color:#5e6d7b; }
+.map-summary { border-radius:11px; padding:16px 22px; box-shadow:0 4px 18px #132c4110; }
+.map-summary strong { font-size:23px; font-weight:620; font-variant-numeric:tabular-nums; }
+.map-summary small { color:#5f6e7c; }
+.map-summary strong span { color:#5f6e7c; }
+.summary-icon { color:#627488; }
+.map-tools button { border-radius:9px; padding:10px 12px; color:#425668; }
+.legend { border-radius:8px; color:#566575; }
+.legend .route-note { color:#617181; }
+.selection { width:278px; border-radius:15px; padding:19px 21px; box-shadow:0 8px 36px #172b4526; }
+.selection .detail-eyebrow { color:#586c80; font-size:10px; font-weight:600; margin:0 0 8px; }
+.selection h3 { font-size:18px; font-weight:640; }
+.selection p { color:#5e6d7c; }
+.selection .close { display:grid; place-items:center; width:28px; height:28px; margin:-4px -6px 0 0; border-radius:50%; background:#f1f3f6; }
+.selection .stop-battery { border-top:1px solid #e9edf1; padding-top:15px; margin-top:17px; color:#5a6c7e; font-size:11px; }
+.stop-battery strong { font-size:25px; font-weight:620; letter-spacing:-.8px; margin-top:3px; font-variant-numeric:tabular-nums; }
+.stop-battery strong small { font-size:15px; font-weight:450; letter-spacing:0; }
+.selection .charge-note { display:flex; align-items:center; gap:5px; margin-top:13px; color:#266c50; font-size:11px; }
+.stop-row { padding:13px 4px; background:transparent; gap:10px; }
+.stop-row.active { background:#eef3f9; border-radius:8px; }
+.stop-number { background:#edf1f6; color:var(--route); }
+.stop-name { font-size:12px; }
+.stop-name small { color:#617183; font-size:10px; }
+.stop-row>strong { color:#42586d; font-size:11px; font-variant-numeric:tabular-nums; }
+.all-routes { display:flex; align-items:center; gap:5px; color:#3e5873; font-size:11px; }
+.route-group + .route-group { margin-top:30px; }
+.route-head { font-size:17px; margin:7px 4px 13px; }
+.route-head .vehicle-dot { display:inline-block; vertical-align:middle; margin:0 8px 2px 0; }
+.route-head small { font-size:11px; color:#637184; margin-top:7px; }
+@media(hover:hover) and (pointer:fine) {
+  .map-tools button, .route-button, .top-actions button { transition:background .15s ease, color .15s ease, transform .12s var(--ease-out); }
+  .map-tools button:active, .top-actions button:active { transform:scale(.97); }
+}
+@media(max-width:1050px) {
+  .workspace { grid-template-columns:310px 1fr; }
+  .sidebar-content { padding:18px 16px; }
+  .sidebar-tabs { margin:0 16px; }
+  .vehicle-card { padding:17px 13px 13px; }
+  .vehicle-card .car-drawing { width:84px; }
+  .map-summary { padding:14px 17px; }
+  .map-summary strong { font-size:21px; }
+}
+@media(max-width:700px) {
+  .topbar { height:60px; padding:0 18px; }
+  .workspace { height:auto; }
+  .scenario { padding:22px; }
+  .sidebar-content { padding:18px 16px; }
+  .vehicle-card { flex-basis:275px; margin:0; padding:18px 16px 14px; }
+  .map-summary { padding:13px; }
+  .map-summary strong { font-size:20px; }
+  .map-summary small { font-size:9px; }
+  .selection { max-width:calc(100% - 28px); }
+}
+@media(prefers-reduced-motion:reduce) { .selection { transform:none!important; } }
+@media(prefers-contrast:more) {
+  .vehicle-card,.map-summary,.selection,.legend,.sidebar-tabs { border-color:#536779; }
+  .sidebar-tabs button[aria-selected=true] { outline:1px solid #536779; }
+}

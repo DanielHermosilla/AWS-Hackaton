@@ -1,0 +1,54 @@
+{
+  "startedAt": "2026-10-15T04:45:57.370Z",
+  "scope": "Confirmation of reported battery profile text only",
+  "errors": [],
+  "styles": [
+    {
+      "selector": ".profile-label",
+      "color": "rgb(95, 110, 124)",
+      "background": "rgb(249, 251, 253)",
+      "fontSize": "10px",
+      "text": "Carga de batería %Por parada",
+      "ratio": 5.051196723371227
+    },
+    {
+      "selector": ".profile-axis",
+      "color": "rgb(95, 110, 124)",
+      "background": "rgb(249, 251, 253)",
+      "fontSize": "10px",
+      "text": "SalidaRegreso a base",
+      "ratio": 5.051196723371227
+    },
+    {
+      "selector": ".profile-plot text",
+      "color": "rgb(95, 110, 124)",
+      "background": "rgb(249, 251, 253)",
+      "fontSize": "9px",
+      "text": "100",
+      "ratio": 5.051196723371227
+    },
+    {
+      "selector": ".profile-legend",
+      "color": "rgb(95, 110, 124)",
+      "background": "rgb(249, 251, 253)",
+      "fontSize": "10px",
+      "text": "RecorridoRecarga",
+      "ratio": 5.051196723371227
+    },
+    {
+      "selector": ".profile-note",
+      "color": "rgb(95, 110, 124)",
+      "background": "rgb(249, 251, 253)",
+      "fontSize": "10px",
+      "text": "Valores ilustrativos por parada.No validan la energía entre paradas.",
+      "ratio": 5.051196723371227
+    }
+  ],
+  "pass": true,
+  "baseline": {
+    "count": 18,
+    "changed": [],
+    "pass": true
+  },
+  "finishedAt": "2026-10-15T04:46:09.186Z"
+}

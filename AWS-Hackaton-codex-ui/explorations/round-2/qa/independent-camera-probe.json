@@ -1,0 +1,128 @@
+{
+  "date": "2026-10-15T02:52:00.999Z",
+  "url": "http://127.0.0.1:4173/round-2/recorrido/",
+  "sharedMapSha256": "de576b5ad4986f7529a731111f33cdddc4ae9a5ac513064bb90b83c8bbddd13e",
+  "measurements": [
+    {
+      "label": "Fresh navigation at 390x844",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "map": {
+        "x": 0,
+        "y": 218,
+        "width": 390,
+        "height": 343,
+        "bottom": 561
+      },
+      "v14": {
+        "x": 242.5,
+        "y": 513.5,
+        "width": 29,
+        "height": 29,
+        "bottom": 542.5
+      },
+      "v14FitsMap": true,
+      "mapStatus": "",
+      "visiblePinCount": 22,
+      "soc": {
+        "color": "rgb(129, 154, 172)",
+        "fontSize": "9px",
+        "activeBackground": "rgb(238, 245, 251)"
+      },
+      "overflow": false
+    },
+    {
+      "label": "Desktop after fit at 1440x900",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "map": {
+        "x": 0,
+        "y": 168,
+        "width": 1440,
+        "height": 517,
+        "bottom": 685
+      },
+      "v14": {
+        "x": 659.5,
+        "y": 611.5,
+        "width": 29,
+        "height": 29,
+        "bottom": 640.5
+      },
+      "v14FitsMap": true,
+      "mapStatus": "",
+      "visiblePinCount": 22,
+      "soc": {
+        "color": "rgb(129, 154, 172)",
+        "fontSize": "9px",
+        "activeBackground": "rgb(238, 245, 251)"
+      },
+      "overflow": false
+    },
+    {
+      "label": "Resized back to 390x844",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "map": {
+        "x": 0,
+        "y": 218,
+        "width": 390,
+        "height": 343,
+        "bottom": 561
+      },
+      "v14": {
+        "x": 134.5,
+        "y": 574.5,
+        "width": 29,
+        "height": 29,
+        "bottom": 603.5
+      },
+      "v14FitsMap": false,
+      "mapStatus": "",
+      "visiblePinCount": 22,
+      "soc": {
+        "color": "rgb(129, 154, 172)",
+        "fontSize": "9px",
+        "activeBackground": "rgb(238, 245, 251)"
+      },
+      "overflow": false
+    },
+    {
+      "label": "Mobile after explicit fit",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "map": {
+        "x": 0,
+        "y": 218,
+        "width": 390,
+        "height": 343,
+        "bottom": 561
+      },
+      "v14": {
+        "x": 242.5,
+        "y": 513.5,
+        "width": 29,
+        "height": 29,
+        "bottom": 542.5
+      },
+      "v14FitsMap": true,
+      "mapStatus": "",
+      "visiblePinCount": 22,
+      "soc": {
+        "color": "rgb(129, 154, 172)",
+        "fontSize": "9px",
+        "activeBackground": "rgb(238, 245, 251)"
+      },
+      "overflow": false
+    }
+  ],
+  "pageErrors": []
+}

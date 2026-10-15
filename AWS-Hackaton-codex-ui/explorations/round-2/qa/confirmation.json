@@ -1,0 +1,104 @@
+{
+  "at": "2026-10-15T03:04:05.119Z",
+  "views": [
+    {
+      "name": "mapa",
+      "width": 1440,
+      "overflow": false
+    },
+    {
+      "name": "mapa",
+      "width": 390,
+      "overflow": false
+    },
+    {
+      "name": "mapa",
+      "width": 319,
+      "overflow": true,
+      "errors": [],
+      "failures": [
+        {
+          "url": "https://tiles.openfreemap.org/planet/20261011_080001_pt/12/1095/1516.pbf",
+          "reason": "net::ERR_ABORTED"
+        },
+        {
+          "url": "https://tiles.openfreemap.org/planet/20261011_080001_pt/12/1095/1515.pbf",
+          "reason": "net::ERR_ABORTED"
+        },
+        {
+          "url": "https://tiles.openfreemap.org/planet/20261011_080001_pt/12/1094/1516.pbf",
+          "reason": "net::ERR_ABORTED"
+        },
+        {
+          "url": "https://tiles.openfreemap.org/planet/20261011_080001_pt/12/1094/1515.pbf",
+          "reason": "net::ERR_ABORTED"
+        }
+      ]
+    },
+    {
+      "name": "despacho",
+      "width": 1440,
+      "overflow": false
+    },
+    {
+      "name": "despacho",
+      "width": 390,
+      "overflow": false
+    },
+    {
+      "name": "despacho",
+      "width": 319,
+      "overflow": false,
+      "errors": [],
+      "failures": []
+    },
+    {
+      "name": "energia",
+      "width": 1440,
+      "overflow": false
+    },
+    {
+      "name": "energia",
+      "width": 390,
+      "overflow": false
+    },
+    {
+      "name": "energia",
+      "width": 319,
+      "overflow": false,
+      "errors": [],
+      "failures": []
+    },
+    {
+      "name": "recorrido",
+      "width": 1440,
+      "overflow": false
+    },
+    {
+      "name": "recorrido",
+      "width": 390,
+      "overflow": false
+    },
+    {
+      "name": "recorrido",
+      "width": 319,
+      "overflow": false,
+      "errors": [],
+      "failures": []
+    }
+  ],
+  "checks": [
+    {
+      "name": "CrossVehicleSelectionConsistent",
+      "pass": true
+    },
+    {
+      "name": "ResponsiveFitKeepsV14",
+      "pass": true,
+      "probe": {
+        "mapBottom": 561,
+        "nodeBottom": 542.5
+      }
+    }
+  ]
+}

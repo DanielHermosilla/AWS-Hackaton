@@ -1,0 +1,290 @@
+{
+  "tested_at_utc": "2026-10-15T04:34:13.631Z",
+  "scope": "Only the battery variant, existing fixture, linked selection, affected keyboard and accordion paths. No engine, Kiro or new metrics.",
+  "checks": [
+    {
+      "name": "original_composition_and_both_actions",
+      "passed": true,
+      "evidence": {
+        "sidebar_width": 352,
+        "actions": [
+          {
+            "top": 496.34375,
+            "bottom": 528.34375,
+            "visible": true
+          },
+          {
+            "top": 784.6875,
+            "bottom": 816.6875,
+            "visible": true
+          }
+        ],
+        "metrics": [
+          "20 / 20",
+          "14,3 kWh",
+          "2"
+        ],
+        "mini_profiles": 2,
+        "charges": [
+          "+4,5 kWh",
+          "+3,2 kWh"
+        ]
+      }
+    },
+    {
+      "name": "original_three_metrics",
+      "passed": true,
+      "evidence": [
+        "20 / 20",
+        "14,3 kWh",
+        "2"
+      ]
+    },
+    {
+      "name": "two_small_profiles_existing_charge_values",
+      "passed": true,
+      "evidence": [
+        "+4,5 kWh",
+        "+3,2 kWh"
+      ]
+    },
+    {
+      "name": "tab_roles",
+      "passed": true,
+      "evidence": true
+    },
+    {
+      "name": "tabs_arrow_right",
+      "passed": true,
+      "evidence": "stops-tab"
+    },
+    {
+      "name": "tabs_home",
+      "passed": true,
+      "evidence": true
+    },
+    {
+      "name": "tabs_end",
+      "passed": true,
+      "evidence": true
+    },
+    {
+      "name": "tabs_arrow_left",
+      "passed": true,
+      "evidence": true
+    },
+    {
+      "name": "selected_route_profile_starts_collapsed",
+      "passed": true,
+      "evidence": true
+    },
+    {
+      "name": "expanded_has_13_indexed_points",
+      "passed": true,
+      "evidence": [
+        {
+          "node": "BASE",
+          "index": "0"
+        },
+        {
+          "node": "V12",
+          "index": "1"
+        },
+        {
+          "node": "V3",
+          "index": "2"
+        },
+        {
+          "node": "V6",
+          "index": "3"
+        },
+        {
+          "node": "V19",
+          "index": "4"
+        },
+        {
+          "node": "V7",
+          "index": "5"
+        },
+        {
+          "node": "V15",
+          "index": "6"
+        },
+        {
+          "node": "V14",
+          "index": "7"
+        },
+        {
+          "node": "V1",
+          "index": "8"
+        },
+        {
+          "node": "C3",
+          "index": "9"
+        },
+        {
+          "node": "V16",
+          "index": "10"
+        },
+        {
+          "node": "V13",
+          "index": "11"
+        },
+        {
+          "node": "BASE",
+          "index": "12"
+        }
+      ]
+    },
+    {
+      "name": "charge_point_links_list_map_and_values",
+      "passed": true,
+      "evidence": {
+        "charge": {
+          "index": "9",
+          "route": "auto-1",
+          "text": "Cargador 3C3 · Estación registrada\n    Batería al llegar22 %Al salir50,1 %Recarga de ejemplo: +4,5 kWh",
+          "battery": [
+            "22 %",
+            "50,1 %"
+          ]
+        },
+        "linked": {
+          "list": "9",
+          "profile": "9",
+          "map": "Cargador 3 (C3)",
+          "focus": "profile:auto-1:9"
+        }
+      }
+    },
+    {
+      "name": "escape_closes_detail_restores_point",
+      "passed": true,
+      "evidence": true
+    },
+    {
+      "name": "base_return_is_index_12_not_departure",
+      "passed": true,
+      "evidence": "Regreso a baseBASE · Centro de distribución\n    Batería al llegar37,5 %Al salir37,5 %"
+    },
+    {
+      "name": "map_base_keeps_selected_return_occurrence",
+      "passed": true,
+      "evidence": "Regreso a baseBASE · Centro de distribución\n    Batería al llegar37,5 %Al salir37,5 %"
+    },
+    {
+      "name": "base_departure_is_index_zero_60",
+      "passed": true,
+      "evidence": "Salida de baseBASE · Centro de distribución\n    Batería al llegar60 %Al salir60 %"
+    },
+    {
+      "name": "list_links_back_to_profile",
+      "passed": true,
+      "evidence": "Local 16V16 · Entrega prevista\n    Batería al llegar47 %Al salir47 %"
+    },
+    {
+      "name": "close_button_restores_original_list_control",
+      "passed": true,
+      "evidence": true
+    },
+    {
+      "name": "keyboard_expand_is_instant",
+      "passed": true,
+      "evidence": true
+    },
+    {
+      "name": "keyboard_charge_b_uses_existing_values",
+      "passed": true,
+      "evidence": "Cargador 9C9 · Estación registrada\n    Batería al llegar46 %Al salir66 %Recarga de ejemplo: +3,2 kWh"
+    },
+    {
+      "name": "rapid_reverse_preserves_visible_state",
+      "passed": true,
+      "evidence": {
+        "before": {
+          "height": 246.046875,
+          "opacity": 1
+        },
+        "after": {
+          "height": 246.046875,
+          "opacity": 1
+        },
+        "method": "Pointer MouseEvent detail=1, controlled 45 ms reversal without locator stability waits",
+        "final_height": 246.046875
+      }
+    },
+    {
+      "name": "original_source_dialog_preserved",
+      "passed": true,
+      "evidence": [
+        "Las ubicaciones pertenecen al escenario público de CASE. Los recorridos siguen calles de OpenStreetMap mediante OSRM, con un orden de visitas preparado para esta demostración.",
+        "El consumo, la recarga y la batería son valores ilustrativos. No han sido calculados ni validados por el motor de Dani y Lucas. No indican disponibilidad de cargadores ni ahorro real."
+      ]
+    },
+    {
+      "name": "about_escape_preserves_map_detail",
+      "passed": true,
+      "evidence": true
+    },
+    {
+      "name": "mobile_390_no_overflow",
+      "passed": true,
+      "evidence": {
+        "viewport": 390,
+        "scroll_width": 390,
+        "metrics": 3
+      }
+    },
+    {
+      "name": "reduced_motion_expand_is_instant",
+      "passed": true,
+      "evidence": {
+        "height": "auto",
+        "hidden": false,
+        "transition": "0s",
+        "inert": false
+      }
+    },
+    {
+      "name": "mobile_charge_links_by_index",
+      "passed": true,
+      "evidence": "Cargador 3 · 22 % → 50,1 % · +4,5 kWh"
+    },
+    {
+      "name": "collapsed_profile_is_hidden_inert",
+      "passed": true,
+      "evidence": true
+    },
+    {
+      "name": "mobile_319_no_overflow",
+      "passed": true,
+      "evidence": {
+        "viewport": 319,
+        "scroll_width": 319,
+        "metrics": 3
+      }
+    },
+    {
+      "name": "selected_base_unchanged",
+      "passed": true,
+      "evidence": {
+        "index.html": "c497af90be2f53ba86fdbf950c9db8e37588bf0e1cdfa0149e476c264966c00e",
+        "app.js": "572cdb2e90d31df4bf4ebf17f3a0742e44058c5eb45eafbb7e9c729b9f749533",
+        "style.css": "ffe2fcbb3c9471694608724f610bcc6d469fadf264da3727ffc26ddb3afdd0aa"
+      }
+    },
+    {
+      "name": "shared_fixture_unchanged_copy",
+      "passed": true,
+      "evidence": true
+    },
+    {
+      "name": "no_page_errors",
+      "passed": true,
+      "evidence": []
+    }
+  ],
+  "errors": [],
+  "browser": "155.0.8059.79",
+  "passed": true
+}

@@ -1,0 +1,1005 @@
+{
+  "tested_at_utc": "2026-10-15T01:53:37.978Z",
+  "browser": "155.0.8059.79",
+  "scope": "Only patched SoC empty/zero/error persistence/stale values/review/reset paths; local synthetic interfaces; no engine or Kiro invoked",
+  "base_url": "http://127.0.0.1:4173",
+  "results": [
+    {
+      "interface": "atlas",
+      "url": "http://127.0.0.1:4173/interfaces/atlas/",
+      "app_sha256": "422aa3e65d258ec54c23521187acb1df92c0f14d5094951a11b9ba2b81753524",
+      "checks": [
+        {
+          "id": "baseline_60",
+          "status": "passed",
+          "expected": "Initial synthetic example at 60%, complete",
+          "observed": {
+            "title": "Atlas · ZMD Mobility",
+            "soc": "60",
+            "aria_invalid": null,
+            "native_valid": true,
+            "scene": "complete",
+            "status": "Ejemplo completo",
+            "caption": "Las ocho entregas están incluidas en esta muestra. El motor no se ha ejecutado.",
+            "selected_vehicle": "Vehículo A",
+            "metrics": {
+              "served": "8 / 8",
+              "energy": "14,3",
+              "return_soc": "42 %"
+            },
+            "battery": "Salida · 60 %Retorno · 42 %",
+            "itinerary": "⌂Centro de distribuciónSalida · batería inicial 60 % de ejemplo1Mercado del norteEntrega · mercado52 %2BibliotecaEntrega · biblioteca42 %+Estación de ejemploRecarga · dato sintéticoSalida 55 %4Almacén del parqueEntrega · almacen49 %5Galería centralEntrega · galeria46 %⌂Regreso al centroBatería de ejemplo 42 %",
+            "battery_values": [
+              "52 %",
+              "42 %",
+              "Salida 55 %",
+              "49 %",
+              "46 %"
+            ],
+            "depot_notes": [
+              "Salida · batería inicial 60 % de ejemplo",
+              "Batería de ejemplo 42 %"
+            ],
+            "review": null,
+            "map_unlocated": false,
+            "map_stale": false
+          }
+        },
+        {
+          "id": "empty_is_config_error",
+          "status": "passed",
+          "expected": "Empty input stays absent and reports configuration cause, not 0%",
+          "observed": {
+            "title": "Atlas · ZMD Mobility",
+            "soc": "",
+            "aria_invalid": "true",
+            "native_valid": true,
+            "scene": "stale",
+            "status": "Revisa el SoC inicial",
+            "caption": "Completa la batería inicial. Un campo vacío no significa 0 %.",
+            "selected_vehicle": "Vehículo A",
+            "metrics": {
+              "served": "—",
+              "energy": "—",
+              "return_soc": "—"
+            },
+            "battery": "Perfil energético no vigente o no disponible en esta escena. No equivale a batería cero.",
+            "itinerary": "⌂Centro de distribuciónBatería inicial por completar1Mercado del norteEntrega · mercado—2BibliotecaEntrega · biblioteca—+Estación de ejemploRecarga · dato sintético—4Almacén del parqueEntrega · almacen—5Galería centralEntrega · galeria—⌂Regreso al centroBatería de retorno no disponible para el escenario actual",
+            "battery_values": [
+              "—",
+              "—",
+              "—",
+              "—",
+              "—"
+            ],
+            "depot_notes": [
+              "Batería inicial por completar",
+              "Batería de retorno no disponible para el escenario actual"
+            ],
+            "review": null,
+            "map_unlocated": false,
+            "map_stale": true
+          }
+        },
+        {
+          "id": "empty_does_not_reclassify_coordinates",
+          "status": "passed",
+          "expected": "Empty SoC must not become a location error",
+          "observed": {
+            "status": "Revisa el SoC inicial",
+            "caption": "Completa la batería inicial. Un campo vacío no significa 0 %.",
+            "map_unlocated": false
+          }
+        },
+        {
+          "id": "config_cause_survives_vehicle_b",
+          "status": "passed",
+          "expected": "Vehicle B selection preserves exact configuration cause",
+          "observed": {
+            "title": "Atlas · ZMD Mobility",
+            "soc": "",
+            "aria_invalid": "true",
+            "native_valid": true,
+            "scene": "stale",
+            "status": "Revisa el SoC inicial",
+            "caption": "Completa la batería inicial. Un campo vacío no significa 0 %.",
+            "selected_vehicle": "Vehículo B",
+            "metrics": {
+              "served": "—",
+              "energy": "—",
+              "return_soc": "—"
+            },
+            "battery": "Perfil energético no vigente o no disponible en esta escena. No equivale a batería cero.",
+            "itinerary": "⌂Centro de distribuciónBatería inicial por completar1Taller de la riberaEntrega · taller—2Local del surEntrega · local-sur—3Librería del barrioEntrega · libreria—4Café de la plazaEntrega · cafe—⌂Regreso al centroBatería de retorno no disponible para el escenario actual",
+            "battery_values": [
+              "—",
+              "—",
+              "—",
+              "—"
+            ],
+            "depot_notes": [
+              "Batería inicial por completar",
+              "Batería de retorno no disponible para el escenario actual"
+            ],
+            "review": null,
+            "map_unlocated": false,
+            "map_stale": true
+          }
+        },
+        {
+          "id": "zero_is_valid_entry",
+          "status": "passed",
+          "expected": "0% is accepted as entry; result remains stale, not a certified route",
+          "observed": {
+            "title": "Atlas · ZMD Mobility",
+            "soc": "0",
+            "aria_invalid": null,
+            "native_valid": true,
+            "scene": "stale",
+            "status": "Resultado desactualizado",
+            "caption": "El escenario cambió. El resultado anterior deja de estar vigente y sus métricas se retiran.",
+            "selected_vehicle": "Vehículo B",
+            "metrics": {
+              "served": "—",
+              "energy": "—",
+              "return_soc": "—"
+            },
+            "battery": "Perfil energético no vigente o no disponible en esta escena. No equivale a batería cero.",
+            "itinerary": "⌂Centro de distribuciónEntrada actual: 0 % · sin validación del motor1Taller de la riberaEntrega · taller—2Local del surEntrega · local-sur—3Librería del barrioEntrega · libreria—4Café de la plazaEntrega · cafe—⌂Regreso al centroBatería de retorno no disponible para el escenario actual",
+            "battery_values": [
+              "—",
+              "—",
+              "—",
+              "—"
+            ],
+            "depot_notes": [
+              "Entrada actual: 0 % · sin validación del motor",
+              "Batería de retorno no disponible para el escenario actual"
+            ],
+            "review": null,
+            "map_unlocated": false,
+            "map_stale": true
+          }
+        },
+        {
+          "id": "zero_retires_old_metrics",
+          "status": "passed",
+          "expected": "No old result metrics; input 0% distinguished from unknown return",
+          "observed": {
+            "title": "Atlas · ZMD Mobility",
+            "soc": "0",
+            "aria_invalid": null,
+            "native_valid": true,
+            "scene": "stale",
+            "status": "Resultado desactualizado",
+            "caption": "El escenario cambió. El resultado anterior deja de estar vigente y sus métricas se retiran.",
+            "selected_vehicle": "Vehículo B",
+            "metrics": {
+              "served": "—",
+              "energy": "—",
+              "return_soc": "—"
+            },
+            "battery": "Perfil energético no vigente o no disponible en esta escena. No equivale a batería cero.",
+            "itinerary": "⌂Centro de distribuciónEntrada actual: 0 % · sin validación del motor1Taller de la riberaEntrega · taller—2Local del surEntrega · local-sur—3Librería del barrioEntrega · libreria—4Café de la plazaEntrega · cafe—⌂Regreso al centroBatería de retorno no disponible para el escenario actual",
+            "battery_values": [
+              "—",
+              "—",
+              "—",
+              "—"
+            ],
+            "depot_notes": [
+              "Entrada actual: 0 % · sin validación del motor",
+              "Batería de retorno no disponible para el escenario actual"
+            ],
+            "review": null,
+            "map_unlocated": false,
+            "map_stale": true
+          }
+        },
+        {
+          "id": "review_uses_55",
+          "status": "not_applicable",
+          "expected": "Atlas has no review-list; current input checked in configuration and itinerary",
+          "observed": "No review-list element in Atlas"
+        },
+        {
+          "id": "55_current_input_no_old_itinerary_soc",
+          "status": "passed",
+          "expected": "55% current input; no old 60/42/29% itinerary or result metrics",
+          "observed": {
+            "title": "Atlas · ZMD Mobility",
+            "soc": "55",
+            "aria_invalid": null,
+            "native_valid": true,
+            "scene": "stale",
+            "status": "Resultado desactualizado",
+            "caption": "El escenario cambió. El resultado anterior deja de estar vigente y sus métricas se retiran.",
+            "selected_vehicle": "Vehículo B",
+            "metrics": {
+              "served": "—",
+              "energy": "—",
+              "return_soc": "—"
+            },
+            "battery": "Perfil energético no vigente o no disponible en esta escena. No equivale a batería cero.",
+            "itinerary": "⌂Centro de distribuciónEntrada actual: 55 % · sin validación del motor1Taller de la riberaEntrega · taller—2Local del surEntrega · local-sur—3Librería del barrioEntrega · libreria—4Café de la plazaEntrega · cafe—⌂Regreso al centroBatería de retorno no disponible para el escenario actual",
+            "battery_values": [
+              "—",
+              "—",
+              "—",
+              "—"
+            ],
+            "depot_notes": [
+              "Entrada actual: 55 % · sin validación del motor",
+              "Batería de retorno no disponible para el escenario actual"
+            ],
+            "review": null,
+            "map_unlocated": false,
+            "map_stale": true
+          }
+        },
+        {
+          "id": "reset_restores_60",
+          "status": "passed",
+          "expected": "Reset restores 60% and complete synthetic fixture",
+          "observed": {
+            "title": "Atlas · ZMD Mobility",
+            "soc": "60",
+            "aria_invalid": null,
+            "native_valid": true,
+            "scene": "complete",
+            "status": "Ejemplo completo",
+            "caption": "Las ocho entregas están incluidas en esta muestra. El motor no se ha ejecutado.",
+            "selected_vehicle": "Vehículo B",
+            "metrics": {
+              "served": "8 / 8",
+              "energy": "14,3",
+              "return_soc": "29 %"
+            },
+            "battery": "Salida · 60 %Retorno · 29 %",
+            "itinerary": "⌂Centro de distribuciónSalida · batería inicial 60 % de ejemplo1Taller de la riberaEntrega · taller53 %2Local del surEntrega · local-sur45 %3Librería del barrioEntrega · libreria39 %4Café de la plazaEntrega · cafe34 %⌂Regreso al centroBatería de ejemplo 29 %",
+            "battery_values": [
+              "53 %",
+              "45 %",
+              "39 %",
+              "34 %"
+            ],
+            "depot_notes": [
+              "Salida · batería inicial 60 % de ejemplo",
+              "Batería de ejemplo 29 %"
+            ],
+            "review": null,
+            "map_unlocated": false,
+            "map_stale": false
+          }
+        },
+        {
+          "id": "no_page_errors",
+          "status": "passed",
+          "expected": "No JavaScript page errors in tested path",
+          "observed": []
+        }
+      ],
+      "snapshots": {
+        "initial": {
+          "title": "Atlas · ZMD Mobility",
+          "soc": "60",
+          "aria_invalid": null,
+          "native_valid": true,
+          "scene": "complete",
+          "status": "Ejemplo completo",
+          "caption": "Las ocho entregas están incluidas en esta muestra. El motor no se ha ejecutado.",
+          "selected_vehicle": "Vehículo A",
+          "metrics": {
+            "served": "8 / 8",
+            "energy": "14,3",
+            "return_soc": "42 %"
+          },
+          "battery": "Salida · 60 %Retorno · 42 %",
+          "itinerary": "⌂Centro de distribuciónSalida · batería inicial 60 % de ejemplo1Mercado del norteEntrega · mercado52 %2BibliotecaEntrega · biblioteca42 %+Estación de ejemploRecarga · dato sintéticoSalida 55 %4Almacén del parqueEntrega · almacen49 %5Galería centralEntrega · galeria46 %⌂Regreso al centroBatería de ejemplo 42 %",
+          "battery_values": [
+            "52 %",
+            "42 %",
+            "Salida 55 %",
+            "49 %",
+            "46 %"
+          ],
+          "depot_notes": [
+            "Salida · batería inicial 60 % de ejemplo",
+            "Batería de ejemplo 42 %"
+          ],
+          "review": null,
+          "map_unlocated": false,
+          "map_stale": false
+        },
+        "empty": {
+          "title": "Atlas · ZMD Mobility",
+          "soc": "",
+          "aria_invalid": "true",
+          "native_valid": true,
+          "scene": "stale",
+          "status": "Revisa el SoC inicial",
+          "caption": "Completa la batería inicial. Un campo vacío no significa 0 %.",
+          "selected_vehicle": "Vehículo A",
+          "metrics": {
+            "served": "—",
+            "energy": "—",
+            "return_soc": "—"
+          },
+          "battery": "Perfil energético no vigente o no disponible en esta escena. No equivale a batería cero.",
+          "itinerary": "⌂Centro de distribuciónBatería inicial por completar1Mercado del norteEntrega · mercado—2BibliotecaEntrega · biblioteca—+Estación de ejemploRecarga · dato sintético—4Almacén del parqueEntrega · almacen—5Galería centralEntrega · galeria—⌂Regreso al centroBatería de retorno no disponible para el escenario actual",
+          "battery_values": [
+            "—",
+            "—",
+            "—",
+            "—",
+            "—"
+          ],
+          "depot_notes": [
+            "Batería inicial por completar",
+            "Batería de retorno no disponible para el escenario actual"
+          ],
+          "review": null,
+          "map_unlocated": false,
+          "map_stale": true
+        },
+        "empty_after_vehicle_b": {
+          "title": "Atlas · ZMD Mobility",
+          "soc": "",
+          "aria_invalid": "true",
+          "native_valid": true,
+          "scene": "stale",
+          "status": "Revisa el SoC inicial",
+          "caption": "Completa la batería inicial. Un campo vacío no significa 0 %.",
+          "selected_vehicle": "Vehículo B",
+          "metrics": {
+            "served": "—",
+            "energy": "—",
+            "return_soc": "—"
+          },
+          "battery": "Perfil energético no vigente o no disponible en esta escena. No equivale a batería cero.",
+          "itinerary": "⌂Centro de distribuciónBatería inicial por completar1Taller de la riberaEntrega · taller—2Local del surEntrega · local-sur—3Librería del barrioEntrega · libreria—4Café de la plazaEntrega · cafe—⌂Regreso al centroBatería de retorno no disponible para el escenario actual",
+          "battery_values": [
+            "—",
+            "—",
+            "—",
+            "—"
+          ],
+          "depot_notes": [
+            "Batería inicial por completar",
+            "Batería de retorno no disponible para el escenario actual"
+          ],
+          "review": null,
+          "map_unlocated": false,
+          "map_stale": true
+        },
+        "zero": {
+          "title": "Atlas · ZMD Mobility",
+          "soc": "0",
+          "aria_invalid": null,
+          "native_valid": true,
+          "scene": "stale",
+          "status": "Resultado desactualizado",
+          "caption": "El escenario cambió. El resultado anterior deja de estar vigente y sus métricas se retiran.",
+          "selected_vehicle": "Vehículo B",
+          "metrics": {
+            "served": "—",
+            "energy": "—",
+            "return_soc": "—"
+          },
+          "battery": "Perfil energético no vigente o no disponible en esta escena. No equivale a batería cero.",
+          "itinerary": "⌂Centro de distribuciónEntrada actual: 0 % · sin validación del motor1Taller de la riberaEntrega · taller—2Local del surEntrega · local-sur—3Librería del barrioEntrega · libreria—4Café de la plazaEntrega · cafe—⌂Regreso al centroBatería de retorno no disponible para el escenario actual",
+          "battery_values": [
+            "—",
+            "—",
+            "—",
+            "—"
+          ],
+          "depot_notes": [
+            "Entrada actual: 0 % · sin validación del motor",
+            "Batería de retorno no disponible para el escenario actual"
+          ],
+          "review": null,
+          "map_unlocated": false,
+          "map_stale": true
+        },
+        "fifty_five": {
+          "title": "Atlas · ZMD Mobility",
+          "soc": "55",
+          "aria_invalid": null,
+          "native_valid": true,
+          "scene": "stale",
+          "status": "Resultado desactualizado",
+          "caption": "El escenario cambió. El resultado anterior deja de estar vigente y sus métricas se retiran.",
+          "selected_vehicle": "Vehículo B",
+          "metrics": {
+            "served": "—",
+            "energy": "—",
+            "return_soc": "—"
+          },
+          "battery": "Perfil energético no vigente o no disponible en esta escena. No equivale a batería cero.",
+          "itinerary": "⌂Centro de distribuciónEntrada actual: 55 % · sin validación del motor1Taller de la riberaEntrega · taller—2Local del surEntrega · local-sur—3Librería del barrioEntrega · libreria—4Café de la plazaEntrega · cafe—⌂Regreso al centroBatería de retorno no disponible para el escenario actual",
+          "battery_values": [
+            "—",
+            "—",
+            "—",
+            "—"
+          ],
+          "depot_notes": [
+            "Entrada actual: 55 % · sin validación del motor",
+            "Batería de retorno no disponible para el escenario actual"
+          ],
+          "review": null,
+          "map_unlocated": false,
+          "map_stale": true
+        },
+        "reset": {
+          "title": "Atlas · ZMD Mobility",
+          "soc": "60",
+          "aria_invalid": null,
+          "native_valid": true,
+          "scene": "complete",
+          "status": "Ejemplo completo",
+          "caption": "Las ocho entregas están incluidas en esta muestra. El motor no se ha ejecutado.",
+          "selected_vehicle": "Vehículo B",
+          "metrics": {
+            "served": "8 / 8",
+            "energy": "14,3",
+            "return_soc": "29 %"
+          },
+          "battery": "Salida · 60 %Retorno · 29 %",
+          "itinerary": "⌂Centro de distribuciónSalida · batería inicial 60 % de ejemplo1Taller de la riberaEntrega · taller53 %2Local del surEntrega · local-sur45 %3Librería del barrioEntrega · libreria39 %4Café de la plazaEntrega · cafe34 %⌂Regreso al centroBatería de ejemplo 29 %",
+          "battery_values": [
+            "53 %",
+            "45 %",
+            "39 %",
+            "34 %"
+          ],
+          "depot_notes": [
+            "Salida · batería inicial 60 % de ejemplo",
+            "Batería de ejemplo 29 %"
+          ],
+          "review": null,
+          "map_unlocated": false,
+          "map_stale": false
+        }
+      },
+      "page_errors": [],
+      "http_status": 200,
+      "passed": true
+    },
+    {
+      "interface": "secuencia",
+      "url": "http://127.0.0.1:4173/interfaces/secuencia/",
+      "app_sha256": "422aa3e65d258ec54c23521187acb1df92c0f14d5094951a11b9ba2b81753524",
+      "checks": [
+        {
+          "id": "baseline_60",
+          "status": "passed",
+          "expected": "Initial synthetic example at 60%, complete",
+          "observed": {
+            "title": "Secuencia · ZMD Mobility",
+            "soc": "60",
+            "aria_invalid": null,
+            "native_valid": true,
+            "scene": "complete",
+            "status": "Ejemplo completo",
+            "caption": "Las ocho entregas están incluidas en esta muestra. El motor no se ha ejecutado.",
+            "selected_vehicle": "Vehículo A",
+            "metrics": {
+              "served": "8 / 8",
+              "energy": "14,3",
+              "return_soc": "42 %"
+            },
+            "battery": "Salida · 60 %Retorno · 42 %",
+            "itinerary": "⌂Centro de distribuciónSalida · batería inicial 60 % de ejemplo1Mercado del norteEntrega · mercado52 %2BibliotecaEntrega · biblioteca42 %+Estación de ejemploRecarga · dato sintéticoSalida 55 %4Almacén del parqueEntrega · almacen49 %5Galería centralEntrega · galeria46 %⌂Regreso al centroBatería de ejemplo 42 %",
+            "battery_values": [
+              "52 %",
+              "42 %",
+              "Salida 55 %",
+              "49 %",
+              "46 %"
+            ],
+            "depot_notes": [
+              "Salida · batería inicial 60 % de ejemplo",
+              "Batería de ejemplo 42 %"
+            ],
+            "review": "8 pedidos obligatorios · objetivo del ejemplo2 vehículos · batería inicial 60 %Regreso de ambos al centro · condición del desafíoCompatibilidad y disponibilidad de cargadores · por confirmar",
+            "map_unlocated": false,
+            "map_stale": false
+          }
+        },
+        {
+          "id": "empty_is_config_error",
+          "status": "passed",
+          "expected": "Empty input stays absent and reports configuration cause, not 0%",
+          "observed": {
+            "title": "Secuencia · ZMD Mobility",
+            "soc": "",
+            "aria_invalid": "true",
+            "native_valid": true,
+            "scene": "stale",
+            "status": "Revisa el SoC inicial",
+            "caption": "Completa la batería inicial. Un campo vacío no significa 0 %.",
+            "selected_vehicle": "Vehículo A",
+            "metrics": {
+              "served": "—",
+              "energy": "—",
+              "return_soc": "—"
+            },
+            "battery": "Perfil energético no vigente o no disponible en esta escena. No equivale a batería cero.",
+            "itinerary": "⌂Centro de distribuciónBatería inicial por completar1Mercado del norteEntrega · mercado—2BibliotecaEntrega · biblioteca—+Estación de ejemploRecarga · dato sintético—4Almacén del parqueEntrega · almacen—5Galería centralEntrega · galeria—⌂Regreso al centroBatería de retorno no disponible para el escenario actual",
+            "battery_values": [
+              "—",
+              "—",
+              "—",
+              "—",
+              "—"
+            ],
+            "depot_notes": [
+              "Batería inicial por completar",
+              "Batería de retorno no disponible para el escenario actual"
+            ],
+            "review": "8 pedidos obligatorios · objetivo del ejemplo2 vehículos · batería inicial por completarRegreso de ambos al centro · condición del desafíoCompatibilidad y disponibilidad de cargadores · por confirmar",
+            "map_unlocated": false,
+            "map_stale": true
+          }
+        },
+        {
+          "id": "empty_does_not_reclassify_coordinates",
+          "status": "passed",
+          "expected": "Empty SoC must not become a location error",
+          "observed": {
+            "status": "Revisa el SoC inicial",
+            "caption": "Completa la batería inicial. Un campo vacío no significa 0 %.",
+            "map_unlocated": false
+          }
+        },
+        {
+          "id": "config_cause_survives_vehicle_b",
+          "status": "passed",
+          "expected": "Vehicle B selection preserves exact configuration cause",
+          "observed": {
+            "title": "Secuencia · ZMD Mobility",
+            "soc": "",
+            "aria_invalid": "true",
+            "native_valid": true,
+            "scene": "stale",
+            "status": "Revisa el SoC inicial",
+            "caption": "Completa la batería inicial. Un campo vacío no significa 0 %.",
+            "selected_vehicle": "Vehículo B",
+            "metrics": {
+              "served": "—",
+              "energy": "—",
+              "return_soc": "—"
+            },
+            "battery": "Perfil energético no vigente o no disponible en esta escena. No equivale a batería cero.",
+            "itinerary": "⌂Centro de distribuciónBatería inicial por completar1Taller de la riberaEntrega · taller—2Local del surEntrega · local-sur—3Librería del barrioEntrega · libreria—4Café de la plazaEntrega · cafe—⌂Regreso al centroBatería de retorno no disponible para el escenario actual",
+            "battery_values": [
+              "—",
+              "—",
+              "—",
+              "—"
+            ],
+            "depot_notes": [
+              "Batería inicial por completar",
+              "Batería de retorno no disponible para el escenario actual"
+            ],
+            "review": "8 pedidos obligatorios · objetivo del ejemplo2 vehículos · batería inicial por completarRegreso de ambos al centro · condición del desafíoCompatibilidad y disponibilidad de cargadores · por confirmar",
+            "map_unlocated": false,
+            "map_stale": true
+          }
+        },
+        {
+          "id": "zero_is_valid_entry",
+          "status": "passed",
+          "expected": "0% is accepted as entry; result remains stale, not a certified route",
+          "observed": {
+            "title": "Secuencia · ZMD Mobility",
+            "soc": "0",
+            "aria_invalid": null,
+            "native_valid": true,
+            "scene": "stale",
+            "status": "Resultado desactualizado",
+            "caption": "El escenario cambió. El resultado anterior deja de estar vigente y sus métricas se retiran.",
+            "selected_vehicle": "Vehículo B",
+            "metrics": {
+              "served": "—",
+              "energy": "—",
+              "return_soc": "—"
+            },
+            "battery": "Perfil energético no vigente o no disponible en esta escena. No equivale a batería cero.",
+            "itinerary": "⌂Centro de distribuciónEntrada actual: 0 % · sin validación del motor1Taller de la riberaEntrega · taller—2Local del surEntrega · local-sur—3Librería del barrioEntrega · libreria—4Café de la plazaEntrega · cafe—⌂Regreso al centroBatería de retorno no disponible para el escenario actual",
+            "battery_values": [
+              "—",
+              "—",
+              "—",
+              "—"
+            ],
+            "depot_notes": [
+              "Entrada actual: 0 % · sin validación del motor",
+              "Batería de retorno no disponible para el escenario actual"
+            ],
+            "review": "8 pedidos obligatorios · objetivo del ejemplo2 vehículos · batería inicial 0 %Regreso de ambos al centro · condición del desafíoCompatibilidad y disponibilidad de cargadores · por confirmar",
+            "map_unlocated": false,
+            "map_stale": true
+          }
+        },
+        {
+          "id": "zero_retires_old_metrics",
+          "status": "passed",
+          "expected": "No old result metrics; input 0% distinguished from unknown return",
+          "observed": {
+            "title": "Secuencia · ZMD Mobility",
+            "soc": "0",
+            "aria_invalid": null,
+            "native_valid": true,
+            "scene": "stale",
+            "status": "Resultado desactualizado",
+            "caption": "El escenario cambió. El resultado anterior deja de estar vigente y sus métricas se retiran.",
+            "selected_vehicle": "Vehículo B",
+            "metrics": {
+              "served": "—",
+              "energy": "—",
+              "return_soc": "—"
+            },
+            "battery": "Perfil energético no vigente o no disponible en esta escena. No equivale a batería cero.",
+            "itinerary": "⌂Centro de distribuciónEntrada actual: 0 % · sin validación del motor1Taller de la riberaEntrega · taller—2Local del surEntrega · local-sur—3Librería del barrioEntrega · libreria—4Café de la plazaEntrega · cafe—⌂Regreso al centroBatería de retorno no disponible para el escenario actual",
+            "battery_values": [
+              "—",
+              "—",
+              "—",
+              "—"
+            ],
+            "depot_notes": [
+              "Entrada actual: 0 % · sin validación del motor",
+              "Batería de retorno no disponible para el escenario actual"
+            ],
+            "review": "8 pedidos obligatorios · objetivo del ejemplo2 vehículos · batería inicial 0 %Regreso de ambos al centro · condición del desafíoCompatibilidad y disponibilidad de cargadores · por confirmar",
+            "map_unlocated": false,
+            "map_stale": true
+          }
+        },
+        {
+          "id": "review_uses_55",
+          "status": "passed",
+          "expected": "Review step shows current 55%, not fixture 60%",
+          "observed": {
+            "review": "8 pedidos obligatorios · objetivo del ejemplo2 vehículos · batería inicial 55 %Regreso de ambos al centro · condición del desafíoCompatibilidad y disponibilidad de cargadores · por confirmar"
+          }
+        },
+        {
+          "id": "55_current_input_no_old_itinerary_soc",
+          "status": "passed",
+          "expected": "55% current input; no old 60/42/29% itinerary or result metrics",
+          "observed": {
+            "title": "Secuencia · ZMD Mobility",
+            "soc": "55",
+            "aria_invalid": null,
+            "native_valid": true,
+            "scene": "stale",
+            "status": "Resultado desactualizado",
+            "caption": "El escenario cambió. El resultado anterior deja de estar vigente y sus métricas se retiran.",
+            "selected_vehicle": "Vehículo B",
+            "metrics": {
+              "served": "—",
+              "energy": "—",
+              "return_soc": "—"
+            },
+            "battery": "Perfil energético no vigente o no disponible en esta escena. No equivale a batería cero.",
+            "itinerary": "⌂Centro de distribuciónEntrada actual: 55 % · sin validación del motor1Taller de la riberaEntrega · taller—2Local del surEntrega · local-sur—3Librería del barrioEntrega · libreria—4Café de la plazaEntrega · cafe—⌂Regreso al centroBatería de retorno no disponible para el escenario actual",
+            "battery_values": [
+              "—",
+              "—",
+              "—",
+              "—"
+            ],
+            "depot_notes": [
+              "Entrada actual: 55 % · sin validación del motor",
+              "Batería de retorno no disponible para el escenario actual"
+            ],
+            "review": "8 pedidos obligatorios · objetivo del ejemplo2 vehículos · batería inicial 55 %Regreso de ambos al centro · condición del desafíoCompatibilidad y disponibilidad de cargadores · por confirmar",
+            "map_unlocated": false,
+            "map_stale": true
+          }
+        },
+        {
+          "id": "reset_restores_60",
+          "status": "passed",
+          "expected": "Reset restores 60% and complete synthetic fixture",
+          "observed": {
+            "title": "Secuencia · ZMD Mobility",
+            "soc": "60",
+            "aria_invalid": null,
+            "native_valid": true,
+            "scene": "complete",
+            "status": "Ejemplo completo",
+            "caption": "Las ocho entregas están incluidas en esta muestra. El motor no se ha ejecutado.",
+            "selected_vehicle": "Vehículo B",
+            "metrics": {
+              "served": "8 / 8",
+              "energy": "14,3",
+              "return_soc": "29 %"
+            },
+            "battery": "Salida · 60 %Retorno · 29 %",
+            "itinerary": "⌂Centro de distribuciónSalida · batería inicial 60 % de ejemplo1Taller de la riberaEntrega · taller53 %2Local del surEntrega · local-sur45 %3Librería del barrioEntrega · libreria39 %4Café de la plazaEntrega · cafe34 %⌂Regreso al centroBatería de ejemplo 29 %",
+            "battery_values": [
+              "53 %",
+              "45 %",
+              "39 %",
+              "34 %"
+            ],
+            "depot_notes": [
+              "Salida · batería inicial 60 % de ejemplo",
+              "Batería de ejemplo 29 %"
+            ],
+            "review": "8 pedidos obligatorios · objetivo del ejemplo2 vehículos · batería inicial 60 %Regreso de ambos al centro · condición del desafíoCompatibilidad y disponibilidad de cargadores · por confirmar",
+            "map_unlocated": false,
+            "map_stale": false
+          }
+        },
+        {
+          "id": "reset_review_restores_60",
+          "status": "passed",
+          "expected": "Reset review also returns to 60%",
+          "observed": {
+            "review": "8 pedidos obligatorios · objetivo del ejemplo2 vehículos · batería inicial 60 %Regreso de ambos al centro · condición del desafíoCompatibilidad y disponibilidad de cargadores · por confirmar"
+          }
+        },
+        {
+          "id": "no_page_errors",
+          "status": "passed",
+          "expected": "No JavaScript page errors in tested path",
+          "observed": []
+        }
+      ],
+      "snapshots": {
+        "initial": {
+          "title": "Secuencia · ZMD Mobility",
+          "soc": "60",
+          "aria_invalid": null,
+          "native_valid": true,
+          "scene": "complete",
+          "status": "Ejemplo completo",
+          "caption": "Las ocho entregas están incluidas en esta muestra. El motor no se ha ejecutado.",
+          "selected_vehicle": "Vehículo A",
+          "metrics": {
+            "served": "8 / 8",
+            "energy": "14,3",
+            "return_soc": "42 %"
+          },
+          "battery": "Salida · 60 %Retorno · 42 %",
+          "itinerary": "⌂Centro de distribuciónSalida · batería inicial 60 % de ejemplo1Mercado del norteEntrega · mercado52 %2BibliotecaEntrega · biblioteca42 %+Estación de ejemploRecarga · dato sintéticoSalida 55 %4Almacén del parqueEntrega · almacen49 %5Galería centralEntrega · galeria46 %⌂Regreso al centroBatería de ejemplo 42 %",
+          "battery_values": [
+            "52 %",
+            "42 %",
+            "Salida 55 %",
+            "49 %",
+            "46 %"
+          ],
+          "depot_notes": [
+            "Salida · batería inicial 60 % de ejemplo",
+            "Batería de ejemplo 42 %"
+          ],
+          "review": "8 pedidos obligatorios · objetivo del ejemplo2 vehículos · batería inicial 60 %Regreso de ambos al centro · condición del desafíoCompatibilidad y disponibilidad de cargadores · por confirmar",
+          "map_unlocated": false,
+          "map_stale": false
+        },
+        "empty": {
+          "title": "Secuencia · ZMD Mobility",
+          "soc": "",
+          "aria_invalid": "true",
+          "native_valid": true,
+          "scene": "stale",
+          "status": "Revisa el SoC inicial",
+          "caption": "Completa la batería inicial. Un campo vacío no significa 0 %.",
+          "selected_vehicle": "Vehículo A",
+          "metrics": {
+            "served": "—",
+            "energy": "—",
+            "return_soc": "—"
+          },
+          "battery": "Perfil energético no vigente o no disponible en esta escena. No equivale a batería cero.",
+          "itinerary": "⌂Centro de distribuciónBatería inicial por completar1Mercado del norteEntrega · mercado—2BibliotecaEntrega · biblioteca—+Estación de ejemploRecarga · dato sintético—4Almacén del parqueEntrega · almacen—5Galería centralEntrega · galeria—⌂Regreso al centroBatería de retorno no disponible para el escenario actual",
+          "battery_values": [
+            "—",
+            "—",
+            "—",
+            "—",
+            "—"
+          ],
+          "depot_notes": [
+            "Batería inicial por completar",
+            "Batería de retorno no disponible para el escenario actual"
+          ],
+          "review": "8 pedidos obligatorios · objetivo del ejemplo2 vehículos · batería inicial por completarRegreso de ambos al centro · condición del desafíoCompatibilidad y disponibilidad de cargadores · por confirmar",
+          "map_unlocated": false,
+          "map_stale": true
+        },
+        "empty_after_vehicle_b": {
+          "title": "Secuencia · ZMD Mobility",
+          "soc": "",
+          "aria_invalid": "true",
+          "native_valid": true,
+          "scene": "stale",
+          "status": "Revisa el SoC inicial",
+          "caption": "Completa la batería inicial. Un campo vacío no significa 0 %.",
+          "selected_vehicle": "Vehículo B",
+          "metrics": {
+            "served": "—",
+            "energy": "—",
+            "return_soc": "—"
+          },
+          "battery": "Perfil energético no vigente o no disponible en esta escena. No equivale a batería cero.",
+          "itinerary": "⌂Centro de distribuciónBatería inicial por completar1Taller de la riberaEntrega · taller—2Local del surEntrega · local-sur—3Librería del barrioEntrega · libreria—4Café de la plazaEntrega · cafe—⌂Regreso al centroBatería de retorno no disponible para el escenario actual",
+          "battery_values": [
+            "—",
+            "—",
+            "—",
+            "—"
+          ],
+          "depot_notes": [
+            "Batería inicial por completar",
+            "Batería de retorno no disponible para el escenario actual"
+          ],
+          "review": "8 pedidos obligatorios · objetivo del ejemplo2 vehículos · batería inicial por completarRegreso de ambos al centro · condición del desafíoCompatibilidad y disponibilidad de cargadores · por confirmar",
+          "map_unlocated": false,
+          "map_stale": true
+        },
+        "zero": {
+          "title": "Secuencia · ZMD Mobility",
+          "soc": "0",
+          "aria_invalid": null,
+          "native_valid": true,
+          "scene": "stale",
+          "status": "Resultado desactualizado",
+          "caption": "El escenario cambió. El resultado anterior deja de estar vigente y sus métricas se retiran.",
+          "selected_vehicle": "Vehículo B",
+          "metrics": {
+            "served": "—",
+            "energy": "—",
+            "return_soc": "—"
+          },
+          "battery": "Perfil energético no vigente o no disponible en esta escena. No equivale a batería cero.",
+          "itinerary": "⌂Centro de distribuciónEntrada actual: 0 % · sin validación del motor1Taller de la riberaEntrega · taller—2Local del surEntrega · local-sur—3Librería del barrioEntrega · libreria—4Café de la plazaEntrega · cafe—⌂Regreso al centroBatería de retorno no disponible para el escenario actual",
+          "battery_values": [
+            "—",
+            "—",
+            "—",
+            "—"
+          ],
+          "depot_notes": [
+            "Entrada actual: 0 % · sin validación del motor",
+            "Batería de retorno no disponible para el escenario actual"
+          ],
+          "review": "8 pedidos obligatorios · objetivo del ejemplo2 vehículos · batería inicial 0 %Regreso de ambos al centro · condición del desafíoCompatibilidad y disponibilidad de cargadores · por confirmar",
+          "map_unlocated": false,
+          "map_stale": true
+        },
+        "review_55": {
+          "title": "Secuencia · ZMD Mobility",
+          "soc": "55",
+          "aria_invalid": null,
+          "native_valid": true,
+          "scene": "stale",
+          "status": "Resultado desactualizado",
+          "caption": "El escenario cambió. El resultado anterior deja de estar vigente y sus métricas se retiran.",
+          "selected_vehicle": "Vehículo B",
+          "metrics": {
+            "served": "—",
+            "energy": "—",
+            "return_soc": "—"
+          },
+          "battery": "Perfil energético no vigente o no disponible en esta escena. No equivale a batería cero.",
+          "itinerary": "⌂Centro de distribuciónEntrada actual: 55 % · sin validación del motor1Taller de la riberaEntrega · taller—2Local del surEntrega · local-sur—3Librería del barrioEntrega · libreria—4Café de la plazaEntrega · cafe—⌂Regreso al centroBatería de retorno no disponible para el escenario actual",
+          "battery_values": [
+            "—",
+            "—",
+            "—",
+            "—"
+          ],
+          "depot_notes": [
+            "Entrada actual: 55 % · sin validación del motor",
+            "Batería de retorno no disponible para el escenario actual"
+          ],
+          "review": "8 pedidos obligatorios · objetivo del ejemplo2 vehículos · batería inicial 55 %Regreso de ambos al centro · condición del desafíoCompatibilidad y disponibilidad de cargadores · por confirmar",
+          "map_unlocated": false,
+          "map_stale": true
+        },
+        "fifty_five": {
+          "title": "Secuencia · ZMD Mobility",
+          "soc": "55",
+          "aria_invalid": null,
+          "native_valid": true,
+          "scene": "stale",
+          "status": "Resultado desactualizado",
+          "caption": "El escenario cambió. El resultado anterior deja de estar vigente y sus métricas se retiran.",
+          "selected_vehicle": "Vehículo B",
+          "metrics": {
+            "served": "—",
+            "energy": "—",
+            "return_soc": "—"
+          },
+          "battery": "Perfil energético no vigente o no disponible en esta escena. No equivale a batería cero.",
+          "itinerary": "⌂Centro de distribuciónEntrada actual: 55 % · sin validación del motor1Taller de la riberaEntrega · taller—2Local del surEntrega · local-sur—3Librería del barrioEntrega · libreria—4Café de la plazaEntrega · cafe—⌂Regreso al centroBatería de retorno no disponible para el escenario actual",
+          "battery_values": [
+            "—",
+            "—",
+            "—",
+            "—"
+          ],
+          "depot_notes": [
+            "Entrada actual: 55 % · sin validación del motor",
+            "Batería de retorno no disponible para el escenario actual"
+          ],
+          "review": "8 pedidos obligatorios · objetivo del ejemplo2 vehículos · batería inicial 55 %Regreso de ambos al centro · condición del desafíoCompatibilidad y disponibilidad de cargadores · por confirmar",
+          "map_unlocated": false,
+          "map_stale": true
+        },
+        "reset": {
+          "title": "Secuencia · ZMD Mobility",
+          "soc": "60",
+          "aria_invalid": null,
+          "native_valid": true,
+          "scene": "complete",
+          "status": "Ejemplo completo",
+          "caption": "Las ocho entregas están incluidas en esta muestra. El motor no se ha ejecutado.",
+          "selected_vehicle": "Vehículo B",
+          "metrics": {
+            "served": "8 / 8",
+            "energy": "14,3",
+            "return_soc": "29 %"
+          },
+          "battery": "Salida · 60 %Retorno · 29 %",
+          "itinerary": "⌂Centro de distribuciónSalida · batería inicial 60 % de ejemplo1Taller de la riberaEntrega · taller53 %2Local del surEntrega · local-sur45 %3Librería del barrioEntrega · libreria39 %4Café de la plazaEntrega · cafe34 %⌂Regreso al centroBatería de ejemplo 29 %",
+          "battery_values": [
+            "53 %",
+            "45 %",
+            "39 %",
+            "34 %"
+          ],
+          "depot_notes": [
+            "Salida · batería inicial 60 % de ejemplo",
+            "Batería de ejemplo 29 %"
+          ],
+          "review": "8 pedidos obligatorios · objetivo del ejemplo2 vehículos · batería inicial 60 %Regreso de ambos al centro · condición del desafíoCompatibilidad y disponibilidad de cargadores · por confirmar",
+          "map_unlocated": false,
+          "map_stale": false
+        },
+        "review_reset": {
+          "title": "Secuencia · ZMD Mobility",
+          "soc": "60",
+          "aria_invalid": null,
+          "native_valid": true,
+          "scene": "complete",
+          "status": "Ejemplo completo",
+          "caption": "Las ocho entregas están incluidas en esta muestra. El motor no se ha ejecutado.",
+          "selected_vehicle": "Vehículo B",
+          "metrics": {
+            "served": "8 / 8",
+            "energy": "14,3",
+            "return_soc": "29 %"
+          },
+          "battery": "Salida · 60 %Retorno · 29 %",
+          "itinerary": "⌂Centro de distribuciónSalida · batería inicial 60 % de ejemplo1Taller de la riberaEntrega · taller53 %2Local del surEntrega · local-sur45 %3Librería del barrioEntrega · libreria39 %4Café de la plazaEntrega · cafe34 %⌂Regreso al centroBatería de ejemplo 29 %",
+          "battery_values": [
+            "53 %",
+            "45 %",
+            "39 %",
+            "34 %"
+          ],
+          "depot_notes": [
+            "Salida · batería inicial 60 % de ejemplo",
+            "Batería de ejemplo 29 %"
+          ],
+          "review": "8 pedidos obligatorios · objetivo del ejemplo2 vehículos · batería inicial 60 %Regreso de ambos al centro · condición del desafíoCompatibilidad y disponibilidad de cargadores · por confirmar",
+          "map_unlocated": false,
+          "map_stale": false
+        }
+      },
+      "page_errors": [],
+      "http_status": 200,
+      "passed": true
+    }
+  ],
+  "passed": true
+}

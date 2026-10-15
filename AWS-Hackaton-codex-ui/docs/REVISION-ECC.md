@@ -1,0 +1,101 @@
+# ECC: qué aprovechar para ZMD Mobility y qué dejar fuera
+
+**Revisión: 14-10-2026. Destinatarios: Diego y Lucas, con Daniel como responsable de formulación.** Investigación y propuesta; no autoriza implementación ni cambia las decisiones abiertas del [proyecto](CONTEXTO.md).
+
+**Actualización posterior del mismo día:** Diego solicitó adaptar la selección. El [repertorio vigente](SKILLS.md) contiene cinco skills propias, incluida Apple Design para ZMD Mobility. Este informe conserva el estado y evidencia de la auditoría previa; sus notas de “skill sin cambios” describen aquel momento, no la instalación posterior.
+
+**Dictamen:** ECC sí aporta material útil, especialmente para coordinar la interfaz con el motor y exigir evidencia al trabajo de los agentes. No recomiendo instalarlo completo para CASE. Su configuración general agrega obligaciones, automatizaciones y opiniones que no corresponden necesariamente a este proyecto. La selección propuesta es de seis prácticas, adaptadas a nuestra documentación y herramientas actuales.
+
+## Qué se examinó y qué demuestra la revisión
+
+Repositorio [affaan-m/ECC](https://github.com/affaan-m/ECC), congelado en el commit [`b92f181b3b748d1abbc2afd94af6aa7d8c8fca29`](https://github.com/affaan-m/ECC/tree/b92f181b3b748d1abbc2afd94af6aa7d8c8fca29), del 11-10-2026. `VERSION` y `package.json` declaran **2.2.3**.
+
+Se inventariaron los **4.615 archivos versionados**, con tamaño y hash. Hay **311 entradas `skills/*/SKILL.md`, 71 descriptores de agentes, 97 archivos en commands, 122 en rules, 369 en scripts y 495 en tests**. El último número incluye auxiliares y fixtures: no significa 495 pruebas ejecutadas. Muchas páginas son traducciones o copias para distintas herramientas.
+
+La revisión se repartió entre tres subagentes —skills/producto, runtime/instalación y compatibilidad/calidad— y una revisión integradora de documentación, antecedentes y hallazgos. Se inspeccionaron las principales superficies del repositorio y se profundizó en lo que podría adoptarse o afectar nuestras herramientas, archivos y contexto.
+
+**Límite explícito:** inventario completo no equivale a lectura manual de cada línea. Los informes distinguen lectura completa, parcial, metadatos y clasificación. No se ejecutaron instaladores, hooks, tests, compilaciones, modelos ni servicios de ECC. La revisión de ECC2/Rust y proveedores Python fue de estructura y puntos seleccionados, no una auditoría integral de su código. Los defectos indicados abajo proceden de lectura estática; donde interviene una herramienta anfitriona, no se afirma un fallo reproducido en ella.
+
+El inventario y las coberturas quedan en la memoria local del workspace, `memoria-hackaton/10-planificacion/ecc/`. Los enlaces externos de este informe fijan el commit para evitar que una actualización cambie la evidencia.
+
+## La historia del hackathon: qué está respaldado
+
+El evento **Forum Ventures × Anthropic** existió: su organizador publica fecha **12 de septiembre de 2025, Nueva York**, y un desafío de un día para crear agentes que ayuden a iniciar empresas. No era un desafío de electromovilidad. [Fuente del organizador](https://www.forumvc.com/forum-ventures-x-anthropic-ai-hackathon).
+
+David Rodríguez, compañero de Affaan, afirma que ganaron el primer premio entre **22 equipos**. El README de ECC y Zenith también atribuyen esa victoria al equipo. Es una afirmación consistente de los participantes; no encontré en la página del organizador una lista de ganadores que la confirme independientemente. [Publicación de David](https://www.linkedin.com/posts/david-c-rodriguez_what-are-the-tools-you-wish-you-had-to-empower-activity-7373454981472874496-umpD), [Zenith](https://zenith.chat/), [README, antecedente](https://github.com/affaan-m/ECC/blob/b92f181b3b748d1abbc2afd94af6aa7d8c8fca29/README.md#L2135-L2139).
+
+No usaría “hackathon enorme” como argumento técnico: la página oficial describe una convocatoria de 75 personas. Tampoco existe evidencia revisada de que las 311 skills y automatizaciones actuales fueran el conjunto utilizado para ganar. El repositorio público se creó en enero de 2026, según los [metadatos de GitHub](https://api.github.com/repos/affaan-m/ECC); el evento fue anterior. Eso no descarta configuraciones privadas previas, pero impide identificar ambos conjuntos sin más evidencia.
+
+**Conclusión de esta comprobación:** el antecedente merece atención; no demuestra que instalar ECC produzca mejor software, mejores rutas o una victoria. Tampoco demuestra causalidad entre el premio y cada componente actual.
+
+## Las seis prácticas que sí extraería
+
+| Práctica y fuente ECC | Aplicación concreta a CASE | Adaptación necesaria |
+|---|---|---|
+| **Contrato primero** — [contract-first](https://github.com/affaan-m/ECC/blob/b92f181b3b748d1abbc2afd94af6aa7d8c8fca29/skills/contract-first/SKILL.md) | Diego necesita saber qué recibe del motor; Daniel y Lucas, qué deben producir. Acordar IDs, unidades, estados, errores y un ejemplo válido antes de trabajar en paralelo. | Elegir el artefacto más sencillo que puedan comprobar ambos lados. Puede ser un tipo compartido o un esquema de archivo. No implica REST, microservicios ni generadores. La propia skill admite que un tipo puede bastar. |
+| **Contexto breve y términos precisos** — [context-and-decisions](https://github.com/affaan-m/ECC/blob/b92f181b3b748d1abbc2afd94af6aa7d8c8fca29/skills/context-and-decisions/SKILL.md) | Evitar confundir cargador registrado con disponible, coordenadas con ruta vial, o potencia de estación con potencia efectiva del vehículo. | Reutilizar `CONTEXTO.md`, `GLOSARIO.md` y `DATOS.md`. No crear otra memoria ni importar su sistema completo de gobernanza. |
+| **Agentes con una responsabilidad y un resultado** — [team-agent-orchestration](https://github.com/affaan-m/ECC/blob/b92f181b3b748d1abbc2afd94af6aa7d8c8fca29/skills/team-agent-orchestration/SKILL.md) | Un implementador modifica un área; un revisor independiente examina un riesgo concreto; un integrador resuelve cambios compartidos. | Basta declarar objetivo, archivos, evidencia y condición de cierre. No necesitamos un nuevo dashboard de agentes, un daemon o un Kanban propio. |
+| **Verificación independiente con evidencia** — [verification-loop](https://github.com/affaan-m/ECC/blob/b92f181b3b748d1abbc2afd94af6aa7d8c8fca29/skills/verification-loop/SKILL.md), [agente code-reviewer](https://github.com/affaan-m/ECC/blob/b92f181b3b748d1abbc2afd94af6aa7d8c8fca29/agents/code-reviewer.md) | Separar “el agente terminó” de “el recorrido funciona”. Revisar entradas reales, salida del motor, diff y comprobaciones pertinentes. | Seleccionar pruebas por riesgo. Una comprobación omitida debe figurar como no ejecutada, no como aprobada. No imponer todos los checks a cada cambio cosmético. |
+| **Probar el flujo visible** — [browser-qa](https://github.com/affaan-m/ECC/blob/b92f181b3b748d1abbc2afd94af6aa7d8c8fca29/skills/browser-qa/SKILL.md), [e2e-testing](https://github.com/affaan-m/ECC/blob/b92f181b3b748d1abbc2afd94af6aa7d8c8fca29/skills/e2e-testing/SKILL.md) | Abrir la interfaz, cambiar escenario, detectar resultados viejos, revisar errores, teclado, zoom y datos difíciles. | Tomar el método y contrastar las APIs con documentación oficial. Hay ejemplos defectuosos; no copiar su código de pruebas sin revisión. |
+| **Buscar y reutilizar antes de construir** — [search-first](https://github.com/affaan-m/ECC/blob/b92f181b3b748d1abbc2afd94af6aa7d8c8fca29/skills/search-first/SKILL.md) | Antes de añadir dependencias, patrones o componentes, revisar lo existente y escoger una solución mantenible. | Poner un alcance a la búsqueda. No convertir cada botón o función en una investigación de frameworks. |
+
+El valor más nuevo para este equipo es **formalizar la frontera UI–motor**. Contexto mínimo, revisiones independientes y pruebas proporcionales ya estaban en nuestro [plan abierto](PLAN.md): ECC los respalda, pero no justifica duplicarlos.
+
+Para la preocupación de Diego sobre código innecesariamente complicado, también es aprovechable el criterio de [code-simplifier](https://github.com/affaan-m/ECC/blob/b92f181b3b748d1abbc2afd94af6aa7d8c8fca29/agents/code-simplifier.md): examinar el código cambiado, preservar comportamiento y retirar abstracciones que no aportan. Lo incorporaría a la revisión anterior cuando haya un problema concreto; no como una reescritura automática de todo el repositorio.
+
+## Diseño: aporta criterios, pero no sería nuestra guía principal
+
+La dirección pedida por Diego es claridad, buena tipografía, espacio consistente, color con significado y una interfaz entendible para quien planifica una flota. ECC contiene material aprovechable sobre estados, interacción y dirección visual, pero sus reglas generales no son neutrales.
+
+`rules/web/design-quality.md` prohíbe layouts planos sin profundidad o movimiento, uniformidad de radios/espaciado/sombras y determinados estilos gris sobre blanco. También prescribe que cada superficie cumpla cuatro cualidades de una lista estética. Estas son preferencias del autor, no requisitos de usabilidad ni criterios CASE. Adoptarlas literalmente podría producir efectos, composiciones o variedad visual innecesarios. [Regla inspeccionada, líneas 21–49](https://github.com/affaan-m/ECC/blob/b92f181b3b748d1abbc2afd94af6aa7d8c8fca29/rules/web/design-quality.md#L21-L49).
+
+**Propuesta:** mantener una dirección visual única, apoyada en las guías primarias y en Apple/Emil ya revisados en [SKILLS.md](SKILLS.md). De ECC tomaríamos preguntas de revisión: ¿se entiende la jerarquía?, ¿qué pasa al fallar?, ¿hay feedback?, ¿el dato mostrado corresponde a la ejecución actual? No adoptaría una segunda autoridad estética ni una obligación de animar.
+
+## Hallazgos que impiden recomendar una copia indiscriminada
+
+| Hallazgo verificado por lectura | Evidencia y alcance | Consecuencia para nosotros |
+|---|---|---|
+| **Un test promete comparar dos modos, pero solo ejecuta uno.** | `ai-regression-testing` titula un ejemplo como paridad sandbox/producción; el cuerpo fuerza sandbox y comprueba campos de esa respuesta. [L269–278](https://github.com/affaan-m/ECC/blob/b92f181b3b748d1abbc2afd94af6aa7d8c8fca29/skills/ai-regression-testing/SKILL.md#L269-L278). | Una prueba verde no demostraría equivalencia con el motor real. Necesitamos ejercitar las dos rutas o validarlas independientemente contra el mismo contrato. |
+| **El desplegable presentado como accesible contiene un problema de eventos.** | El clic en una opción llama a `setIsOpen(false)` y luego alcanza el padre, que invierte el estado. Tampoco actualiza el índice seleccionado al elegir con ratón. [frontend-a11y, L282–302](https://github.com/affaan-m/ECC/blob/b92f181b3b748d1abbc2afd94af6aa7d8c8fca29/skills/frontend-a11y/SKILL.md#L282-L302). Inferencia directa del flujo; no se renderizó. | Extraer criterios y usar componentes comprobados; no tratar una etiqueta “a11y” como certificado. |
+| **Hay referencias técnicas imprecisas en material de UI.** | El agente a11y agrupa foco lógico e indicadores de alto contraste bajo WCAG 2.4.11. Ese criterio trata de que el componente enfocado no quede completamente oculto; W3C distingue Focus Visible como 2.4.7. [Agente ECC](https://github.com/affaan-m/ECC/blob/b92f181b3b748d1abbc2afd94af6aa7d8c8fca29/agents/a11y-architect.md#L82), [W3C 2.4.7](https://www.w3.org/WAI/WCAG22/Understanding/focus-visible.html), [W3C 2.4.11](https://www.w3.org/WAI/WCAG22/Understanding/focus-not-obscured-minimum.html). | Contrastar estándares con su fuente, no con la reputación del catálogo. |
+| **El material E2E mezcla dos sistemas de tracing.** | El ejemplo de [e2e-testing](https://github.com/affaan-m/ECC/blob/b92f181b3b748d1abbc2afd94af6aa7d8c8fca29/skills/e2e-testing/SKILL.md) usa tracing de navegador como si fuera el tracing de Playwright. Son APIs/formats distintos: [Browser.startTracing](https://playwright.dev/docs/api/class-browser#browser-start-tracing), [Tracing.start](https://playwright.dev/docs/api/class-tracing#tracing-start). | No copiar la receta de diagnóstico. Verificar la API de la versión elegida. |
+| **Una comprobación puede aprobar sin ejecutar nada.** | La quality gate de Kiro permite omitir build, tipos, lint y tests; termina con éxito si no hubo fallos, incluso cuando todas se omitieron. [quality-gate.sh, L108–119](https://github.com/affaan-m/ECC/blob/b92f181b3b748d1abbc2afd94af6aa7d8c8fca29/.kiro/scripts/quality-gate.sh#L108-L119). No se ejecutó. | “No falló” no equivale a “se verificó”. Conservar ese matiz en todos nuestros reportes. |
+| **La memoria automática es más amplia que nuestra memoria mínima.** | Los hooks incluyen observaciones de entradas/salidas y resúmenes de sesión. `observer.enabled=false` se consulta después de la escritura de observaciones: no es un interruptor global de captura. [observe.sh](https://github.com/affaan-m/ECC/blob/b92f181b3b748d1abbc2afd94af6aa7d8c8fca29/skills/continuous-learning-v2/hooks/observe.sh). | No habilitar captura continua para un proyecto que deliberadamente conserva solo contexto necesario. |
+| **Algunas sesiones pueden iniciar otra llamada al modelo.** | `session-end.js` puede resumir con LLM bajo condiciones de mensajes/contexto; el helper invoca `claude -p`. Existe `ECC_SKIP_LLM_SUMMARY`. [Disparador L249–266](https://github.com/affaan-m/ECC/blob/b92f181b3b748d1abbc2afd94af6aa7d8c8fca29/scripts/hooks/session-end.js#L249-L266), [helper L114–180](https://github.com/affaan-m/ECC/blob/b92f181b3b748d1abbc2afd94af6aa7d8c8fca29/scripts/lib/llm-summary.js#L114-L180). | Distinguir registro local de envío al proveedor configurado. No se encontró ni se afirma exfiltración universal. |
+| **El wrapper instala dependencias antes de procesar argumentos.** | Si falta `node_modules`, `install.sh` llama a `npm install --ignore-scripts` antes de delegar a su parser. Por tanto, incluso `--help`/`--dry-run` podrían causar descarga y escritura en esa condición. [L25–42](https://github.com/affaan-m/ECC/blob/b92f181b3b748d1abbc2afd94af6aa7d8c8fca29/install.sh#L25-L42). | Leer primero no es equivalente a ejecutar el instalador en modo supuestamente informativo. `--ignore-scripts` sí es una defensa real frente a scripts de dependencias. |
+| **El adaptador OpenCode tiene una aprobación por prefijo de texto.** | Su callback acepta órdenes bash mediante regex de prefijo, sin comprobar que allí termine la orden. [L781–790](https://github.com/affaan-m/ECC/blob/b92f181b3b748d1abbc2afd94af6aa7d8c8fca29/.opencode/plugins/ecc-hooks.ts#L781-L790). | No reutilizar esa política. Es un defecto del clasificador observado; no se comprobó que el host actual consuma ese retorno ni un bypass real de permisos. |
+
+El runtime también tiene defensas concretas: protección de archivos no administrados, consentimiento explícito para determinados hooks en el instalador gestionado, instalaciones mínimas, versiones fijadas en componentes y controles de memoria. El Memory Vault más reciente distingue memoria no revisada de política autorizada. Son decisiones positivas que deben evaluarse junto con los hallazgos. [Política de memoria](https://github.com/affaan-m/ECC/blob/b92f181b3b748d1abbc2afd94af6aa7d8c8fca29/README.md#L1257-L1307), [instalación selectiva](https://github.com/affaan-m/ECC/blob/b92f181b3b748d1abbc2afd94af6aa7d8c8fca29/docs/SELECTIVE-INSTALL-ARCHITECTURE.md).
+
+## Qué dejaría fuera de CASE
+
+- **Reglas globales de desarrollo sin adaptar.** La exigencia general de TDD, cobertura del 80%, tres capas de pruebas, límites rígidos de tamaño e inmutabilidad absoluta no demuestra por sí sola calidad ni adecuación al problema. Puede generar pruebas y fragmentación innecesarias. [AGENTS.md de ECC](https://github.com/affaan-m/ECC/blob/b92f181b3b748d1abbc2afd94af6aa7d8c8fca29/AGENTS.md).
+- **Gobernanza documental completa.** ECC combina documentos que permiten un flujo breve con reglas más rígidas. Preferimos mantener nuestros archivos actuales. Su propio patrón PRD permite saltar etapas para cambios pequeños; no sería justo afirmar que todo ECC exige un PRD para todo. [PLAN-PRD-PATTERN](https://github.com/affaan-m/ECC/blob/b92f181b3b748d1abbc2afd94af6aa7d8c8fca29/docs/PLAN-PRD-PATTERN.md#L52-L87).
+- **Aprendizaje continuo, memoria global y resúmenes automáticos**, hasta que exista un problema concreto que nuestra memoria breve no resuelva. No son necesarios para acordar el producto.
+- **ECC2, dashboards y daemons de agentes.** ECC2 se declara alpha. Administrar una plataforma adicional de agentes sería otro producto que mantener. [Estado explícito](https://github.com/affaan-m/ECC/blob/b92f181b3b748d1abbc2afd94af6aa7d8c8fca29/ecc2/README.md).
+- **Catálogo multilenguaje o MCP completo.** Las guías de Python/React/etc. se evalúan después de escoger stack. Un adaptador presente no prueba compatibilidad total. La configuración nativa de un plugin y una plantilla para el directorio de usuario pueden activar superficies diferentes.
+- **Plantillas SaaS y arquitectura de ejemplo.** Autenticación, pagos, repositorios genéricos, colas, microservicios, almacenamiento vectorial o múltiples proveedores LLM no son requisitos CASE por aparecer en un ejemplo.
+- **Recomendaciones de modelos y ahorro como verdades universales.** Son específicas del proveedor, época y tarea. No cambiar modelos ni presupuestos de este equipo por una tabla histórica.
+
+No encontré un componente directamente aprovechable que resuelva **la asignación de vehículos, la red vial o la validación energética del desafío**. No aporta evidencia de capacidad útil del Leaf, disponibilidad real de cargadores, calibración energética, factibilidad ni mejoras medidas de nuestras rutas. Eso sigue dependiendo del trabajo de Daniel y Lucas y de las condiciones del desafío.
+
+## Propuesta de uso cuando Daniel termine
+
+Esta secuencia adapta las ideas útiles; no instala skills ni comienza desarrollo.
+
+1. **Acordar el primer recorrido.** Qué decisión toma la jefa de flota, qué calcula realmente el motor y qué queda fuera. Reutilizar `PLAN.md`.
+2. **Fijar la frontera con un ejemplo real.** Campos, unidades, IDs, estados y errores. Distinguir una solución no encontrada de una imposibilidad demostrada, si el motor puede demostrarla. El formato depende de su implementación.
+3. **Construir una integración pequeña completa.** Entrada → motor → resultado interpretable. Un ejemplo simulado puede servir al diseño si se identifica como tal; no cuenta como prueba de integración.
+4. **Revisar con responsabilidades separadas.** Un agente examina contrato/simplicidad; otro, experiencia y accesibilidad; Daniel/Lucas validan restricciones del motor con apoyo independiente. Activarlos cuando exista material revisable.
+5. **Cerrar con evidencia.** Probar una entrada distinta, errores pertinentes y el recorrido visible. Comprobar que los KPI provienen del motor y que el cambio de escenario no conserva resultados viejos como actuales.
+6. **Corregir hallazgos relevantes y cerrar la revisión.** Mantener el límite de dos rondas antes de elevar una discrepancia al responsable humano. Más agentes no sustituyen decidir qué resultado es aceptable.
+
+No necesitamos convertir seis prácticas en seis nuevas skills permanentes. Primero pueden ser instrucciones breves de las tareas. Solo extraer una skill local si un comportamiento útil se repite y falta en las existentes.
+
+**Cómo evaluar si ECC aporta algo:** aplicar una candidata a una tarea representativa y observar si descubre un fallo real, reduce cambios innecesarios, respeta el contrato y entrega evidencia más clara. Compararla con el procedimiento actual. Una prueba pequeña orienta la adopción; no constituye un benchmark general ni una promesa de rendimiento.
+
+El resultado propuesto para CASE sigue siendo el programa reproducible, una experiencia comprensible y evidencia honesta de sus resultados. ECC puede ayudar a coordinar su construcción; no redefine lo que hay que entregar.
+
+## Estado de esta revisión
+
+Se descargó una copia temporal para lectura, se crearon inventarios e informes y se añadió esta evaluación al catálogo de referencias. **No se instaló ECC, no se activaron sus instrucciones, hooks o MCP, no se modificó la skill de contexto y no se hizo commit ni push.** El plan, stack, motor e interfaz final siguen pendientes de las conclusiones del equipo.

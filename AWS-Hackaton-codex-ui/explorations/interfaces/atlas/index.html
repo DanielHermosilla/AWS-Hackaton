@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://tiles.openfreemap.org; worker-src 'self' blob:; child-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Atlas · ZMD Mobility</title>
+  <link rel="stylesheet" href="../../shared/demo.css">
+  <link rel="stylesheet" href="style.css">
+  <script defer src="../../shared/demo.js"></script>
+  <script defer src="app.js"></script>
+</head>
+<body class="atlas">
+  <a class="skip-link" href="#workspace">Ir a la operación</a>
+  <div class="demo-strip"><span>Exploración · datos sintéticos · motor no ejecutado</span><a href="../../index.html">← Todas las propuestas</a></div>
+  <header class="topbar">
+    <a class="mark brand" href="../../index.html"><span class="brand-symbol" aria-hidden="true">Z</span>ZMD <span class="brand-light">Mobility</span></a>
+    <span class="workspace-name">Operación de reparto <span aria-hidden="true">/</span> Atlas</span>
+    <button class="btn small" id="configure">Configurar escenario</button>
+  </header>
+  <main class="workspace" id="workspace">
+    <aside class="rail" aria-label="Vista actual"><div class="rail-selected"><span aria-hidden="true">⌖</span><small>Mapa</small></div><a class="rail-back" href="../../index.html" aria-label="Volver a las propuestas">↗</a></aside>
+    <section class="map-workspace" aria-label="Mapa e información de la operación">
+      <div class="map-head">
+        <div><p class="eyebrow">Escenario de ejemplo</p><h1>La operación, a la vista.</h1></div>
+        <label class="scene-label">Escena de ejemplo<select class="scenario-select" id="scene"><option value="complete">Completo</option><option value="partial">Diagnóstico parcial</option><option value="empty">Sin resultado</option><option value="error">Error de ubicación</option><option value="stale">Desactualizado</option></select></label>
+      </div>
+      <div class="map-frame">
+        <div class="map-tools">
+          <div class="tabs" aria-label="Vehículos"><button id="vehicle-all" aria-pressed="true">Todos</button><button id="vehicle-a" aria-pressed="false"><span class="route-dot" style="--route-color:#27756c"></span>A</button><button id="vehicle-b" aria-pressed="false"><span class="route-dot" style="--route-color:#6372a3"></span>B</button></div>
+          <details class="layers"><summary>Capas</summary><div><label><input type="checkbox" checked id="layer-routes">Trazados ilustrativos</label><label><input type="checkbox" checked id="layer-stops">Pedidos</label><label><input type="checkbox" checked id="layer-chargers">Recarga de ejemplo</label></div></details>
+        </div>
+        <div id="map" class="map-host"></div>
+        <div class="map-caption">Esquema · no red vial</div>
+        <div class="zoom-controls" aria-label="Vista del esquema"><button id="zoom-out" aria-label="Alejar">−</button><span id="zoom-label">100 %</span><button id="zoom-in" aria-label="Acercar">+</button><button id="fit">Encajar</button></div>
+      </div>
+      <div class="operation-bar">
+        <div class="state-copy"><span class="state-dot" aria-hidden="true"></span><div><strong id="status" role="status" aria-live="polite">Ejemplo completo</strong><p id="state-caption"></p></div></div>
+        <div class="operation-metrics"><div><strong id="served">—</strong><span>Pedidos · ejemplo</span></div><div><strong><span id="energy">—</span><small> kWh</small></strong><span>Energía · ejemplo</span></div></div>
+      </div>
+    </section>
+    <aside class="inspector" aria-label="Detalle de selección">
+      <div class="inspector-title"><p class="eyebrow">Inspector</p><h2 id="selected-name">Vehículo A</h2><p id="selected-detail"></p></div>
+      <div class="return-summary"><span>SoC de regreso · ejemplo</span><strong id="return-soc">—</strong></div>
+      <div class="battery-area"><div id="battery"></div><p class="footnote">Perfil sintético. No acredita validación energética.</p></div>
+      <div class="itinerary-head"><h3>Secuencia de paradas</h3><span class="pill">Ejemplo</span></div>
+      <div class="itinerary-scroll" id="itinerary"></div>
+      <div class="issues-area"><button class="btn small" id="review-issues" hidden>Revisar pedidos pendientes</button><div class="notice" id="issues" hidden></div></div>
+      <footer class="inspector-footer"><p>Las estaciones registradas no acreditan disponibilidad ni compatibilidad.</p><button class="quiet" id="reset-scene">Restablecer ejemplo</button></footer>
+    </aside>
+  </main>
+  <dialog class="dialog" id="settings" aria-labelledby="settings-title">
+    <h2 id="settings-title">Configurar el escenario</h2>
+    <p>Dos Nissan Leaf 2013. Esta exploración usa ocho pedidos sintéticos y no ejecuta el motor.</p>
+    <label class="field-label" for="soc">SoC inicial de ejemplo (%)</label>
+    <input id="soc" type="number" value="60" min="0" max="100" step="1">
+    <p>Editar este valor retira las métricas del resultado anterior.</p>
+    <div class="dialog-actions"><button class="btn" id="close-settings">Cerrar</button><button class="btn primary" id="save-settings">Aplicar a la exploración</button></div>
+  </dialog>
+</body>
+</html>

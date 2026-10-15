@@ -1,0 +1,94 @@
+{
+  "date": "2026-10-15T02:33:29.495Z",
+  "page": "http://127.0.0.1:4173/round-2/energia/",
+  "browser": "Google Chrome / Playwright",
+  "checks": [
+    {
+      "name": "Contexto eléctrico visible",
+      "passed": true,
+      "detail": "Dos Nissan Leaf 2013, salida al 60 %, veinte entregas, retorno a BASE y cifras etiquetadas como ejemplo."
+    },
+    {
+      "name": "Recarga como aumento de SoC",
+      "passed": true,
+      "detail": {
+        "from": 177.32,
+        "to": 122.75750000000001,
+        "x1": "597.5",
+        "x2": "597.5"
+      }
+    },
+    {
+      "name": "Selección de vehículo por teclado",
+      "passed": true,
+      "detail": "Enter conserva el foco, actualiza el perfil de Auto 2 y selecciona su recarga C9."
+    },
+    {
+      "name": "Gráfico, teclado y mapa sincronizados",
+      "passed": true,
+      "detail": "Flechas y Home/End conservan foco y seleccionan el mismo nodo en detalle, lista y mapa."
+    },
+    {
+      "name": "Secuencia por teclado",
+      "passed": true,
+      "detail": "Espacio en C9 conserva foco de la lista y lo relaciona con el mapa."
+    },
+    {
+      "name": "Mapa hacia perfil",
+      "passed": true,
+      "detail": "Click real en Local 16 actualiza parada 10, detalle y gráfico de Auto 1."
+    },
+    {
+      "name": "BASE repetida en la ruta",
+      "passed": true,
+      "detail": "La selección de BASE preserva el retorno cuando esa parada ya está activa."
+    },
+    {
+      "name": "Procedencia y diálogo accesible",
+      "passed": true,
+      "detail": "Se declara el balance ilustrativo de 16 kWh; Escape cierra y devuelve foco."
+    },
+    {
+      "name": "Cargador fuera de la secuencia",
+      "passed": true,
+      "detail": "Mostrar sesenta estaciones permite seleccionar una registrada sin inventar balance ni disponibilidad."
+    },
+    {
+      "name": "Desktop 1440 px sin desbordamiento",
+      "passed": true,
+      "detail": {
+        "viewport": 1440,
+        "page": 1440,
+        "chart": 808.65625,
+        "map": 531.328125
+      }
+    },
+    {
+      "name": "Móvil 390 px y movimiento reducido",
+      "passed": true,
+      "detail": {
+        "viewport": 390,
+        "page": 390,
+        "chart": 354,
+        "map": 354,
+        "motion": {
+          "preference": true,
+          "card": "0s",
+          "mapPin": "0s"
+        },
+        "selection": "Retorno BASE de Auto 2 comprobado antes de captura del ejemplo inicial."
+      }
+    },
+    {
+      "name": "Datos desconocidos conservados",
+      "passed": true,
+      "detail": "SoC de entrada/salida, recarga, consumo y SoC final nulos muestran —; no se convierten en cero."
+    }
+  ],
+  "errors": [],
+  "networkHosts": [
+    "127.0.0.1:4173",
+    "tiles.openfreemap.org"
+  ],
+  "passed": true
+}

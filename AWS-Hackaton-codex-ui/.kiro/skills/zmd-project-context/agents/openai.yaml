@@ -1,0 +1,4 @@
+interface:
+  display_name: "Contexto del proyecto ZMD Mobility"
+  short_description: "Contexto vigente, fuentes y encargos acotados de ZMD Mobility"
+  default_prompt: "Usa $zmd-project-context para consultar el contexto vigente y trabajar en esta tarea de ZMD Mobility."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "ZMD · Mapa operativo"
+  short_description: "Integra mapas, rutas y selección sin confundir el motor"
+  default_prompt: "Usa $zmd-map-ui para diseñar o integrar el mapa operativo de ZMD Mobility con el contrato y los datos disponibles."

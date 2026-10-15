@@ -1,0 +1,49 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  Backend serverless de ruteo EV (hackaton). Lambda contenerizada que corre el
+  solver (Pyomo + HiGHS) expuesta por una HTTP API. Agnóstico a la UI.
+
+Globals:
+  Function:
+    Timeout: 180          # el solver puede tardar; margen amplio
+    MemorySize: 2048      # MILP + HiGHS necesitan memoria
+    Architectures:
+      - x86_64
+
+Resources:
+  SolverFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      PackageType: Image
+      Environment:
+        Variables:
+          BEDROCK_MODEL_ID: amazon.nova-lite-v1:0
+      Policies:
+        # Permite invocar Bedrock para la explicación/afinado con IA.
+        - Statement:
+            - Effect: Allow
+              Action:
+                - bedrock:InvokeModel
+                - bedrock:Converse
+              Resource: "*"
+      Events:
+        Solve:
+          Type: HttpApi
+          Properties:
+            Path: /solve
+            Method: POST
+        Health:
+          Type: HttpApi
+          Properties:
+            Path: /health
+            Method: GET
+    Metadata:
+      Dockerfile: Dockerfile
+      DockerContext: .
+      DockerTag: ev-routing-backend
+
+Outputs:
+  ApiBaseUrl:
+    Description: URL base de la API (usar en la UI)
+    Value: !Sub "https://${ServerlessHttpApi}.execute-api.${AWS::Region}.amazonaws.com"

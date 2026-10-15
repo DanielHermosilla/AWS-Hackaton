@@ -1,0 +1,50 @@
+[build-system]
+requires = ["hatchling>=1.26"]
+build-backend = "hatchling.build"
+
+[project]
+name = "ev-routing-hackathon"
+version = "0.1.0"
+description = "Modelo Pyomo de rutas eléctricas, basado en modelamiento.pdf."
+readme = "README.md"
+requires-python = ">=3.12,<3.14"
+dependencies = [
+  "pyomo>=6.9,<7",
+  "pydantic>=2.10,<3",
+  "pandas>=2.2,<3",
+  "numpy>=1.26,<3",
+  "networkx>=3.4,<4",
+  "gurobipy>=12,<14",
+  "osmnx>=2,<3",
+  "pyproj>=3.6,<4",
+]
+
+[dependency-groups]
+dev = [
+  "pytest>=8,<10",
+  "pytest-cov>=6,<8",
+  "ruff>=0.11,<1",
+]
+
+[project.scripts]
+ev-routing = "ev_routing.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/ev_routing"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
+markers = [
+  "solver: ejecuta un solver instalado; no necesita Internet",
+  "network: descarga datos viales; ejecución explícita y separada",
+  "real_data: necesita los CSV locales ignorados por Git",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
+ignore = ["E501"]

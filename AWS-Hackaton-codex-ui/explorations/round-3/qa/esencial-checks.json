@@ -1,0 +1,16 @@
+{
+  "errors": [],
+  "desktopOverflow": false,
+  "chargeDetail": "Auto 1 · C3\n\nCargador 3\n\nEstación registrada\n\nBatería al llegar\n22 %\nAl salir\n50,1 %\n\nRecarga de ejemplo: +4,5 kWh",
+  "rapidReopen": "Auto 1 · BASE\n\nRegreso a base\n\nCentro de distribución\n\nBatería al llegar\n37,5 %\nAl salir\n37,5 %",
+  "keyboardClose": true,
+  "focus": "<button class=\"stop-row active\" data-stop=\"BASE\" data-route=\"auto-1\" data-index=\"12\" aria-pressed=\"true\">\n            <span class=\"stop-number\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"m3 10 9-7 9 7v11H3V10Zm5 11v-8h8v8\"></path></svg></span>\n            <span class=\"stop-name\">Regreso a base<small>BASE</small></span>\n            <strong>37,5 %</strong>\n          </button>",
+  "routeKeyboardFocus": "all-routes",
+  "overflow390": false,
+  "overflow319": false,
+  "reduced": {
+    "transform": "none",
+    "opacity": "1",
+    "animations": 0
+  }
+}

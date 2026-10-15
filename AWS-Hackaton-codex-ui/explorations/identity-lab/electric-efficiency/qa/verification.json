@@ -1,0 +1,525 @@
+{
+  "date_utc": "2026-10-15T01:28:02.084Z",
+  "browser": "155.0.8059.79",
+  "profile": "temporary clean headless",
+  "svg_count": 36,
+  "proof_sizes": [
+    20,
+    32,
+    80
+  ],
+  "optical_refinements": [
+    "Relevo replaced literal S by an open transfer contour",
+    "Reingreso replaced literal G by an open return contour",
+    "Convergencia overlapping branches share one solid terminal"
+  ],
+  "failures": [],
+  "page_errors": [],
+  "remote_requests": [],
+  "bounds": [
+    {
+      "id": "e01-veta",
+      "asset": "symbol",
+      "x": 14,
+      "y": 8,
+      "width": 36,
+      "height": 48,
+      "viewBox": [
+        0,
+        0,
+        64,
+        64
+      ]
+    },
+    {
+      "id": "e01-veta",
+      "asset": "lockup_light",
+      "x": 14,
+      "y": 8,
+      "width": 239.51683044433594,
+      "height": 48,
+      "viewBox": [
+        0,
+        0,
+        350,
+        64
+      ]
+    },
+    {
+      "id": "e01-veta",
+      "asset": "lockup_dark",
+      "x": 14,
+      "y": 8,
+      "width": 239.51683044433594,
+      "height": 48,
+      "viewBox": [
+        0,
+        0,
+        350,
+        64
+      ]
+    },
+    {
+      "id": "e02-contacto",
+      "asset": "symbol",
+      "x": 12,
+      "y": 10,
+      "width": 39,
+      "height": 34,
+      "viewBox": [
+        0,
+        0,
+        64,
+        64
+      ]
+    },
+    {
+      "id": "e02-contacto",
+      "asset": "lockup_light",
+      "x": 12,
+      "y": 10,
+      "width": 241.51683044433594,
+      "height": 39.48147964477539,
+      "viewBox": [
+        0,
+        0,
+        350,
+        64
+      ]
+    },
+    {
+      "id": "e02-contacto",
+      "asset": "lockup_dark",
+      "x": 12,
+      "y": 10,
+      "width": 241.51683044433594,
+      "height": 39.48147964477539,
+      "viewBox": [
+        0,
+        0,
+        350,
+        64
+      ]
+    },
+    {
+      "id": "e03-polar",
+      "asset": "symbol",
+      "x": 9,
+      "y": 12,
+      "width": 46,
+      "height": 40,
+      "viewBox": [
+        0,
+        0,
+        64,
+        64
+      ]
+    },
+    {
+      "id": "e03-polar",
+      "asset": "lockup_light",
+      "x": 9,
+      "y": 12,
+      "width": 244.51683044433594,
+      "height": 40,
+      "viewBox": [
+        0,
+        0,
+        350,
+        64
+      ]
+    },
+    {
+      "id": "e03-polar",
+      "asset": "lockup_dark",
+      "x": 9,
+      "y": 12,
+      "width": 244.51683044433594,
+      "height": 40,
+      "viewBox": [
+        0,
+        0,
+        350,
+        64
+      ]
+    },
+    {
+      "id": "e04-induccion",
+      "asset": "symbol",
+      "x": 9,
+      "y": 8,
+      "width": 47,
+      "height": 48,
+      "viewBox": [
+        0,
+        0,
+        64,
+        64
+      ]
+    },
+    {
+      "id": "e04-induccion",
+      "asset": "lockup_light",
+      "x": 9,
+      "y": 8,
+      "width": 244.51683044433594,
+      "height": 48,
+      "viewBox": [
+        0,
+        0,
+        350,
+        64
+      ]
+    },
+    {
+      "id": "e04-induccion",
+      "asset": "lockup_dark",
+      "x": 9,
+      "y": 8,
+      "width": 244.51683044433594,
+      "height": 48,
+      "viewBox": [
+        0,
+        0,
+        350,
+        64
+      ]
+    },
+    {
+      "id": "e05-rotor",
+      "asset": "symbol",
+      "x": 0.21539030969142914,
+      "y": 8,
+      "width": 53.784610748291016,
+      "height": 55.05255889892578,
+      "viewBox": [
+        0,
+        0,
+        64,
+        64
+      ]
+    },
+    {
+      "id": "e05-rotor",
+      "asset": "lockup_light",
+      "x": 0.21539030969142914,
+      "y": 8,
+      "width": 253.3014373779297,
+      "height": 55.05255889892578,
+      "viewBox": [
+        0,
+        0,
+        350,
+        64
+      ]
+    },
+    {
+      "id": "e05-rotor",
+      "asset": "lockup_dark",
+      "x": 0.21539030969142914,
+      "y": 8,
+      "width": 253.3014373779297,
+      "height": 55.05255889892578,
+      "viewBox": [
+        0,
+        0,
+        350,
+        64
+      ]
+    },
+    {
+      "id": "e06-impulso",
+      "asset": "symbol",
+      "x": 8,
+      "y": 7,
+      "width": 48,
+      "height": 50,
+      "viewBox": [
+        0,
+        0,
+        64,
+        64
+      ]
+    },
+    {
+      "id": "e06-impulso",
+      "asset": "lockup_light",
+      "x": 8,
+      "y": 7,
+      "width": 245.51683044433594,
+      "height": 50,
+      "viewBox": [
+        0,
+        0,
+        350,
+        64
+      ]
+    },
+    {
+      "id": "e06-impulso",
+      "asset": "lockup_dark",
+      "x": 8,
+      "y": 7,
+      "width": 245.51683044433594,
+      "height": 50,
+      "viewBox": [
+        0,
+        0,
+        350,
+        64
+      ]
+    },
+    {
+      "id": "f01-atajo",
+      "asset": "symbol",
+      "x": 12,
+      "y": 10,
+      "width": 39,
+      "height": 44,
+      "viewBox": [
+        0,
+        0,
+        64,
+        64
+      ]
+    },
+    {
+      "id": "f01-atajo",
+      "asset": "lockup_light",
+      "x": 12,
+      "y": 10,
+      "width": 241.51683044433594,
+      "height": 44,
+      "viewBox": [
+        0,
+        0,
+        350,
+        64
+      ]
+    },
+    {
+      "id": "f01-atajo",
+      "asset": "lockup_dark",
+      "x": 12,
+      "y": 10,
+      "width": 241.51683044433594,
+      "height": 44,
+      "viewBox": [
+        0,
+        0,
+        350,
+        64
+      ]
+    },
+    {
+      "id": "f02-relevo",
+      "asset": "symbol",
+      "x": 8,
+      "y": 9,
+      "width": 48,
+      "height": 46,
+      "viewBox": [
+        0,
+        0,
+        64,
+        64
+      ]
+    },
+    {
+      "id": "f02-relevo",
+      "asset": "lockup_light",
+      "x": 8,
+      "y": 9,
+      "width": 245.51683044433594,
+      "height": 46,
+      "viewBox": [
+        0,
+        0,
+        350,
+        64
+      ]
+    },
+    {
+      "id": "f02-relevo",
+      "asset": "lockup_dark",
+      "x": 8,
+      "y": 9,
+      "width": 245.51683044433594,
+      "height": 46,
+      "viewBox": [
+        0,
+        0,
+        350,
+        64
+      ]
+    },
+    {
+      "id": "f03-reingreso",
+      "asset": "symbol",
+      "x": 7,
+      "y": 8,
+      "width": 48,
+      "height": 48,
+      "viewBox": [
+        0,
+        0,
+        64,
+        64
+      ]
+    },
+    {
+      "id": "f03-reingreso",
+      "asset": "lockup_light",
+      "x": 7,
+      "y": 8,
+      "width": 246.51683044433594,
+      "height": 48,
+      "viewBox": [
+        0,
+        0,
+        350,
+        64
+      ]
+    },
+    {
+      "id": "f03-reingreso",
+      "asset": "lockup_dark",
+      "x": 7,
+      "y": 8,
+      "width": 246.51683044433594,
+      "height": 48,
+      "viewBox": [
+        0,
+        0,
+        350,
+        64
+      ]
+    },
+    {
+      "id": "f04-ajuste",
+      "asset": "symbol",
+      "x": 10,
+      "y": 10,
+      "width": 44,
+      "height": 44,
+      "viewBox": [
+        0,
+        0,
+        64,
+        64
+      ]
+    },
+    {
+      "id": "f04-ajuste",
+      "asset": "lockup_light",
+      "x": 10,
+      "y": 10,
+      "width": 243.51683044433594,
+      "height": 44,
+      "viewBox": [
+        0,
+        0,
+        350,
+        64
+      ]
+    },
+    {
+      "id": "f04-ajuste",
+      "asset": "lockup_dark",
+      "x": 10,
+      "y": 10,
+      "width": 243.51683044433594,
+      "height": 44,
+      "viewBox": [
+        0,
+        0,
+        350,
+        64
+      ]
+    },
+    {
+      "id": "f05-convergencia",
+      "asset": "symbol",
+      "x": 9,
+      "y": 10,
+      "width": 46,
+      "height": 44,
+      "viewBox": [
+        0,
+        0,
+        64,
+        64
+      ]
+    },
+    {
+      "id": "f05-convergencia",
+      "asset": "lockup_light",
+      "x": 9,
+      "y": 10,
+      "width": 244.51683044433594,
+      "height": 44,
+      "viewBox": [
+        0,
+        0,
+        350,
+        64
+      ]
+    },
+    {
+      "id": "f05-convergencia",
+      "asset": "lockup_dark",
+      "x": 9,
+      "y": 10,
+      "width": 244.51683044433594,
+      "height": 44,
+      "viewBox": [
+        0,
+        0,
+        350,
+        64
+      ]
+    },
+    {
+      "id": "f06-equilibrio",
+      "asset": "symbol",
+      "x": 9,
+      "y": 7,
+      "width": 46,
+      "height": 50,
+      "viewBox": [
+        0,
+        0,
+        64,
+        64
+      ]
+    },
+    {
+      "id": "f06-equilibrio",
+      "asset": "lockup_light",
+      "x": 9,
+      "y": 7,
+      "width": 244.51683044433594,
+      "height": 50,
+      "viewBox": [
+        0,
+        0,
+        350,
+        64
+      ]
+    },
+    {
+      "id": "f06-equilibrio",
+      "asset": "lockup_dark",
+      "x": 9,
+      "y": 7,
+      "width": 244.51683044433594,
+      "height": 50,
+      "viewBox": [
+        0,
+        0,
+        350,
+        64
+      ]
+    }
+  ]
+}

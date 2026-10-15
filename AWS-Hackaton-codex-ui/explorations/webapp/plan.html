@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://tiles.openfreemap.org; worker-src 'self' blob:; child-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <link rel="icon" href="data:,">
+  <title>Plan de reparto · ZMD Mobility</title>
+  <link rel="stylesheet" href="../round-3/shared/base.css">
+  <link rel="stylesheet" href="plan.css">
+  <link rel="stylesheet" href="material.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="plan.html" aria-label="ZMD Mobility, plan de reparto"><strong>ZMD</strong><span>Mobility</span></a>
+    <div class="app-name">Planificación de flota eléctrica</div>
+    <div class="top-actions">
+      <span class="demo-tag">Demostración</span>
+      <button id="about" class="icon-button" aria-label="Acerca de los datos"></button>
+    </div>
+  </header>
+  <main class="workspace">
+    <aside class="sidebar" aria-label="Vehículos y paradas del plan">
+      <div class="scenario">
+        <div class="row between"><p>Escenario público</p><span class="file-tag">CSV</span></div>
+        <h1>Plan de reparto</h1>
+        <div class="row location"><span class="pin-dot"></span>Ann Arbor, Michigan</div>
+      </div>
+      <div class="sidebar-tabs" role="tablist" aria-label="Contenido del plan">
+        <button id="fleet-tab" role="tab" aria-controls="sidebar-content" aria-selected="true">Vehículos <span>2</span></button>
+        <button id="stops-tab" role="tab" aria-controls="sidebar-content" aria-selected="false">Paradas <span>20</span></button>
+      </div>
+      <div class="sidebar-content" id="sidebar-content" role="tabpanel" aria-labelledby="fleet-tab"></div>
+      <div class="sidebar-foot"><span id="foot-icon"></span><p>Recorridos y batería de ejemplo.<br>Validación del motor pendiente.</p></div>
+    </aside>
+    <section class="map-region" aria-label="Mapa del plan de reparto">
+      <div id="map"></div>
+      <div class="map-summary">
+        <div><span class="summary-icon" id="delivery-icon"></span><p><strong>20 <span>/ 20</span></strong><small>entregas asignadas</small></p></div>
+        <div><span class="summary-icon" id="energy-icon"></span><p><strong>14,3 <span>kWh</span></strong><small>consumo de ejemplo</small></p></div>
+        <div><span class="summary-icon" id="charge-icon"></span><p><strong>2</strong><small>paradas de recarga</small></p></div>
+      </div>
+      <div class="map-tools">
+        <button id="chargers" aria-pressed="false"></button>
+        <button id="fit" class="icon-button" aria-label="Ver el recorrido completo"></button>
+      </div>
+      <div id="selection" class="selection" hidden></div>
+      <div class="legend">
+        <span><i class="dot a"></i>Auto 1</span>
+        <span><i class="dot b"></i>Auto 2</span>
+        <span id="base-legend"></span>
+        <span class="route-note">Trazado vial de demostración</span>
+      </div>
+    </section>
+  </main>
+  <p id="selection-status" class="sr-only" role="status" aria-live="polite"></p>
+  <dialog id="about-dialog" aria-labelledby="about-heading">
+    <h2 id="about-heading">Un ejemplo para explorar el diseño</h2>
+    <p>Las ubicaciones pertenecen al escenario público de CASE. Los recorridos siguen calles de OpenStreetMap mediante OSRM, con un orden de visitas preparado para esta demostración.</p>
+    <p>El consumo, la recarga y la batería son valores ilustrativos. No han sido calculados ni validados por el motor de Dani y Lucas. No indican disponibilidad de cargadores ni ahorro real.</p>
+    <div class="row"><button id="close-about">Entendido</button></div>
+  </dialog>
+  <script type="module" src="plan.js"></script>
+</body>
+</html>

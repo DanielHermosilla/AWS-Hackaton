@@ -1,0 +1,315 @@
+# web-test — Bitácora UNIFICADA del proyecto (handoff para IAs)
+
+> Documento maestro de traspaso. **Fusiona el trabajo de dos asistentes de IA**:
+> (IA-1) backend serverless + Streamlit del solver; (IA-2) login/registro + backend
+> de auth + webapp. Pensado para que cualquier IA retome sin contexto previo.
+> Raíz del proyecto: `C:\Users\Laptop_2\Desktop\maximo\AWS-Hackaton-main`
+> Proyecto: Ruteo de vehículos eléctricos (EVRP) — Hackatón AWS Breaking Barriers Chile 2026.
+> Última actualización: 2026-10-15. (Fusionado desde `web-test` + `AWS-Hackaton-main/web-test.md`.)
+
+---
+
+## 0. Mapa de aplicaciones (hay varias, no confundir)
+
+| App | Qué es | Puerto | Login | Solver real | Autor |
+|-----|--------|--------|-------|-------------|-------|
+| **A. Streamlit `app.py`** | UI del solver MILP (HiGHS) + mapa + Bedrock | 8501 | ❌ | ✅ | IA-1 |
+| **A2. Backend serverless** | API estable `/solve` (Lambda/local), "cocina" sin UI | 8000 | ❌ | ✅ | IA-1 |
+| **B. Webapp + login FastAPI** | Webapp de planificación (datos demo) + auth real | 4173 | ✅ | ❌ | IA-2 |
+| **C. Login "exploraciones" (v1)** | Primer login, estética vieja, páginas sueltas | — | ✅(demo) | ❌ | IA-2 |
+
+La idea de conjunto: **A2 (backend solver)** es la cocina; **A (Streamlit)** y **B
+(webapp+login)** son interfaces. El plan natural es que la UI con login (B)
+termine consumiendo el backend del solver (A2) vía su contrato de API v1.0.
+
+---
+
+## 1. Estado del entorno (verificado)
+
+| Elemento | Estado | Detalle |
+|---|---|---|
+| Python proyecto | ✅ | **3.12.3** en `AWS-Hackaton-main/AWS-Hackaton-main/.venv` |
+| Python global | ⚠️ | 3.10.11 en el shell por defecto (NO es el del proyecto) |
+| Dependencias solver | ✅ | boto3, pandas, numpy, pyomo, streamlit 1.65, highspy, pytest |
+| Solver MILP | ✅ | HiGHS; `pytest` pasa (1 passed) |
+| Perfil AWS | ✅ | `hackaton` en `C:\Users\Laptop_2\.aws\` |
+| Identidad AWS | ✅ | `arn:aws:sts::831851703432:assumed-role/WSParticipantRole/Participant` |
+| Bedrock | ✅ | responde con `amazon.nova-lite-v1:0` (verificado) |
+| Git | ✅ | `C:\Program Files\Git\cmd\git.exe` (NO en PATH; usar ruta completa) |
+| SSH GitHub | ✅ | autentica como `maximar77` (permiso de escritura) |
+
+> ⚠️ **AVISO CRÍTICO DE ENTORNO:** hay DOS Python.
+> - El del **proyecto** es 3.12.3 (`.venv`), con todo instalado (streamlit, ev_routing, highs).
+> - El **global del shell** es 3.10.11. IA-2 instaló su backend de auth en el GLOBAL
+>   y tuvo que quitar pydantic por incompatibilidad con 3.10 (`ForwardRef ... is_class`).
+> Para el solver/Streamlit SIEMPRE activar el venv del proyecto:
+> `.\.venv\Scripts\Activate.ps1` (desde `AWS-Hackaton-main/AWS-Hackaton-main`).
+
+### Permisos del rol de la hackatón (verificado por IA-1)
+Permitidos: **S3, Lambda, API Gateway (REST y HTTP), DynamoDB, Amplify, CloudFront, Step Functions**.
+No disponible: **EC2** (el evento es serverless, no se usa). Auditoría en
+`AWS-Hackaton-main/docs/security-audit.md`.
+
+---
+
+## 2. Ubicaciones en disco
+
+```
+AWS-Hackaton-main/                          ← RAÍZ
+├─ web-test                                 ← ESTE archivo (maestro unificado)
+├─ analyze_instance.py                      ← diagnóstico de instancias (haversine)   [IA-2]
+├─ ANALISIS-PROYECTO.md                     ← análisis técnico (algoritmos, mapa)      [IA-2]
+│
+├─ AWS-Hackaton-main/                        ← App A + A2 (solver)                      [IA-1]
+│   ├─ app.py                               ← Streamlit (puerto 8501)
+│   ├─ web-test.md                          ← bitácora ORIGINAL de IA-1 (ya fusionada aquí)
+│   ├─ backend/                             ← API serverless
+│   │   ├─ service.py                       ← núcleo solve(payload), agnóstico de UI
+│   │   ├─ lambda_handler.py                ← adaptador AWS Lambda + API Gateway (CORS)
+│   │   ├─ local_server.py                  ← mismo API en local (puerto 8000)
+│   │   └─ API_CONTRACT.md                  ← contrato estable v1.0
+│   ├─ template.yaml + Dockerfile           ← infra AWS SAM
+│   ├─ data_ejemplo/*.csv                   ← dataset del desafío (en el repo)
+│   ├─ docs/security-audit.md               ← auditoría de permisos/seguridad
+│   ├─ .venv/ (Python 3.12.3)               ← entorno del solver
+│   └─ src/ev_routing/                      ← motor MILP (model.py, solve.py, network.py)
+│
+├─ AWS-Hackaton-codex-optimizacion-contraida/ ← motor evrp (2 capas: Dijkstra + MILP HiGHS)
+├─ AWS-Hackaton-codex-ui/                    ← exploraciones de UI (incl. login v1)
+├─ Electromovilidad/                         ← datos CSV (nodos, eVED)
+│
+└─ web-login/                                ← versiones del login (branch test/login-web) [IA-2]
+    ├─ v1/   ← login "exploraciones" (App C)
+    └─ v2/   ← webapp + login + registro + backend FastAPI (App B)
+
+C:\Users\Laptop_2\Desktop\maximo\_compare_webapp\   ← CLON de trabajo (fuera de la raíz) [IA-2]
+    └─ webapp/   ← App B en vivo (branch test/login-webapp)
+        ├─ login.html / login.css / login.js
+        ├─ register.html / register.js / auth.js
+        ├─ boot.js / app-shell.js / salida.html
+        └─ server/  ← BACKEND auth: app.py (FastAPI+SQLite+bcrypt), data/zmd.db (git-ignored)
+```
+
+---
+
+## 3. GitHub — repo y branches
+
+Repo: **https://github.com/DanielHermosilla/AWS-Hackaton** (SSH como `maximar77`).
+
+| Branch | Contenido | Estado |
+|--------|-----------|--------|
+| `main` | base | remota (no tocar sin permiso) |
+| `codex/webapp` | webapp real original (sin login) | remota — base de App B |
+| `codex/optimizacion-contraida` | motor evrp 2 capas | remota |
+| `modelamiento` | motor MILP fiel al PDF | remota |
+| **`test/login-web`** | `web-login/` con v1 y v2 | subida por IA-2 |
+| **`test/login-webapp`** | webapp + login + registro + backend auth (App B) | subida por IA-2 |
+
+> El backend serverless y el Streamlit (IA-1) están **preparados pero NO subidos**
+> a git todavía (ver pendientes). `.gitignore` ya protege `.aws/`, `.venv/`,
+> secrets y CSV gigantes.
+
+Push con SSH:
+```powershell
+$env:GIT_SSH_COMMAND = "ssh -o StrictHostKeyChecking=accept-new -o BatchMode=yes"
+& "C:\Program Files\Git\cmd\git.exe" push origin <branch>
+```
+
+---
+
+## 4. App A — Streamlit del solver (IA-1)  [EJECUTÁNDOSE]
+
+`AWS-Hackaton-main/AWS-Hackaton-main/app.py`. Carga nodos → resuelve MILP (HiGHS)
+→ mapa / rutas / JSON + explicación opcional con Bedrock. **Sin login.**
+Verificada con el CSV real (81 nodos → 6 entregas, factible).
+
+```powershell
+cd C:\Users\Laptop_2\Desktop\maximo\AWS-Hackaton-main\AWS-Hackaton-main
+.\.venv\Scripts\Activate.ps1
+$env:AWS_PROFILE = "hackaton"
+streamlit run app.py        # http://localhost:8501
+# (modo red/headless usado por IA-2):
+python -m streamlit run app.py --server.port 8501 --server.address 0.0.0.0 --server.headless true
+```
+- Local http://localhost:8501 · Red http://10.42.17.96:8501 · Health `/_stcore/health`→ok
+
+### Túnel público (cloudflared)
+```powershell
+& "$env:USERPROFILE\cloudflared\cloudflared.exe" tunnel --url http://127.0.0.1:8501
+```
+Da URL `*.trycloudflare.com`. El túnel falla ("connection refused ::1:8501") si
+Streamlit NO está corriendo. Usar `127.0.0.1`, no `localhost` (evita IPv6 `::1`).
+
+### Rendimiento observado (importante)
+Con H alto + red vial completa el MILP es enorme (~131.886 binarias) y **no cierra**
+en el límite (ej.: 121s, gap 300%, incumbente -5 vs cota -20). Bajar "Límite de
+movimientos (H)" a 4–6, o usar el motor `evrp` (2 capas, cierra rápido).
+
+---
+
+## 5. App A2 — Backend serverless del solver (IA-1)
+
+API estable que expone el solver; la UI es intercambiable. **No es web visual.**
+- `backend/service.py` — núcleo `solve(payload)`, agnóstico de UI. Verificado.
+- `backend/lambda_handler.py` — adaptador Lambda + API Gateway (CORS abierto).
+- `backend/local_server.py` — mismo API en local. Verificado por HTTP.
+- `backend/API_CONTRACT.md` — contrato v1.0.
+- `template.yaml` + `Dockerfile` — infra AWS SAM.
+
+Endpoints:
+- `GET /health` → `{"status":"ok","api_version":"1.0"}`
+- `POST /solve` → recibe JSON de instancia, devuelve la solución.
+
+```powershell
+cd C:\Users\Laptop_2\Desktop\maximo\AWS-Hackaton-main\AWS-Hackaton-main
+.\.venv\Scripts\Activate.ps1
+python -m backend.local_server     # http://127.0.0.1:8000/health
+```
+
+---
+
+## 6. App B — Webapp + login/registro + backend auth (IA-2)
+
+Login y registro **reales** sobre la webapp de planificación.
+
+### Backend: `_compare_webapp/webapp/server/app.py`
+- **FastAPI + SQLite + bcrypt**. Endpoints `/auth/register|login|logout|me`.
+- Sirve estáticos y **protege** `index.html`/`plan.html` (sin sesión → `/login.html`).
+- Seguridad: bcrypt; token de sesión aleatorio con expiración (8h) guardado como
+  hash SHA-256; cookie httpOnly + SameSite=Lax; rate-limit por IP
+  (login 10/10min, registro 5/10min); comparación tiempo ~constante; anti path-traversal.
+- Política de contraseña: 10+ con mayús, minús, número y símbolo.
+- BD `server/data/zmd.db` (tablas users, sessions). **Ignorada por git.**
+- Pydantic eliminado (incompat Python 3.10 global) → validación manual sobre dict.
+- Cookie `secure=False` para http://localhost; producción HTTPS → `secure=True`.
+
+### Frontend
+`login.html`/`login.js`, `register.html`/`register.js`, `auth.js` (compartido,
+`API.base=''` mismo origen). Estética webapp (Inter, azul `#1664ec`, logo
+"Batería en marcha"). `boot.js`→`exigirSesion()`; `app-shell.js` "Salir"→logout.
+
+### Correr App B (uvicorn, NO http.server)
+```powershell
+cd C:\Users\Laptop_2\Desktop\maximo\_compare_webapp\webapp\server
+python -m pip install -r requirements.txt       # fastapi, uvicorn, bcrypt
+python -m uvicorn app:app --host 0.0.0.0 --port 4173
+# http://127.0.0.1:4173/login.html
+```
+Probado end-to-end OK (register/login/logout/me, rutas protegidas, rate-limit 429).
+
+---
+
+## 7. Credenciales / AWS / Seguridad
+
+- Rol: `arn:aws:sts::831851703432:assumed-role/WSParticipantRole/Participant`.
+- Perfil Streamlit/Bedrock: `AWS_PROFILE = "hackaton"`.
+- Auth del login = SQLite+bcrypt local (NO usa AWS). Bedrock solo en "Explicar con
+  IA" (Streamlit) y en el asesor opcional del motor evrp.
+- NUNCA versionar: `~/.ssh/id_ed25519`, `.aws/`, `.env`, `*.db`, secrets, CSV gigantes.
+- Auditoría de seguridad: `AWS-Hackaton-main/docs/security-audit.md`.
+
+---
+
+## 8. Puertos
+
+| Puerto | Proceso | Estado |
+|--------|---------|--------|
+| 8501 | Streamlit `app.py` (App A) | CORRIENDO (0.0.0.0) |
+| 8000 | backend serverless local (A2) | se levanta a demanda |
+| 4173 | FastAPI auth (App B) | detenido (liberado para Streamlit) |
+
+Solo un servicio por puerto. Levantar según lo que se pruebe.
+
+---
+
+## 9. Pendientes / próximos pasos (de ambas IAs)
+
+**Integración (lo más importante):**
+- Conectar la **UI con login (B)** al **backend del solver (A2)** vía API v1.0.
+  Hoy B usa datos demo y A2 corre el solver real por separado.
+- Poner **login al Streamlit (A)** o ponerlo detrás del backend de auth, si se
+  quiere exigir sesión antes del solver.
+
+**Despliegue (IA-1):**
+- Arquitectura serverless: Lambda + API Gateway + front en Amplify/S3.
+- Desplegar backend desde el entorno VS Code de la hackatón (`sam build`/`sam deploy`).
+- Subir a git el backend serverless y el Streamlit (aún no versionados).
+
+**Rendimiento / motor:**
+- Preferir el motor contraído `evrp` (Dijkstra + MILP sobre grafo reducido) para
+  que el solver cierre en tiempo de hackathon (ver ANALISIS-PROYECTO.md).
+
+**Producción:**
+- Cookie `secure=True` (HTTPS), BD fuera de disco local, CORS si la API cambia de host.
+
+---
+
+## 10. Orden de lectura recomendado
+
+1. `web-test` (este archivo) — estado general unificado.
+2. `ANALISIS-PROYECTO.md` — algoritmos, mapa, los 2 motores.
+3. `AWS-Hackaton-main/backend/API_CONTRACT.md` — contrato del solver (clave para integrar).
+4. `AWS-Hackaton-main/app.py` — Streamlit del solver.
+5. `_compare_webapp/webapp/server/app.py` + `auth.js` — backend y cliente de auth.
+6. `AWS-Hackaton-main/docs/security-audit.md` — permisos AWS y seguridad.
+
+---
+
+## 11. Historial de acciones (combinado)
+
+**IA-1 (solver / serverless):**
+- Reparado venv (Python 3.12), instaladas dependencias, HiGHS; pytest pasa.
+- Configurado perfil AWS `hackaton`; verificada identidad y Bedrock (nova-lite).
+- Creada app Streamlit `app.py`; verificada con datos reales (81 nodos → 6 entregas).
+- Instalado cloudflared; túnel temporal probado.
+- Preparados requirements.txt, .gitignore, data_ejemplo.
+- Verificados permisos del rol (serverless sí, EC2 no).
+- Construido backend serverless (service, lambda_handler, local_server,
+  API_CONTRACT, template.yaml, Dockerfile); verificado por HTTP. Aún no subido a git.
+
+**IA-2 (login / webapp / auth):**
+- Análisis del proyecto (ANALISIS-PROYECTO.md) y `analyze_instance.py`.
+- Login v1 (exploraciones) → branch `test/login-web` con carpetas v1/.
+- Login v2 integrado en la webapp real (codex/webapp): login+register.
+- Backend de auth real (FastAPI+SQLite+bcrypt), probado end-to-end.
+- Subidas branches `test/login-web` y `test/login-webapp`.
+- Ejecutado Streamlit en 8501 (headless, red) a pedido del usuario.
+- Fusionado este `web-test` con el `web-test.md` de IA-1 (este documento).
+
+---
+
+## 12. Auditoría encontrada en disco (de una 3ª IA — "IA-auditora")
+
+> Detectado al buscar registros nuevos. Carpeta `C:\Users\Laptop_2\Desktop\maximo\auditoria\`
+> (NO está dentro de la raíz del proyecto). Es trabajo de otra IA que audita el
+> repo y hace pentest del backend de auth. Fechas ~18:28–19:36 del 2026-10-15.
+
+Artefactos:
+- `auditoria/ramas/*` — clones de todas las branches (main, codex/webapp, codex/ui,
+  modelamiento, codex/optimizacion-contraida, test/login-web) para comparar.
+- `auditoria/comparar_local_vs_github.py` — compara carpetas locales vs ramas de
+  GitHub por hash (normaliza CRLF→LF; ignora .git/.venv/__pycache__/data).
+- `auditoria/analizar_codigo.py` + `analisis_codigo.json` — análisis estático:
+  duplicados exactos (65 grupos, ~4 MB redundantes, sobre todo vendor MapLibre/Motion
+  copiado 3×), funciones Python sin referencias, módulos no importados, stubs/TODO,
+  y helpers JS repetidos.
+- `auditoria/pentest_auth.py` — **pentest del backend de auth de App B** (13 familias
+  de ataque): protección de rutas, SQLi en login, cookie httpOnly/SameSite, token
+  no adivinable, no-enumeración de usuarios (mismo error exista o no la cuenta),
+  path traversal, token falso, logout invalida token, rate-limiting. Levanta uvicorn
+  en puerto **8099** sobre una copia aislada en `auditoria/pentest_auth/`.
+- `auditoria/pentest_resultado.txt` — resultado del pentest (puede no existir aún
+  si no se ha ejecutado; al cierre de esta nota NO estaba generado).
+
+Hallazgos que me tocan (IA-2) y aclaración:
+- El análisis marca en `webapp/auth.js` 4 "exports sin uso": `fortalezaContrasena`,
+  `contrasenaValida`, `haySesion`, `exigirSesion`. **Falso positivo parcial**: sí se
+  usan, pero vía `register.js` (fortaleza/valida), `boot.js` (exigirSesion, import
+  dinámico) y como API pública; el analizador estático no cruzó esos usos. `haySesion`
+  sí quedó efectivamente sin uso tras pasar la verificación al servidor → se puede quitar.
+- Duplicación de vendor (MapLibre/Motion) entre `codex-ui`, `compare_webapp` y
+  `login-web/v2`: esperable (cada entrega vendoriza su copia). No es un bug.
+
+Acción de IA-2: NO modifico la carpeta `auditoria/` (es de otra IA). Si la
+IA-auditora pide cambios concretos sobre el backend de auth, se aplican en
+`_compare_webapp/webapp/server/` y se re-prueban.

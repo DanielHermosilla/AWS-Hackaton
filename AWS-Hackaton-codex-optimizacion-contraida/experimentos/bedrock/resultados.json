@@ -1,0 +1,348 @@
+{
+  "region": "us-east-1",
+  "reps": 3,
+  "presupuesto_tokens": 60000,
+  "candidatos": [
+    "us.anthropic.claude-sonnet-4-6",
+    "global.anthropic.claude-sonnet-4-6",
+    "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+    "us.anthropic.claude-opus-4-5-20251101-v1:0",
+    "us.anthropic.claude-sonnet-4-5-20250929-v1:0",
+    "us.anthropic.claude-opus-4-1-20250805-v1:0",
+    "us.anthropic.claude-3-haiku-20240307-v1:0",
+    "us.anthropic.claude-3-sonnet-20240229-v1:0"
+  ],
+  "modelos": [
+    {
+      "modelo": "us.anthropic.claude-sonnet-4-6",
+      "disponible": true,
+      "tokens_usados": 3504,
+      "tareas": [
+        {
+          "tarea": "ping",
+          "reps": 3,
+          "exitos": 3,
+          "exito_frac": 1.0,
+          "latencia_p50_s": 0.868,
+          "latencia_p95_s": 1.914,
+          "tokens_in": 42,
+          "tokens_out": 15,
+          "errores": []
+        },
+        {
+          "tarea": "json",
+          "reps": 3,
+          "exitos": 3,
+          "exito_frac": 1.0,
+          "latencia_p50_s": 1.022,
+          "latencia_p95_s": 1.022,
+          "tokens_in": 342,
+          "tokens_out": 123,
+          "errores": []
+        },
+        {
+          "tarea": "tool",
+          "reps": 3,
+          "exitos": 3,
+          "exito_frac": 1.0,
+          "latencia_p50_s": 0.957,
+          "latencia_p95_s": 1.318,
+          "tokens_in": 2373,
+          "tokens_out": 180,
+          "errores": []
+        },
+        {
+          "tarea": "imagen",
+          "reps": 3,
+          "exitos": 3,
+          "exito_frac": 1.0,
+          "latencia_p50_s": 1.694,
+          "latencia_p95_s": 1.709,
+          "tokens_in": 252,
+          "tokens_out": 177,
+          "errores": []
+        }
+      ],
+      "tokens_acumulados": 3504
+    },
+    {
+      "modelo": "global.anthropic.claude-sonnet-4-6",
+      "disponible": true,
+      "tokens_usados": 3504,
+      "tareas": [
+        {
+          "tarea": "ping",
+          "reps": 3,
+          "exitos": 3,
+          "exito_frac": 1.0,
+          "latencia_p50_s": 0.806,
+          "latencia_p95_s": 1.667,
+          "tokens_in": 42,
+          "tokens_out": 15,
+          "errores": []
+        },
+        {
+          "tarea": "json",
+          "reps": 3,
+          "exitos": 3,
+          "exito_frac": 1.0,
+          "latencia_p50_s": 0.965,
+          "latencia_p95_s": 0.977,
+          "tokens_in": 342,
+          "tokens_out": 123,
+          "errores": []
+        },
+        {
+          "tarea": "tool",
+          "reps": 3,
+          "exitos": 3,
+          "exito_frac": 1.0,
+          "latencia_p50_s": 0.969,
+          "latencia_p95_s": 2.019,
+          "tokens_in": 2373,
+          "tokens_out": 180,
+          "errores": []
+        },
+        {
+          "tarea": "imagen",
+          "reps": 3,
+          "exitos": 3,
+          "exito_frac": 1.0,
+          "latencia_p50_s": 1.895,
+          "latencia_p95_s": 2.076,
+          "tokens_in": 252,
+          "tokens_out": 177,
+          "errores": []
+        }
+      ],
+      "tokens_acumulados": 7008
+    },
+    {
+      "modelo": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+      "disponible": true,
+      "tokens_usados": 3531,
+      "tareas": [
+        {
+          "tarea": "ping",
+          "reps": 3,
+          "exitos": 3,
+          "exito_frac": 1.0,
+          "latencia_p50_s": 0.793,
+          "latencia_p95_s": 1.431,
+          "tokens_in": 42,
+          "tokens_out": 15,
+          "errores": []
+        },
+        {
+          "tarea": "json",
+          "reps": 3,
+          "exitos": 3,
+          "exito_frac": 1.0,
+          "latencia_p50_s": 0.86,
+          "latencia_p95_s": 0.88,
+          "tokens_in": 339,
+          "tokens_out": 183,
+          "errores": []
+        },
+        {
+          "tarea": "tool",
+          "reps": 3,
+          "exitos": 3,
+          "exito_frac": 1.0,
+          "latencia_p50_s": 0.964,
+          "latencia_p95_s": 1.024,
+          "tokens_in": 2370,
+          "tokens_out": 180,
+          "errores": []
+        },
+        {
+          "tarea": "imagen",
+          "reps": 3,
+          "exitos": 3,
+          "exito_frac": 1.0,
+          "latencia_p50_s": 1.317,
+          "latencia_p95_s": 1.32,
+          "tokens_in": 252,
+          "tokens_out": 150,
+          "errores": []
+        }
+      ],
+      "tokens_acumulados": 10539
+    },
+    {
+      "modelo": "us.anthropic.claude-opus-4-5-20251101-v1:0",
+      "disponible": true,
+      "tokens_usados": 3468,
+      "tareas": [
+        {
+          "tarea": "ping",
+          "reps": 3,
+          "exitos": 3,
+          "exito_frac": 1.0,
+          "latencia_p50_s": 1.88,
+          "latencia_p95_s": 2.235,
+          "tokens_in": 42,
+          "tokens_out": 12,
+          "errores": []
+        },
+        {
+          "tarea": "json",
+          "reps": 3,
+          "exitos": 3,
+          "exito_frac": 1.0,
+          "latencia_p50_s": 1.989,
+          "latencia_p95_s": 2.559,
+          "tokens_in": 339,
+          "tokens_out": 123,
+          "errores": []
+        },
+        {
+          "tarea": "tool",
+          "reps": 3,
+          "exitos": 3,
+          "exito_frac": 1.0,
+          "latencia_p50_s": 1.742,
+          "latencia_p95_s": 1.937,
+          "tokens_in": 2370,
+          "tokens_out": 180,
+          "errores": []
+        },
+        {
+          "tarea": "imagen",
+          "reps": 3,
+          "exitos": 3,
+          "exito_frac": 1.0,
+          "latencia_p50_s": 3.277,
+          "latencia_p95_s": 3.429,
+          "tokens_in": 252,
+          "tokens_out": 150,
+          "errores": []
+        }
+      ],
+      "tokens_acumulados": 14007
+    },
+    {
+      "modelo": "us.anthropic.claude-sonnet-4-5-20250929-v1:0",
+      "disponible": true,
+      "tokens_usados": 3534,
+      "tareas": [
+        {
+          "tarea": "ping",
+          "reps": 3,
+          "exitos": 3,
+          "exito_frac": 1.0,
+          "latencia_p50_s": 1.596,
+          "latencia_p95_s": 3.681,
+          "tokens_in": 42,
+          "tokens_out": 12,
+          "errores": []
+        },
+        {
+          "tarea": "json",
+          "reps": 3,
+          "exitos": 3,
+          "exito_frac": 1.0,
+          "latencia_p50_s": 1.953,
+          "latencia_p95_s": 2.145,
+          "tokens_in": 339,
+          "tokens_out": 183,
+          "errores": []
+        },
+        {
+          "tarea": "tool",
+          "reps": 3,
+          "exitos": 3,
+          "exito_frac": 1.0,
+          "latencia_p50_s": 2.274,
+          "latencia_p95_s": 3.573,
+          "tokens_in": 2370,
+          "tokens_out": 180,
+          "errores": []
+        },
+        {
+          "tarea": "imagen",
+          "reps": 3,
+          "exitos": 3,
+          "exito_frac": 1.0,
+          "latencia_p50_s": 3.363,
+          "latencia_p95_s": 4.191,
+          "tokens_in": 252,
+          "tokens_out": 156,
+          "errores": []
+        }
+      ],
+      "tokens_acumulados": 17541
+    },
+    {
+      "modelo": "us.anthropic.claude-opus-4-1-20250805-v1:0",
+      "disponible": false,
+      "tokens_usados": 0,
+      "tareas": [
+        {
+          "tarea": "ping",
+          "reps": 3,
+          "exitos": 0,
+          "exito_frac": 0.0,
+          "latencia_p50_s": 0.0,
+          "latencia_p95_s": 0.0,
+          "tokens_in": 0,
+          "tokens_out": 0,
+          "errores": [
+            "AccessDeniedException",
+            "AccessDeniedException",
+            "AccessDeniedException"
+          ]
+        }
+      ],
+      "tokens_acumulados": 17541
+    },
+    {
+      "modelo": "us.anthropic.claude-3-haiku-20240307-v1:0",
+      "disponible": false,
+      "tokens_usados": 0,
+      "tareas": [
+        {
+          "tarea": "ping",
+          "reps": 3,
+          "exitos": 0,
+          "exito_frac": 0.0,
+          "latencia_p50_s": 0.0,
+          "latencia_p95_s": 0.0,
+          "tokens_in": 0,
+          "tokens_out": 0,
+          "errores": [
+            "ResourceNotFoundException",
+            "ResourceNotFoundException",
+            "ResourceNotFoundException"
+          ]
+        }
+      ],
+      "tokens_acumulados": 17541
+    },
+    {
+      "modelo": "us.anthropic.claude-3-sonnet-20240229-v1:0",
+      "disponible": false,
+      "tokens_usados": 0,
+      "tareas": [
+        {
+          "tarea": "ping",
+          "reps": 3,
+          "exitos": 0,
+          "exito_frac": 0.0,
+          "latencia_p50_s": 0.0,
+          "latencia_p95_s": 0.0,
+          "tokens_in": 0,
+          "tokens_out": 0,
+          "errores": [
+            "ResourceNotFoundException",
+            "ResourceNotFoundException",
+            "ResourceNotFoundException"
+          ]
+        }
+      ],
+      "tokens_acumulados": 17541
+    }
+  ],
+  "tokens_totales": 17541,
+  "segundos_totales": 108.8
+}

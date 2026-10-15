@@ -1,0 +1,194 @@
+{
+  "date": "2026-10-15T04:28:31.008Z",
+  "localDate": "15 de octubre de 2026 a las 1:28 a. m.",
+  "page": "http://127.0.0.1:4173/round-3/cristal/",
+  "checks": [
+    {
+      "name": "Desktop 1440×900 y ambas acciones visibles",
+      "passed": true,
+      "detail": {
+        "viewport": 1440,
+        "scrollWidth": 1440,
+        "height": 900,
+        "actions": [
+          {
+            "visible": true,
+            "top": 482.078125,
+            "bottom": 521.078125,
+            "panelBottom": 844.90625
+          },
+          {
+            "visible": true,
+            "top": 775.78125,
+            "bottom": 814.78125,
+            "panelBottom": 844.90625
+          }
+        ]
+      }
+    },
+    {
+      "name": "Vidrio limitado a controles y contenido opaco",
+      "passed": true,
+      "detail": {
+        "material": {
+          "background": "rgba(255, 255, 255, 0.88)",
+          "filter": "blur(18px) saturate(1.3)",
+          "border": "rgba(255, 255, 255, 0.86)",
+          "transparency": false,
+          "contrast": false,
+          "forcedColors": false
+        },
+        "backgrounds": [
+          "rgb(255, 255, 255)",
+          "rgb(255, 255, 255)",
+          "rgb(255, 255, 255)"
+        ]
+      }
+    },
+    {
+      "name": "Explorar recorrido conserva foco",
+      "passed": true,
+      "detail": "Enter en Auto 1 lleva el foco a su parada de salida, sin caer al body."
+    },
+    {
+      "name": "Mapa a lista: V16 concreto",
+      "passed": true,
+      "detail": "Click real en V16 selecciona parada 10 de Auto 1."
+    },
+    {
+      "name": "Selección entre vehículos desde el mapa",
+      "passed": true,
+      "detail": "V5 cambia de Auto 1 a Auto 2 y sincroniza parada 1 y batería."
+    },
+    {
+      "name": "BASE por índice y foco estable",
+      "passed": true,
+      "detail": "Regreso de Auto 2 conserva índice 12 al seleccionar el marcador compartido de BASE."
+    },
+    {
+      "name": "Cerrar detalle devuelve foco",
+      "passed": true,
+      "detail": "Escape devuelve foco al marcador que originó el detalle."
+    },
+    {
+      "name": "Pestañas con teclado",
+      "passed": true,
+      "detail": "Flechas y Home/End actualizan tabpanel; Ver ambos vehículos conserva foco."
+    },
+    {
+      "name": "Cargadores registrados",
+      "passed": true,
+      "detail": "El control muestra 60 estaciones; al ocultarlas permanecen las dos recargas del ejemplo."
+    },
+    {
+      "name": "Procedencia accesible",
+      "passed": true,
+      "detail": "Diálogo nativo abre por Enter; Escape devuelve el foco a Acerca de los datos."
+    },
+    {
+      "name": "Transparencia reducida",
+      "passed": true,
+      "detail": {
+        "background": "rgb(249, 251, 253)",
+        "filter": "none",
+        "border": "rgb(199, 211, 223)",
+        "transparency": true,
+        "contrast": false,
+        "forcedColors": false
+      }
+    },
+    {
+      "name": "Alto contraste",
+      "passed": true,
+      "detail": {
+        "background": "rgb(255, 255, 255)",
+        "filter": "none",
+        "border": "rgb(97, 117, 139)",
+        "transparency": false,
+        "contrast": true,
+        "forcedColors": false
+      }
+    },
+    {
+      "name": "Colores forzados",
+      "passed": true,
+      "detail": {
+        "background": "rgb(0, 0, 0)",
+        "filter": "none",
+        "border": "rgb(255, 255, 255)",
+        "transparency": false,
+        "contrast": false,
+        "forcedColors": true
+      }
+    },
+    {
+      "name": "Móvil 390 px",
+      "passed": true,
+      "detail": {
+        "viewport": 390,
+        "scrollWidth": 390,
+        "height": 1181,
+        "readability": {
+          "model": "12px",
+          "metricLabel": "10px",
+          "soc": "11px",
+          "battery": 49,
+          "motion": true,
+          "transition": "0s"
+        },
+        "obstruction": [],
+        "selectionBounds": {
+          "left": 14,
+          "right": 293,
+          "viewport": 390
+        },
+        "returnSelection": "Auto 2, BASE índice 12"
+      }
+    },
+    {
+      "name": "Móvil 319 px",
+      "passed": true,
+      "detail": {
+        "viewport": 319,
+        "scrollWidth": 319,
+        "height": 1181,
+        "readability": {
+          "model": "12px",
+          "metricLabel": "10px",
+          "soc": "11px",
+          "battery": 49,
+          "motion": true,
+          "transition": "0s"
+        },
+        "obstruction": [],
+        "selectionBounds": {
+          "left": 12,
+          "right": 291,
+          "viewport": 319
+        },
+        "returnSelection": "Auto 2, BASE índice 12"
+      }
+    },
+    {
+      "name": "Opción 1 preservada",
+      "passed": true,
+      "detail": {
+        "index.html": true,
+        "app.js": true,
+        "style.css": true
+      }
+    }
+  ],
+  "errors": [],
+  "screenshots": [
+    "qa-desktop.png",
+    "qa-reduced-transparency.png",
+    "qa-high-contrast.png",
+    "qa-forced-colors.png",
+    "qa-mobile-390.png",
+    "qa-mobile-390-selection.png",
+    "qa-mobile-319.png",
+    "qa-mobile-319-selection.png"
+  ],
+  "passed": true
+}

@@ -1,0 +1,23 @@
+[
+  {
+    "variant": "bateria",
+    "errors": [],
+    "overflow": false,
+    "vehicles": 2,
+    "metrics": "20 / 20\nentregas asignadas\n\n14,3 kWh\nconsumo de ejemplo\n\n2\nparadas de recarga"
+  },
+  {
+    "variant": "cristal",
+    "errors": [],
+    "overflow": false,
+    "vehicles": 2,
+    "metrics": "20 / 20\nentregas asignadas\n\n14,3 kWh\nconsumo de ejemplo\n\n2\nparadas de recarga"
+  },
+  {
+    "variant": "esencial",
+    "errors": [],
+    "overflow": false,
+    "vehicles": 2,
+    "metrics": "20 / 20\nentregas asignadas\n\n14,3 kWh\nconsumo de ejemplo\n\n2\nparadas de recarga"
+  }
+]

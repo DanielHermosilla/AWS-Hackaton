@@ -1,0 +1,60 @@
+{
+  "sidebar": {
+    "x": 0,
+    "y": 65,
+    "width": 352,
+    "height": 835,
+    "top": 65,
+    "right": 352,
+    "bottom": 900,
+    "left": 0
+  },
+  "foot": {
+    "x": 0,
+    "y": 838,
+    "width": 351,
+    "height": 62,
+    "top": 838,
+    "right": 351,
+    "bottom": 900,
+    "left": 0
+  },
+  "actions": [
+    {
+      "name": "Explorar recorrido",
+      "x": 31,
+      "y": 496.34375,
+      "width": 289,
+      "height": 32,
+      "top": 496.34375,
+      "right": 320,
+      "bottom": 528.34375,
+      "left": 31
+    },
+    {
+      "name": "Explorar recorrido",
+      "x": 31,
+      "y": 784.6875,
+      "width": 289,
+      "height": 32,
+      "top": 784.6875,
+      "right": 320,
+      "bottom": 816.6875,
+      "left": 31
+    }
+  ],
+  "mapReady": "true",
+  "mapStatus": "",
+  "sidebarScroll": {
+    "height": 587,
+    "scroll": 609
+  },
+  "metrics": [
+    "20 / 20",
+    "14,3 kWh",
+    "2"
+  ],
+  "errors": [],
+  "http": 200,
+  "bothActionsVisible": true
+}

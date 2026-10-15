@@ -1,0 +1,4 @@
+interface:
+  display_name: "Apple Design · ZMD Mobility"
+  short_description: "Claridad, tipografía e interacción para la jefa de flota"
+  default_prompt: "Usa $zmd-apple-design para mejorar esta pantalla de ZMD Mobility con una composición clara y sobria."

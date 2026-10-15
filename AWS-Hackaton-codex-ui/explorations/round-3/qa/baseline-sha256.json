@@ -1,0 +1,20 @@
+{
+  "round-2/mapa/index.html": "c497af90be2f53ba86fdbf950c9db8e37588bf0e1cdfa0149e476c264966c00e",
+  "round-2/mapa/style.css": "ffe2fcbb3c9471694608724f610bcc6d469fadf264da3727ffc26ddb3afdd0aa",
+  "round-2/mapa/app.js": "572cdb2e90d31df4bf4ebf17f3a0742e44058c5eb45eafbb7e9c729b9f749533",
+  "round-2/shared/prepare-local-fixture.py": "ea461dd6960d03c9159234fa4f2fca9e5db193eaae729764356783f231dc3791",
+  "round-2/shared/icons.js": "fa23adbcdd24d055d23e65d2a4c57becdff4c490073bbdd73b347d8047b44804",
+  "round-2/shared/osrm-auto-1.local.json": "7b4fa440c214f4f2fb2d40d9234d88e95466c24f902d7eecd1971cb091751199",
+  "round-2/shared/data.js": "d561909d33f44fb78f1ca10c9813bcf09d8c9f10f01d81ad922ae7a9c51579eb",
+  "round-2/shared/provenance.local.json": "e013d8f08038d5af5b1f729bccc9d5f72fb6e096a91da67a821b77ce4636d304",
+  "round-2/shared/map.js": "8e8a3d1bf5793a3940b5e7868753a75cde60d2065bd1967333c4abb8167b949e",
+  "round-2/shared/fixture.local.json": "ee8888c6ccad3201cb09f7a7263e70f563dbb96e5642bfebf857ce4f7ed18531",
+  "round-2/shared/base.css": "90a3b2fa7df6e79736985f719b199921f8093426f84f5322fc17cd8db7283c73",
+  "round-2/shared/osrm-auto-2.local.json": "fd05519e9abe003da734e4530787b64b697692d4be2686d5489627dd0f5d6cca",
+  "round-2/shared/vendor/maplibre-gl-worker.mjs": "5f1e2f0e1624082b7e88a06e4c86085992b0f8c02929801e552f3f7a119856a9",
+  "round-2/shared/vendor/maplibre-gl.mjs": "244d36122c1398da3a8259817cc6d71e04321afe6404f32606b4b6c6cc4f26fb",
+  "round-2/shared/vendor/maplibre-gl.css": "bacba6a85a867fcf602f2ff88331b8acf7edf3fbd063a519888cfbff39970193",
+  "round-2/shared/vendor/maplibre-gl-shared.mjs": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "round-2/shared/vendor/LICENSE.txt": "ee5fc05a0677eaf69601d2c7db0d9ecd6cc27c3abc1d0733bc9ed34707cf8ef2",
+  "round-2/shared/vendor/positron.json": "a0f5b8487480a47ba5a5eaf25e165a19789dfa422f9ef9442f04da79c7d216db"
+}

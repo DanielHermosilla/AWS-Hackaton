@@ -1,0 +1,43 @@
+:root{--ease-out:cubic-bezier(.23,1,.32,1)}
+body{background:#f7f8fa;color:#202b36;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+.gallery-header{height:78px;border-bottom:1px solid #e0e4e9;background:#fff;display:flex;align-items:center;gap:24px;padding:0 max(28px,calc((100vw - 1280px)/2))}
+.round-label{font-size:11px;color:#687685;border-left:1px solid #e2e6eb;padding-left:24px}
+.logo-link{margin-left:auto;font-size:12px;color:#536779;white-space:nowrap}
+.logo-link span{margin-left:10px}
+main{max-width:1280px;margin:auto;padding:49px 0 55px}
+.intro{display:flex;align-items:end;justify-content:space-between;gap:60px;margin-bottom:37px}
+.eyebrow{color:#637386;font-size:11px;margin-bottom:16px}
+h1{font-size:39px;font-weight:620;letter-spacing:-1.6px;line-height:1.13}
+.intro-copy{font-size:13px;color:#617181;line-height:1.75;max-width:363px;padding-bottom:3px}
+.design-grid{display:grid;grid-template-columns:1fr 1fr;gap:28px}
+.design{background:white;border:1px solid #dfe5eb;border-radius:13px;overflow:hidden}
+.preview{display:block;width:100%;border:0;border-bottom:1px solid #e1e6eb;border-radius:0;background:#edf1f5;aspect-ratio:1.6;padding:0;position:relative;overflow:hidden;text-align:left}
+.preview img{width:100%;height:100%;object-fit:cover;object-position:top;display:block}
+.preview-hint{position:absolute;bottom:14px;right:14px;border:1px solid #dfe5eb;background:#fffffff2;color:#324a62;font-size:11px;padding:9px 12px;border-radius:7px;box-shadow:0 2px 9px #1b344417;opacity:0}
+.preview-hint span{margin-left:10px}
+.preview:focus-visible{outline-offset:-4px}
+.preview:focus-visible .preview-hint{opacity:1}
+.design-info{padding:22px 24px 24px}
+.title-row{display:flex;align-items:center;gap:10px;min-height:25px}
+.number{font-size:10px;color:#66798a;font-variant-numeric:tabular-nums;border:1px solid #dfe6ec;padding:4px 5px;border-radius:5px}
+h2{font-size:19px;letter-spacing:-.5px;font-weight:620}
+.badge{margin-left:auto;background:#edf2f5;color:#506477;font-size:10px;border-radius:5px;padding:5px 7px}
+.design-info p{font-size:12px;color:#617282;line-height:1.7;max-width:450px;margin:12px 0 19px;min-height:41px}
+.design-info>a{font-size:12px;color:#245fb3;font-weight:550;display:inline-flex;align-items:center;gap:19px}
+.limits{font-size:11px;color:#607284;line-height:1.7;margin-top:27px;max-width:780px}
+#comparison{position:fixed;inset:0;margin:0;max-width:none;width:100%;height:100%;max-height:none;padding:0;border:0;border-radius:0;background:#fff;overflow:hidden}
+#comparison[open]{display:flex;flex-direction:column}
+.compare-toolbar{height:64px;flex-shrink:0;display:flex;align-items:center;padding:0 20px;gap:16px;border-bottom:1px solid #dee5ec;background:#f9fafb}
+.variant-switcher{display:flex;padding:3px;border:1px solid #dfe5eb;border-radius:9px;background:#edf0f4;gap:3px}
+.variant-switcher button{padding:8px 13px;font-size:10px;color:#697989;background:none;border:0;border-radius:6px}
+.variant-switcher button span{font-size:12px;margin-left:7px;color:#536678}
+.variant-switcher button[aria-pressed=true]{background:white;box-shadow:0 1px 4px #263a5114;color:#265d9a}
+.variant-switcher button[aria-pressed=true] span{color:#1f3c59;font-weight:600}
+#open-full{margin-left:auto;white-space:nowrap;font-size:12px;color:#3e5b78}
+#open-full span{margin-left:8px}
+#close-comparison{border:0;background:transparent;padding:10px;color:#405466}
+#live-preview{width:100%;flex:1;border:0;background:#f6f8fa;min-height:0}
+@media(hover:hover) and (pointer:fine){.preview:hover .preview-hint{opacity:1;transition:opacity .15s ease}.design-info>a:hover,.logo-link:hover{color:#164fa2}}
+@media(max-width:1340px){main{padding-left:28px;padding-right:28px}}
+@media(max-width:760px){.gallery-header{height:66px;padding:0 20px;gap:15px}.round-label{display:none}main{padding:30px 18px}.intro{display:block;margin-bottom:26px}h1{font-size:32px;letter-spacing:-1.2px}.intro-copy{margin-top:20px;max-width:440px}.design-grid{grid-template-columns:1fr;gap:22px}.design-info{padding:20px}.compare-toolbar{gap:8px;padding:0 9px;height:59px}.variant-switcher{flex:1;gap:0}.variant-switcher button{flex:1;padding:8px 6px}.variant-switcher button span{margin-left:4px;font-size:10px}#open-full{display:none}#close-comparison{padding:9px 3px}.badge{font-size:9px;padding:4px 5px}.title-row{gap:8px}}
+@media(max-width:360px){.variant-switcher button span{display:block;margin:3px 0 0}.compare-toolbar{height:65px}h2{font-size:17px}.design-info{padding:18px}.badge{font-size:8px}}

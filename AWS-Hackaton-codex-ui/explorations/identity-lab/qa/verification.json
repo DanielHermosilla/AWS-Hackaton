@@ -1,0 +1,61 @@
+{
+  "errors": [],
+  "all": 24,
+  "filters": [
+    {
+      "family": "electric",
+      "count": 6
+    },
+    {
+      "family": "efficiency",
+      "count": 6
+    },
+    {
+      "family": "value",
+      "count": 6
+    },
+    {
+      "family": "intelligence",
+      "count": 6
+    },
+    {
+      "family": "recommended",
+      "count": 6
+    },
+    {
+      "family": "all",
+      "count": 24
+    }
+  ],
+  "dialogVisible": true,
+  "images": [
+    {
+      "src": "electric-efficiency/assets/e01-veta/lockup-light.svg",
+      "loaded": true
+    },
+    {
+      "src": "electric-efficiency/assets/e01-veta/lockup-dark.svg",
+      "loaded": true
+    }
+  ],
+  "selected": "Para refinar: Veta",
+  "selectionCleared": true,
+  "viewports": [
+    {
+      "width": 1440,
+      "overflow": false
+    },
+    {
+      "width": 768,
+      "overflow": false
+    },
+    {
+      "width": 390,
+      "overflow": false
+    },
+    {
+      "width": 320,
+      "overflow": false
+    }
+  ]
+}

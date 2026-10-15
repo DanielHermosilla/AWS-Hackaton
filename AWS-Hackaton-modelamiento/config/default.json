@@ -1,0 +1,18 @@
+{
+  "model": {
+    "vehicle_count": 2,
+    "battery_capacity_kwh": 24.0,
+    "reserve_kwh": 2.4,
+    "initial_soc": 0.6,
+    "movement_limit": 30,
+    "vehicle_connector_types": ["J1772", "CHAdeMO"]
+  },
+  "solver": {
+    "solver": "auto",
+    "time_limit_seconds": 60.0,
+    "relative_gap": 0.0,
+    "threads": 1,
+    "seed": 0,
+    "tee": false
+  }
+}

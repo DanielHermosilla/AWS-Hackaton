@@ -1,0 +1,90 @@
+{
+  "schema_version": "1.0",
+  "brand": "ZMD Mobility",
+  "status": "exploration",
+  "approval": null,
+  "gallery": "index.html",
+  "font": "system UI; editable text; no embedded external font",
+  "concepts": [
+    {
+      "id": "cauce",
+      "label": "Cauce",
+      "idea": "Distintos recorridos, una dirección común.",
+      "rationale": "Tres canales cambian de dirección con el mismo ritmo. Representa coordinación y decisiones que conservan continuidad.",
+      "note": "El gesto es ligero y legible; su lectura puede acercarse a una señal de conectividad.",
+      "symbol": "assets/cauce/symbol.svg",
+      "lockup_light": "assets/cauce/lockup-light.svg",
+      "lockup_dark": "assets/cauce/lockup-dark.svg"
+    },
+    {
+      "id": "acople",
+      "label": "Acople",
+      "idea": "Dos capacidades. Un sistema compartido.",
+      "rationale": "Dos piezas abiertas encajan sin perder su autonomía. Una relación entre investigación e implementación, con espacio para crecer.",
+      "note": "Los huecos son parte del símbolo: conservarlos al usarlo sobre fondos con textura.",
+      "symbol": "assets/acople/symbol.svg",
+      "lockup_light": "assets/acople/lockup-light.svg",
+      "lockup_dark": "assets/acople/lockup-dark.svg"
+    },
+    {
+      "id": "umbral",
+      "label": "Umbral",
+      "idea": "De la posibilidad a una decisión clara.",
+      "rationale": "Un portal abierto, con un apoyo desplazado, combina estabilidad y avance. La consultora ayuda a convertir preguntas en acciones.",
+      "note": "La silueta puede sugerir acceso o resguardo; comprobar que esa asociación encaje con la marca.",
+      "symbol": "assets/umbral/symbol.svg",
+      "lockup_light": "assets/umbral/lockup-light.svg",
+      "lockup_dark": "assets/umbral/lockup-dark.svg"
+    },
+    {
+      "id": "triada",
+      "label": "Tríada",
+      "idea": "Un equilibrio construido entre partes.",
+      "rationale": "Tres planos angulares dejan un espacio central en común. Alude al equipo y a un sistema donde cada decisión afecta al conjunto.",
+      "note": "La geometría es la más técnica del grupo; a escala pequeña domina su silueta sobre la lectura de las tres piezas.",
+      "symbol": "assets/triada/symbol.svg",
+      "lockup_light": "assets/triada/lockup-light.svg",
+      "lockup_dark": "assets/triada/lockup-dark.svg"
+    },
+    {
+      "id": "orbita",
+      "label": "Órbita",
+      "idea": "Continuidad con margen para evolucionar.",
+      "rationale": "Dos arcos desplazados forman un conjunto abierto. El círculo ofrece orientación; el desfase introduce movimiento sin una flecha literal.",
+      "note": "Puede acercarse a un estado de carga o a una órbita científica. Mantenerlo estático como firma de marca.",
+      "symbol": "assets/orbita/symbol.svg",
+      "lockup_light": "assets/orbita/lockup-light.svg",
+      "lockup_dark": "assets/orbita/lockup-dark.svg"
+    },
+    {
+      "id": "modulo",
+      "label": "Módulo",
+      "idea": "Una estructura que admite nuevas rutas.",
+      "rationale": "Una envolvente curva y un plano interior componen una inicial abierta. Une un gesto de ingeniería con la flexibilidad de la movilidad.",
+      "note": "La forma admite lecturas de D o E. El nombre completo debe acompañarla hasta que exista reconocimiento.",
+      "symbol": "assets/modulo/symbol.svg",
+      "lockup_light": "assets/modulo/lockup-light.svg",
+      "lockup_dark": "assets/modulo/lockup-dark.svg"
+    }
+  ],
+  "previews": {
+    "desktop_light": "qa/desktop-light.png",
+    "desktop_dark": "qa/desktop-dark.png",
+    "assets_light_dark": "qa/asset-proof.png",
+    "mobile_light": "qa/mobile-light.png"
+  },
+  "quality_notes": {
+    "optical_refinement": "Tríada: vacío central ampliado tras observar compresión a 20 px.",
+    "stronger_for_flow_system": [
+      "cauce",
+      "acople"
+    ],
+    "limitations": [
+      "Fuente de sistema: métricas y forma variables entre plataformas.",
+      "Umbral puede sugerir acceso o resguardo.",
+      "Órbita puede parecer un indicador de estado.",
+      "Módulo admite lectura D/E poco directa para ZMD.",
+      "Sin elección aprobada ni búsqueda de marcas."
+    ]
+  }
+}

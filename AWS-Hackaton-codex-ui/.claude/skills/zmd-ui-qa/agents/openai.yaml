@@ -1,0 +1,4 @@
+interface:
+  display_name: "Pruebas de interfaz ZMD Mobility"
+  short_description: "Verifica flujo, estados, datos difíciles y accesibilidad"
+  default_prompt: "Usa $zmd-ui-qa para comprobar este flujo de ZMD Mobility y distinguir resultados observados de lo que falta probar."

@@ -1,0 +1,21 @@
+{
+  "fuente": "eved",
+  "nodos": 9688,
+  "directos": 1571,
+  "cobertura_directa": 0.1622,
+  "interpolados": 8117,
+  "puntos_eved": 476308,
+  "puntos_asignados": 420466,
+  "radio_m": 120.0,
+  "interpolacion": "idw",
+  "puntos_por_nodo_mediana": 96,
+  "dist_interp_m": {
+    "mediana": 3121.8,
+    "p90": 9015.4,
+    "max": 13666.7
+  },
+  "altura_min_m": 229.5,
+  "altura_max_m": 321.5,
+  "desde_cache": true,
+  "segundos": 0.06
+}

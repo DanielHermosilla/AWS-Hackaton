@@ -1,0 +1,2734 @@
+{
+  "startedAt": "2026-10-15T04:31:42.160Z",
+  "checks": [
+    {
+      "name": "Cristal layout 1440",
+      "pass": true,
+      "evidence": {
+        "viewport": {
+          "width": 1440,
+          "height": 900
+        },
+        "documentWidth": 1440,
+        "bodyWidth": 1440,
+        "map": {
+          "left": 352,
+          "right": 1440,
+          "top": 65,
+          "bottom": 900,
+          "width": 1088,
+          "height": 835
+        },
+        "summary": {
+          "left": 606.4765625,
+          "right": 1185.5234375,
+          "top": 89,
+          "bottom": 175.4375,
+          "width": 579.046875,
+          "height": 86.4375
+        },
+        "summaryInside": true,
+        "mapReady": "true",
+        "mapStatus": "",
+        "pins": [
+          {
+            "name": "Centro de distribución (BASE)",
+            "left": 783,
+            "right": 819,
+            "top": 487,
+            "bottom": 523,
+            "obstructedBy": []
+          },
+          {
+            "name": "Local 1 (V1)",
+            "left": 862.5,
+            "right": 891.5,
+            "top": 657.5,
+            "bottom": 686.5,
+            "obstructedBy": []
+          },
+          {
+            "name": "Local 2 (V2)",
+            "left": 1052.5,
+            "right": 1081.5,
+            "top": 259.5,
+            "bottom": 288.5,
+            "obstructedBy": []
+          },
+          {
+            "name": "Local 3 (V3)",
+            "left": 647.5,
+            "right": 676.5,
+            "top": 307.5,
+            "bottom": 336.5,
+            "obstructedBy": []
+          },
+          {
+            "name": "Local 4 (V4)",
+            "left": 1109.5,
+            "right": 1138.5,
+            "top": 530.5,
+            "bottom": 559.5,
+            "obstructedBy": []
+          },
+          {
+            "name": "Local 5 (V5)",
+            "left": 870.5,
+            "right": 899.5,
+            "top": 416.5,
+            "bottom": 445.5,
+            "obstructedBy": []
+          },
+          {
+            "name": "Local 6 (V6)",
+            "left": 651.5,
+            "right": 680.5,
+            "top": 546.5,
+            "bottom": 575.5,
+            "obstructedBy": []
+          },
+          {
+            "name": "Local 7 (V7)",
+            "left": 656.5,
+            "right": 685.5,
+            "top": 736.5,
+            "bottom": 765.5,
+            "obstructedBy": []
+          },
+          {
+            "name": "Local 8 (V8)",
+            "left": 1042.5,
+            "right": 1071.5,
+            "top": 696.5,
+            "bottom": 725.5,
+            "obstructedBy": []
+          },
+          {
+            "name": "Local 9 (V9)",
+            "left": 897.5,
+            "right": 926.5,
+            "top": 266.5,
+            "bottom": 295.5,
+            "obstructedBy": []
+          },
+          {
+            "name": "Local 10 (V10)",
+            "left": 1047.5,
+            "right": 1076.5,
+            "top": 401.5,
+            "bottom": 430.5,
+            "obstructedBy": []
+          },
+          {
+            "name": "Local 11 (V11)",
+            "left": 939.5,
+            "right": 968.5,
+            "top": 540.5,
+            "bottom": 569.5,
+            "obstructedBy": []
+          },
+          {
+            "name": "Local 12 (V12)",
+            "left": 720.5,
+            "right": 749.5,
+            "top": 425.5,
+            "bottom": 454.5,
+            "obstructedBy": []
+          },
+          {
+            "name": "Local 13 (V13)",
+            "left": 804.5,
+            "right": 833.5,
+            "top": 534.5,
+            "bottom": 563.5,
+            "obstructedBy": []
+          },
+          {
+            "name": "Local 14 (V14)",
+            "left": 890.5,
+            "right": 919.5,
+            "top": 773.5,
+            "bottom": 802.5,
+            "obstructedBy": []
+          },
+          {
+            "name": "Local 15 (V15)",
+            "left": 773.5,
+            "right": 802.5,
+            "top": 733.5,
+            "bottom": 762.5,
+            "obstructedBy": []
+          },
+          {
+            "name": "Local 16 (V16)",
+            "left": 754.5,
+            "right": 783.5,
+            "top": 629.5,
+            "bottom": 658.5,
+            "obstructedBy": []
+          },
+          {
+            "name": "Local 17 (V17)",
+            "left": 1027.5,
+            "right": 1056.5,
+            "top": 590.5,
+            "bottom": 619.5,
+            "obstructedBy": []
+          },
+          {
+            "name": "Local 18 (V18)",
+            "left": 957.5,
+            "right": 986.5,
+            "top": 655.5,
+            "bottom": 684.5,
+            "obstructedBy": []
+          },
+          {
+            "name": "Local 19 (V19)",
+            "left": 653.5,
+            "right": 682.5,
+            "top": 643.5,
+            "bottom": 672.5,
+            "obstructedBy": []
+          },
+          {
+            "name": "Local 20 (V20)",
+            "left": 1023.5,
+            "right": 1052.5,
+            "top": 492.5,
+            "bottom": 521.5,
+            "obstructedBy": []
+          },
+          {
+            "name": "Cargador 3 (C3)",
+            "left": 777,
+            "right": 801,
+            "top": 677,
+            "bottom": 701,
+            "obstructedBy": []
+          },
+          {
+            "name": "Cargador 9 (C9)",
+            "left": 995,
+            "right": 1019,
+            "top": 269,
+            "bottom": 293,
+            "obstructedBy": []
+          }
+        ],
+        "obstruction": [],
+        "materials": {
+          "glass": {
+            "background": "rgba(255, 255, 255, 0.88)",
+            "backdropFilter": "blur(18px) saturate(1.3)",
+            "border": "rgba(255, 255, 255, 0.86)",
+            "color": "rgb(29, 41, 56)"
+          },
+          "summary": {
+            "background": "rgb(255, 255, 255)",
+            "backdropFilter": "none",
+            "border": "rgb(224, 229, 235)",
+            "color": "rgb(29, 41, 56)"
+          },
+          "card": {
+            "background": "rgb(255, 255, 255)",
+            "backdropFilter": "none",
+            "border": "rgb(221, 228, 237)",
+            "color": "rgb(29, 41, 56)"
+          },
+          "legend": {
+            "background": "rgb(255, 255, 255)",
+            "backdropFilter": "none",
+            "border": "rgb(219, 226, 233)",
+            "color": "rgb(82, 98, 118)"
+          }
+        }
+      }
+    },
+    {
+      "name": "V16 selects concrete occurrence without losing keyboard focus",
+      "pass": true,
+      "evidence": {
+        "hidden": false,
+        "title": "Local 16",
+        "text": "Local 16V16 · Entrega prevista · Auto 1Batería al llegar47 %Al salir47 %",
+        "soc": [
+          "47 %",
+          "47 %"
+        ],
+        "active": [
+          {
+            "route": "auto-1",
+            "index": "10",
+            "node": "V16"
+          }
+        ],
+        "focus": "<button type=\"button\" class=\"stop-row active\" data-stop=\"V16\" data-route=\"auto-1\" data-index=\"10\" aria-pressed=\"true\"><span class=\"stop-number\" aria-hidden=\"true\">16</span><span class=\"stop-name\">Local 16<small>V16</small></span><strong>47 %</strong></button>",
+        "status": "Local 16 de Auto 1. Entrada 47 %. Salida 47 %.",
+        "muted": [
+          "Local 2 (V2)",
+          "Local 4 (V4)",
+          "Local 5 (V5)",
+          "Local 8 (V8)",
+          "Local 9 (V9)",
+          "Local 10 (V10)",
+          "Local 11 (V11)",
+          "Local 17 (V17)",
+          "Local 18 (V18)",
+          "Local 20 (V20)"
+        ]
+      }
+    },
+    {
+      "name": "Escape returns focus to selected list row",
+      "pass": true,
+      "evidence": {
+        "hidden": true,
+        "title": "Local 16",
+        "text": "Local 16V16 · Entrega prevista · Auto 1Batería al llegar47 %Al salir47 %",
+        "soc": [
+          "47 %",
+          "47 %"
+        ],
+        "active": [
+          {
+            "route": "auto-1",
+            "index": "10",
+            "node": "V16"
+          }
+        ],
+        "focus": "<button type=\"button\" class=\"stop-row active\" data-stop=\"V16\" data-route=\"auto-1\" data-index=\"10\" aria-pressed=\"true\"><span class=\"stop-number\" aria-hidden=\"true\">16</span><span class=\"stop-name\">Local 16<small>V16</small></span><strong>47 %</strong></button>",
+        "status": "Local 16 de Auto 1. Entrada 47 %. Salida 47 %.",
+        "muted": [
+          "Local 2 (V2)",
+          "Local 4 (V4)",
+          "Local 5 (V5)",
+          "Local 8 (V8)",
+          "Local 9 (V9)",
+          "Local 10 (V10)",
+          "Local 11 (V11)",
+          "Local 17 (V17)",
+          "Local 18 (V18)",
+          "Local 20 (V20)"
+        ]
+      }
+    },
+    {
+      "name": "Auto 1 to V5 consistently selects Auto 2",
+      "pass": true,
+      "evidence": {
+        "hidden": false,
+        "title": "Local 5",
+        "text": "Local 5V5 · Entrega prevista · Auto 2Batería al llegar57 %Al salir57 %",
+        "soc": [
+          "57 %",
+          "57 %"
+        ],
+        "active": [
+          {
+            "route": "auto-2",
+            "index": "1",
+            "node": "V5"
+          }
+        ],
+        "focus": "<button type=\"button\" id=\"fit\" class=\"icon-button\" aria-label=\"Ver el recorrido completo\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"7\"></circle><pat",
+        "status": "Local 5 de Auto 2. Entrada 57 %. Salida 57 %.",
+        "muted": [
+          "Local 1 (V1)",
+          "Local 3 (V3)",
+          "Local 6 (V6)",
+          "Local 7 (V7)",
+          "Local 12 (V12)",
+          "Local 13 (V13)",
+          "Local 14 (V14)",
+          "Local 15 (V15)",
+          "Local 16 (V16)",
+          "Local 19 (V19)"
+        ]
+      }
+    },
+    {
+      "name": "Repeated BASE preserves return auto-1",
+      "pass": true,
+      "evidence": {
+        "hidden": false,
+        "title": "Regreso a BASE",
+        "text": "Regreso a BASEBASE · Centro de distribución · Auto 1Batería al llegar37,5 %Al salir37,5 %",
+        "soc": [
+          "37,5 %",
+          "37,5 %"
+        ],
+        "active": [
+          {
+            "route": "auto-1",
+            "index": "12",
+            "node": "BASE"
+          }
+        ],
+        "focus": "<button type=\"button\" class=\"stop-row active\" data-stop=\"BASE\" data-route=\"auto-1\" data-index=\"12\" aria-pressed=\"true\"><span class=\"stop-number\" aria-hidden=\"true\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linej",
+        "status": "Regreso a BASE de Auto 1. Entrada 37,5 %. Salida 37,5 %.",
+        "muted": [
+          "Local 2 (V2)",
+          "Local 4 (V4)",
+          "Local 5 (V5)",
+          "Local 8 (V8)",
+          "Local 9 (V9)",
+          "Local 10 (V10)",
+          "Local 11 (V11)",
+          "Local 17 (V17)",
+          "Local 18 (V18)",
+          "Local 20 (V20)"
+        ]
+      }
+    },
+    {
+      "name": "Repeated BASE preserves return auto-2",
+      "pass": true,
+      "evidence": {
+        "hidden": false,
+        "title": "Regreso a BASE",
+        "text": "Regreso a BASEBASE · Centro de distribución · Auto 2Batería al llegar41,3 %Al salir41,3 %",
+        "soc": [
+          "41,3 %",
+          "41,3 %"
+        ],
+        "active": [
+          {
+            "route": "auto-2",
+            "index": "12",
+            "node": "BASE"
+          }
+        ],
+        "focus": "<button type=\"button\" class=\"stop-row active\" data-stop=\"BASE\" data-route=\"auto-2\" data-index=\"12\" aria-pressed=\"true\"><span class=\"stop-number\" aria-hidden=\"true\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linej",
+        "status": "Regreso a BASE de Auto 2. Entrada 41,3 %. Salida 41,3 %.",
+        "muted": [
+          "Local 1 (V1)",
+          "Local 3 (V3)",
+          "Local 6 (V6)",
+          "Local 7 (V7)",
+          "Local 12 (V12)",
+          "Local 13 (V13)",
+          "Local 14 (V14)",
+          "Local 15 (V15)",
+          "Local 16 (V16)",
+          "Local 19 (V19)"
+        ]
+      }
+    },
+    {
+      "name": "Cristal layout 900",
+      "pass": true,
+      "evidence": {
+        "viewport": {
+          "width": 900,
+          "height": 900
+        },
+        "documentWidth": 900,
+        "bodyWidth": 900,
+        "map": {
+          "left": 320,
+          "right": 900,
+          "top": 65,
+          "bottom": 900,
+          "width": 580,
+          "height": 835
+        },
+        "summary": {
+          "left": 410.578125,
+          "right": 809.421875,
+          "top": 89,
+          "bottom": 168.890625,
+          "width": 398.84375,
+          "height": 79.890625
+        },
+        "summaryInside": true,
+        "mapReady": "true",
+        "mapStatus": "",
+        "pins": [
+          {
+            "name": "Centro de distribución (BASE)",
+            "left": 502,
+            "right": 538,
+            "top": 488,
+            "bottom": 524,
+            "obstructedBy": []
+          },
+          {
+            "name": "Local 1 (V1)",
+            "left": 577.5,
+            "right": 606.5,
+            "top": 648.5,
+            "bottom": 677.5,
+            "obstructedBy": []
+          },
+          {
+            "name": "Local 2 (V2)",
+            "left": 757.5,
+            "right": 786.5,
+            "top": 271.5,
+            "bottom": 300.5,
+            "obstructedBy": []
+          },
+          {
+            "name": "Local 3 (V3)",
+            "left": 373.5,
+            "right": 402.5,
+            "top": 317.5,
+            "bottom": 346.5,
+            "obstructedBy": []
+          },
+          {
+            "name": "Local 4 (V4)",
+            "left": 811.5,
+            "right": 840.5,
+            "top": 529.5,
+            "bottom": 558.5,
+            "obstructedBy": []
+          },
+          {
+            "name": "Local 5 (V5)",
+            "left": 585.5,
+            "right": 614.5,
+            "top": 420.5,
+            "bottom": 449.5,
+            "obstructedBy": []
+          },
+          {
+            "name": "Local 6 (V6)",
+            "left": 377.5,
+            "right": 406.5,
+            "top": 544.5,
+            "bottom": 573.5,
+            "obstructedBy": []
+          },
+          {
+            "name": "Local 7 (V7)",
+            "left": 381.5,
+            "right": 410.5,
+            "top": 724.5,
+            "bottom": 753.5,
+            "obstructedBy": []
+          },
+          {
+            "name": "Local 8 (V8)",
+            "left": 748.5,
+            "right": 777.5,
+            "top": 686.5,
+            "bottom": 715.5,
+            "obstructedBy": []
+          },
+          {
+            "name": "Local 9 (V9)",
+            "left": 611.5,
+            "right": 640.5,
+            "top": 278.5,
+            "bottom": 307.5,
+            "obstructedBy": []
+          },
+          {
+            "name": "Local 10 (V10)",
+            "left": 752.5,
+            "right": 781.5,
+            "top": 406.5,
+            "bottom": 435.5,
+            "obstructedBy": []
+          },
+          {
+            "name": "Local 11 (V11)",
+            "left": 650.5,
+            "right": 679.5,
+            "top": 538.5,
+            "bottom": 567.5,
+            "obstructedBy": []
+          },
+          {
+            "name": "Local 12 (V12)",
+            "left": 442.5,
+            "right": 471.5,
+            "top": 429.5,
+            "bottom": 458.5,
+            "obstructedBy": []
+          },
+          {
+            "name": "Local 13 (V13)",
+            "left": 522.5,
+            "right": 551.5,
+            "top": 532.5,
+            "bottom": 561.5,
+            "obstructedBy": []
+          },
+          {
+            "name": "Local 14 (V14)",
+            "left": 604.5,
+            "right": 633.5,
+            "top": 759.5,
+            "bottom": 788.5,
+            "obstructedBy": []
+          },
+          {
+            "name": "Local 15 (V15)",
+            "left": 493.5,
+            "right": 522.5,
+            "top": 721.5,
+            "bottom": 750.5,
+            "obstructedBy": []
+          },
+          {
+            "name": "Local 16 (V16)",
+            "left": 474.5,
+            "right": 503.5,
+            "top": 622.5,
+            "bottom": 651.5,
+            "obstructedBy": []
+          },
+          {
+            "name": "Local 17 (V17)",
+            "left": 734.5,
+            "right": 763.5,
+            "top": 586.5,
+            "bottom": 615.5,
+            "obstructedBy": []
+          },
+          {
+            "name": "Local 18 (V18)",
+            "left": 667.5,
+            "right": 696.5,
+            "top": 647.5,
+            "bottom": 676.5,
+            "obstructedBy": []
+          },
+          {
+            "name": "Local 19 (V19)",
+            "left": 379.5,
+            "right": 408.5,
+            "top": 635.5,
+            "bottom": 664.5,
+            "obstructedBy": []
+          },
+          {
+            "name": "Local 20 (V20)",
+            "left": 730.5,
+            "right": 759.5,
+            "top": 492.5,
+            "bottom": 521.5,
+            "obstructedBy": []
+          },
+          {
+            "name": "Cargador 3 (C3)",
+            "left": 496,
+            "right": 520,
+            "top": 668,
+            "bottom": 692,
+            "obstructedBy": []
+          },
+          {
+            "name": "Cargador 9 (C9)",
+            "left": 703,
+            "right": 727,
+            "top": 281,
+            "bottom": 305,
+            "obstructedBy": []
+          }
+        ],
+        "obstruction": [],
+        "materials": {
+          "glass": {
+            "background": "rgba(255, 255, 255, 0.88)",
+            "backdropFilter": "blur(18px) saturate(1.3)",
+            "border": "rgba(255, 255, 255, 0.86)",
+            "color": "rgb(29, 41, 56)"
+          },
+          "summary": {
+            "background": "rgb(255, 255, 255)",
+            "backdropFilter": "none",
+            "border": "rgb(224, 229, 235)",
+            "color": "rgb(29, 41, 56)"
+          },
+          "card": {
+            "background": "rgb(255, 255, 255)",
+            "backdropFilter": "none",
+            "border": "rgb(221, 228, 237)",
+            "color": "rgb(29, 41, 56)"
+          },
+          "legend": {
+            "background": "rgb(255, 255, 255)",
+            "backdropFilter": "none",
+            "border": "rgb(219, 226, 233)",
+            "color": "rgb(82, 98, 118)"
+          }
+        }
+      }
+    },
+    {
+      "name": "Cristal layout 701",
+      "pass": true,
+      "evidence": {
+        "viewport": {
+          "width": 701,
+          "height": 900
+        },
+        "documentWidth": 701,
+        "bodyWidth": 701,
+        "map": {
+          "left": 296,
+          "right": 701,
+          "top": 65,
+          "bottom": 900,
+          "width": 405,
+          "height": 835
+        },
+        "summary": {
+          "left": 372.3984375,
+          "right": 624.6015625,
+          "top": 89,
+          "bottom": 195.890625,
+          "width": 252.203125,
+          "height": 106.890625
+        },
+        "summaryInside": true,
+        "mapReady": "true",
+        "mapStatus": "",
+        "pins": [
+          {
+            "name": "Centro de distribución (BASE)",
+            "left": 426,
+            "right": 462,
+            "top": 490,
+            "bottom": 526,
+            "obstructedBy": []
+          },
+          {
+            "name": "Local 1 (V1)",
+            "left": 473.5,
+            "right": 502.5,
+            "top": 589.5,
+            "bottom": 618.5,
+            "obstructedBy": []
+          },
+          {
+            "name": "Local 2 (V2)",
+            "left": 581.5,
+            "right": 610.5,
+            "top": 360.5,
+            "bottom": 389.5,
+            "obstructedBy": []
+          },
+          {
+            "name": "Local 3 (V3)",
+            "left": 349.5,
+            "right": 378.5,
+            "top": 388.5,
+            "bottom": 417.5,
+            "obstructedBy": []
+          },
+          {
+            "name": "Local 4 (V4)",
+            "left": 614.5,
+            "right": 643.5,
+            "top": 516.5,
+            "bottom": 545.5,
+            "obstructedBy": []
+          },
+          {
+            "name": "Local 5 (V5)",
+            "left": 477.5,
+            "right": 506.5,
+            "top": 451.5,
+            "bottom": 480.5,
+            "obstructedBy": []
+          },
+          {
+            "name": "Local 6 (V6)",
+            "left": 351.5,
+            "right": 380.5,
+            "top": 525.5,
+            "bottom": 554.5,
+            "obstructedBy": []
+          },
+          {
+            "name": "Local 7 (V7)",
+            "left": 354.5,
+            "right": 383.5,
+            "top": 635.5,
+            "bottom": 664.5,
+            "obstructedBy": []
+          },
+          {
+            "name": "Local 8 (V8)",
+            "left": 576.5,
+            "right": 605.5,
+            "top": 611.5,
+            "bottom": 640.5,
+            "obstructedBy": []
+          },
+          {
+            "name": "Local 9 (V9)",
+            "left": 493.5,
+            "right": 522.5,
+            "top": 364.5,
+            "bottom": 393.5,
+            "obstructedBy": []
+          },
+          {
+            "name": "Local 10 (V10)",
+            "left": 579.5,
+            "right": 608.5,
+            "top": 442.5,
+            "bottom": 471.5,
+            "obstructedBy": []
+          },
+          {
+            "name": "Local 11 (V11)",
+            "left": 517.5,
+            "right": 546.5,
+            "top": 522.5,
+            "bottom": 551.5,
+            "obstructedBy": []
+          },
+          {
+            "name": "Local 12 (V12)",
+            "left": 391.5,
+            "right": 420.5,
+            "top": 456.5,
+            "bottom": 485.5,
+            "obstructedBy": []
+          },
+          {
+            "name": "Local 13 (V13)",
+            "left": 439.5,
+            "right": 468.5,
+            "top": 518.5,
+            "bottom": 547.5,
+            "obstructedBy": []
+          },
+          {
+            "name": "Local 14 (V14)",
+            "left": 489.5,
+            "right": 518.5,
+            "top": 656.5,
+            "bottom": 685.5,
+            "obstructedBy": []
+          },
+          {
+            "name": "Local 15 (V15)",
+            "left": 422.5,
+            "right": 451.5,
+            "top": 633.5,
+            "bottom": 662.5,
+            "obstructedBy": []
+          },
+          {
+            "name": "Local 16 (V16)",
+            "left": 410.5,
+            "right": 439.5,
+            "top": 573.5,
+            "bottom": 602.5,
+            "obstructedBy": []
+          },
+          {
+            "name": "Local 17 (V17)",
+            "left": 567.5,
+            "right": 596.5,
+            "top": 551.5,
+            "bottom": 580.5,
+            "obstructedBy": []
+          },
+          {
+            "name": "Local 18 (V18)",
+            "left": 527.5,
+            "right": 556.5,
+            "top": 588.5,
+            "bottom": 617.5,
+            "obstructedBy": []
+          },
+          {
+            "name": "Local 19 (V19)",
+            "left": 352.5,
+            "right": 381.5,
+            "top": 581.5,
+            "bottom": 610.5,
+            "obstructedBy": []
+          },
+          {
+            "name": "Local 20 (V20)",
+            "left": 565.5,
+            "right": 594.5,
+            "top": 494.5,
+            "bottom": 523.5,
+            "obstructedBy": []
+          },
+          {
+            "name": "Cargador 3 (C3)",
+            "left": 425,
+            "right": 449,
+            "top": 602,
+            "bottom": 626,
+            "obstructedBy": []
+          },
+          {
+            "name": "Cargador 9 (C9)",
+            "left": 550,
+            "right": 574,
+            "top": 367,
+            "bottom": 391,
+            "obstructedBy": []
+          }
+        ],
+        "obstruction": [],
+        "materials": {
+          "glass": {
+            "background": "rgba(255, 255, 255, 0.88)",
+            "backdropFilter": "blur(18px) saturate(1.3)",
+            "border": "rgba(255, 255, 255, 0.86)",
+            "color": "rgb(29, 41, 56)"
+          },
+          "summary": {
+            "background": "rgb(255, 255, 255)",
+            "backdropFilter": "none",
+            "border": "rgb(224, 229, 235)",
+            "color": "rgb(29, 41, 56)"
+          },
+          "card": {
+            "background": "rgb(255, 255, 255)",
+            "backdropFilter": "none",
+            "border": "rgb(221, 228, 237)",
+            "color": "rgb(29, 41, 56)"
+          },
+          "legend": {
+            "background": "rgb(255, 255, 255)",
+            "backdropFilter": "none",
+            "border": "rgb(219, 226, 233)",
+            "color": "rgb(82, 98, 118)"
+          }
+        }
+      }
+    },
+    {
+      "name": "Cristal layout 390",
+      "pass": true,
+      "evidence": {
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "documentWidth": 390,
+        "bodyWidth": 390,
+        "map": {
+          "left": 0,
+          "right": 390,
+          "top": 61,
+          "bottom": 611,
+          "width": 390,
+          "height": 550
+        },
+        "summary": {
+          "left": 14,
+          "right": 376,
+          "top": 76,
+          "bottom": 166.1875,
+          "width": 362,
+          "height": 90.1875
+        },
+        "summaryInside": true,
+        "mapReady": "true",
+        "mapStatus": "",
+        "pins": [
+          {
+            "name": "Centro de distribución (BASE)",
+            "left": 140,
+            "right": 176,
+            "top": 347,
+            "bottom": 383,
+            "obstructedBy": []
+          },
+          {
+            "name": "Local 1 (V1)",
+            "left": 173.5,
+            "right": 202.5,
+            "top": 416.5,
+            "bottom": 445.5,
+            "obstructedBy": []
+          },
+          {
+            "name": "Local 2 (V2)",
+            "left": 247.5,
+            "right": 276.5,
+            "top": 259.5,
+            "bottom": 288.5,
+            "obstructedBy": []
+          },
+          {
+            "name": "Local 3 (V3)",
+            "left": 88.5,
+            "right": 117.5,
+            "top": 278.5,
+            "bottom": 307.5,
+            "obstructedBy": []
+          },
+          {
+            "name": "Local 4 (V4)",
+            "left": 270.5,
+            "right": 299.5,
+            "top": 366.5,
+            "bottom": 395.5,
+            "obstructedBy": []
+          },
+          {
+            "name": "Local 5 (V5)",
+            "left": 176.5,
+            "right": 205.5,
+            "top": 321.5,
+            "bottom": 350.5,
+            "obstructedBy": []
+          },
+          {
+            "name": "Local 6 (V6)",
+            "left": 90.5,
+            "right": 119.5,
+            "top": 372.5,
+            "bottom": 401.5,
+            "obstructedBy": []
+          },
+          {
+            "name": "Local 7 (V7)",
+            "left": 91.5,
+            "right": 120.5,
+            "top": 447.5,
+            "bottom": 476.5,
+            "obstructedBy": []
+          },
+          {
+            "name": "Local 8 (V8)",
+            "left": 243.5,
+            "right": 272.5,
+            "top": 431.5,
+            "bottom": 460.5,
+            "obstructedBy": []
+          },
+          {
+            "name": "Local 9 (V9)",
+            "left": 186.5,
+            "right": 215.5,
+            "top": 262.5,
+            "bottom": 291.5,
+            "obstructedBy": []
+          },
+          {
+            "name": "Local 10 (V10)",
+            "left": 245.5,
+            "right": 274.5,
+            "top": 315.5,
+            "bottom": 344.5,
+            "obstructedBy": []
+          },
+          {
+            "name": "Local 11 (V11)",
+            "left": 203.5,
+            "right": 232.5,
+            "top": 370.5,
+            "bottom": 399.5,
+            "obstructedBy": []
+          },
+          {
+            "name": "Local 12 (V12)",
+            "left": 116.5,
+            "right": 145.5,
+            "top": 325.5,
+            "bottom": 354.5,
+            "obstructedBy": []
+          },
+          {
+            "name": "Local 13 (V13)",
+            "left": 149.5,
+            "right": 178.5,
+            "top": 368.5,
+            "bottom": 397.5,
+            "obstructedBy": []
+          },
+          {
+            "name": "Local 14 (V14)",
+            "left": 184.5,
+            "right": 213.5,
+            "top": 462.5,
+            "bottom": 491.5,
+            "obstructedBy": []
+          },
+          {
+            "name": "Local 15 (V15)",
+            "left": 138.5,
+            "right": 167.5,
+            "top": 446.5,
+            "bottom": 475.5,
+            "obstructedBy": []
+          },
+          {
+            "name": "Local 16 (V16)",
+            "left": 130.5,
+            "right": 159.5,
+            "top": 405.5,
+            "bottom": 434.5,
+            "obstructedBy": []
+          },
+          {
+            "name": "Local 17 (V17)",
+            "left": 238.5,
+            "right": 267.5,
+            "top": 390.5,
+            "bottom": 419.5,
+            "obstructedBy": []
+          },
+          {
+            "name": "Local 18 (V18)",
+            "left": 210.5,
+            "right": 239.5,
+            "top": 415.5,
+            "bottom": 444.5,
+            "obstructedBy": []
+          },
+          {
+            "name": "Local 19 (V19)",
+            "left": 90.5,
+            "right": 119.5,
+            "top": 410.5,
+            "bottom": 439.5,
+            "obstructedBy": []
+          },
+          {
+            "name": "Local 20 (V20)",
+            "left": 236.5,
+            "right": 265.5,
+            "top": 351.5,
+            "bottom": 380.5,
+            "obstructedBy": []
+          },
+          {
+            "name": "Cargador 3 (C3)",
+            "left": 141,
+            "right": 165,
+            "top": 426,
+            "bottom": 450,
+            "obstructedBy": []
+          },
+          {
+            "name": "Cargador 9 (C9)",
+            "left": 226,
+            "right": 250,
+            "top": 265,
+            "bottom": 289,
+            "obstructedBy": []
+          }
+        ],
+        "obstruction": [],
+        "materials": {
+          "glass": {
+            "background": "rgba(255, 255, 255, 0.88)",
+            "backdropFilter": "blur(18px) saturate(1.3)",
+            "border": "rgba(255, 255, 255, 0.86)",
+            "color": "rgb(29, 41, 56)"
+          },
+          "summary": {
+            "background": "rgb(255, 255, 255)",
+            "backdropFilter": "none",
+            "border": "rgb(224, 229, 235)",
+            "color": "rgb(29, 41, 56)"
+          },
+          "card": {
+            "background": "rgb(255, 255, 255)",
+            "backdropFilter": "none",
+            "border": "rgb(221, 228, 237)",
+            "color": "rgb(29, 41, 56)"
+          },
+          "legend": {
+            "background": "rgb(255, 255, 255)",
+            "backdropFilter": "none",
+            "border": "rgb(219, 226, 233)",
+            "color": "rgb(82, 98, 118)"
+          }
+        }
+      }
+    },
+    {
+      "name": "Cristal layout 319",
+      "pass": true,
+      "evidence": {
+        "viewport": {
+          "width": 319,
+          "height": 859
+        },
+        "documentWidth": 319,
+        "bodyWidth": 319,
+        "map": {
+          "left": 0,
+          "right": 319,
+          "top": 61,
+          "bottom": 611,
+          "width": 319,
+          "height": 550
+        },
+        "summary": {
+          "left": 12,
+          "right": 307,
+          "top": 76,
+          "bottom": 163,
+          "width": 295,
+          "height": 87
+        },
+        "summaryInside": true,
+        "mapReady": "true",
+        "mapStatus": "",
+        "pins": [
+          {
+            "name": "Centro de distribución (BASE)",
+            "left": 104,
+            "right": 140,
+            "top": 347,
+            "bottom": 383,
+            "obstructedBy": []
+          },
+          {
+            "name": "Local 1 (V1)",
+            "left": 137.5,
+            "right": 166.5,
+            "top": 416.5,
+            "bottom": 445.5,
+            "obstructedBy": []
+          },
+          {
+            "name": "Local 2 (V2)",
+            "left": 212.5,
+            "right": 241.5,
+            "top": 259.5,
+            "bottom": 288.5,
+            "obstructedBy": []
+          },
+          {
+            "name": "Local 3 (V3)",
+            "left": 52.5,
+            "right": 81.5,
+            "top": 278.5,
+            "bottom": 307.5,
+            "obstructedBy": []
+          },
+          {
+            "name": "Local 4 (V4)",
+            "left": 234.5,
+            "right": 263.5,
+            "top": 366.5,
+            "bottom": 395.5,
+            "obstructedBy": []
+          },
+          {
+            "name": "Local 5 (V5)",
+            "left": 140.5,
+            "right": 169.5,
+            "top": 321.5,
+            "bottom": 350.5,
+            "obstructedBy": []
+          },
+          {
+            "name": "Local 6 (V6)",
+            "left": 54.5,
+            "right": 83.5,
+            "top": 372.5,
+            "bottom": 401.5,
+            "obstructedBy": []
+          },
+          {
+            "name": "Local 7 (V7)",
+            "left": 56.5,
+            "right": 85.5,
+            "top": 447.5,
+            "bottom": 476.5,
+            "obstructedBy": []
+          },
+          {
+            "name": "Local 8 (V8)",
+            "left": 208.5,
+            "right": 237.5,
+            "top": 431.5,
+            "bottom": 460.5,
+            "obstructedBy": []
+          },
+          {
+            "name": "Local 9 (V9)",
+            "left": 151.5,
+            "right": 180.5,
+            "top": 262.5,
+            "bottom": 291.5,
+            "obstructedBy": []
+          },
+          {
+            "name": "Local 10 (V10)",
+            "left": 210.5,
+            "right": 239.5,
+            "top": 315.5,
+            "bottom": 344.5,
+            "obstructedBy": []
+          },
+          {
+            "name": "Local 11 (V11)",
+            "left": 168.5,
+            "right": 197.5,
+            "top": 370.5,
+            "bottom": 399.5,
+            "obstructedBy": []
+          },
+          {
+            "name": "Local 12 (V12)",
+            "left": 81.5,
+            "right": 110.5,
+            "top": 325.5,
+            "bottom": 354.5,
+            "obstructedBy": []
+          },
+          {
+            "name": "Local 13 (V13)",
+            "left": 114.5,
+            "right": 143.5,
+            "top": 368.5,
+            "bottom": 397.5,
+            "obstructedBy": []
+          },
+          {
+            "name": "Local 14 (V14)",
+            "left": 148.5,
+            "right": 177.5,
+            "top": 462.5,
+            "bottom": 491.5,
+            "obstructedBy": []
+          },
+          {
+            "name": "Local 15 (V15)",
+            "left": 102.5,
+            "right": 131.5,
+            "top": 446.5,
+            "bottom": 475.5,
+            "obstructedBy": []
+          },
+          {
+            "name": "Local 16 (V16)",
+            "left": 94.5,
+            "right": 123.5,
+            "top": 405.5,
+            "bottom": 434.5,
+            "obstructedBy": []
+          },
+          {
+            "name": "Local 17 (V17)",
+            "left": 202.5,
+            "right": 231.5,
+            "top": 390.5,
+            "bottom": 419.5,
+            "obstructedBy": []
+          },
+          {
+            "name": "Local 18 (V18)",
+            "left": 174.5,
+            "right": 203.5,
+            "top": 415.5,
+            "bottom": 444.5,
+            "obstructedBy": []
+          },
+          {
+            "name": "Local 19 (V19)",
+            "left": 55.5,
+            "right": 84.5,
+            "top": 410.5,
+            "bottom": 439.5,
+            "obstructedBy": []
+          },
+          {
+            "name": "Local 20 (V20)",
+            "left": 200.5,
+            "right": 229.5,
+            "top": 351.5,
+            "bottom": 380.5,
+            "obstructedBy": []
+          },
+          {
+            "name": "Cargador 3 (C3)",
+            "left": 105,
+            "right": 129,
+            "top": 426,
+            "bottom": 450,
+            "obstructedBy": []
+          },
+          {
+            "name": "Cargador 9 (C9)",
+            "left": 191,
+            "right": 215,
+            "top": 265,
+            "bottom": 289,
+            "obstructedBy": []
+          }
+        ],
+        "obstruction": [],
+        "materials": {
+          "glass": {
+            "background": "rgba(255, 255, 255, 0.88)",
+            "backdropFilter": "blur(18px) saturate(1.3)",
+            "border": "rgba(255, 255, 255, 0.86)",
+            "color": "rgb(29, 41, 56)"
+          },
+          "summary": {
+            "background": "rgb(255, 255, 255)",
+            "backdropFilter": "none",
+            "border": "rgb(224, 229, 235)",
+            "color": "rgb(29, 41, 56)"
+          },
+          "card": {
+            "background": "rgb(255, 255, 255)",
+            "backdropFilter": "none",
+            "border": "rgb(221, 228, 237)",
+            "color": "rgb(29, 41, 56)"
+          },
+          "legend": {
+            "background": "rgb(255, 255, 255)",
+            "backdropFilter": "none",
+            "border": "rgb(219, 226, 233)",
+            "color": "rgb(82, 98, 118)"
+          }
+        }
+      }
+    },
+    {
+      "name": "Reduced transparency makes controls opaque and removes blur",
+      "pass": true,
+      "evidence": {
+        "media": true,
+        "contrast": false,
+        ".glass-controls": {
+          "background": "rgb(249, 251, 253)",
+          "backdrop": "none",
+          "border": "rgb(199, 211, 223)",
+          "color": "rgb(29, 41, 56)"
+        },
+        ".maplibregl-ctrl-group": {
+          "background": "rgb(249, 251, 253)",
+          "backdrop": "none",
+          "border": "rgb(199, 211, 223)",
+          "color": "rgb(29, 41, 56)"
+        },
+        ".map-summary": {
+          "background": "rgb(255, 255, 255)",
+          "backdrop": "none",
+          "border": "rgb(224, 229, 235)",
+          "color": "rgb(29, 41, 56)"
+        },
+        ".vehicle-card": {
+          "background": "rgb(255, 255, 255)",
+          "backdrop": "none",
+          "border": "rgb(221, 228, 237)",
+          "color": "rgb(29, 41, 56)"
+        },
+        ".legend": {
+          "background": "rgb(255, 255, 255)",
+          "backdrop": "none",
+          "border": "rgb(219, 226, 233)",
+          "color": "rgb(82, 98, 118)"
+        }
+      }
+    },
+    {
+      "name": "Contrast preference preserves opaque data and controls",
+      "pass": true,
+      "evidence": {
+        "media": false,
+        "contrast": true,
+        ".glass-controls": {
+          "background": "rgb(255, 255, 255)",
+          "backdrop": "none",
+          "border": "rgb(97, 117, 139)",
+          "color": "rgb(29, 41, 56)"
+        },
+        ".maplibregl-ctrl-group": {
+          "background": "rgb(255, 255, 255)",
+          "backdrop": "none",
+          "border": "rgb(97, 117, 139)",
+          "color": "rgb(29, 41, 56)"
+        },
+        ".map-summary": {
+          "background": "rgb(255, 255, 255)",
+          "backdrop": "none",
+          "border": "rgb(114, 129, 150)",
+          "color": "rgb(29, 41, 56)"
+        },
+        ".vehicle-card": {
+          "background": "rgb(255, 255, 255)",
+          "backdrop": "none",
+          "border": "rgb(114, 129, 150)",
+          "color": "rgb(29, 41, 56)"
+        },
+        ".legend": {
+          "background": "rgb(255, 255, 255)",
+          "backdrop": "none",
+          "border": "rgb(114, 129, 150)",
+          "color": "rgb(53, 74, 97)"
+        }
+      }
+    },
+    {
+      "name": "No JS exceptions or HTTP errors",
+      "pass": true,
+      "evidence": {
+        "errors": [],
+        "httpErrors": []
+      }
+    }
+  ],
+  "layouts": [
+    {
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "documentWidth": 1440,
+      "bodyWidth": 1440,
+      "map": {
+        "left": 352,
+        "right": 1440,
+        "top": 65,
+        "bottom": 900,
+        "width": 1088,
+        "height": 835
+      },
+      "summary": {
+        "left": 606.4765625,
+        "right": 1185.5234375,
+        "top": 89,
+        "bottom": 175.4375,
+        "width": 579.046875,
+        "height": 86.4375
+      },
+      "summaryInside": true,
+      "mapReady": "true",
+      "mapStatus": "",
+      "pins": [
+        {
+          "name": "Centro de distribución (BASE)",
+          "left": 783,
+          "right": 819,
+          "top": 487,
+          "bottom": 523,
+          "obstructedBy": []
+        },
+        {
+          "name": "Local 1 (V1)",
+          "left": 862.5,
+          "right": 891.5,
+          "top": 657.5,
+          "bottom": 686.5,
+          "obstructedBy": []
+        },
+        {
+          "name": "Local 2 (V2)",
+          "left": 1052.5,
+          "right": 1081.5,
+          "top": 259.5,
+          "bottom": 288.5,
+          "obstructedBy": []
+        },
+        {
+          "name": "Local 3 (V3)",
+          "left": 647.5,
+          "right": 676.5,
+          "top": 307.5,
+          "bottom": 336.5,
+          "obstructedBy": []
+        },
+        {
+          "name": "Local 4 (V4)",
+          "left": 1109.5,
+          "right": 1138.5,
+          "top": 530.5,
+          "bottom": 559.5,
+          "obstructedBy": []
+        },
+        {
+          "name": "Local 5 (V5)",
+          "left": 870.5,
+          "right": 899.5,
+          "top": 416.5,
+          "bottom": 445.5,
+          "obstructedBy": []
+        },
+        {
+          "name": "Local 6 (V6)",
+          "left": 651.5,
+          "right": 680.5,
+          "top": 546.5,
+          "bottom": 575.5,
+          "obstructedBy": []
+        },
+        {
+          "name": "Local 7 (V7)",
+          "left": 656.5,
+          "right": 685.5,
+          "top": 736.5,
+          "bottom": 765.5,
+          "obstructedBy": []
+        },
+        {
+          "name": "Local 8 (V8)",
+          "left": 1042.5,
+          "right": 1071.5,
+          "top": 696.5,
+          "bottom": 725.5,
+          "obstructedBy": []
+        },
+        {
+          "name": "Local 9 (V9)",
+          "left": 897.5,
+          "right": 926.5,
+          "top": 266.5,
+          "bottom": 295.5,
+          "obstructedBy": []
+        },
+        {
+          "name": "Local 10 (V10)",
+          "left": 1047.5,
+          "right": 1076.5,
+          "top": 401.5,
+          "bottom": 430.5,
+          "obstructedBy": []
+        },
+        {
+          "name": "Local 11 (V11)",
+          "left": 939.5,
+          "right": 968.5,
+          "top": 540.5,
+          "bottom": 569.5,
+          "obstructedBy": []
+        },
+        {
+          "name": "Local 12 (V12)",
+          "left": 720.5,
+          "right": 749.5,
+          "top": 425.5,
+          "bottom": 454.5,
+          "obstructedBy": []
+        },
+        {
+          "name": "Local 13 (V13)",
+          "left": 804.5,
+          "right": 833.5,
+          "top": 534.5,
+          "bottom": 563.5,
+          "obstructedBy": []
+        },
+        {
+          "name": "Local 14 (V14)",
+          "left": 890.5,
+          "right": 919.5,
+          "top": 773.5,
+          "bottom": 802.5,
+          "obstructedBy": []
+        },
+        {
+          "name": "Local 15 (V15)",
+          "left": 773.5,
+          "right": 802.5,
+          "top": 733.5,
+          "bottom": 762.5,
+          "obstructedBy": []
+        },
+        {
+          "name": "Local 16 (V16)",
+          "left": 754.5,
+          "right": 783.5,
+          "top": 629.5,
+          "bottom": 658.5,
+          "obstructedBy": []
+        },
+        {
+          "name": "Local 17 (V17)",
+          "left": 1027.5,
+          "right": 1056.5,
+          "top": 590.5,
+          "bottom": 619.5,
+          "obstructedBy": []
+        },
+        {
+          "name": "Local 18 (V18)",
+          "left": 957.5,
+          "right": 986.5,
+          "top": 655.5,
+          "bottom": 684.5,
+          "obstructedBy": []
+        },
+        {
+          "name": "Local 19 (V19)",
+          "left": 653.5,
+          "right": 682.5,
+          "top": 643.5,
+          "bottom": 672.5,
+          "obstructedBy": []
+        },
+        {
+          "name": "Local 20 (V20)",
+          "left": 1023.5,
+          "right": 1052.5,
+          "top": 492.5,
+          "bottom": 521.5,
+          "obstructedBy": []
+        },
+        {
+          "name": "Cargador 3 (C3)",
+          "left": 777,
+          "right": 801,
+          "top": 677,
+          "bottom": 701,
+          "obstructedBy": []
+        },
+        {
+          "name": "Cargador 9 (C9)",
+          "left": 995,
+          "right": 1019,
+          "top": 269,
+          "bottom": 293,
+          "obstructedBy": []
+        }
+      ],
+      "obstruction": [],
+      "materials": {
+        "glass": {
+          "background": "rgba(255, 255, 255, 0.88)",
+          "backdropFilter": "blur(18px) saturate(1.3)",
+          "border": "rgba(255, 255, 255, 0.86)",
+          "color": "rgb(29, 41, 56)"
+        },
+        "summary": {
+          "background": "rgb(255, 255, 255)",
+          "backdropFilter": "none",
+          "border": "rgb(224, 229, 235)",
+          "color": "rgb(29, 41, 56)"
+        },
+        "card": {
+          "background": "rgb(255, 255, 255)",
+          "backdropFilter": "none",
+          "border": "rgb(221, 228, 237)",
+          "color": "rgb(29, 41, 56)"
+        },
+        "legend": {
+          "background": "rgb(255, 255, 255)",
+          "backdropFilter": "none",
+          "border": "rgb(219, 226, 233)",
+          "color": "rgb(82, 98, 118)"
+        }
+      }
+    },
+    {
+      "viewport": {
+        "width": 900,
+        "height": 900
+      },
+      "documentWidth": 900,
+      "bodyWidth": 900,
+      "map": {
+        "left": 320,
+        "right": 900,
+        "top": 65,
+        "bottom": 900,
+        "width": 580,
+        "height": 835
+      },
+      "summary": {
+        "left": 410.578125,
+        "right": 809.421875,
+        "top": 89,
+        "bottom": 168.890625,
+        "width": 398.84375,
+        "height": 79.890625
+      },
+      "summaryInside": true,
+      "mapReady": "true",
+      "mapStatus": "",
+      "pins": [
+        {
+          "name": "Centro de distribución (BASE)",
+          "left": 502,
+          "right": 538,
+          "top": 488,
+          "bottom": 524,
+          "obstructedBy": []
+        },
+        {
+          "name": "Local 1 (V1)",
+          "left": 577.5,
+          "right": 606.5,
+          "top": 648.5,
+          "bottom": 677.5,
+          "obstructedBy": []
+        },
+        {
+          "name": "Local 2 (V2)",
+          "left": 757.5,
+          "right": 786.5,
+          "top": 271.5,
+          "bottom": 300.5,
+          "obstructedBy": []
+        },
+        {
+          "name": "Local 3 (V3)",
+          "left": 373.5,
+          "right": 402.5,
+          "top": 317.5,
+          "bottom": 346.5,
+          "obstructedBy": []
+        },
+        {
+          "name": "Local 4 (V4)",
+          "left": 811.5,
+          "right": 840.5,
+          "top": 529.5,
+          "bottom": 558.5,
+          "obstructedBy": []
+        },
+        {
+          "name": "Local 5 (V5)",
+          "left": 585.5,
+          "right": 614.5,
+          "top": 420.5,
+          "bottom": 449.5,
+          "obstructedBy": []
+        },
+        {
+          "name": "Local 6 (V6)",
+          "left": 377.5,
+          "right": 406.5,
+          "top": 544.5,
+          "bottom": 573.5,
+          "obstructedBy": []
+        },
+        {
+          "name": "Local 7 (V7)",
+          "left": 381.5,
+          "right": 410.5,
+          "top": 724.5,
+          "bottom": 753.5,
+          "obstructedBy": []
+        },
+        {
+          "name": "Local 8 (V8)",
+          "left": 748.5,
+          "right": 777.5,
+          "top": 686.5,
+          "bottom": 715.5,
+          "obstructedBy": []
+        },
+        {
+          "name": "Local 9 (V9)",
+          "left": 611.5,
+          "right": 640.5,
+          "top": 278.5,
+          "bottom": 307.5,
+          "obstructedBy": []
+        },
+        {
+          "name": "Local 10 (V10)",
+          "left": 752.5,
+          "right": 781.5,
+          "top": 406.5,
+          "bottom": 435.5,
+          "obstructedBy": []
+        },
+        {
+          "name": "Local 11 (V11)",
+          "left": 650.5,
+          "right": 679.5,
+          "top": 538.5,
+          "bottom": 567.5,
+          "obstructedBy": []
+        },
+        {
+          "name": "Local 12 (V12)",
+          "left": 442.5,
+          "right": 471.5,
+          "top": 429.5,
+          "bottom": 458.5,
+          "obstructedBy": []
+        },
+        {
+          "name": "Local 13 (V13)",
+          "left": 522.5,
+          "right": 551.5,
+          "top": 532.5,
+          "bottom": 561.5,
+          "obstructedBy": []
+        },
+        {
+          "name": "Local 14 (V14)",
+          "left": 604.5,
+          "right": 633.5,
+          "top": 759.5,
+          "bottom": 788.5,
+          "obstructedBy": []
+        },
+        {
+          "name": "Local 15 (V15)",
+          "left": 493.5,
+          "right": 522.5,
+          "top": 721.5,
+          "bottom": 750.5,
+          "obstructedBy": []
+        },
+        {
+          "name": "Local 16 (V16)",
+          "left": 474.5,
+          "right": 503.5,
+          "top": 622.5,
+          "bottom": 651.5,
+          "obstructedBy": []
+        },
+        {
+          "name": "Local 17 (V17)",
+          "left": 734.5,
+          "right": 763.5,
+          "top": 586.5,
+          "bottom": 615.5,
+          "obstructedBy": []
+        },
+        {
+          "name": "Local 18 (V18)",
+          "left": 667.5,
+          "right": 696.5,
+          "top": 647.5,
+          "bottom": 676.5,
+          "obstructedBy": []
+        },
+        {
+          "name": "Local 19 (V19)",
+          "left": 379.5,
+          "right": 408.5,
+          "top": 635.5,
+          "bottom": 664.5,
+          "obstructedBy": []
+        },
+        {
+          "name": "Local 20 (V20)",
+          "left": 730.5,
+          "right": 759.5,
+          "top": 492.5,
+          "bottom": 521.5,
+          "obstructedBy": []
+        },
+        {
+          "name": "Cargador 3 (C3)",
+          "left": 496,
+          "right": 520,
+          "top": 668,
+          "bottom": 692,
+          "obstructedBy": []
+        },
+        {
+          "name": "Cargador 9 (C9)",
+          "left": 703,
+          "right": 727,
+          "top": 281,
+          "bottom": 305,
+          "obstructedBy": []
+        }
+      ],
+      "obstruction": [],
+      "materials": {
+        "glass": {
+          "background": "rgba(255, 255, 255, 0.88)",
+          "backdropFilter": "blur(18px) saturate(1.3)",
+          "border": "rgba(255, 255, 255, 0.86)",
+          "color": "rgb(29, 41, 56)"
+        },
+        "summary": {
+          "background": "rgb(255, 255, 255)",
+          "backdropFilter": "none",
+          "border": "rgb(224, 229, 235)",
+          "color": "rgb(29, 41, 56)"
+        },
+        "card": {
+          "background": "rgb(255, 255, 255)",
+          "backdropFilter": "none",
+          "border": "rgb(221, 228, 237)",
+          "color": "rgb(29, 41, 56)"
+        },
+        "legend": {
+          "background": "rgb(255, 255, 255)",
+          "backdropFilter": "none",
+          "border": "rgb(219, 226, 233)",
+          "color": "rgb(82, 98, 118)"
+        }
+      }
+    },
+    {
+      "viewport": {
+        "width": 701,
+        "height": 900
+      },
+      "documentWidth": 701,
+      "bodyWidth": 701,
+      "map": {
+        "left": 296,
+        "right": 701,
+        "top": 65,
+        "bottom": 900,
+        "width": 405,
+        "height": 835
+      },
+      "summary": {
+        "left": 372.3984375,
+        "right": 624.6015625,
+        "top": 89,
+        "bottom": 195.890625,
+        "width": 252.203125,
+        "height": 106.890625
+      },
+      "summaryInside": true,
+      "mapReady": "true",
+      "mapStatus": "",
+      "pins": [
+        {
+          "name": "Centro de distribución (BASE)",
+          "left": 426,
+          "right": 462,
+          "top": 490,
+          "bottom": 526,
+          "obstructedBy": []
+        },
+        {
+          "name": "Local 1 (V1)",
+          "left": 473.5,
+          "right": 502.5,
+          "top": 589.5,
+          "bottom": 618.5,
+          "obstructedBy": []
+        },
+        {
+          "name": "Local 2 (V2)",
+          "left": 581.5,
+          "right": 610.5,
+          "top": 360.5,
+          "bottom": 389.5,
+          "obstructedBy": []
+        },
+        {
+          "name": "Local 3 (V3)",
+          "left": 349.5,
+          "right": 378.5,
+          "top": 388.5,
+          "bottom": 417.5,
+          "obstructedBy": []
+        },
+        {
+          "name": "Local 4 (V4)",
+          "left": 614.5,
+          "right": 643.5,
+          "top": 516.5,
+          "bottom": 545.5,
+          "obstructedBy": []
+        },
+        {
+          "name": "Local 5 (V5)",
+          "left": 477.5,
+          "right": 506.5,
+          "top": 451.5,
+          "bottom": 480.5,
+          "obstructedBy": []
+        },
+        {
+          "name": "Local 6 (V6)",
+          "left": 351.5,
+          "right": 380.5,
+          "top": 525.5,
+          "bottom": 554.5,
+          "obstructedBy": []
+        },
+        {
+          "name": "Local 7 (V7)",
+          "left": 354.5,
+          "right": 383.5,
+          "top": 635.5,
+          "bottom": 664.5,
+          "obstructedBy": []
+        },
+        {
+          "name": "Local 8 (V8)",
+          "left": 576.5,
+          "right": 605.5,
+          "top": 611.5,
+          "bottom": 640.5,
+          "obstructedBy": []
+        },
+        {
+          "name": "Local 9 (V9)",
+          "left": 493.5,
+          "right": 522.5,
+          "top": 364.5,
+          "bottom": 393.5,
+          "obstructedBy": []
+        },
+        {
+          "name": "Local 10 (V10)",
+          "left": 579.5,
+          "right": 608.5,
+          "top": 442.5,
+          "bottom": 471.5,
+          "obstructedBy": []
+        },
+        {
+          "name": "Local 11 (V11)",
+          "left": 517.5,
+          "right": 546.5,
+          "top": 522.5,
+          "bottom": 551.5,
+          "obstructedBy": []
+        },
+        {
+          "name": "Local 12 (V12)",
+          "left": 391.5,
+          "right": 420.5,
+          "top": 456.5,
+          "bottom": 485.5,
+          "obstructedBy": []
+        },
+        {
+          "name": "Local 13 (V13)",
+          "left": 439.5,
+          "right": 468.5,
+          "top": 518.5,
+          "bottom": 547.5,
+          "obstructedBy": []
+        },
+        {
+          "name": "Local 14 (V14)",
+          "left": 489.5,
+          "right": 518.5,
+          "top": 656.5,
+          "bottom": 685.5,
+          "obstructedBy": []
+        },
+        {
+          "name": "Local 15 (V15)",
+          "left": 422.5,
+          "right": 451.5,
+          "top": 633.5,
+          "bottom": 662.5,
+          "obstructedBy": []
+        },
+        {
+          "name": "Local 16 (V16)",
+          "left": 410.5,
+          "right": 439.5,
+          "top": 573.5,
+          "bottom": 602.5,
+          "obstructedBy": []
+        },
+        {
+          "name": "Local 17 (V17)",
+          "left": 567.5,
+          "right": 596.5,
+          "top": 551.5,
+          "bottom": 580.5,
+          "obstructedBy": []
+        },
+        {
+          "name": "Local 18 (V18)",
+          "left": 527.5,
+          "right": 556.5,
+          "top": 588.5,
+          "bottom": 617.5,
+          "obstructedBy": []
+        },
+        {
+          "name": "Local 19 (V19)",
+          "left": 352.5,
+          "right": 381.5,
+          "top": 581.5,
+          "bottom": 610.5,
+          "obstructedBy": []
+        },
+        {
+          "name": "Local 20 (V20)",
+          "left": 565.5,
+          "right": 594.5,
+          "top": 494.5,
+          "bottom": 523.5,
+          "obstructedBy": []
+        },
+        {
+          "name": "Cargador 3 (C3)",
+          "left": 425,
+          "right": 449,
+          "top": 602,
+          "bottom": 626,
+          "obstructedBy": []
+        },
+        {
+          "name": "Cargador 9 (C9)",
+          "left": 550,
+          "right": 574,
+          "top": 367,
+          "bottom": 391,
+          "obstructedBy": []
+        }
+      ],
+      "obstruction": [],
+      "materials": {
+        "glass": {
+          "background": "rgba(255, 255, 255, 0.88)",
+          "backdropFilter": "blur(18px) saturate(1.3)",
+          "border": "rgba(255, 255, 255, 0.86)",
+          "color": "rgb(29, 41, 56)"
+        },
+        "summary": {
+          "background": "rgb(255, 255, 255)",
+          "backdropFilter": "none",
+          "border": "rgb(224, 229, 235)",
+          "color": "rgb(29, 41, 56)"
+        },
+        "card": {
+          "background": "rgb(255, 255, 255)",
+          "backdropFilter": "none",
+          "border": "rgb(221, 228, 237)",
+          "color": "rgb(29, 41, 56)"
+        },
+        "legend": {
+          "background": "rgb(255, 255, 255)",
+          "backdropFilter": "none",
+          "border": "rgb(219, 226, 233)",
+          "color": "rgb(82, 98, 118)"
+        }
+      }
+    },
+    {
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "documentWidth": 390,
+      "bodyWidth": 390,
+      "map": {
+        "left": 0,
+        "right": 390,
+        "top": 61,
+        "bottom": 611,
+        "width": 390,
+        "height": 550
+      },
+      "summary": {
+        "left": 14,
+        "right": 376,
+        "top": 76,
+        "bottom": 166.1875,
+        "width": 362,
+        "height": 90.1875
+      },
+      "summaryInside": true,
+      "mapReady": "true",
+      "mapStatus": "",
+      "pins": [
+        {
+          "name": "Centro de distribución (BASE)",
+          "left": 140,
+          "right": 176,
+          "top": 347,
+          "bottom": 383,
+          "obstructedBy": []
+        },
+        {
+          "name": "Local 1 (V1)",
+          "left": 173.5,
+          "right": 202.5,
+          "top": 416.5,
+          "bottom": 445.5,
+          "obstructedBy": []
+        },
+        {
+          "name": "Local 2 (V2)",
+          "left": 247.5,
+          "right": 276.5,
+          "top": 259.5,
+          "bottom": 288.5,
+          "obstructedBy": []
+        },
+        {
+          "name": "Local 3 (V3)",
+          "left": 88.5,
+          "right": 117.5,
+          "top": 278.5,
+          "bottom": 307.5,
+          "obstructedBy": []
+        },
+        {
+          "name": "Local 4 (V4)",
+          "left": 270.5,
+          "right": 299.5,
+          "top": 366.5,
+          "bottom": 395.5,
+          "obstructedBy": []
+        },
+        {
+          "name": "Local 5 (V5)",
+          "left": 176.5,
+          "right": 205.5,
+          "top": 321.5,
+          "bottom": 350.5,
+          "obstructedBy": []
+        },
+        {
+          "name": "Local 6 (V6)",
+          "left": 90.5,
+          "right": 119.5,
+          "top": 372.5,
+          "bottom": 401.5,
+          "obstructedBy": []
+        },
+        {
+          "name": "Local 7 (V7)",
+          "left": 91.5,
+          "right": 120.5,
+          "top": 447.5,
+          "bottom": 476.5,
+          "obstructedBy": []
+        },
+        {
+          "name": "Local 8 (V8)",
+          "left": 243.5,
+          "right": 272.5,
+          "top": 431.5,
+          "bottom": 460.5,
+          "obstructedBy": []
+        },
+        {
+          "name": "Local 9 (V9)",
+          "left": 186.5,
+          "right": 215.5,
+          "top": 262.5,
+          "bottom": 291.5,
+          "obstructedBy": []
+        },
+        {
+          "name": "Local 10 (V10)",
+          "left": 245.5,
+          "right": 274.5,
+          "top": 315.5,
+          "bottom": 344.5,
+          "obstructedBy": []
+        },
+        {
+          "name": "Local 11 (V11)",
+          "left": 203.5,
+          "right": 232.5,
+          "top": 370.5,
+          "bottom": 399.5,
+          "obstructedBy": []
+        },
+        {
+          "name": "Local 12 (V12)",
+          "left": 116.5,
+          "right": 145.5,
+          "top": 325.5,
+          "bottom": 354.5,
+          "obstructedBy": []
+        },
+        {
+          "name": "Local 13 (V13)",
+          "left": 149.5,
+          "right": 178.5,
+          "top": 368.5,
+          "bottom": 397.5,
+          "obstructedBy": []
+        },
+        {
+          "name": "Local 14 (V14)",
+          "left": 184.5,
+          "right": 213.5,
+          "top": 462.5,
+          "bottom": 491.5,
+          "obstructedBy": []
+        },
+        {
+          "name": "Local 15 (V15)",
+          "left": 138.5,
+          "right": 167.5,
+          "top": 446.5,
+          "bottom": 475.5,
+          "obstructedBy": []
+        },
+        {
+          "name": "Local 16 (V16)",
+          "left": 130.5,
+          "right": 159.5,
+          "top": 405.5,
+          "bottom": 434.5,
+          "obstructedBy": []
+        },
+        {
+          "name": "Local 17 (V17)",
+          "left": 238.5,
+          "right": 267.5,
+          "top": 390.5,
+          "bottom": 419.5,
+          "obstructedBy": []
+        },
+        {
+          "name": "Local 18 (V18)",
+          "left": 210.5,
+          "right": 239.5,
+          "top": 415.5,
+          "bottom": 444.5,
+          "obstructedBy": []
+        },
+        {
+          "name": "Local 19 (V19)",
+          "left": 90.5,
+          "right": 119.5,
+          "top": 410.5,
+          "bottom": 439.5,
+          "obstructedBy": []
+        },
+        {
+          "name": "Local 20 (V20)",
+          "left": 236.5,
+          "right": 265.5,
+          "top": 351.5,
+          "bottom": 380.5,
+          "obstructedBy": []
+        },
+        {
+          "name": "Cargador 3 (C3)",
+          "left": 141,
+          "right": 165,
+          "top": 426,
+          "bottom": 450,
+          "obstructedBy": []
+        },
+        {
+          "name": "Cargador 9 (C9)",
+          "left": 226,
+          "right": 250,
+          "top": 265,
+          "bottom": 289,
+          "obstructedBy": []
+        }
+      ],
+      "obstruction": [],
+      "materials": {
+        "glass": {
+          "background": "rgba(255, 255, 255, 0.88)",
+          "backdropFilter": "blur(18px) saturate(1.3)",
+          "border": "rgba(255, 255, 255, 0.86)",
+          "color": "rgb(29, 41, 56)"
+        },
+        "summary": {
+          "background": "rgb(255, 255, 255)",
+          "backdropFilter": "none",
+          "border": "rgb(224, 229, 235)",
+          "color": "rgb(29, 41, 56)"
+        },
+        "card": {
+          "background": "rgb(255, 255, 255)",
+          "backdropFilter": "none",
+          "border": "rgb(221, 228, 237)",
+          "color": "rgb(29, 41, 56)"
+        },
+        "legend": {
+          "background": "rgb(255, 255, 255)",
+          "backdropFilter": "none",
+          "border": "rgb(219, 226, 233)",
+          "color": "rgb(82, 98, 118)"
+        }
+      }
+    },
+    {
+      "viewport": {
+        "width": 319,
+        "height": 859
+      },
+      "documentWidth": 319,
+      "bodyWidth": 319,
+      "map": {
+        "left": 0,
+        "right": 319,
+        "top": 61,
+        "bottom": 611,
+        "width": 319,
+        "height": 550
+      },
+      "summary": {
+        "left": 12,
+        "right": 307,
+        "top": 76,
+        "bottom": 163,
+        "width": 295,
+        "height": 87
+      },
+      "summaryInside": true,
+      "mapReady": "true",
+      "mapStatus": "",
+      "pins": [
+        {
+          "name": "Centro de distribución (BASE)",
+          "left": 104,
+          "right": 140,
+          "top": 347,
+          "bottom": 383,
+          "obstructedBy": []
+        },
+        {
+          "name": "Local 1 (V1)",
+          "left": 137.5,
+          "right": 166.5,
+          "top": 416.5,
+          "bottom": 445.5,
+          "obstructedBy": []
+        },
+        {
+          "name": "Local 2 (V2)",
+          "left": 212.5,
+          "right": 241.5,
+          "top": 259.5,
+          "bottom": 288.5,
+          "obstructedBy": []
+        },
+        {
+          "name": "Local 3 (V3)",
+          "left": 52.5,
+          "right": 81.5,
+          "top": 278.5,
+          "bottom": 307.5,
+          "obstructedBy": []
+        },
+        {
+          "name": "Local 4 (V4)",
+          "left": 234.5,
+          "right": 263.5,
+          "top": 366.5,
+          "bottom": 395.5,
+          "obstructedBy": []
+        },
+        {
+          "name": "Local 5 (V5)",
+          "left": 140.5,
+          "right": 169.5,
+          "top": 321.5,
+          "bottom": 350.5,
+          "obstructedBy": []
+        },
+        {
+          "name": "Local 6 (V6)",
+          "left": 54.5,
+          "right": 83.5,
+          "top": 372.5,
+          "bottom": 401.5,
+          "obstructedBy": []
+        },
+        {
+          "name": "Local 7 (V7)",
+          "left": 56.5,
+          "right": 85.5,
+          "top": 447.5,
+          "bottom": 476.5,
+          "obstructedBy": []
+        },
+        {
+          "name": "Local 8 (V8)",
+          "left": 208.5,
+          "right": 237.5,
+          "top": 431.5,
+          "bottom": 460.5,
+          "obstructedBy": []
+        },
+        {
+          "name": "Local 9 (V9)",
+          "left": 151.5,
+          "right": 180.5,
+          "top": 262.5,
+          "bottom": 291.5,
+          "obstructedBy": []
+        },
+        {
+          "name": "Local 10 (V10)",
+          "left": 210.5,
+          "right": 239.5,
+          "top": 315.5,
+          "bottom": 344.5,
+          "obstructedBy": []
+        },
+        {
+          "name": "Local 11 (V11)",
+          "left": 168.5,
+          "right": 197.5,
+          "top": 370.5,
+          "bottom": 399.5,
+          "obstructedBy": []
+        },
+        {
+          "name": "Local 12 (V12)",
+          "left": 81.5,
+          "right": 110.5,
+          "top": 325.5,
+          "bottom": 354.5,
+          "obstructedBy": []
+        },
+        {
+          "name": "Local 13 (V13)",
+          "left": 114.5,
+          "right": 143.5,
+          "top": 368.5,
+          "bottom": 397.5,
+          "obstructedBy": []
+        },
+        {
+          "name": "Local 14 (V14)",
+          "left": 148.5,
+          "right": 177.5,
+          "top": 462.5,
+          "bottom": 491.5,
+          "obstructedBy": []
+        },
+        {
+          "name": "Local 15 (V15)",
+          "left": 102.5,
+          "right": 131.5,
+          "top": 446.5,
+          "bottom": 475.5,
+          "obstructedBy": []
+        },
+        {
+          "name": "Local 16 (V16)",
+          "left": 94.5,
+          "right": 123.5,
+          "top": 405.5,
+          "bottom": 434.5,
+          "obstructedBy": []
+        },
+        {
+          "name": "Local 17 (V17)",
+          "left": 202.5,
+          "right": 231.5,
+          "top": 390.5,
+          "bottom": 419.5,
+          "obstructedBy": []
+        },
+        {
+          "name": "Local 18 (V18)",
+          "left": 174.5,
+          "right": 203.5,
+          "top": 415.5,
+          "bottom": 444.5,
+          "obstructedBy": []
+        },
+        {
+          "name": "Local 19 (V19)",
+          "left": 55.5,
+          "right": 84.5,
+          "top": 410.5,
+          "bottom": 439.5,
+          "obstructedBy": []
+        },
+        {
+          "name": "Local 20 (V20)",
+          "left": 200.5,
+          "right": 229.5,
+          "top": 351.5,
+          "bottom": 380.5,
+          "obstructedBy": []
+        },
+        {
+          "name": "Cargador 3 (C3)",
+          "left": 105,
+          "right": 129,
+          "top": 426,
+          "bottom": 450,
+          "obstructedBy": []
+        },
+        {
+          "name": "Cargador 9 (C9)",
+          "left": 191,
+          "right": 215,
+          "top": 265,
+          "bottom": 289,
+          "obstructedBy": []
+        }
+      ],
+      "obstruction": [],
+      "materials": {
+        "glass": {
+          "background": "rgba(255, 255, 255, 0.88)",
+          "backdropFilter": "blur(18px) saturate(1.3)",
+          "border": "rgba(255, 255, 255, 0.86)",
+          "color": "rgb(29, 41, 56)"
+        },
+        "summary": {
+          "background": "rgb(255, 255, 255)",
+          "backdropFilter": "none",
+          "border": "rgb(224, 229, 235)",
+          "color": "rgb(29, 41, 56)"
+        },
+        "card": {
+          "background": "rgb(255, 255, 255)",
+          "backdropFilter": "none",
+          "border": "rgb(221, 228, 237)",
+          "color": "rgb(29, 41, 56)"
+        },
+        "legend": {
+          "background": "rgb(255, 255, 255)",
+          "backdropFilter": "none",
+          "border": "rgb(219, 226, 233)",
+          "color": "rgb(82, 98, 118)"
+        }
+      }
+    }
+  ],
+  "errors": [],
+  "httpErrors": [],
+  "requestsFailed": [
+    {
+      "url": "https://tiles.openfreemap.org/planet/20261011_080001_pt/12/1093/1516.pbf",
+      "failure": "net::ERR_ABORTED"
+    },
+    {
+      "url": "https://tiles.openfreemap.org/planet/20261011_080001_pt/12/1093/1517.pbf",
+      "failure": "net::ERR_ABORTED"
+    },
+    {
+      "url": "https://tiles.openfreemap.org/planet/20261011_080001_pt/12/1093/1515.pbf",
+      "failure": "net::ERR_ABORTED"
+    },
+    {
+      "url": "https://tiles.openfreemap.org/planet/20261011_080001_pt/12/1094/1515.pbf",
+      "failure": "net::ERR_ABORTED"
+    },
+    {
+      "url": "https://tiles.openfreemap.org/planet/20261011_080001_pt/12/1095/1515.pbf",
+      "failure": "net::ERR_ABORTED"
+    },
+    {
+      "url": "https://tiles.openfreemap.org/planet/20261011_080001_pt/12/1094/1515.pbf",
+      "failure": "net::ERR_ABORTED"
+    },
+    {
+      "url": "https://tiles.openfreemap.org/planet/20261011_080001_pt/12/1095/1515.pbf",
+      "failure": "net::ERR_ABORTED"
+    },
+    {
+      "url": "https://tiles.openfreemap.org/planet/20261011_080001_pt/12/1093/1516.pbf",
+      "failure": "net::ERR_ABORTED"
+    },
+    {
+      "url": "https://tiles.openfreemap.org/planet/20261011_080001_pt/12/1093/1517.pbf",
+      "failure": "net::ERR_ABORTED"
+    },
+    {
+      "url": "https://tiles.openfreemap.org/planet/20261011_080001_pt/12/1093/1515.pbf",
+      "failure": "net::ERR_ABORTED"
+    },
+    {
+      "url": "https://tiles.openfreemap.org/planet/20261011_080001_pt/12/1096/1516.pbf",
+      "failure": "net::ERR_ABORTED"
+    },
+    {
+      "url": "https://tiles.openfreemap.org/planet/20261011_080001_pt/12/1096/1515.pbf",
+      "failure": "net::ERR_ABORTED"
+    }
+  ],
+  "finishedAt": "2026-10-15T04:32:01.772Z"
+}

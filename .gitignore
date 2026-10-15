@@ -1,0 +1,56 @@
+# ── Datasets eVED (GB, superan el límite de 100MB de GitHub) ──
+# Se descargan aparte; ver CONTINUAR-DESDE-CASA.md
+Electromovilidad/eVED_ICE.csv
+Electromovilidad/eVED_PHEV_HEV.csv
+Electromovilidad/eVED_EV.csv
+Electromovilidad/__MACOSX/
+*.zip
+
+# Mantener SÍ los CSV pequeños del desafío (nodos, vehicle_types):
+!Electromovilidad/competition_routing_nodes.csv
+!Electromovilidad/evaluation_routing_nodes.csv
+!Electromovilidad/vehicle_types.csv
+
+# ── Entornos virtuales (se recrean con pip/uv) ──
+.venv/
+venv/
+env/
+
+# ── Repos git anidados (se incluyen como código, no como submódulos) ──
+web-login/.git/
+
+# ── Cachés y temporales de Python ──
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+*.egg-info/
+.ipynb_checkpoints/
+
+# ── Bases de datos locales de la auth (no versionar credenciales/datos) ──
+*.db
+*.db-wal
+*.db-shm
+**/server/data/
+
+# ── Datos generados / locales de las UIs ──
+*.local.json
+osrm-*.json
+fixture.local.json
+
+# ── Secretos (defensa en profundidad) ──
+.env
+*.pem
+*.key
+id_ed25519*
+.aws/
+
+# ── Resultados y artefactos de ejecución ──
+results/
+*.log
+
+# ── SO / editor ──
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

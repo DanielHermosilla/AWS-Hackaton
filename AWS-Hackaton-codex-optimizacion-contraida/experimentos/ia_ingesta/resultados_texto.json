@@ -1,0 +1,50 @@
+{
+  "corpus_casos": 23,
+  "corpus_pedidos": 40,
+  "resultados": [
+    {
+      "modelo": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+      "casos": 23,
+      "pedidos_esperados": 40,
+      "pedidos_extraidos": 40,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "exactitud_cantidad": 1.0,
+      "exactitud_ventana": 1.0,
+      "pct_geocodificado": 0.925,
+      "error_geo_mediana_m": 0.0,
+      "error_geo_p90_m": 0.0,
+      "error_geo_max_m": 0.0,
+      "latencia_p50_s": 2.08,
+      "latencia_p95_s": 2.79,
+      "tokens_in": 28581,
+      "tokens_out": 5352,
+      "tokens_total": 33933,
+      "modalidad": "texto",
+      "segundos_totales": 48.6
+    },
+    {
+      "modelo": "us.anthropic.claude-sonnet-4-6",
+      "casos": 23,
+      "pedidos_esperados": 40,
+      "pedidos_extraidos": 40,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "exactitud_cantidad": 1.0,
+      "exactitud_ventana": 1.0,
+      "pct_geocodificado": 0.925,
+      "error_geo_mediana_m": 0.0,
+      "error_geo_p90_m": 0.0,
+      "error_geo_max_m": 0.0,
+      "latencia_p50_s": 2.08,
+      "latencia_p95_s": 3.23,
+      "tokens_in": 27983,
+      "tokens_out": 4624,
+      "tokens_total": 32607,
+      "modalidad": "texto",
+      "segundos_totales": 52.9
+    }
+  ]
+}

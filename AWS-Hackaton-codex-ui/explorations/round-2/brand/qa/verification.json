@@ -1,0 +1,627 @@
+{
+  "tested_at_utc": "2026-10-15T02:28:16.371Z",
+  "scope": "Brand round 2 only; isolated local headless Chrome, synthetic gallery, no Kiro/engine/services",
+  "checks": [
+    {
+      "name": "local_page_200",
+      "passed": true,
+      "evidence": 200
+    },
+    {
+      "name": "12_large_logos",
+      "passed": true,
+      "evidence": {
+        "x": 49,
+        "y": 529.265625,
+        "width": 434,
+        "height": 222
+      }
+    },
+    {
+      "name": "filter_typographic",
+      "passed": true,
+      "evidence": [
+        "01-zmd-conectado",
+        "02-zmd-bateria",
+        "03-zmd-recorrido",
+        "04-zmd-electrico"
+      ]
+    },
+    {
+      "name": "filter_monogram",
+      "passed": true,
+      "evidence": [
+        "05-z-enchufada",
+        "06-z-bateria",
+        "07-z-cargador",
+        "08-z-ruta-carga"
+      ]
+    },
+    {
+      "name": "filter_symbol",
+      "passed": true,
+      "evidence": [
+        "09-vehiculo-electrico",
+        "10-enchufe-z",
+        "11-bateria-retorno",
+        "12-punto-carga"
+      ]
+    },
+    {
+      "name": "dark_green_palette",
+      "passed": true,
+      "evidence": "rgb(96, 223, 177)"
+    },
+    {
+      "name": "monochrome_dark",
+      "passed": true,
+      "evidence": "rgb(245, 248, 252)"
+    },
+    {
+      "name": "keyboard_detail",
+      "passed": true,
+      "evidence": "Z enchufada"
+    },
+    {
+      "name": "download_current_palette",
+      "passed": true,
+      "evidence": "05-z-enchufada-light-blue.svg"
+    },
+    {
+      "name": "escape_closes_and_restores_focus",
+      "passed": true,
+      "evidence": true
+    },
+    {
+      "name": "36_svg_bounds",
+      "passed": true,
+      "evidence": []
+    },
+    {
+      "name": "mobile_390_no_overflow",
+      "passed": true,
+      "evidence": {
+        "viewport": 390,
+        "scroll_width": 390
+      }
+    },
+    {
+      "name": "mobile_detail_no_overflow",
+      "passed": true,
+      "evidence": {
+        "x": 19,
+        "y": 68.5,
+        "width": 352,
+        "height": 706.984375
+      }
+    },
+    {
+      "name": "mobile_320_no_overflow",
+      "passed": true,
+      "evidence": {
+        "viewport": 320,
+        "scroll_width": 320
+      }
+    },
+    {
+      "name": "no_page_errors",
+      "passed": true,
+      "evidence": []
+    },
+    {
+      "name": "no_remote_requests",
+      "passed": true,
+      "evidence": []
+    }
+  ],
+  "errors": [],
+  "remote_requests": [],
+  "browser": "155.0.8059.79",
+  "bounds": [
+    {
+      "path": "assets/01-zmd-conectado/logo-light.svg",
+      "x": 73,
+      "y": 20,
+      "width": 168,
+      "height": 104,
+      "viewBox": [
+        0,
+        0,
+        320,
+        144
+      ],
+      "inside": true
+    },
+    {
+      "path": "assets/01-zmd-conectado/logo-dark.svg",
+      "x": 73,
+      "y": 20,
+      "width": 168,
+      "height": 104,
+      "viewBox": [
+        0,
+        0,
+        320,
+        144
+      ],
+      "inside": true
+    },
+    {
+      "path": "assets/01-zmd-conectado/symbol.svg",
+      "x": 10,
+      "y": 8,
+      "width": 36.20000076293945,
+      "height": 52,
+      "viewBox": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "inside": true
+    },
+    {
+      "path": "assets/02-zmd-bateria/logo-light.svg",
+      "x": 61,
+      "y": 22,
+      "width": 192,
+      "height": 102,
+      "viewBox": [
+        0,
+        0,
+        320,
+        144
+      ],
+      "inside": true
+    },
+    {
+      "path": "assets/02-zmd-bateria/logo-dark.svg",
+      "x": 61,
+      "y": 22,
+      "width": 192,
+      "height": 102,
+      "viewBox": [
+        0,
+        0,
+        320,
+        144
+      ],
+      "inside": true
+    },
+    {
+      "path": "assets/02-zmd-bateria/symbol.svg",
+      "x": 5,
+      "y": 14,
+      "width": 55,
+      "height": 36,
+      "viewBox": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "inside": true
+    },
+    {
+      "path": "assets/03-zmd-recorrido/logo-light.svg",
+      "x": 84,
+      "y": 29,
+      "width": 151,
+      "height": 80,
+      "viewBox": [
+        0,
+        0,
+        320,
+        144
+      ],
+      "inside": true
+    },
+    {
+      "path": "assets/03-zmd-recorrido/logo-dark.svg",
+      "x": 84,
+      "y": 29,
+      "width": 151,
+      "height": 80,
+      "viewBox": [
+        0,
+        0,
+        320,
+        144
+      ],
+      "inside": true
+    },
+    {
+      "path": "assets/03-zmd-recorrido/symbol.svg",
+      "x": 12,
+      "y": 8,
+      "width": 40,
+      "height": 48,
+      "viewBox": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "inside": true
+    },
+    {
+      "path": "assets/04-zmd-electrico/logo-light.svg",
+      "x": 82,
+      "y": 29,
+      "width": 154,
+      "height": 80,
+      "viewBox": [
+        0,
+        0,
+        320,
+        144
+      ],
+      "inside": true
+    },
+    {
+      "path": "assets/04-zmd-electrico/logo-dark.svg",
+      "x": 82,
+      "y": 29,
+      "width": 154,
+      "height": 80,
+      "viewBox": [
+        0,
+        0,
+        320,
+        144
+      ],
+      "inside": true
+    },
+    {
+      "path": "assets/04-zmd-electrico/symbol.svg",
+      "x": 11,
+      "y": 8,
+      "width": 42,
+      "height": 48,
+      "viewBox": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "inside": true
+    },
+    {
+      "path": "assets/05-z-enchufada/logo-light.svg",
+      "x": 44,
+      "y": 32,
+      "width": 232,
+      "height": 71,
+      "viewBox": [
+        0,
+        0,
+        320,
+        144
+      ],
+      "inside": true
+    },
+    {
+      "path": "assets/05-z-enchufada/logo-dark.svg",
+      "x": 44,
+      "y": 32,
+      "width": 232,
+      "height": 71,
+      "viewBox": [
+        0,
+        0,
+        320,
+        144
+      ],
+      "inside": true
+    },
+    {
+      "path": "assets/05-z-enchufada/symbol.svg",
+      "x": 8,
+      "y": 7,
+      "width": 52,
+      "height": 46,
+      "viewBox": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "inside": true
+    },
+    {
+      "path": "assets/06-z-bateria/logo-light.svg",
+      "x": 49,
+      "y": 32,
+      "width": 227,
+      "height": 71,
+      "viewBox": [
+        0,
+        0,
+        320,
+        144
+      ],
+      "inside": true
+    },
+    {
+      "path": "assets/06-z-bateria/logo-dark.svg",
+      "x": 49,
+      "y": 32,
+      "width": 227,
+      "height": 71,
+      "viewBox": [
+        0,
+        0,
+        320,
+        144
+      ],
+      "inside": true
+    },
+    {
+      "path": "assets/06-z-bateria/symbol.svg",
+      "x": 13,
+      "y": 4,
+      "width": 38,
+      "height": 54,
+      "viewBox": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "inside": true
+    },
+    {
+      "path": "assets/07-z-cargador/logo-light.svg",
+      "x": 44,
+      "y": 32,
+      "width": 232,
+      "height": 71,
+      "viewBox": [
+        0,
+        0,
+        320,
+        144
+      ],
+      "inside": true
+    },
+    {
+      "path": "assets/07-z-cargador/logo-dark.svg",
+      "x": 44,
+      "y": 32,
+      "width": 232,
+      "height": 71,
+      "viewBox": [
+        0,
+        0,
+        320,
+        144
+      ],
+      "inside": true
+    },
+    {
+      "path": "assets/07-z-cargador/symbol.svg",
+      "x": 8,
+      "y": 8,
+      "width": 49,
+      "height": 49,
+      "viewBox": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "inside": true
+    },
+    {
+      "path": "assets/08-z-ruta-carga/logo-light.svg",
+      "x": 44,
+      "y": 32,
+      "width": 232,
+      "height": 71,
+      "viewBox": [
+        0,
+        0,
+        320,
+        144
+      ],
+      "inside": true
+    },
+    {
+      "path": "assets/08-z-ruta-carga/logo-dark.svg",
+      "x": 44,
+      "y": 32,
+      "width": 232,
+      "height": 71,
+      "viewBox": [
+        0,
+        0,
+        320,
+        144
+      ],
+      "inside": true
+    },
+    {
+      "path": "assets/08-z-ruta-carga/symbol.svg",
+      "x": 8,
+      "y": 8,
+      "width": 54,
+      "height": 48,
+      "viewBox": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "inside": true
+    },
+    {
+      "path": "assets/09-vehiculo-electrico/logo-light.svg",
+      "x": 43,
+      "y": 32,
+      "width": 233,
+      "height": 71,
+      "viewBox": [
+        0,
+        0,
+        320,
+        144
+      ],
+      "inside": true
+    },
+    {
+      "path": "assets/09-vehiculo-electrico/logo-dark.svg",
+      "x": 43,
+      "y": 32,
+      "width": 233,
+      "height": 71,
+      "viewBox": [
+        0,
+        0,
+        320,
+        144
+      ],
+      "inside": true
+    },
+    {
+      "path": "assets/09-vehiculo-electrico/symbol.svg",
+      "x": 7,
+      "y": 5,
+      "width": 55,
+      "height": 44,
+      "viewBox": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "inside": true
+    },
+    {
+      "path": "assets/10-enchufe-z/logo-light.svg",
+      "x": 52,
+      "y": 32,
+      "width": 224,
+      "height": 71,
+      "viewBox": [
+        0,
+        0,
+        320,
+        144
+      ],
+      "inside": true
+    },
+    {
+      "path": "assets/10-enchufe-z/logo-dark.svg",
+      "x": 52,
+      "y": 32,
+      "width": 224,
+      "height": 71,
+      "viewBox": [
+        0,
+        0,
+        320,
+        144
+      ],
+      "inside": true
+    },
+    {
+      "path": "assets/10-enchufe-z/symbol.svg",
+      "x": 16,
+      "y": 6,
+      "width": 32,
+      "height": 51,
+      "viewBox": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "inside": true
+    },
+    {
+      "path": "assets/11-bateria-retorno/logo-light.svg",
+      "x": 45,
+      "y": 32,
+      "width": 231,
+      "height": 71,
+      "viewBox": [
+        0,
+        0,
+        320,
+        144
+      ],
+      "inside": true
+    },
+    {
+      "path": "assets/11-bateria-retorno/logo-dark.svg",
+      "x": 45,
+      "y": 32,
+      "width": 231,
+      "height": 71,
+      "viewBox": [
+        0,
+        0,
+        320,
+        144
+      ],
+      "inside": true
+    },
+    {
+      "path": "assets/11-bateria-retorno/symbol.svg",
+      "x": 9,
+      "y": 7.111605644226074,
+      "width": 46,
+      "height": 51.77678680419922,
+      "viewBox": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "inside": true
+    },
+    {
+      "path": "assets/12-punto-carga/logo-light.svg",
+      "x": 46,
+      "y": 32,
+      "width": 230,
+      "height": 71,
+      "viewBox": [
+        0,
+        0,
+        320,
+        144
+      ],
+      "inside": true
+    },
+    {
+      "path": "assets/12-punto-carga/logo-dark.svg",
+      "x": 46,
+      "y": 32,
+      "width": 230,
+      "height": 71,
+      "viewBox": [
+        0,
+        0,
+        320,
+        144
+      ],
+      "inside": true
+    },
+    {
+      "path": "assets/12-punto-carga/symbol.svg",
+      "x": 10,
+      "y": 5,
+      "width": 44,
+      "height": 54,
+      "viewBox": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "inside": true
+    }
+  ],
+  "passed": true
+}

@@ -1,0 +1,137 @@
+{
+  "date": "2026-10-15T02:28:15.867Z",
+  "checks": [
+    {
+      "name": "mapa13stops",
+      "pass": true
+    },
+    {
+      "name": "mapaCharge22to50.1",
+      "pass": true
+    },
+    {
+      "name": "mapa60chargers",
+      "pass": true
+    },
+    {
+      "name": "recorridoChargeDetail",
+      "pass": true
+    },
+    {
+      "name": "recorridoSwitchResets",
+      "pass": true
+    },
+    {
+      "name": "recorridoSecondVehicleCharge",
+      "pass": true
+    },
+    {
+      "name": "recorridoPauseStops",
+      "pass": true
+    },
+    {
+      "name": "20uniqueDeliveries",
+      "pass": true
+    },
+    {
+      "name": "batteryArithmeticFixtureOnly",
+      "pass": true
+    }
+  ],
+  "views": [
+    {
+      "name": "mapa",
+      "width": 1440,
+      "errors": [],
+      "failed": [],
+      "overflow": false,
+      "mapStatus": ""
+    },
+    {
+      "name": "mapa",
+      "width": 900,
+      "overflow": false
+    },
+    {
+      "name": "mapa",
+      "width": 390,
+      "errors": [],
+      "failed": [],
+      "overflow": false
+    },
+    {
+      "name": "recorrido",
+      "width": 1440,
+      "errors": [],
+      "failed": [
+        "https://tiles.openfreemap.org/planet/20261011_080001_pt/12/1094/1516.pbf",
+        "https://tiles.openfreemap.org/planet/20261011_080001_pt/12/1095/1516.pbf",
+        "https://tiles.openfreemap.org/planet/20261011_080001_pt/12/1094/1517.pbf",
+        "https://tiles.openfreemap.org/planet/20261011_080001_pt/12/1095/1517.pbf",
+        "https://tiles.openfreemap.org/planet/20261011_080001_pt/12/1093/1516.pbf",
+        "https://tiles.openfreemap.org/planet/20261011_080001_pt/12/1093/1517.pbf"
+      ],
+      "overflow": false,
+      "mapStatus": ""
+    },
+    {
+      "name": "recorrido",
+      "width": 900,
+      "overflow": false
+    },
+    {
+      "name": "recorrido",
+      "width": 390,
+      "errors": [],
+      "failed": [
+        "https://tiles.openfreemap.org/planet/20261011_080001_pt/12/1094/1516.pbf",
+        "https://tiles.openfreemap.org/planet/20261011_080001_pt/12/1095/1516.pbf",
+        "https://tiles.openfreemap.org/planet/20261011_080001_pt/12/1094/1517.pbf",
+        "https://tiles.openfreemap.org/planet/20261011_080001_pt/12/1095/1517.pbf",
+        "https://tiles.openfreemap.org/planet/20261011_080001_pt/12/1093/1516.pbf",
+        "https://tiles.openfreemap.org/planet/20261011_080001_pt/12/1093/1517.pbf"
+      ],
+      "overflow": false
+    },
+    {
+      "name": "despacho",
+      "width": 1440,
+      "errors": [],
+      "failed": [],
+      "overflow": false,
+      "mapStatus": ""
+    },
+    {
+      "name": "despacho",
+      "width": 900,
+      "overflow": false
+    },
+    {
+      "name": "despacho",
+      "width": 390,
+      "errors": [],
+      "failed": [],
+      "overflow": false
+    },
+    {
+      "name": "energia",
+      "width": 1440,
+      "errors": [],
+      "failed": [],
+      "overflow": false,
+      "mapStatus": ""
+    },
+    {
+      "name": "energia",
+      "width": 900,
+      "overflow": false
+    },
+    {
+      "name": "energia",
+      "width": 390,
+      "errors": [],
+      "failed": [],
+      "overflow": false
+    }
+  ]
+}

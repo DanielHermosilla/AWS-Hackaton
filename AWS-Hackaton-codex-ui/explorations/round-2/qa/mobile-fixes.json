@@ -1,0 +1,68 @@
+{
+  "at": "2026-10-15T03:34:11.439Z",
+  "results": [
+    {
+      "name": "despacho",
+      "width": 1440,
+      "overflow": false,
+      "nodeAttributionOverlap": false,
+      "carModelOverlap": false
+    },
+    {
+      "name": "despacho",
+      "width": 390,
+      "overflow": false,
+      "nodeAttributionOverlap": false,
+      "carModelOverlap": false
+    },
+    {
+      "name": "despacho",
+      "width": 319,
+      "overflow": false,
+      "nodeAttributionOverlap": false,
+      "carModelOverlap": false
+    },
+    {
+      "name": "energia",
+      "width": 1440,
+      "overflow": false,
+      "nodeAttributionOverlap": false,
+      "carModelOverlap": true
+    },
+    {
+      "name": "energia",
+      "width": 390,
+      "overflow": false,
+      "nodeAttributionOverlap": false,
+      "carModelOverlap": false
+    },
+    {
+      "name": "energia",
+      "width": 319,
+      "overflow": false,
+      "nodeAttributionOverlap": false,
+      "carModelOverlap": false
+    },
+    {
+      "name": "recorrido",
+      "width": 1440,
+      "overflow": false,
+      "nodeAttributionOverlap": false,
+      "carModelOverlap": false
+    },
+    {
+      "name": "recorrido",
+      "width": 390,
+      "overflow": false,
+      "nodeAttributionOverlap": false,
+      "carModelOverlap": false
+    },
+    {
+      "name": "recorrido",
+      "width": 319,
+      "overflow": false,
+      "nodeAttributionOverlap": false,
+      "carModelOverlap": false
+    }
+  ]
+}

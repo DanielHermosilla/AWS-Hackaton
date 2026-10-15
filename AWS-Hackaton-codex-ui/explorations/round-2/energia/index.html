@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://tiles.openfreemap.org; worker-src 'self' blob:; child-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#182724">
+    <title>Energía del recorrido · ZMD Mobility</title>
+    <link rel="stylesheet" href="../shared/base.css">
+    <link rel="stylesheet" href="./style.css">
+  </head>
+  <body class="energy-page">
+    <header class="app-header">
+      <a class="brand" href="/round-2/" aria-label="ZMD Mobility, volver a las exploraciones"><strong>ZMD</strong><span>Mobility</span></a>
+      <div class="header-actions">
+        <span class="example-label">Ejemplo de diseño</span>
+        <a class="back-link" href="/round-2/">Exploraciones <span aria-hidden="true">↗</span></a>
+      </div>
+    </header>
+
+    <main>
+      <div class="page-heading">
+        <div>
+          <p class="eyebrow">Flota eléctrica <span aria-hidden="true">/</span> <span id="scenario-name">Escenario</span></p>
+          <h1>Energía del recorrido</h1>
+        </div>
+        <div class="delivery-summary"><strong id="delivery-count">—</strong><span>entregas en<br>el ejemplo</span></div>
+      </div>
+
+      <div class="workspace">
+        <div class="energy-workspace">
+          <div id="vehicle-selector" class="vehicle-selector" role="group" aria-label="Vehículo del perfil de batería"></div>
+
+          <section class="chart-panel" aria-labelledby="chart-heading">
+            <div class="chart-heading">
+              <div><p class="section-kicker" id="active-model">Vehículo eléctrico</p><h2 id="chart-heading">Perfil de batería</h2></div>
+              <span class="chart-unit">Estado de carga · %</span>
+            </div>
+            <div class="chart-key"><span><i class="key-line" aria-hidden="true"></i>Recorrido</span><span><i class="key-charge" aria-hidden="true"></i>Recarga en parada</span></div>
+            <div id="soc-chart" class="soc-chart" aria-label="Perfil de batería por paradas"></div>
+            <p class="chart-hint">Selecciona un punto para ver su batería y ubicación.</p>
+            <div class="stop-detail" id="stop-detail"></div>
+          </section>
+
+          <section class="route-summary" aria-label="Energía de la ruta seleccionada" id="route-summary"></section>
+          <section class="sequence-panel" aria-labelledby="sequence-heading">
+            <div class="sequence-heading"><h2 id="sequence-heading">Paradas del recorrido</h2><span id="sequence-count">—</span></div>
+            <div id="stop-sequence" class="stop-sequence" aria-label="Seleccionar parada"></div>
+          </section>
+        </div>
+
+        <section class="map-panel" aria-labelledby="map-heading">
+          <div class="map-heading"><div><p class="section-kicker">La misma ruta, en el mapa</p><h2 id="map-heading">Recorrido por calles</h2></div><button type="button" class="fit-button" id="fit-map" aria-label="Encuadrar el recorrido completo">Ver ruta</button></div>
+          <div class="map-toolbar">
+            <div class="route-legend" id="route-legend" aria-label="Vehículos en el mapa"></div>
+            <label class="charger-toggle"><input type="checkbox" id="show-chargers"><span id="charger-label">Cargadores</span></label>
+          </div>
+          <div id="map" class="operational-map" aria-label="Mapa de base, entregas y cargadores"></div>
+          <div class="map-selection" id="map-selection"></div>
+          <p class="map-provenance">Calles reales · secuencia de demostración, sin optimizar.</p>
+        </section>
+      </div>
+
+      <footer class="page-footer"><span>Perfil energético ilustrativo. No es un resultado del motor ni una validación de factibilidad.</span><button id="show-source" type="button">Origen de los datos</button></footer>
+      <p class="sr-only" id="selection-status" role="status" aria-live="polite"></p>
+    </main>
+    <dialog id="source-dialog" aria-labelledby="source-heading">
+      <h2 id="source-heading">Este es un ejemplo de diseño</h2>
+      <p id="source-text"></p>
+      <p class="source-battery" id="source-battery"></p>
+      <div class="row"><button type="button" id="close-source">Entendido</button></div>
+    </dialog>
+    <noscript><p class="load-error">Activa JavaScript para explorar el perfil de batería y las paradas.</p></noscript>
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>

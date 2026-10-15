@@ -1,0 +1,17 @@
+# ZMD Mobility — identidad, ronda 02
+
+Exploración original del 15-10-2026. Encargo: doce logos nuevos, minimalistas, con ZMD protagonista y una relación visible con electromovilidad. Fuente: `PRODUCT.md` y feedback de Diego del 15-10. CASE es el cliente del desafío; ZMD Mobility es la consultora. Ninguna propuesta está aprobada.
+
+La página `index.html` compara cuatro nombres tipográficos, cuatro monogramas Z y cuatro símbolos reconocibles. Muestra logos grandes, filtra familias y permite comparar fondo claro/oscuro y negro/azul/verde. El detalle muestra el motivo, un riesgo concreto y la versión compacta a 20/32/64 px. Descargar o abrir un logo no indica una elección. Se puede abrir directamente el HTML o servirlo con cualquier servidor de archivos; no necesita build ni dependencias.
+
+Cada carpeta de `assets/` contiene `logo-light.svg`, `logo-dark.svg` y `symbol.svg`: 36 SVG entregables con fondo transparente. Las versiones completas usan negro/blanco y azul; los símbolos usan `currentColor` y se pueden recolorear. La descarga desde el detalle conserva la paleta visible. `manifest.json` es el inventario para integrar esta página en otra galería; `recommended` indica tres favoritas de esta revisión, no una decisión de Diego.
+
+ZMD y MOBILITY son trazados dibujados aquí, no una fuente convertida ni una dependencia de tipografía. `build.py` conserva los trazados, coordenadas y construcciones editables originales; utiliza solo la biblioteca estándar de Python. Las cuatro identidades tipográficas incluyen una derivación compacta con Z para usos donde el nombre completo no cabe. Esa versión debe acompañarse del nombre cuando aún no se conoce la marca. La tipografía de la página es la del sistema.
+
+La revisión visual favorece **01 ZMD conectado**, por integrar el enchufe en el propio nombre; **04 ZMD eléctrico**, por ser la composición más contenida; y **06 Z en batería**, por conservar una Z clara dentro de una batería reconocible a 20 px. Sus límites son distintos: el cable de 01 ocupa ancho; el rayo de 04 es menos literal que una batería y puede percibirse primero como Z; 06 utiliza una forma de batería habitual y tiene más masa visual. Son candidatas para comparar, no identidades definitivas.
+
+La ronda también conserva opciones más literales: 09 vehículo, 10 enchufe y 12 punto de carga. Comunican la categoría con rapidez, pero se acercan más a pictogramas comunes. En 03 las marcas de carril pierden nitidez a 20 px; en 07 se reconoce antes el cargador que su letra; en 09 las clavijas pequeñas pierden precisión. En 11 las flechas pueden sugerir reciclaje o regeneración: el texto se limita a batería y regreso del vehículo y no declara recuperación energética ni ahorro medido.
+
+QA guardada en `qa/`: estructura XML, límites renderizados de los 36 SVG, captura general clara y oscura, prueba óptica a 20/32/80 px en ambos fondos, móvil a 390 px y detalle, y resultados de filtros, color, teclado/Escape/foco y descarga. También se comprobó ausencia de desborde a 320 px. Se usó Chrome headless local con Playwright, sin Kiro, motor ni servicios externos. La evidencia es una revisión de render y funcionamiento de esta galería; no es una prueba con usuarios, una investigación de marcas registradas ni una garantía de exclusividad.
+
+Para regenerar assets: `python3 build.py`. Para regenerar la prueba óptica y comprobar XML: `python3 qa/check-structure.py`. `qa/render.cjs` conserva el runner de Chrome usado en este entorno; sus rutas de runtime son locales y no son dependencias de la galería.

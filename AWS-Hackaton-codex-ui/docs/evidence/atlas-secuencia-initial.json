@@ -1,0 +1,134 @@
+[
+  {
+    "status": "fulfilled",
+    "value": {
+      "name": "atlas",
+      "errors": [],
+      "requests": [],
+      "states": [
+        {
+          "state": "partial",
+          "status": "Sólo diagnóstico",
+          "energy": "—",
+          "served": "6 / 8",
+          "pins": 9
+        },
+        {
+          "state": "empty",
+          "status": "Sin resultado",
+          "energy": "—",
+          "served": "—",
+          "pins": 0
+        },
+        {
+          "state": "error",
+          "status": "Falta ubicar un pedido",
+          "energy": "—",
+          "served": "—",
+          "pins": 8
+        },
+        {
+          "state": "stale",
+          "status": "Resultado desactualizado",
+          "energy": "—",
+          "served": "—",
+          "pins": 9
+        },
+        {
+          "state": "complete",
+          "status": "Ejemplo completo",
+          "energy": "14,3",
+          "served": "8 / 8",
+          "pins": 9
+        }
+      ],
+      "selectedB": "Vehículo B",
+      "zoom": "115 %",
+      "steps": null,
+      "widths": [
+        {
+          "width": 1440,
+          "overflow": false
+        },
+        {
+          "width": 768,
+          "overflow": false
+        },
+        {
+          "width": 390,
+          "overflow": false
+        },
+        {
+          "width": 320,
+          "overflow": false
+        }
+      ]
+    }
+  },
+  {
+    "status": "fulfilled",
+    "value": {
+      "name": "secuencia",
+      "errors": [],
+      "requests": [],
+      "states": [
+        {
+          "state": "partial",
+          "status": "Sólo diagnóstico",
+          "energy": "—",
+          "served": "6 / 8",
+          "pins": 9
+        },
+        {
+          "state": "empty",
+          "status": "Sin resultado",
+          "energy": "—",
+          "served": "—",
+          "pins": 0
+        },
+        {
+          "state": "error",
+          "status": "Falta ubicar un pedido",
+          "energy": "—",
+          "served": "—",
+          "pins": 8
+        },
+        {
+          "state": "stale",
+          "status": "Resultado desactualizado",
+          "energy": "—",
+          "served": "—",
+          "pins": 9
+        },
+        {
+          "state": "complete",
+          "status": "Ejemplo completo",
+          "energy": "14,3",
+          "served": "8 / 8",
+          "pins": 9
+        }
+      ],
+      "selectedB": "Vehículo B",
+      "zoom": "115 %",
+      "steps": "3 de 3 · exploración de decisiones",
+      "widths": [
+        {
+          "width": 1440,
+          "overflow": false
+        },
+        {
+          "width": 768,
+          "overflow": false
+        },
+        {
+          "width": 390,
+          "overflow": false
+        },
+        {
+          "width": 320,
+          "overflow": false
+        }
+      ]
+    }
+  }
+]

@@ -1,0 +1,185 @@
+{
+  "at": "2026-10-15T03:31:50.027Z",
+  "checks": [
+    {
+      "name": "recorrido",
+      "width": 319,
+      "overflow": false,
+      "mapStatus": "",
+      "map": {
+        "x": 0,
+        "y": 234,
+        "width": 319,
+        "height": 343,
+        "right": 319,
+        "bottom": 577
+      },
+      "pin": {
+        "x": 207.5,
+        "y": 529.5,
+        "width": 29,
+        "height": 29,
+        "right": 236.5,
+        "bottom": 558.5
+      },
+      "attribution": {
+        "x": 10,
+        "y": 523,
+        "width": 299,
+        "height": 44,
+        "right": 309,
+        "bottom": 567
+      },
+      "pinOverlapsAttribution": true,
+      "colors": {
+        "soc": {
+          "text": "60 %",
+          "color": "rgb(82, 111, 133)",
+          "fontSize": "9px"
+        },
+        "sidebarFoot": null,
+        "chartHint": null,
+        "editBattery": null,
+        "selectionNeutral": null,
+        "workspaceFooter": null
+      }
+    },
+    {
+      "name": "energia",
+      "width": 319,
+      "overflow": false,
+      "mapStatus": "",
+      "map": {
+        "x": 18,
+        "y": 1207.796875,
+        "width": 283,
+        "height": 350,
+        "right": 301,
+        "bottom": 1557.796875
+      },
+      "pin": {
+        "x": 209.5,
+        "y": 1496.296875,
+        "width": 29,
+        "height": 29,
+        "right": 238.5,
+        "bottom": 1525.296875
+      },
+      "attribution": {
+        "x": 28,
+        "y": 1503.796875,
+        "width": 263,
+        "height": 44,
+        "right": 291,
+        "bottom": 1547.796875
+      },
+      "pinOverlapsAttribution": true,
+      "colors": {
+        "soc": null,
+        "sidebarFoot": null,
+        "chartHint": {
+          "text": "Selecciona un punto para ver su batería y ubicación.",
+          "color": "rgb(83, 103, 90)",
+          "fontSize": "10px"
+        },
+        "editBattery": null,
+        "selectionNeutral": null,
+        "workspaceFooter": null
+      }
+    },
+    {
+      "name": "mapa",
+      "width": 319,
+      "overflow": false,
+      "mapStatus": "",
+      "map": {
+        "x": 0,
+        "y": 60,
+        "width": 319,
+        "height": 480,
+        "right": 319,
+        "bottom": 540
+      },
+      "pin": {
+        "x": 149.5,
+        "y": 437.5,
+        "width": 29,
+        "height": 29,
+        "right": 178.5,
+        "bottom": 466.5
+      },
+      "attribution": {
+        "x": 10,
+        "y": 486,
+        "width": 299,
+        "height": 44,
+        "right": 309,
+        "bottom": 530
+      },
+      "pinOverlapsAttribution": false,
+      "colors": {
+        "soc": null,
+        "sidebarFoot": {
+          "text": "Recorridos y batería de ejemplo.Validación del motor pendiente.",
+          "color": "rgb(95, 112, 128)",
+          "fontSize": "11px"
+        },
+        "chartHint": null,
+        "editBattery": null,
+        "selectionNeutral": null,
+        "workspaceFooter": null
+      }
+    },
+    {
+      "name": "despacho",
+      "width": 319,
+      "overflow": false,
+      "mapStatus": "",
+      "map": {
+        "x": 0,
+        "y": 1094.921875,
+        "width": 319,
+        "height": 300,
+        "right": 319,
+        "bottom": 1394.921875
+      },
+      "pin": {
+        "x": 149.5,
+        "y": 1324.421875,
+        "width": 29,
+        "height": 29,
+        "right": 178.5,
+        "bottom": 1353.421875
+      },
+      "attribution": {
+        "x": 10,
+        "y": 1340.921875,
+        "width": 299,
+        "height": 44,
+        "right": 309,
+        "bottom": 1384.921875
+      },
+      "pinOverlapsAttribution": true,
+      "colors": {
+        "soc": null,
+        "sidebarFoot": null,
+        "chartHint": null,
+        "editBattery": {
+          "text": "Editar batería",
+          "color": "rgb(89, 104, 83)",
+          "fontSize": "12px"
+        },
+        "selectionNeutral": {
+          "text": "Selecciona una fila o un punto para revisar su ubicación y los datos del ejemplo.",
+          "color": "rgb(89, 104, 83)",
+          "fontSize": "10px"
+        },
+        "workspaceFooter": {
+          "text": "Rutas y energía de ejemplo. No se ha ejecutado el motor.",
+          "color": "rgb(100, 114, 93)",
+          "fontSize": "8px"
+        }
+      }
+    }
+  ]
+}

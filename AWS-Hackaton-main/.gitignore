@@ -1,0 +1,31 @@
+data/
+.env
+.env.*
+artifacts/
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+*.egg-info/
+.DS_Store
+
+# Entorno virtual (no debe subirse)
+.venv/
+venv/
+
+# Credenciales y secretos (NUNCA subir a GitHub)
+.aws/
+**/credentials
+*.pem
+*.key
+.streamlit/secrets.toml
+
+# Datasets pesados (exceden el limite de GitHub de 100 MB)
+*.csv
+!**/competition_routing_nodes.csv
+!**/evaluation_routing_nodes.csv
+*.pdf
+*.pptx
+
+# Archivos temporales
+_tmp_*.py

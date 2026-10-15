@@ -1,0 +1,334 @@
+[
+  {
+    "kind": "cuaderno",
+    "step": "initial",
+    "summary": "8 / 8\nEntregas · ejemplo\n14,3kWh\nEnergía de ejemplo\n1,6s\nCómputo de ejemplo",
+    "pins": 9,
+    "syntheticVisible": 1
+  },
+  {
+    "kind": "cuaderno",
+    "step": "dialog-open",
+    "open": true,
+    "focused": {
+      "tag": "BUTTON",
+      "text": "Entendido"
+    }
+  },
+  {
+    "kind": "cuaderno",
+    "step": "dialog-escape",
+    "closed": true,
+    "focusReturned": true
+  },
+  {
+    "kind": "cuaderno",
+    "step": "map-keyboard-select-B",
+    "selection": "Vehículo B · parada seleccionada",
+    "chosenStop": "cafe",
+    "rowSelected": "cafe",
+    "focus": "cafe"
+  },
+  {
+    "kind": "cuaderno",
+    "step": "list-keyboard-select-A",
+    "selection": "Vehículo A · parada seleccionada",
+    "chosenStop": "biblioteca",
+    "focusClass": "stop-row selected"
+  },
+  {
+    "kind": "cuaderno",
+    "step": "show-all",
+    "openDetails": 2
+  },
+  {
+    "kind": "cuaderno",
+    "step": "partial",
+    "summary": "6 / 8\nEntregas · ejemplo\n—kWh\nEnergía de ejemplo\n—s\nCómputo de ejemplo",
+    "pins": 7,
+    "batteryCharts": 0,
+    "chartMissing": 0
+  },
+  {
+    "kind": "cuaderno",
+    "step": "empty",
+    "summary": "—\nEntregas · ejemplo\n—kWh\nEnergía de ejemplo\n—s\nCómputo de ejemplo",
+    "pins": 0,
+    "routes": 0,
+    "emptyText": [
+      "No hay un plan para mostrar\n\nEste ejemplo representa un límite de cómputo sin solución encontrada. No demuestra que el problema sea infactible.",
+      "No hay un plan para mostrar\n\nEste ejemplo representa un límite de cómputo sin solución encontrada. No demuestra que el problema sea infactible."
+    ]
+  },
+  {
+    "kind": "cuaderno",
+    "step": "export-empty",
+    "record": {
+      "schema_version": "design-fixture-0",
+      "source": "synthetic",
+      "warning": "Exploración de interfaz. No es salida del motor, ruta vial ni prueba de factibilidad.",
+      "scenario_id": "design-demo-eight",
+      "state": "empty",
+      "metrics": {
+        "served": "—",
+        "energy": "—",
+        "seconds": "—",
+        "label": "Sin solución encontrada"
+      },
+      "routes": []
+    }
+  },
+  {
+    "kind": "cuaderno",
+    "step": "layout-768",
+    "layout": {
+      "width": 768,
+      "scrollWidth": 768,
+      "horizontalOverflow": false,
+      "overflowElements": []
+    }
+  },
+  {
+    "kind": "cuaderno",
+    "step": "layout-390",
+    "layout": {
+      "width": 390,
+      "scrollWidth": 390,
+      "horizontalOverflow": false,
+      "overflowElements": []
+    }
+  },
+  {
+    "kind": "cuaderno",
+    "step": "browser-errors",
+    "errors": [],
+    "failedRequests": []
+  },
+  {
+    "kind": "balance",
+    "step": "initial",
+    "summary": "✓\nCobertura completa de ejemplo\nDatos sintéticos · sin validación del motor\n8 / 8\nENTREGAS · EJEMPLO\n14,3kWh\nCONSUMO DE EJEMPLO\n1,6s\nCÓMPUTO DE EJEMPLO",
+    "pins": 9,
+    "syntheticVisible": 1
+  },
+  {
+    "kind": "balance",
+    "step": "dialog-open",
+    "open": true,
+    "focused": {
+      "tag": "BUTTON",
+      "text": "Volver al plan"
+    }
+  },
+  {
+    "kind": "balance",
+    "step": "dialog-escape",
+    "closed": true,
+    "focusReturned": true
+  },
+  {
+    "kind": "balance",
+    "step": "vehicle-B-keyboard",
+    "selected": "true",
+    "focused": {
+      "tag": "BODY",
+      "id": "",
+      "class": "",
+      "text": "BODY"
+    }
+  },
+  {
+    "kind": "balance",
+    "step": "stops-tab",
+    "pressed": "true",
+    "maps": 0,
+    "itineraries": 2
+  },
+  {
+    "kind": "balance",
+    "step": "list-keyboard-select-stop",
+    "selectedStop": "cafe",
+    "focusStop": "cafe"
+  },
+  {
+    "kind": "balance",
+    "step": "map-tab",
+    "maps": 2,
+    "chosenStop": "cafe"
+  },
+  {
+    "kind": "balance",
+    "step": "partial",
+    "summary": "!\nCobertura incompleta\nDatos sintéticos · sin validación del motor\n6 / 8\nENTREGAS · EJEMPLO\n—kWh\nCONSUMO DE EJEMPLO\n—s\nCÓMPUTO DE EJEMPLO",
+    "pins": 7,
+    "batteryCharts": 0,
+    "chartMissing": 2
+  },
+  {
+    "kind": "balance",
+    "step": "empty",
+    "summary": "—\nSin solución encontrada\nDatos sintéticos · sin validación del motor\n—\nENTREGAS · EJEMPLO\n—kWh\nCONSUMO DE EJEMPLO\n—s\nCÓMPUTO DE EJEMPLO",
+    "pins": 0,
+    "routes": 0,
+    "emptyText": [
+      "Perfil no incluido en este ejemplo.\nNo equivale a batería cero.",
+      "Perfil no incluido en este ejemplo.\nNo equivale a batería cero."
+    ]
+  },
+  {
+    "kind": "balance",
+    "step": "export-empty",
+    "record": {
+      "schema_version": "design-fixture-0",
+      "source": "synthetic",
+      "warning": "Exploración de interfaz. No es salida del motor, ruta vial ni prueba de factibilidad.",
+      "scenario_id": "design-demo-eight",
+      "state": "empty",
+      "metrics": {
+        "served": "—",
+        "energy": "—",
+        "seconds": "—",
+        "label": "Sin solución encontrada"
+      },
+      "routes": []
+    }
+  },
+  {
+    "kind": "balance",
+    "step": "layout-768",
+    "layout": {
+      "width": 768,
+      "scrollWidth": 768,
+      "horizontalOverflow": false,
+      "overflowElements": [
+        {
+          "tag": "rect",
+          "class": null,
+          "text": ""
+        },
+        {
+          "tag": "rect",
+          "class": null,
+          "text": ""
+        },
+        {
+          "tag": "path",
+          "class": null,
+          "text": ""
+        },
+        {
+          "tag": "g",
+          "class": null,
+          "text": ""
+        },
+        {
+          "tag": "path",
+          "class": null,
+          "text": ""
+        },
+        {
+          "tag": "path",
+          "class": null,
+          "text": ""
+        },
+        {
+          "tag": "rect",
+          "class": null,
+          "text": ""
+        },
+        {
+          "tag": "rect",
+          "class": null,
+          "text": ""
+        },
+        {
+          "tag": "g",
+          "class": null,
+          "text": ""
+        },
+        {
+          "tag": "path",
+          "class": null,
+          "text": ""
+        }
+      ]
+    }
+  },
+  {
+    "kind": "balance",
+    "step": "layout-390",
+    "layout": {
+      "width": 390,
+      "scrollWidth": 390,
+      "horizontalOverflow": false,
+      "overflowElements": [
+        {
+          "tag": "rect",
+          "class": null,
+          "text": ""
+        },
+        {
+          "tag": "rect",
+          "class": null,
+          "text": ""
+        },
+        {
+          "tag": "path",
+          "class": null,
+          "text": ""
+        },
+        {
+          "tag": "path",
+          "class": null,
+          "text": ""
+        },
+        {
+          "tag": "g",
+          "class": null,
+          "text": ""
+        },
+        {
+          "tag": "path",
+          "class": null,
+          "text": ""
+        },
+        {
+          "tag": "path",
+          "class": null,
+          "text": ""
+        },
+        {
+          "tag": "g",
+          "class": null,
+          "text": "DISTRITO NORTEEL PARQUEBARRIO SURLA RIBERA"
+        },
+        {
+          "tag": "text",
+          "class": null,
+          "text": "EL PARQUE"
+        },
+        {
+          "tag": "text",
+          "class": null,
+          "text": "LA RIBERA"
+        },
+        {
+          "tag": "rect",
+          "class": null,
+          "text": ""
+        },
+        {
+          "tag": "rect",
+          "class": null,
+          "text": ""
+        }
+      ]
+    }
+  },
+  {
+    "kind": "balance",
+    "step": "browser-errors",
+    "errors": [],
+    "failedRequests": []
+  }
+]

@@ -1,0 +1,94 @@
+/* Acceso — ZMD Mobility.
+   Reutiliza tokens.css + demo.css (Inter, Georgia serif, --ink/--surface/--line,
+   .btn, .eyebrow, .mark, .demo-strip). Solo añade lo propio del acceso. */
+
+:root{--accent-soft:#edf5f0}
+
+/* ---- cabecera (igual que balance) ---- */
+.topbar{display:flex;align-items:center;justify-content:space-between;height:78px;padding:0 4.5%;border-bottom:1px solid var(--line)}
+.topbar .mark{text-decoration:none;font-size:17px;gap:7px}
+.brand-light{font-weight:400}
+.account{font-size:11px;font-weight:550;color:var(--muted)}
+
+/* ---- disposición en dos columnas ---- */
+.auth{max-width:1500px;margin:0 auto;padding:0 4.5%;min-height:calc(100vh - 78px - 37px);
+      display:grid;grid-template-columns:1.15fr .85fr;align-items:stretch}
+
+/* columna de marca */
+.auth-aside{display:flex;flex-direction:column;justify-content:space-between;
+            padding:70px 60px 50px 0;border-right:1px solid var(--line)}
+.aside-top .eyebrow{font-size:10px}
+.auth-aside h1{font-family:Georgia,"Times New Roman",serif;font-weight:400;
+               font-size:64px;letter-spacing:-.055em;margin:18px 0 16px}
+.auth-aside p{font-size:12px;color:var(--muted);line-height:1.9}
+.aside-points{list-style:none;padding:0;margin:34px 0 0;display:flex;flex-direction:column;gap:14px}
+.aside-points li{display:flex;align-items:center;gap:12px;font-size:12px;color:var(--ink)}
+.aside-points .dot{width:9px;height:9px;border-radius:50%;background:var(--ink);flex-shrink:0}
+.aside-points .dot.square{border-radius:2px;background:#8152d9}
+.aside-points .dot.ring{background:transparent;border:1.5px solid #637448}
+.aside-foot{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.14em;margin-top:40px}
+
+/* columna del formulario */
+.auth-panel{display:flex;flex-direction:column;justify-content:space-between;padding:70px 0 0 60px}
+.panel-inner{max-width:380px;width:100%}
+.panel-inner .eyebrow{font-size:10px}
+#auth-title{font-size:30px;letter-spacing:-.04em;margin:12px 0 8px}
+.panel-lead{font-size:12px;color:var(--muted);margin-bottom:30px;line-height:1.7}
+
+/* campos */
+.field{margin-bottom:18px}
+.field label{display:block;font-size:11px;font-weight:600;margin-bottom:7px;color:var(--ink)}
+.label-row{display:flex;align-items:center;justify-content:space-between}
+.field input[type=email],
+.field input[type=password]{width:100%;border:1px solid var(--line);border-radius:8px;
+   background:var(--surface);padding:12px 13px;font-size:14px;color:var(--ink);
+   transition:border-color .16s,box-shadow .16s}
+.field input::placeholder{color:#aab2a7}
+.field input:focus{outline:none;border-color:#a8b4a7;box-shadow:0 0 0 3px #edf5f0}
+.field input.invalid{border-color:#b4524a;box-shadow:0 0 0 3px #f6e9e7}
+.field-error{display:block;margin-top:6px;font-size:10px;color:#9c463f}
+
+.field-row{display:flex;align-items:center;justify-content:space-between;margin:4px 0 24px}
+.check{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted)}
+.check input{width:15px;height:15px;accent-color:var(--ink)}
+.link-quiet{border:0;background:none;padding:0;font-size:11px;color:var(--muted);text-decoration:none}
+.link-quiet:hover{color:var(--ink);text-decoration:underline}
+
+/* botones a lo ancho */
+.btn.block{width:100%;padding:12px 14px}
+#submit{margin-top:2px}
+.form-note{margin-top:14px;font-size:11px;padding:9px 12px;border-radius:7px;line-height:1.5}
+.form-note.ok{background:var(--accent-soft);color:#3c5a4f;border:1px solid #bed6d0}
+.form-note.err{background:#faf0ee;color:#8f453e;border:1px solid #e4c6c2}
+
+/* separador */
+.divider{display:flex;align-items:center;gap:12px;margin:22px 0;color:var(--muted);font-size:10px}
+.divider::before,.divider::after{content:"";flex:1;height:1px;background:var(--line)}
+
+.switch{margin-top:24px;font-size:12px;color:var(--muted)}
+.switch a{color:var(--ink);font-weight:550}
+
+.panel-foot{display:flex;justify-content:space-between;gap:12px;max-width:380px;width:100%;
+            margin-top:40px;padding:16px 0 22px;border-top:1px solid var(--line);
+            font-size:9px;color:var(--muted)}
+
+/* ---- responsive ---- */
+@media(max-width:1000px){
+  .auth-aside h1{font-size:52px}
+  .auth-panel{padding-left:44px}
+  .auth-aside{padding-right:44px}
+}
+@media(max-width:820px){
+  .auth{display:block;min-height:0;padding-top:34px;padding-bottom:34px}
+  .auth-aside{border-right:0;border-bottom:1px solid var(--line);padding:0 0 34px}
+  .auth-aside h1{font-size:46px}
+  .aside-points{margin-top:24px}
+  .auth-panel{padding:34px 0 0}
+  .panel-inner,.panel-foot{max-width:none}
+}
+@media(max-width:720px){
+  .topbar{height:62px}
+  .brand-light,.account{display:none}
+  .auth{padding:24px 20px}
+  .auth-aside h1{font-size:40px}
+}

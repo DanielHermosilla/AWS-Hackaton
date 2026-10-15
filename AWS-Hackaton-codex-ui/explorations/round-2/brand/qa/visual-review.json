@@ -1,0 +1,25 @@
+{
+  "date": "2026-10-15",
+  "method": "Inspección visual de capturas Chrome headless locales; sin servicios externos ni prueba con usuarios.",
+  "images_reviewed": [
+    "overview-light.png",
+    "overview-dark-green.png",
+    "mobile-top.png",
+    "mobile-detail.png",
+    "small-sizes.png"
+  ],
+  "preferred_for_comparison": [
+    "01-zmd-conectado",
+    "04-zmd-electrico",
+    "06-z-bateria"
+  ],
+  "observations": [
+    "El nombre ZMD domina los logos completos; los mecanismos eléctricos se reconocen mejor que en la ronda rechazada.",
+    "El cuerpo del enchufe 05 se amplió en la última revisión para distinguirlo de dos extensiones arbitrarias de la Z.",
+    "06 conserva una Z clara en negativo a 20 px. La batería vertical es reconocible, pero común y visualmente densa.",
+    "03 pierde nitidez de carriles a 20 px; 07 prioriza la lectura del cargador; 09 pierde precisión de clavijas pequeñas.",
+    "04 es contenido y legible, pero su vínculo eléctrico es menos literal que el de las baterías o enchufes.",
+    "11 puede evocar reciclaje o regeneración. El texto final representa batería y regreso del vehículo sin prometer recuperación real de energía."
+  ],
+  "brand_approved": false
+}

@@ -1,0 +1,21 @@
+# Batería integrada
+
+Variante cercana del mapa de la ronda 02 elegido por Diego, preparada el 15-10-2026. El encargo mantiene la composición con barra lateral de 352 px, mapa principal y tres indicadores flotantes. Esta variante integra batería dentro de las tarjetas y del recorrido. La base original permanece en `../../round-2/mapa/`; sus hashes anteriores se conservan en `qa/base-hashes.json`.
+
+Cada vehículo presenta un perfil pequeño junto a salida, regreso y recarga. Se compactó la ilustración y el espacio de las tarjetas para que las dos acciones “Explorar recorrido” queden visibles a 1440×900. Al explorar un recorrido aparece “Batería del recorrido”, inicialmente plegado; su apertura conserva el mapa principal libre de otra tarjeta grande.
+
+Los perfiles usan exclusivamente `ROUTES.stops`, `arrivalSoc`, `departureSoc` y los valores existentes de recarga. El eje horizontal es orden de parada, no tiempo ni distancia; el vertical conserva la escala 0–100 %. El salto verde conecta llegada y salida de una recarga en la misma parada. La línea une valores ilustrativos; no valida energía entre paradas ni establece una reserva mínima. El diálogo original de fuentes y la advertencia de demostración permanecen visibles.
+
+Cada punto identifica vehículo e índice de parada. Seleccionarlo enlaza perfil, fila y marcador del mapa; el detalle muestra llegada/salida y recarga. `BASE` de salida tiene índice 0 y el regreso índice 12 en estos fixtures: nunca se resuelve el regreso buscando solo el ID compartido. Un clic en el marcador de base conserva la ocurrencia seleccionada. La selección mantiene el foco en el punto o fila; cerrar el detalle con botón o Escape restaura ese origen.
+
+Las pestañas usan `tablist`, `tab`, `tabpanel`, un único `tabindex=0` en los controles y navegación con flechas/Home/End. El acordeón comunica un cambio ocasional de estado mediante altura y opacidad a 200 ms, con `cubic-bezier(.23,1,.32,1)`. Teclado y movimiento reducido abren de inmediato. La finalización espera las transiciones reales del navegador y cancela el callback anterior al invertir; conserva la altura y opacidad visibles. No se añadió una dependencia de Motion para esta interacción CSS.
+
+La QA acotada se guarda en `qa/verification.json` y `qa/render.cjs`: composición, indicadores originales, selección enlazada, recarga, ambas ocurrencias de base, foco, pestañas, Escape, inversión del acordeón, movimiento reducido y anchos 390/319 px. Las capturas son `qa/desktop.png`, `qa/profile-charge-desktop.png`, `qa/mobile-390.png`, `qa/mobile-319.png` y `qa/profile-mobile-390.png`. Chrome headless local usa el escenario ya existente y cartografía de la implementación compartida. No ejecuta Kiro ni el motor.
+
+La primera prueba de inversión está preservada en `qa/verification-before-transition-fix.json`. Mostró que un cierre por timeout podía finalizar mientras la transición CSS todavía estaba pendiente; además, la espera de estabilidad de Playwright podía posponer el segundo clic. Se retiró aquel timeout, se confirmó el estado instantáneo antes de reactivar CSS y la regresión usa eventos de puntero controlados a 45 ms para medir la continuidad, sin afirmar una evaluación humana del tacto.
+
+Límite de experiencia: en móvil, mapa y lista ocupan bloques consecutivos; no se mantienen ambos visibles a la vez. Los puntos son compactos y la lista ofrece la misma selección con botones mayores. El perfil sigue siendo ilustrativo y no una medición energética.
+
+Para abrir: servir `explorations/` y visitar `round-3/bateria/`. `index.html`, `app.js` y `style.css` pertenecen a esta variante; las imports de `../shared/` conservan la API preparada por el integrador. No se modificaron datos, métricas ni originales de ronda 02.
+
+La revisión independiente aprobó los casos funcionales y detectó contraste insuficiente en las etiquetas secundarias. Se cambió únicamente su color y el relleno del texto SVG a `#5f6e7c`. `qa/contrast.json` verifica 16 selectores calculados en Chrome y ratios de 5,05:1 sobre `#f9fbfd`, 5,24:1 sobre blanco y 4,75:1 sobre `#eef4ff`. Las capturas del perfil están actualizadas; esta comprobación localizada no certifica toda la accesibilidad de la aplicación.

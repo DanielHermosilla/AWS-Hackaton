@@ -1,0 +1,53 @@
+{
+  "images": [
+    {
+      "src": "../round-2/qa/mapa-desktop.webp",
+      "loaded": true
+    },
+    {
+      "src": "qa/bateria-desktop.webp",
+      "loaded": true
+    },
+    {
+      "src": "qa/cristal-desktop.webp",
+      "loaded": true
+    },
+    {
+      "src": "qa/esencial-desktop.webp",
+      "loaded": true
+    }
+  ],
+  "errors": [],
+  "switches": [
+    {
+      "variant": 1,
+      "pressed": "true",
+      "source": "../round-2/mapa/",
+      "vehicleCount": 2
+    },
+    {
+      "variant": 2,
+      "pressed": "true",
+      "source": "bateria/",
+      "vehicleCount": 2
+    },
+    {
+      "variant": 3,
+      "pressed": "true",
+      "source": "cristal/",
+      "vehicleCount": 2
+    },
+    {
+      "variant": 4,
+      "pressed": "true",
+      "source": "esencial/",
+      "vehicleCount": 2
+    }
+  ],
+  "closeRestoresFocus": true,
+  "iframeReleased": true,
+  "overflow390": false,
+  "toolbarOverflow390": false,
+  "overflow319": false,
+  "toolbarOverflow319": false
+}

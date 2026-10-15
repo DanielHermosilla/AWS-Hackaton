@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://tiles.openfreemap.org; worker-src 'self' blob:; child-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#f6f8fb">
+  <link rel="icon" href="data:,">
+  <title>ZMD · Cristal · Planificar sobre el mapa</title>
+  <link rel="stylesheet" href="../shared/base.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="../"><strong>ZMD</strong><span>Mobility</span></a>
+    <div class="app-name">Planificación de flota eléctrica</div>
+    <div class="top-actions"><span class="demo-tag">Demostración</span><button type="button" id="about" class="icon-button" aria-label="Acerca de los datos"></button><a href="../" class="all-designs">Comparar diseños</a></div>
+  </header>
+  <main class="workspace">
+    <aside class="sidebar" aria-label="Flota y paradas">
+      <div class="scenario"><div class="row between"><p>Escenario público</p><span class="file-tag">CSV</span></div><h1>Plan de reparto</h1><div class="row location"><span class="pin-dot" aria-hidden="true"></span><span id="scenario-location">Ann Arbor, Michigan</span></div></div>
+      <div class="sidebar-tabs" role="tablist" aria-label="Contenido de la flota"><button type="button" role="tab" id="fleet-tab" aria-selected="true" aria-controls="sidebar-content">Vehículos <span id="fleet-count">—</span></button><button type="button" role="tab" id="stops-tab" aria-selected="false" aria-controls="sidebar-content" tabindex="-1">Paradas <span id="stops-count">—</span></button></div>
+      <div class="sidebar-content" id="sidebar-content" role="tabpanel" aria-labelledby="fleet-tab"></div>
+      <div class="sidebar-foot"><span id="foot-icon" aria-hidden="true"></span><p>Recorridos y batería de ejemplo.<br>Validación del motor pendiente.</p></div>
+    </aside>
+    <section class="map-region" aria-label="Mapa del plan de reparto">
+      <div id="map"></div>
+      <div class="map-summary" aria-label="Resumen del ejemplo, ambos vehículos">
+        <div><span class="summary-icon" id="delivery-icon" aria-hidden="true"></span><p><strong id="delivery-value">—</strong><small>entregas asignadas</small></p></div>
+        <div><span class="summary-icon" id="energy-icon" aria-hidden="true"></span><p><strong id="energy-value">—</strong><small>consumo de ejemplo</small></p></div>
+        <div><span class="summary-icon" id="charge-icon" aria-hidden="true"></span><p><strong id="charge-value">—</strong><small>paradas de recarga</small></p></div>
+      </div>
+      <div class="map-tools glass-controls" role="group" aria-label="Controles del mapa"><button type="button" id="chargers" aria-pressed="false"></button><span class="tool-divider" aria-hidden="true"></span><button type="button" id="fit" class="icon-button" aria-label="Ver el recorrido completo"></button></div>
+      <div id="selection" class="selection" hidden aria-label="Detalle de la parada"></div>
+      <div class="legend"><span><i class="dot a" aria-hidden="true"></i>Auto 1</span><span><i class="dot b" aria-hidden="true"></i>Auto 2</span><span id="base-legend"></span><span class="route-note">Trazado vial de demostración</span></div>
+    </section>
+  </main>
+  <p class="sr-only" id="selection-status" role="status" aria-live="polite"></p>
+  <dialog id="about-dialog" aria-labelledby="about-heading"><h2 id="about-heading">Un ejemplo para explorar el diseño</h2><p>Las ubicaciones pertenecen al escenario público de CASE. Los recorridos siguen calles de OpenStreetMap mediante OSRM, con un orden de visitas preparado para esta demostración.</p><p>El consumo, la recarga y la batería son valores ilustrativos. No han sido calculados ni validados por el motor de Dani y Lucas. No indican disponibilidad de cargadores ni ahorro real.</p><div class="row"><button type="button" id="close-about">Entendido</button></div></dialog>
+  <script type="module" src="app.js"></script>
+</body>
+</html>

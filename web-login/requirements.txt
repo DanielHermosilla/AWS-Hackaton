@@ -1,0 +1,12 @@
+# Dependencias para desplegar la app en Streamlit Community Cloud.
+# Versiones fijadas a las verificadas en local.
+streamlit==1.65.0
+boto3==1.43.114
+pandas==2.2.3
+numpy==1.26.4
+Pyomo==6.10.1
+pydantic==2.9.2
+highspy==1.15.1
+
+# Instala el propio paquete del proyecto (src/ev_routing) para poder importarlo.
+-e .

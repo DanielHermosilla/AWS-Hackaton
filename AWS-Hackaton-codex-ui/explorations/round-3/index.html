@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://tiles.openfreemap.org; worker-src 'self' blob:; child-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <link rel="icon" href="data:,">
+  <title>ZMD Mobility · Un mapa, cuatro variantes</title>
+  <link rel="stylesheet" href="shared/base.css">
+  <link rel="stylesheet" href="gallery.css">
+</head>
+<body>
+  <header class="gallery-header">
+    <a class="brand" href="./"><strong>ZMD</strong><span>Mobility</span></a>
+    <span class="round-label">Exploración de interfaz · 03</span>
+    <a class="logo-link" href="../logo-40/" target="_blank" rel="noopener">Explorar logos <span aria-hidden="true">↗</span></a>
+  </header>
+  <main>
+    <section class="intro">
+      <div><p class="eyebrow">A partir del mapa que elegiste</p><h1>La misma base.<br>Cuatro maneras de afinarla.</h1></div>
+      <p class="intro-copy">La primera permanece intacta. Las otras tres exploran batería, materiales y densidad, conservando el mapa y la organización del plan.</p>
+    </section>
+    <section class="design-grid" aria-label="Cuatro variantes del mapa de flota">
+      <article class="design">
+        <button class="preview" data-preview="0" aria-label="Comparar variante 1, original">
+          <img src="../round-2/qa/mapa-desktop.webp" alt="Interfaz original: dos vehículos a la izquierda y mapa de Ann Arbor con sus recorridos" width="1440" height="900">
+          <span class="preview-hint">Abrir comparación <span aria-hidden="true">↗</span></span>
+        </button>
+        <div class="design-info"><div class="title-row"><span class="number">01</span><h2>Original</h2><span class="badge">Sin cambios</span></div><p>El mapa de flota de la ronda anterior, conservado exactamente como estaba.</p><a href="../round-2/mapa/">Abrir original <span aria-hidden="true">→</span></a></div>
+      </article>
+      <article class="design">
+        <button class="preview" data-preview="1" aria-label="Comparar variante 2, batería integrada">
+          <img src="qa/bateria-desktop.webp" alt="La misma distribución, con un perfil pequeño de batería dentro de cada tarjeta de vehículo" width="1440" height="900">
+          <span class="preview-hint">Abrir comparación <span aria-hidden="true">↗</span></span>
+        </button>
+        <div class="design-info"><div class="title-row"><span class="number">02</span><h2>Batería integrada</h2></div><p>Un perfil discreto por vehículo. Abre su detalle para relacionar batería, recarga y parada.</p><a href="bateria/">Explorar batería <span aria-hidden="true">→</span></a></div>
+      </article>
+      <article class="design">
+        <button class="preview" data-preview="2" aria-label="Comparar variante 3, cristal">
+          <img src="qa/cristal-desktop.webp" alt="Mapa de flota con controles translúcidos y tarjetas de vehículo sobre fondos sólidos" width="1440" height="900">
+          <span class="preview-hint">Abrir comparación <span aria-hidden="true">↗</span></span>
+        </button>
+        <div class="design-info"><div class="title-row"><span class="number">03</span><h2>Cristal</h2></div><p>Superficies translúcidas en los controles y un indicador de batería discreto. Los datos mantienen su claridad.</p><a href="cristal/">Explorar cristal <span aria-hidden="true">→</span></a></div>
+      </article>
+      <article class="design">
+        <button class="preview" data-preview="3" aria-label="Comparar variante 4, esencial">
+          <img src="qa/esencial-desktop.webp" alt="Mapa de flota con tarjetas más compactas, pestañas segmentadas y jerarquía tipográfica sobria" width="1440" height="900">
+          <span class="preview-hint">Abrir comparación <span aria-hidden="true">↗</span></span>
+        </button>
+        <div class="design-info"><div class="title-row"><span class="number">04</span><h2>Esencial</h2></div><p>Tarjetas más compactas, tipografía sobria y detalle con una transición breve al abrir y cerrar.</p><a href="esencial/">Explorar esencial <span aria-hidden="true">→</span></a></div>
+      </article>
+    </section>
+    <p class="limits">Mismo escenario y mismos valores de demostración en las cuatro. Las rutas, la batería y el consumo siguen pendientes de validación por el motor.</p>
+  </main>
+  <dialog id="comparison" aria-label="Comparación interactiva de variantes">
+    <div class="compare-toolbar">
+      <div class="variant-switcher" role="group" aria-label="Elegir variante">
+        <button data-variant="0" aria-pressed="false">01 <span>Original</span></button>
+        <button data-variant="1" aria-pressed="false">02 <span>Batería</span></button>
+        <button data-variant="2" aria-pressed="false">03 <span>Cristal</span></button>
+        <button data-variant="3" aria-pressed="false">04 <span>Esencial</span></button>
+      </div>
+      <a id="open-full" href="../round-2/mapa/" target="_blank" rel="noopener" aria-label="Abrir variante en otra pestaña">Abrir <span aria-hidden="true">↗</span></a>
+      <button id="close-comparison" aria-label="Cerrar comparación">✕</button>
+    </div>
+    <iframe id="live-preview" title="Variante interactiva del mapa de flota"></iframe>
+  </dialog>
+  <script type="module" src="gallery.js"></script>
+</body>
+</html>

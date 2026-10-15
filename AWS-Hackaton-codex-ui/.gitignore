@@ -1,0 +1,7 @@
+data/
+
+.DS_Store
+# Local inspection screenshots; compact reviewed previews are kept as WebP.
+explorations/previews/*.png
+explorations/round-2/shared/*.local.json
+explorations/round-3/shared/*.local.json

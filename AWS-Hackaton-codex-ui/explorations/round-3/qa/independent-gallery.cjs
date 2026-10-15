@@ -1,0 +1,121 @@
+const { chromium }=require('/Users/caballero/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
+const fs=require('fs'),path=require('path');
+const result={startedAt:new Date().toISOString(),checks:[],pageErrors:[],httpErrors:[],requestsFailed:[]};
+let browser,page;
+function check(name,pass,evidence){result.checks.push({name,pass:!!pass,evidence});console.log(JSON.stringify({name,pass:!!pass,evidence}));}
+async function frameReady(expected){
+  await page.waitForFunction(expected=>{
+    const f=document.querySelector('#live-preview');
+    return f?.contentDocument?.querySelector('#map')?.dataset.mapReady==='true'&&f.contentWindow.location.pathname===expected;
+  },expected,{timeout:45000});
+  const f=page.frames().find(f=>f.url().includes(expected));
+  await f.evaluate(()=>new Promise(resolve=>{
+    let last='',stable=0;
+    const step=()=>{
+      const r=document.querySelector('.zmd-pin[aria-label$="(V14)"]')?.getBoundingClientRect();
+      const now=r?`${r.x.toFixed(2)},${r.y.toFixed(2)}`:'';
+      stable=now===last?stable+1:0;last=now;
+      if(stable>=12)return resolve();
+      requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  }));
+  return f;
+}
+async function galleryState(){
+  return page.evaluate(()=>{
+    const d=document.querySelector('#comparison'),f=document.querySelector('#live-preview');
+    return {open:d.open,src:f.getAttribute('src'),title:f.title,frameUrl:f.contentWindow.location.pathname,pressed:[...document.querySelectorAll('[data-variant]')].filter(x=>x.getAttribute('aria-pressed')==='true').map(x=>x.dataset.variant),activeElement:document.activeElement?.outerHTML.slice(0,300),documentWidth:document.documentElement.scrollWidth,innerWidth,frameWidth:f.clientWidth,fullLink:document.querySelector('#open-full').getAttribute('href')};
+  });
+}
+(async()=>{
+  browser=await chromium.launch({executablePath:'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',headless:true,args:['--enable-unsafe-swiftshader']});
+  page=await browser.newPage({viewport:{width:1440,height:900}});
+  page.on('pageerror',e=>result.pageErrors.push(e.message));
+  page.on('response',r=>{if(r.status()>=400)result.httpErrors.push({url:r.url(),status:r.status()});});
+  page.on('requestfailed',r=>result.requestsFailed.push({url:r.url(),failure:r.failure()?.errorText}));
+  await page.goto('http://127.0.0.1:4173/round-3/');
+  await page.locator('[data-preview="3"]').focus();
+  await page.keyboard.press('Enter');
+  let f=await frameReady('/round-3/esencial/');
+  let e=await galleryState();
+  check('Keyboard opens requested variant and focuses switch',e.open&&e.pressed.join()==='3'&&e.activeElement.includes('data-variant="3"')&&e.fullLink==='esencial/',e);
+  await f.locator('#fit').focus();
+  await page.keyboard.press('Escape');
+  await page.waitForFunction(()=>!document.querySelector('#comparison').open&&document.querySelector('#live-preview').getAttribute('src')===null,null,{timeout:3000}).catch(()=>{});
+  e=await galleryState();
+  check('Escape from focused iframe closes comparison',!e.open,e);
+  if(e.open)await page.locator('#close-comparison').click();
+  await page.waitForFunction(()=>!document.querySelector('#comparison').open&&document.querySelector('#live-preview').getAttribute('src')===null);
+  e=await galleryState();
+  check('Closed comparison releases iframe and returns launcher focus',e.src===null&&e.activeElement?.includes('data-preview="3"'),e);
+  await page.locator('[data-preview="3"]').click();
+  f=await frameReady('/round-3/esencial/');
+  await f.locator('[data-vehicle="auto-1"]').click();
+  await f.locator('[data-stop="V12"]').focus();
+  await page.keyboard.press('Enter');
+  await f.waitForFunction(()=>!document.querySelector('#selection').hidden);
+  await f.locator('#close-selection').focus();
+  await page.keyboard.press('Escape');
+  await f.waitForFunction(()=>document.querySelector('#selection').hidden);
+  e=await galleryState();
+  const innerFocus=await f.evaluate(()=>document.activeElement?.outerHTML.slice(0,300));
+  check('First Escape closes only inner detail and restores its focus',e.open&&innerFocus?.includes('data-stop="V12"'),{parent:e,innerFocus});
+  await page.keyboard.press('Escape');
+  await page.waitForFunction(()=>!document.querySelector('#comparison').open&&document.querySelector('#live-preview').getAttribute('src')===null);
+  e=await galleryState();
+  check('Second Escape closes comparator and returns launcher focus',!e.open&&e.src===null&&e.activeElement?.includes('data-preview="3"'),e);
+  await page.locator('[data-preview="3"]').click();
+  f=await frameReady('/round-3/esencial/');
+  await f.locator('#about').focus();
+  await page.keyboard.press('Enter');
+  await f.waitForFunction(()=>document.querySelector('#about-dialog').open);
+  await page.keyboard.press('Escape');
+  await f.waitForFunction(()=>!document.querySelector('#about-dialog').open);
+  e=await galleryState();
+  const aboutFocus=await f.evaluate(()=>document.activeElement?.id);
+  check('Inner dialog gets native Escape first and restores focus',e.open&&aboutFocus==='about',{parent:e,aboutFocus});
+  await page.keyboard.press('Escape');
+  await page.waitForFunction(()=>!document.querySelector('#comparison').open&&document.querySelector('#live-preview').getAttribute('src')===null);
+  e=await galleryState();
+  check('Escape after inner dialog closes comparison',!e.open&&e.src===null,e);
+  await page.locator('[data-preview="0"]').click();
+  f=await frameReady('/round-2/mapa/');
+  e=await galleryState();
+  check('Original points to unchanged original URL',e.open&&e.src==='../round-2/mapa/'&&e.pressed.join()==='0'&&e.title.startsWith('1. Original')&&e.fullLink==='../round-2/mapa/',e);
+  await page.locator('[data-variant="1"]').click();
+  f=await frameReady('/round-3/bateria/');
+  e=await galleryState();
+  check('Switch loads Batería with matching state and link',e.open&&e.pressed.join()==='1'&&e.src==='bateria/'&&e.title.includes('Batería integrada')&&e.fullLink==='bateria/',e);
+  await page.locator('[data-variant="2"]').click();
+  f=await frameReady('/round-3/cristal/');
+  e=await galleryState();
+  check('Switch loads Cristal with matching state and link',e.open&&e.pressed.join()==='2'&&e.src==='cristal/'&&e.title.includes('Cristal')&&e.fullLink==='cristal/',e);
+  await page.locator('[data-variant="0"]').click();
+  await page.locator('[data-variant="3"]').click();
+  f=await frameReady('/round-3/esencial/');
+  e=await galleryState();
+  check('Rapid switching ends with latest selected variant',e.pressed.join()==='3'&&e.frameUrl==='/round-3/esencial/'&&e.fullLink==='esencial/',e);
+  await page.screenshot({path:path.join(__dirname,'independent-gallery-modal-1440.png')});
+  await page.locator('#close-comparison').click();
+  await page.setViewportSize({width:319,height:859});
+  const closed=await page.evaluate(()=>({width:innerWidth,documentWidth:document.documentElement.scrollWidth,images:[...document.querySelectorAll('main img')].map(x=>({src:x.getAttribute('src'),loaded:x.complete&&x.naturalWidth>0,naturalWidth:x.naturalWidth}))}));
+  check('Gallery 319 has no horizontal overflow',closed.documentWidth<=319,closed);
+  await page.screenshot({path:path.join(__dirname,'independent-gallery-319.png'),fullPage:true});
+  await page.locator('[data-preview="3"]').click();
+  f=await frameReady('/round-3/esencial/');
+  e=await galleryState();
+  const inside=await f.evaluate(()=>({width:innerWidth,documentWidth:document.documentElement.scrollWidth,summaryLeft:document.querySelector('.map-summary').getBoundingClientRect().left,summaryRight:document.querySelector('.map-summary').getBoundingClientRect().right,mapReady:document.querySelector('#map').dataset.mapReady}));
+  check('Comparison and embedded Esencial fit 319',e.documentWidth<=319&&e.frameWidth===319&&inside.documentWidth<=319&&inside.summaryLeft>=0&&inside.summaryRight<=319,{parent:e,inside});
+  await page.screenshot({path:path.join(__dirname,'independent-gallery-modal-319.png')});
+  await page.locator('#close-comparison').focus();
+  await page.keyboard.press('Enter');
+  await page.waitForFunction(()=>!document.querySelector('#comparison').open&&document.querySelector('#live-preview').getAttribute('src')===null);
+  e=await galleryState();
+  check('Keyboard close returns correct launcher focus at 319',!e.open&&e.activeElement?.includes('data-preview="3"')&&e.src===null,e);
+  check('No JavaScript exceptions',result.pageErrors.length===0,{errors:result.pageErrors});
+})().catch(e=>{result.fatal={message:e.message,stack:e.stack};console.error(e);process.exitCode=1;}).finally(async()=>{
+  result.finishedAt=new Date().toISOString();
+  fs.writeFileSync(path.join(__dirname,'independent-gallery-results.json'),JSON.stringify(result,null,2));
+  await browser?.close();
+});

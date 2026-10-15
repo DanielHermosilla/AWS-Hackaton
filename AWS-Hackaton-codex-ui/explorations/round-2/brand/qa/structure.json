@@ -1,0 +1,265 @@
+{
+  "scope": "36 delivered SVGs; custom lettering, no embedded or external images, fonts, scripts or references",
+  "concept_count": 12,
+  "family_counts": {
+    "typographic": 4,
+    "monogram": 4,
+    "symbol": 4
+  },
+  "recommended_count": 3,
+  "passed": true,
+  "assets": [
+    {
+      "path": "assets/01-zmd-conectado/logo-light.svg",
+      "viewBox": "0 0 320 144",
+      "pure_vector": true,
+      "forbidden": [],
+      "accessible_name": "ZMD Mobility — ZMD conectado"
+    },
+    {
+      "path": "assets/01-zmd-conectado/logo-dark.svg",
+      "viewBox": "0 0 320 144",
+      "pure_vector": true,
+      "forbidden": [],
+      "accessible_name": "ZMD Mobility — ZMD conectado"
+    },
+    {
+      "path": "assets/01-zmd-conectado/symbol.svg",
+      "viewBox": "0 0 64 64",
+      "pure_vector": true,
+      "forbidden": [],
+      "accessible_name": "ZMD Mobility — ZMD conectado"
+    },
+    {
+      "path": "assets/02-zmd-bateria/logo-light.svg",
+      "viewBox": "0 0 320 144",
+      "pure_vector": true,
+      "forbidden": [],
+      "accessible_name": "ZMD Mobility — ZMD en batería"
+    },
+    {
+      "path": "assets/02-zmd-bateria/logo-dark.svg",
+      "viewBox": "0 0 320 144",
+      "pure_vector": true,
+      "forbidden": [],
+      "accessible_name": "ZMD Mobility — ZMD en batería"
+    },
+    {
+      "path": "assets/02-zmd-bateria/symbol.svg",
+      "viewBox": "0 0 64 64",
+      "pure_vector": true,
+      "forbidden": [],
+      "accessible_name": "ZMD Mobility — ZMD en batería"
+    },
+    {
+      "path": "assets/03-zmd-recorrido/logo-light.svg",
+      "viewBox": "0 0 320 144",
+      "pure_vector": true,
+      "forbidden": [],
+      "accessible_name": "ZMD Mobility — ZMD en ruta"
+    },
+    {
+      "path": "assets/03-zmd-recorrido/logo-dark.svg",
+      "viewBox": "0 0 320 144",
+      "pure_vector": true,
+      "forbidden": [],
+      "accessible_name": "ZMD Mobility — ZMD en ruta"
+    },
+    {
+      "path": "assets/03-zmd-recorrido/symbol.svg",
+      "viewBox": "0 0 64 64",
+      "pure_vector": true,
+      "forbidden": [],
+      "accessible_name": "ZMD Mobility — ZMD en ruta"
+    },
+    {
+      "path": "assets/04-zmd-electrico/logo-light.svg",
+      "viewBox": "0 0 320 144",
+      "pure_vector": true,
+      "forbidden": [],
+      "accessible_name": "ZMD Mobility — ZMD eléctrico"
+    },
+    {
+      "path": "assets/04-zmd-electrico/logo-dark.svg",
+      "viewBox": "0 0 320 144",
+      "pure_vector": true,
+      "forbidden": [],
+      "accessible_name": "ZMD Mobility — ZMD eléctrico"
+    },
+    {
+      "path": "assets/04-zmd-electrico/symbol.svg",
+      "viewBox": "0 0 64 64",
+      "pure_vector": true,
+      "forbidden": [],
+      "accessible_name": "ZMD Mobility — ZMD eléctrico"
+    },
+    {
+      "path": "assets/05-z-enchufada/logo-light.svg",
+      "viewBox": "0 0 320 144",
+      "pure_vector": true,
+      "forbidden": [],
+      "accessible_name": "ZMD Mobility — Z enchufada"
+    },
+    {
+      "path": "assets/05-z-enchufada/logo-dark.svg",
+      "viewBox": "0 0 320 144",
+      "pure_vector": true,
+      "forbidden": [],
+      "accessible_name": "ZMD Mobility — Z enchufada"
+    },
+    {
+      "path": "assets/05-z-enchufada/symbol.svg",
+      "viewBox": "0 0 64 64",
+      "pure_vector": true,
+      "forbidden": [],
+      "accessible_name": "ZMD Mobility — Z enchufada"
+    },
+    {
+      "path": "assets/06-z-bateria/logo-light.svg",
+      "viewBox": "0 0 320 144",
+      "pure_vector": true,
+      "forbidden": [],
+      "accessible_name": "ZMD Mobility — Z en batería"
+    },
+    {
+      "path": "assets/06-z-bateria/logo-dark.svg",
+      "viewBox": "0 0 320 144",
+      "pure_vector": true,
+      "forbidden": [],
+      "accessible_name": "ZMD Mobility — Z en batería"
+    },
+    {
+      "path": "assets/06-z-bateria/symbol.svg",
+      "viewBox": "0 0 64 64",
+      "pure_vector": true,
+      "forbidden": [],
+      "accessible_name": "ZMD Mobility — Z en batería"
+    },
+    {
+      "path": "assets/07-z-cargador/logo-light.svg",
+      "viewBox": "0 0 320 144",
+      "pure_vector": true,
+      "forbidden": [],
+      "accessible_name": "ZMD Mobility — Z en cargador"
+    },
+    {
+      "path": "assets/07-z-cargador/logo-dark.svg",
+      "viewBox": "0 0 320 144",
+      "pure_vector": true,
+      "forbidden": [],
+      "accessible_name": "ZMD Mobility — Z en cargador"
+    },
+    {
+      "path": "assets/07-z-cargador/symbol.svg",
+      "viewBox": "0 0 64 64",
+      "pure_vector": true,
+      "forbidden": [],
+      "accessible_name": "ZMD Mobility — Z en cargador"
+    },
+    {
+      "path": "assets/08-z-ruta-carga/logo-light.svg",
+      "viewBox": "0 0 320 144",
+      "pure_vector": true,
+      "forbidden": [],
+      "accessible_name": "ZMD Mobility — Z de ruta con carga"
+    },
+    {
+      "path": "assets/08-z-ruta-carga/logo-dark.svg",
+      "viewBox": "0 0 320 144",
+      "pure_vector": true,
+      "forbidden": [],
+      "accessible_name": "ZMD Mobility — Z de ruta con carga"
+    },
+    {
+      "path": "assets/08-z-ruta-carga/symbol.svg",
+      "viewBox": "0 0 64 64",
+      "pure_vector": true,
+      "forbidden": [],
+      "accessible_name": "ZMD Mobility — Z de ruta con carga"
+    },
+    {
+      "path": "assets/09-vehiculo-electrico/logo-light.svg",
+      "viewBox": "0 0 320 144",
+      "pure_vector": true,
+      "forbidden": [],
+      "accessible_name": "ZMD Mobility — Vehículo conectado"
+    },
+    {
+      "path": "assets/09-vehiculo-electrico/logo-dark.svg",
+      "viewBox": "0 0 320 144",
+      "pure_vector": true,
+      "forbidden": [],
+      "accessible_name": "ZMD Mobility — Vehículo conectado"
+    },
+    {
+      "path": "assets/09-vehiculo-electrico/symbol.svg",
+      "viewBox": "0 0 64 64",
+      "pure_vector": true,
+      "forbidden": [],
+      "accessible_name": "ZMD Mobility — Vehículo conectado"
+    },
+    {
+      "path": "assets/10-enchufe-z/logo-light.svg",
+      "viewBox": "0 0 320 144",
+      "pure_vector": true,
+      "forbidden": [],
+      "accessible_name": "ZMD Mobility — Enchufe con Z"
+    },
+    {
+      "path": "assets/10-enchufe-z/logo-dark.svg",
+      "viewBox": "0 0 320 144",
+      "pure_vector": true,
+      "forbidden": [],
+      "accessible_name": "ZMD Mobility — Enchufe con Z"
+    },
+    {
+      "path": "assets/10-enchufe-z/symbol.svg",
+      "viewBox": "0 0 64 64",
+      "pure_vector": true,
+      "forbidden": [],
+      "accessible_name": "ZMD Mobility — Enchufe con Z"
+    },
+    {
+      "path": "assets/11-bateria-retorno/logo-light.svg",
+      "viewBox": "0 0 320 144",
+      "pure_vector": true,
+      "forbidden": [],
+      "accessible_name": "ZMD Mobility — Batería y retorno"
+    },
+    {
+      "path": "assets/11-bateria-retorno/logo-dark.svg",
+      "viewBox": "0 0 320 144",
+      "pure_vector": true,
+      "forbidden": [],
+      "accessible_name": "ZMD Mobility — Batería y retorno"
+    },
+    {
+      "path": "assets/11-bateria-retorno/symbol.svg",
+      "viewBox": "0 0 64 64",
+      "pure_vector": true,
+      "forbidden": [],
+      "accessible_name": "ZMD Mobility — Batería y retorno"
+    },
+    {
+      "path": "assets/12-punto-carga/logo-light.svg",
+      "viewBox": "0 0 320 144",
+      "pure_vector": true,
+      "forbidden": [],
+      "accessible_name": "ZMD Mobility — Punto de carga"
+    },
+    {
+      "path": "assets/12-punto-carga/logo-dark.svg",
+      "viewBox": "0 0 320 144",
+      "pure_vector": true,
+      "forbidden": [],
+      "accessible_name": "ZMD Mobility — Punto de carga"
+    },
+    {
+      "path": "assets/12-punto-carga/symbol.svg",
+      "viewBox": "0 0 64 64",
+      "pure_vector": true,
+      "forbidden": [],
+      "accessible_name": "ZMD Mobility — Punto de carga"
+    }
+  ]
+}

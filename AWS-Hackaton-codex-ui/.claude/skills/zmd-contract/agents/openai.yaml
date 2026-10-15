@@ -1,0 +1,4 @@
+interface:
+  display_name: "Contrato UI–motor ZMD Mobility"
+  short_description: "Entradas, estados y unidades compartidos por UI y motor"
+  default_prompt: "Usa $zmd-contract para acordar la salida mínima del motor que necesita esta pantalla ZMD Mobility."

@@ -1,0 +1,517 @@
+{
+  "date": "2026-10-15T05:24:04.231Z",
+  "scope": "Only mobile list → detail → close/Escape, after viewport/focus fix",
+  "sourcesBefore": {
+    "map.js": "5d1cf2014ce66b5322d02050b537101181f6f863ddd43b3bf516f235a08406c5",
+    "plan.js": "157b36f198feff3aa615a4604d377da39634b4be17fe21548cbe0469f802cb22",
+    "plan.css": "51a123def0a5eef8b4ed4be34f2e7bb9fc1a835dcd08b0e70884ad93884caedc",
+    "material.css": "33d5248e0279a25ff322dc5f1fba1d4206cb351074a235e5f4941da96bfa8f42"
+  },
+  "cases": [
+    {
+      "width": 319,
+      "node": "C3",
+      "index": "9",
+      "mode": "click",
+      "triggerReplaced": true,
+      "open": {
+        "focus": {
+          "id": "close-selection",
+          "visible": true
+        },
+        "title": "Cargador 3",
+        "hidden": false,
+        "detailVisible": true,
+        "pinVisible": true,
+        "scrollY": 60,
+        "viewport": {
+          "width": 319,
+          "height": 844
+        }
+      },
+      "openImage": "/tmp/zmd-webapp-focus-319-c3-open.png",
+      "closed": {
+        "focus": {
+          "id": "",
+          "route": "auto-1",
+          "index": "9",
+          "stop": "C3",
+          "visible": true
+        },
+        "title": "Cargador 3",
+        "hidden": true,
+        "detailVisible": false,
+        "pinVisible": false,
+        "scrollY": 886,
+        "viewport": {
+          "width": 319,
+          "height": 844
+        }
+      },
+      "closedImage": "/tmp/zmd-webapp-focus-319-c3-closed.png",
+      "passed": true
+    },
+    {
+      "width": 319,
+      "node": "C3",
+      "index": "9",
+      "mode": "keyboard",
+      "triggerReplaced": true,
+      "open": {
+        "focus": {
+          "id": "close-selection",
+          "visible": true
+        },
+        "title": "Cargador 3",
+        "hidden": false,
+        "detailVisible": true,
+        "pinVisible": true,
+        "scrollY": 60,
+        "viewport": {
+          "width": 319,
+          "height": 844
+        }
+      },
+      "closed": {
+        "focus": {
+          "id": "",
+          "route": "auto-1",
+          "index": "9",
+          "stop": "C3",
+          "visible": true
+        },
+        "title": "Cargador 3",
+        "hidden": true,
+        "detailVisible": false,
+        "pinVisible": false,
+        "scrollY": 886,
+        "viewport": {
+          "width": 319,
+          "height": 844
+        }
+      },
+      "passed": true
+    },
+    {
+      "width": 319,
+      "node": "BASE",
+      "index": "0",
+      "mode": "click",
+      "triggerReplaced": true,
+      "open": {
+        "focus": {
+          "id": "close-selection",
+          "visible": true
+        },
+        "title": "Salida de base",
+        "hidden": false,
+        "detailVisible": true,
+        "pinVisible": true,
+        "scrollY": 60,
+        "viewport": {
+          "width": 319,
+          "height": 844
+        }
+      },
+      "closed": {
+        "focus": {
+          "id": "",
+          "route": "auto-1",
+          "index": "0",
+          "stop": "BASE",
+          "visible": true
+        },
+        "title": "Salida de base",
+        "hidden": true,
+        "detailVisible": false,
+        "pinVisible": true,
+        "scrollY": 105,
+        "viewport": {
+          "width": 319,
+          "height": 844
+        }
+      },
+      "passed": true
+    },
+    {
+      "width": 319,
+      "node": "BASE",
+      "index": "0",
+      "mode": "keyboard",
+      "triggerReplaced": true,
+      "open": {
+        "focus": {
+          "id": "close-selection",
+          "visible": true
+        },
+        "title": "Salida de base",
+        "hidden": false,
+        "detailVisible": true,
+        "pinVisible": true,
+        "scrollY": 60,
+        "viewport": {
+          "width": 319,
+          "height": 844
+        }
+      },
+      "closed": {
+        "focus": {
+          "id": "",
+          "route": "auto-1",
+          "index": "0",
+          "stop": "BASE",
+          "visible": true
+        },
+        "title": "Salida de base",
+        "hidden": true,
+        "detailVisible": false,
+        "pinVisible": true,
+        "scrollY": 105,
+        "viewport": {
+          "width": 319,
+          "height": 844
+        }
+      },
+      "passed": true
+    },
+    {
+      "width": 319,
+      "node": "BASE",
+      "index": "12",
+      "mode": "click",
+      "triggerReplaced": true,
+      "open": {
+        "focus": {
+          "id": "close-selection",
+          "visible": true
+        },
+        "title": "Regreso a base",
+        "hidden": false,
+        "detailVisible": true,
+        "pinVisible": true,
+        "scrollY": 60,
+        "viewport": {
+          "width": 319,
+          "height": 844
+        }
+      },
+      "closed": {
+        "focus": {
+          "id": "",
+          "route": "auto-1",
+          "index": "12",
+          "stop": "BASE",
+          "visible": true
+        },
+        "title": "Regreso a base",
+        "hidden": true,
+        "detailVisible": false,
+        "pinVisible": false,
+        "scrollY": 886,
+        "viewport": {
+          "width": 319,
+          "height": 844
+        }
+      },
+      "passed": true
+    },
+    {
+      "width": 319,
+      "node": "BASE",
+      "index": "12",
+      "mode": "keyboard",
+      "triggerReplaced": true,
+      "open": {
+        "focus": {
+          "id": "close-selection",
+          "visible": true
+        },
+        "title": "Regreso a base",
+        "hidden": false,
+        "detailVisible": true,
+        "pinVisible": true,
+        "scrollY": 60,
+        "viewport": {
+          "width": 319,
+          "height": 844
+        }
+      },
+      "closed": {
+        "focus": {
+          "id": "",
+          "route": "auto-1",
+          "index": "12",
+          "stop": "BASE",
+          "visible": true
+        },
+        "title": "Regreso a base",
+        "hidden": true,
+        "detailVisible": false,
+        "pinVisible": false,
+        "scrollY": 886,
+        "viewport": {
+          "width": 319,
+          "height": 844
+        }
+      },
+      "passed": true
+    },
+    {
+      "width": 390,
+      "node": "C3",
+      "index": "9",
+      "mode": "click",
+      "triggerReplaced": true,
+      "open": {
+        "focus": {
+          "id": "close-selection",
+          "visible": true
+        },
+        "title": "Cargador 3",
+        "hidden": false,
+        "detailVisible": true,
+        "pinVisible": true,
+        "scrollY": 60,
+        "viewport": {
+          "width": 390,
+          "height": 844
+        }
+      },
+      "openImage": "/tmp/zmd-webapp-focus-390-c3-open.png",
+      "closed": {
+        "focus": {
+          "id": "",
+          "route": "auto-1",
+          "index": "9",
+          "stop": "C3",
+          "visible": true
+        },
+        "title": "Cargador 3",
+        "hidden": true,
+        "detailVisible": false,
+        "pinVisible": false,
+        "scrollY": 886,
+        "viewport": {
+          "width": 390,
+          "height": 844
+        }
+      },
+      "closedImage": "/tmp/zmd-webapp-focus-390-c3-closed.png",
+      "passed": true
+    },
+    {
+      "width": 390,
+      "node": "C3",
+      "index": "9",
+      "mode": "keyboard",
+      "triggerReplaced": true,
+      "open": {
+        "focus": {
+          "id": "close-selection",
+          "visible": true
+        },
+        "title": "Cargador 3",
+        "hidden": false,
+        "detailVisible": true,
+        "pinVisible": true,
+        "scrollY": 60,
+        "viewport": {
+          "width": 390,
+          "height": 844
+        }
+      },
+      "closed": {
+        "focus": {
+          "id": "",
+          "route": "auto-1",
+          "index": "9",
+          "stop": "C3",
+          "visible": true
+        },
+        "title": "Cargador 3",
+        "hidden": true,
+        "detailVisible": false,
+        "pinVisible": false,
+        "scrollY": 886,
+        "viewport": {
+          "width": 390,
+          "height": 844
+        }
+      },
+      "passed": true
+    },
+    {
+      "width": 390,
+      "node": "BASE",
+      "index": "0",
+      "mode": "click",
+      "triggerReplaced": true,
+      "open": {
+        "focus": {
+          "id": "close-selection",
+          "visible": true
+        },
+        "title": "Salida de base",
+        "hidden": false,
+        "detailVisible": true,
+        "pinVisible": true,
+        "scrollY": 60,
+        "viewport": {
+          "width": 390,
+          "height": 844
+        }
+      },
+      "closed": {
+        "focus": {
+          "id": "",
+          "route": "auto-1",
+          "index": "0",
+          "stop": "BASE",
+          "visible": true
+        },
+        "title": "Salida de base",
+        "hidden": true,
+        "detailVisible": false,
+        "pinVisible": true,
+        "scrollY": 105,
+        "viewport": {
+          "width": 390,
+          "height": 844
+        }
+      },
+      "passed": true
+    },
+    {
+      "width": 390,
+      "node": "BASE",
+      "index": "0",
+      "mode": "keyboard",
+      "triggerReplaced": true,
+      "open": {
+        "focus": {
+          "id": "close-selection",
+          "visible": true
+        },
+        "title": "Salida de base",
+        "hidden": false,
+        "detailVisible": true,
+        "pinVisible": true,
+        "scrollY": 60,
+        "viewport": {
+          "width": 390,
+          "height": 844
+        }
+      },
+      "closed": {
+        "focus": {
+          "id": "",
+          "route": "auto-1",
+          "index": "0",
+          "stop": "BASE",
+          "visible": true
+        },
+        "title": "Salida de base",
+        "hidden": true,
+        "detailVisible": false,
+        "pinVisible": true,
+        "scrollY": 105,
+        "viewport": {
+          "width": 390,
+          "height": 844
+        }
+      },
+      "passed": true
+    },
+    {
+      "width": 390,
+      "node": "BASE",
+      "index": "12",
+      "mode": "click",
+      "triggerReplaced": true,
+      "open": {
+        "focus": {
+          "id": "close-selection",
+          "visible": true
+        },
+        "title": "Regreso a base",
+        "hidden": false,
+        "detailVisible": true,
+        "pinVisible": true,
+        "scrollY": 60,
+        "viewport": {
+          "width": 390,
+          "height": 844
+        }
+      },
+      "closed": {
+        "focus": {
+          "id": "",
+          "route": "auto-1",
+          "index": "12",
+          "stop": "BASE",
+          "visible": true
+        },
+        "title": "Regreso a base",
+        "hidden": true,
+        "detailVisible": false,
+        "pinVisible": false,
+        "scrollY": 886,
+        "viewport": {
+          "width": 390,
+          "height": 844
+        }
+      },
+      "passed": true
+    },
+    {
+      "width": 390,
+      "node": "BASE",
+      "index": "12",
+      "mode": "keyboard",
+      "triggerReplaced": true,
+      "open": {
+        "focus": {
+          "id": "close-selection",
+          "visible": true
+        },
+        "title": "Regreso a base",
+        "hidden": false,
+        "detailVisible": true,
+        "pinVisible": true,
+        "scrollY": 60,
+        "viewport": {
+          "width": 390,
+          "height": 844
+        }
+      },
+      "closed": {
+        "focus": {
+          "id": "",
+          "route": "auto-1",
+          "index": "12",
+          "stop": "BASE",
+          "visible": true
+        },
+        "title": "Regreso a base",
+        "hidden": true,
+        "detailVisible": false,
+        "pinVisible": false,
+        "scrollY": 886,
+        "viewport": {
+          "width": 390,
+          "height": 844
+        }
+      },
+      "passed": true
+    }
+  ],
+  "errors": [],
+  "sourcesAfter": {
+    "map.js": "5d1cf2014ce66b5322d02050b537101181f6f863ddd43b3bf516f235a08406c5",
+    "plan.js": "157b36f198feff3aa615a4604d377da39634b4be17fe21548cbe0469f802cb22",
+    "plan.css": "51a123def0a5eef8b4ed4be34f2e7bb9fc1a835dcd08b0e70884ad93884caedc",
+    "material.css": "33d5248e0279a25ff322dc5f1fba1d4206cb351074a235e5f4941da96bfa8f42"
+  },
+  "sourcesUnchanged": true,
+  "passed": true
+}

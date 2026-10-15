@@ -1,0 +1,148 @@
+{
+  "tested_at_utc": "2026-10-15T04:44:58.360Z",
+  "change": "Text and SVG text fill only; geometry, routes and layout unchanged",
+  "foreground": "#5f6e7c",
+  "ratios": [
+    {
+      "background": "#f9fbfd",
+      "ratio": 5.051196723371227,
+      "target": 4.5
+    },
+    {
+      "background": "#ffffff",
+      "ratio": 5.2395228184959395,
+      "target": 4.5
+    },
+    {
+      "background": "#eef4ff",
+      "ratio": 4.7454363177686485,
+      "target": 4.5
+    }
+  ],
+  "computed_fields": [
+    {
+      "selector": ".file-tag",
+      "colors": [
+        "rgb(95, 110, 124)"
+      ]
+    },
+    {
+      "selector": ".sidebar-tabs button span",
+      "colors": [
+        "rgb(95, 110, 124)",
+        "rgb(95, 110, 124)"
+      ]
+    },
+    {
+      "selector": ".vehicle-model",
+      "colors": [
+        "rgb(95, 110, 124)",
+        "rgb(95, 110, 124)"
+      ]
+    },
+    {
+      "selector": ".vehicle-stats small",
+      "colors": [
+        "rgb(95, 110, 124)",
+        "rgb(95, 110, 124)",
+        "rgb(95, 110, 124)",
+        "rgb(95, 110, 124)",
+        "rgb(95, 110, 124)",
+        "rgb(95, 110, 124)"
+      ]
+    },
+    {
+      "selector": ".map-summary strong span",
+      "colors": [
+        "rgb(95, 110, 124)",
+        "rgb(95, 110, 124)"
+      ]
+    },
+    {
+      "selector": ".map-summary small",
+      "colors": [
+        "rgb(95, 110, 124)",
+        "rgb(95, 110, 124)",
+        "rgb(95, 110, 124)"
+      ]
+    },
+    {
+      "selector": ".legend .route-note",
+      "colors": [
+        "rgb(95, 110, 124)"
+      ]
+    },
+    {
+      "selector": ".mini-profile figcaption",
+      "colors": [
+        "rgb(95, 110, 124)",
+        "rgb(95, 110, 124)"
+      ]
+    },
+    {
+      "selector": ".selection p",
+      "colors": [
+        "rgb(95, 110, 124)",
+        "rgb(95, 110, 124)"
+      ]
+    },
+    {
+      "selector": ".stop-name small",
+      "colors": [
+        "rgb(95, 110, 124)",
+        "rgb(95, 110, 124)",
+        "rgb(95, 110, 124)",
+        "rgb(95, 110, 124)",
+        "rgb(95, 110, 124)",
+        "rgb(95, 110, 124)",
+        "rgb(95, 110, 124)",
+        "rgb(95, 110, 124)",
+        "rgb(95, 110, 124)",
+        "rgb(95, 110, 124)",
+        "rgb(95, 110, 124)",
+        "rgb(95, 110, 124)",
+        "rgb(95, 110, 124)"
+      ]
+    },
+    {
+      "selector": ".route-head small",
+      "colors": [
+        "rgb(95, 110, 124)"
+      ]
+    },
+    {
+      "selector": ".profile-label",
+      "colors": [
+        "rgb(95, 110, 124)"
+      ]
+    },
+    {
+      "selector": ".profile-axis",
+      "colors": [
+        "rgb(95, 110, 124)"
+      ]
+    },
+    {
+      "selector": ".profile-legend",
+      "colors": [
+        "rgb(95, 110, 124)"
+      ]
+    },
+    {
+      "selector": ".profile-note",
+      "colors": [
+        "rgb(95, 110, 124)"
+      ]
+    },
+    {
+      "selector": ".profile-plot text",
+      "colors": [
+        "rgb(95, 110, 124)",
+        "rgb(95, 110, 124)",
+        "rgb(95, 110, 124)"
+      ]
+    }
+  ],
+  "errors": [],
+  "passed": true
+}

@@ -1,0 +1,762 @@
+{
+  "startedAt": "2026-10-15T04:38:35.328Z",
+  "checks": [
+    {
+      "name": "Batería layout 1440",
+      "pass": true,
+      "evidence": {
+        "viewport": {
+          "width": 1440,
+          "height": 900
+        },
+        "documentWidth": 1440,
+        "bodyWidth": 1440,
+        "map": {
+          "left": 352,
+          "right": 1440,
+          "top": 65,
+          "bottom": 900,
+          "width": 1088,
+          "height": 835
+        },
+        "summary": {
+          "left": 612.4765625,
+          "right": 1179.5234375,
+          "top": 88,
+          "bottom": 166,
+          "width": 567.046875,
+          "height": 78
+        },
+        "summaryInside": true,
+        "mapReady": "true",
+        "mapStatus": "",
+        "models": [
+          "Nissan Leaf 2013",
+          "Nissan Leaf 2013"
+        ],
+        "miniProfiles": 2,
+        "cta": [
+          {
+            "vehicle": "auto-1",
+            "top": 496.34375,
+            "bottom": 528.34375,
+            "visibleInSidebar": true
+          },
+          {
+            "vehicle": "auto-2",
+            "top": 784.6875,
+            "bottom": 816.6875,
+            "visibleInSidebar": true
+          }
+        ]
+      }
+    },
+    {
+      "name": "Tabs use End with roving focus and selection",
+      "pass": true,
+      "evidence": {
+        "active": "stops-tab",
+        "selected": "true",
+        "fleetTabIndex": -1,
+        "stopsTabIndex": 0
+      }
+    },
+    {
+      "name": "Tabs use Home to return to vehicles",
+      "pass": true,
+      "evidence": {
+        "active": "fleet-tab",
+        "selected": "true"
+      }
+    },
+    {
+      "name": "Keyboard opens full battery profile immediately",
+      "pass": true,
+      "evidence": {
+        "height": "auto",
+        "opacity": "1",
+        "hidden": false,
+        "inert": false,
+        "animations": 0,
+        "focus": "profile-toggle-auto-1"
+      }
+    },
+    {
+      "name": "C3 point links profile, list and map to charge fixture",
+      "pass": true,
+      "evidence": {
+        "hidden": false,
+        "title": "Cargador 3",
+        "text": "Cargador 3C3 · Estación registrada\n    Batería al llegar22 %Al salir50,1 %Recarga de ejemplo: +4,5 kWh",
+        "route": "auto-1",
+        "index": "9",
+        "soc": [
+          "22 %",
+          "50,1 %"
+        ],
+        "active": [
+          {
+            "node": "C3",
+            "route": "auto-1",
+            "index": "9",
+            "kind": "profile-point is-charge active"
+          },
+          {
+            "node": "C3",
+            "route": "auto-1",
+            "index": "9",
+            "kind": "stop-row active"
+          }
+        ],
+        "focus": "profile:auto-1:9",
+        "status": "Auto 1. Cargador 3. Llegada 22 %, salida 50,1 %. Valores de ejemplo.",
+        "profileContext": "Cargador 3 · 22 % → 50,1 % · +4,5 kWh",
+        "mapSelected": "Cargador 3 (C3)"
+      }
+    },
+    {
+      "name": "Battery profile functional text contrast",
+      "pass": false,
+      "evidence": [
+        {
+          "selector": ".profile-label",
+          "text": "Carga de batería %Por parada",
+          "color": "rgb(123, 137, 151)",
+          "background": "rgb(249, 251, 253)",
+          "fontSize": "10px",
+          "ratio": 3.4504955852542003
+        },
+        {
+          "selector": ".profile-axis",
+          "text": "SalidaRegreso a base",
+          "color": "rgb(123, 137, 151)",
+          "background": "rgb(249, 251, 253)",
+          "fontSize": "10px",
+          "ratio": 3.4504955852542003
+        },
+        {
+          "selector": ".profile-plot text",
+          "text": "100",
+          "color": "rgb(137, 149, 162)",
+          "background": "rgb(249, 251, 253)",
+          "fontSize": "9px",
+          "ratio": 2.9407432232120274
+        },
+        {
+          "selector": ".profile-legend",
+          "text": "RecorridoRecarga",
+          "color": "rgb(111, 125, 139)",
+          "background": "rgb(249, 251, 253)",
+          "fontSize": "10px",
+          "ratio": 4.063533491025198
+        },
+        {
+          "selector": ".profile-note",
+          "text": "Valores ilustrativos por parada.No validan la energía entre paradas.",
+          "color": "rgb(123, 136, 149)",
+          "background": "rgb(249, 251, 253)",
+          "fontSize": "10px",
+          "ratio": 3.4918504315146834
+        }
+      ]
+    },
+    {
+      "name": "Escape restores exact charging point focus",
+      "pass": true,
+      "evidence": {
+        "hidden": true,
+        "title": "Cargador 3",
+        "text": "Cargador 3C3 · Estación registrada\n    Batería al llegar22 %Al salir50,1 %Recarga de ejemplo: +4,5 kWh",
+        "route": "auto-1",
+        "index": "9",
+        "soc": [
+          "22 %",
+          "50,1 %"
+        ],
+        "active": [
+          {
+            "node": "C3",
+            "route": "auto-1",
+            "index": "9",
+            "kind": "profile-point is-charge active"
+          },
+          {
+            "node": "C3",
+            "route": "auto-1",
+            "index": "9",
+            "kind": "stop-row active"
+          }
+        ],
+        "focus": "profile:auto-1:9",
+        "status": "Auto 1. Cargador 3. Llegada 22 %, salida 50,1 %. Valores de ejemplo.",
+        "profileContext": "Cargador 3 · 22 % → 50,1 % · +4,5 kWh",
+        "mapSelected": "Cargador 3 (C3)"
+      }
+    },
+    {
+      "name": "BASE map preserves profile return occurrence",
+      "pass": true,
+      "evidence": {
+        "hidden": false,
+        "title": "Regreso a base",
+        "text": "Regreso a baseBASE · Centro de distribución\n    Batería al llegar37,5 %Al salir37,5 %",
+        "route": "auto-1",
+        "index": "12",
+        "soc": [
+          "37,5 %",
+          "37,5 %"
+        ],
+        "active": [
+          {
+            "node": "BASE",
+            "route": "auto-1",
+            "index": "12",
+            "kind": "profile-point active"
+          },
+          {
+            "node": "BASE",
+            "route": "auto-1",
+            "index": "12",
+            "kind": "stop-row active"
+          }
+        ],
+        "focus": "profile:auto-1:12",
+        "status": "Auto 1. Regreso a base. Llegada 37,5 %, salida 37,5 %. Valores de ejemplo.",
+        "profileContext": "Regreso a base · 37,5 % al llegar",
+        "mapSelected": "Centro de distribución (BASE)"
+      }
+    },
+    {
+      "name": "Departure BASE point remains separate from return",
+      "pass": true,
+      "evidence": {
+        "hidden": false,
+        "title": "Salida de base",
+        "text": "Salida de baseBASE · Centro de distribución\n    Batería al llegar60 %Al salir60 %",
+        "route": "auto-1",
+        "index": "0",
+        "soc": [
+          "60 %",
+          "60 %"
+        ],
+        "active": [
+          {
+            "node": "BASE",
+            "route": "auto-1",
+            "index": "0",
+            "kind": "profile-point active"
+          },
+          {
+            "node": "BASE",
+            "route": "auto-1",
+            "index": "0",
+            "kind": "stop-row active"
+          }
+        ],
+        "focus": "profile:auto-1:0",
+        "status": "Auto 1. Salida de base. Llegada 60 %, salida 60 %. Valores de ejemplo.",
+        "profileContext": "Salida de base · 60 % al llegar",
+        "mapSelected": "Centro de distribución (BASE)"
+      }
+    },
+    {
+      "name": "Cross vehicle map selection updates list and profile context",
+      "pass": true,
+      "evidence": {
+        "hidden": false,
+        "title": "Local 5",
+        "text": "Local 5V5 · Entrega prevista\n    Batería al llegar57 %Al salir57 %",
+        "route": "auto-2",
+        "index": "1",
+        "soc": [
+          "57 %",
+          "57 %"
+        ],
+        "active": [
+          {
+            "node": "V5",
+            "route": "auto-2",
+            "index": "1",
+            "kind": "profile-point active"
+          },
+          {
+            "node": "V5",
+            "route": "auto-2",
+            "index": "1",
+            "kind": "stop-row active"
+          }
+        ],
+        "status": "Auto 2. Local 5. Llegada 57 %, salida 57 %. Valores de ejemplo.",
+        "profileContext": "Local 5 · 57 % al llegar",
+        "mapSelected": "Local 5 (V5)"
+      }
+    },
+    {
+      "name": "Auto 2 charge uses existing C9 fixture",
+      "pass": true,
+      "evidence": {
+        "hidden": false,
+        "title": "Cargador 9",
+        "text": "Cargador 9C9 · Estación registrada\n    Batería al llegar46 %Al salir66 %Recarga de ejemplo: +3,2 kWh",
+        "route": "auto-2",
+        "index": "4",
+        "soc": [
+          "46 %",
+          "66 %"
+        ],
+        "active": [
+          {
+            "node": "C9",
+            "route": "auto-2",
+            "index": "4",
+            "kind": "profile-point is-charge active"
+          },
+          {
+            "node": "C9",
+            "route": "auto-2",
+            "index": "4",
+            "kind": "stop-row active"
+          }
+        ],
+        "focus": "profile:auto-2:4",
+        "status": "Auto 2. Cargador 9. Llegada 46 %, salida 66 %. Valores de ejemplo.",
+        "profileContext": "Cargador 9 · 46 % → 66 % · +3,2 kWh",
+        "mapSelected": "Cargador 9 (C9)"
+      }
+    },
+    {
+      "name": "Pointer reversal settles expanded battery profile",
+      "pass": true,
+      "evidence": {
+        "before": {
+          "height": 55.25,
+          "opacity": "0.224586",
+          "hidden": false,
+          "inert": true,
+          "animations": 2
+        },
+        "after": {
+          "height": 246.046875,
+          "opacity": "1",
+          "hidden": false,
+          "inert": false,
+          "animations": 0
+        }
+      }
+    },
+    {
+      "name": "Reduced motion closes profile immediately",
+      "pass": true,
+      "evidence": {
+        "hidden": true,
+        "inert": true,
+        "height": "0px",
+        "opacity": "0",
+        "animations": 0
+      }
+    },
+    {
+      "name": "Batería layout 701",
+      "pass": true,
+      "evidence": {
+        "viewport": {
+          "width": 701,
+          "height": 900
+        },
+        "documentWidth": 701,
+        "bodyWidth": 701,
+        "map": {
+          "left": 310,
+          "right": 701,
+          "top": 65,
+          "bottom": 900,
+          "width": 391,
+          "height": 835
+        },
+        "summary": {
+          "left": 320.078125,
+          "right": 690.921875,
+          "top": 88,
+          "bottom": 154,
+          "width": 370.84375,
+          "height": 66
+        },
+        "summaryInside": true,
+        "mapReady": "true",
+        "mapStatus": "",
+        "models": [
+          "Nissan Leaf 2013",
+          "Nissan Leaf 2013"
+        ],
+        "miniProfiles": 2,
+        "cta": [
+          {
+            "vehicle": "auto-1",
+            "top": 490.34375,
+            "bottom": 522.34375,
+            "visibleInSidebar": true
+          },
+          {
+            "vehicle": "auto-2",
+            "top": 778.6875,
+            "bottom": 810.6875,
+            "visibleInSidebar": true
+          }
+        ]
+      }
+    },
+    {
+      "name": "Batería layout 390",
+      "pass": true,
+      "evidence": {
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "documentWidth": 390,
+        "bodyWidth": 390,
+        "map": {
+          "left": 0,
+          "right": 390,
+          "top": 60,
+          "bottom": 540,
+          "width": 390,
+          "height": 480
+        },
+        "summary": {
+          "left": 14,
+          "right": 376,
+          "top": 74,
+          "bottom": 139,
+          "width": 362,
+          "height": 65
+        },
+        "summaryInside": true,
+        "mapReady": "true",
+        "mapStatus": "",
+        "models": [
+          "Nissan Leaf 2013",
+          "Nissan Leaf 2013"
+        ],
+        "miniProfiles": 2,
+        "cta": [
+          {
+            "vehicle": "auto-1",
+            "top": 959.34375,
+            "bottom": 991.34375,
+            "visibleInSidebar": true
+          },
+          {
+            "vehicle": "auto-2",
+            "top": 959.34375,
+            "bottom": 991.34375,
+            "visibleInSidebar": true
+          }
+        ]
+      }
+    },
+    {
+      "name": "Batería layout 319",
+      "pass": true,
+      "evidence": {
+        "viewport": {
+          "width": 319,
+          "height": 859
+        },
+        "documentWidth": 319,
+        "bodyWidth": 319,
+        "map": {
+          "left": 0,
+          "right": 319,
+          "top": 60,
+          "bottom": 540,
+          "width": 319,
+          "height": 480
+        },
+        "summary": {
+          "left": 14,
+          "right": 305,
+          "top": 74,
+          "bottom": 149.28125,
+          "width": 291,
+          "height": 75.28125
+        },
+        "summaryInside": true,
+        "mapReady": "true",
+        "mapStatus": "",
+        "models": [
+          "Nissan Leaf 2013",
+          "Nissan Leaf 2013"
+        ],
+        "miniProfiles": 2,
+        "cta": [
+          {
+            "vehicle": "auto-1",
+            "top": 959.34375,
+            "bottom": 991.34375,
+            "visibleInSidebar": true
+          },
+          {
+            "vehicle": "auto-2",
+            "top": 959.34375,
+            "bottom": 991.34375,
+            "visibleInSidebar": true
+          }
+        ]
+      }
+    },
+    {
+      "name": "No JS exceptions or HTTP errors",
+      "pass": true,
+      "evidence": {
+        "errors": [],
+        "httpErrors": []
+      }
+    }
+  ],
+  "layouts": [
+    {
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "documentWidth": 1440,
+      "bodyWidth": 1440,
+      "map": {
+        "left": 352,
+        "right": 1440,
+        "top": 65,
+        "bottom": 900,
+        "width": 1088,
+        "height": 835
+      },
+      "summary": {
+        "left": 612.4765625,
+        "right": 1179.5234375,
+        "top": 88,
+        "bottom": 166,
+        "width": 567.046875,
+        "height": 78
+      },
+      "summaryInside": true,
+      "mapReady": "true",
+      "mapStatus": "",
+      "models": [
+        "Nissan Leaf 2013",
+        "Nissan Leaf 2013"
+      ],
+      "miniProfiles": 2,
+      "cta": [
+        {
+          "vehicle": "auto-1",
+          "top": 496.34375,
+          "bottom": 528.34375,
+          "visibleInSidebar": true
+        },
+        {
+          "vehicle": "auto-2",
+          "top": 784.6875,
+          "bottom": 816.6875,
+          "visibleInSidebar": true
+        }
+      ]
+    },
+    {
+      "viewport": {
+        "width": 701,
+        "height": 900
+      },
+      "documentWidth": 701,
+      "bodyWidth": 701,
+      "map": {
+        "left": 310,
+        "right": 701,
+        "top": 65,
+        "bottom": 900,
+        "width": 391,
+        "height": 835
+      },
+      "summary": {
+        "left": 320.078125,
+        "right": 690.921875,
+        "top": 88,
+        "bottom": 154,
+        "width": 370.84375,
+        "height": 66
+      },
+      "summaryInside": true,
+      "mapReady": "true",
+      "mapStatus": "",
+      "models": [
+        "Nissan Leaf 2013",
+        "Nissan Leaf 2013"
+      ],
+      "miniProfiles": 2,
+      "cta": [
+        {
+          "vehicle": "auto-1",
+          "top": 490.34375,
+          "bottom": 522.34375,
+          "visibleInSidebar": true
+        },
+        {
+          "vehicle": "auto-2",
+          "top": 778.6875,
+          "bottom": 810.6875,
+          "visibleInSidebar": true
+        }
+      ]
+    },
+    {
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "documentWidth": 390,
+      "bodyWidth": 390,
+      "map": {
+        "left": 0,
+        "right": 390,
+        "top": 60,
+        "bottom": 540,
+        "width": 390,
+        "height": 480
+      },
+      "summary": {
+        "left": 14,
+        "right": 376,
+        "top": 74,
+        "bottom": 139,
+        "width": 362,
+        "height": 65
+      },
+      "summaryInside": true,
+      "mapReady": "true",
+      "mapStatus": "",
+      "models": [
+        "Nissan Leaf 2013",
+        "Nissan Leaf 2013"
+      ],
+      "miniProfiles": 2,
+      "cta": [
+        {
+          "vehicle": "auto-1",
+          "top": 959.34375,
+          "bottom": 991.34375,
+          "visibleInSidebar": true
+        },
+        {
+          "vehicle": "auto-2",
+          "top": 959.34375,
+          "bottom": 991.34375,
+          "visibleInSidebar": true
+        }
+      ]
+    },
+    {
+      "viewport": {
+        "width": 319,
+        "height": 859
+      },
+      "documentWidth": 319,
+      "bodyWidth": 319,
+      "map": {
+        "left": 0,
+        "right": 319,
+        "top": 60,
+        "bottom": 540,
+        "width": 319,
+        "height": 480
+      },
+      "summary": {
+        "left": 14,
+        "right": 305,
+        "top": 74,
+        "bottom": 149.28125,
+        "width": 291,
+        "height": 75.28125
+      },
+      "summaryInside": true,
+      "mapReady": "true",
+      "mapStatus": "",
+      "models": [
+        "Nissan Leaf 2013",
+        "Nissan Leaf 2013"
+      ],
+      "miniProfiles": 2,
+      "cta": [
+        {
+          "vehicle": "auto-1",
+          "top": 959.34375,
+          "bottom": 991.34375,
+          "visibleInSidebar": true
+        },
+        {
+          "vehicle": "auto-2",
+          "top": 959.34375,
+          "bottom": 991.34375,
+          "visibleInSidebar": true
+        }
+      ]
+    }
+  ],
+  "contrast": [
+    {
+      "selector": ".profile-label",
+      "text": "Carga de batería %Por parada",
+      "color": "rgb(123, 137, 151)",
+      "background": "rgb(249, 251, 253)",
+      "fontSize": "10px",
+      "ratio": 3.4504955852542003
+    },
+    {
+      "selector": ".profile-axis",
+      "text": "SalidaRegreso a base",
+      "color": "rgb(123, 137, 151)",
+      "background": "rgb(249, 251, 253)",
+      "fontSize": "10px",
+      "ratio": 3.4504955852542003
+    },
+    {
+      "selector": ".profile-plot text",
+      "text": "100",
+      "color": "rgb(137, 149, 162)",
+      "background": "rgb(249, 251, 253)",
+      "fontSize": "9px",
+      "ratio": 2.9407432232120274
+    },
+    {
+      "selector": ".profile-legend",
+      "text": "RecorridoRecarga",
+      "color": "rgb(111, 125, 139)",
+      "background": "rgb(249, 251, 253)",
+      "fontSize": "10px",
+      "ratio": 4.063533491025198
+    },
+    {
+      "selector": ".profile-note",
+      "text": "Valores ilustrativos por parada.No validan la energía entre paradas.",
+      "color": "rgb(123, 136, 149)",
+      "background": "rgb(249, 251, 253)",
+      "fontSize": "10px",
+      "ratio": 3.4918504315146834
+    }
+  ],
+  "errors": [],
+  "httpErrors": [],
+  "requestsFailed": [
+    {
+      "url": "https://tiles.openfreemap.org/planet/20261011_080001_pt/12/1093/1516.pbf",
+      "failure": "net::ERR_ABORTED"
+    },
+    {
+      "url": "https://tiles.openfreemap.org/planet/20261011_080001_pt/12/1093/1515.pbf",
+      "failure": "net::ERR_ABORTED"
+    },
+    {
+      "url": "https://tiles.openfreemap.org/planet/20261011_080001_pt/12/1093/1517.pbf",
+      "failure": "net::ERR_ABORTED"
+    }
+  ],
+  "finishedAt": "2026-10-15T04:39:01.637Z"
+}

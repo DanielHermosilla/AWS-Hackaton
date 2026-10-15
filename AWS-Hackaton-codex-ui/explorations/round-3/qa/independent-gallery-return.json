@@ -1,0 +1,34 @@
+{
+  "startedAt": "2026-10-15T04:44:17.093Z",
+  "checks": [
+    {
+      "name": "/round-2/mapa/ a.brand returns to current gallery",
+      "pass": true,
+      "evidence": {
+        "parentPath": "/round-3/",
+        "dialogOpen": false,
+        "iframeSrc": null,
+        "focus": "0",
+        "navigated": [
+          "about:blank"
+        ]
+      }
+    },
+    {
+      "name": "/round-3/esencial/ a.all-designs returns to current gallery",
+      "pass": true,
+      "evidence": {
+        "parentPath": "/round-3/",
+        "dialogOpen": false,
+        "iframeSrc": null,
+        "focus": "3",
+        "navigated": [
+          "about:blank"
+        ]
+      }
+    }
+  ],
+  "errors": [],
+  "pass": true,
+  "finishedAt": "2026-10-15T04:44:25.491Z"
+}

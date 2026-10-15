@@ -1,0 +1,4 @@
+interface:
+  display_name: "ZMD · Logo creator"
+  short_description: "Crea logos editables y comprueba sus usos reales"
+  default_prompt: "Usa $zmd-logo-creator para crear o refinar el logo de ZMD Mobility y preparar los activos que necesita esta entrega."

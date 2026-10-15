@@ -1,0 +1,304 @@
+{
+  "startedAt": "2026-10-15T04:37:09.414Z",
+  "checks": [
+    {
+      "name": "Keyboard opens requested variant and focuses switch",
+      "pass": true,
+      "evidence": {
+        "open": true,
+        "src": "esencial/",
+        "title": "4. Esencial — mapa de flota interactivo",
+        "frameUrl": "/round-3/esencial/",
+        "pressed": [
+          "3"
+        ],
+        "activeElement": "<button data-variant=\"3\" aria-pressed=\"true\">04 <span>Esencial</span></button>",
+        "documentWidth": 1440,
+        "innerWidth": 1440,
+        "frameWidth": 1440,
+        "fullLink": "esencial/"
+      }
+    },
+    {
+      "name": "Escape from focused iframe closes comparison",
+      "pass": true,
+      "evidence": {
+        "open": false,
+        "src": null,
+        "title": "4. Esencial — mapa de flota interactivo",
+        "frameUrl": "blank",
+        "pressed": [
+          "3"
+        ],
+        "activeElement": "<button class=\"preview\" data-preview=\"3\" aria-label=\"Comparar variante 4, esencial\">\n          <img src=\"qa/esencial-desktop.webp\" alt=\"Mapa de flota con tarjetas más compactas, pestañas segmentadas y jerarquía tipográfica sobria\" width=\"1440\" height=\"900\">\n          <span class=\"preview-hint\">Abrir",
+        "documentWidth": 1440,
+        "innerWidth": 1440,
+        "frameWidth": 0,
+        "fullLink": "esencial/"
+      }
+    },
+    {
+      "name": "Closed comparison releases iframe and returns launcher focus",
+      "pass": true,
+      "evidence": {
+        "open": false,
+        "src": null,
+        "title": "4. Esencial — mapa de flota interactivo",
+        "frameUrl": "blank",
+        "pressed": [
+          "3"
+        ],
+        "activeElement": "<button class=\"preview\" data-preview=\"3\" aria-label=\"Comparar variante 4, esencial\">\n          <img src=\"qa/esencial-desktop.webp\" alt=\"Mapa de flota con tarjetas más compactas, pestañas segmentadas y jerarquía tipográfica sobria\" width=\"1440\" height=\"900\">\n          <span class=\"preview-hint\">Abrir",
+        "documentWidth": 1440,
+        "innerWidth": 1440,
+        "frameWidth": 0,
+        "fullLink": "esencial/"
+      }
+    },
+    {
+      "name": "First Escape closes only inner detail and restores its focus",
+      "pass": true,
+      "evidence": {
+        "parent": {
+          "open": true,
+          "src": "esencial/",
+          "title": "4. Esencial — mapa de flota interactivo",
+          "frameUrl": "/round-3/esencial/",
+          "pressed": [
+            "3"
+          ],
+          "activeElement": "<iframe id=\"live-preview\" title=\"4. Esencial — mapa de flota interactivo\" src=\"esencial/\"></iframe>",
+          "documentWidth": 1440,
+          "innerWidth": 1440,
+          "frameWidth": 1440,
+          "fullLink": "esencial/"
+        },
+        "innerFocus": "<button class=\"stop-row active\" data-stop=\"V12\" data-route=\"auto-1\" data-index=\"1\" aria-pressed=\"true\">\n            <span class=\"stop-number\">12</span>\n            <span class=\"stop-name\">Local 12<small>V12</small></span>\n            <strong>57 %</strong>\n          </button>"
+      }
+    },
+    {
+      "name": "Second Escape closes comparator and returns launcher focus",
+      "pass": true,
+      "evidence": {
+        "open": false,
+        "src": null,
+        "title": "4. Esencial — mapa de flota interactivo",
+        "frameUrl": "blank",
+        "pressed": [
+          "3"
+        ],
+        "activeElement": "<button class=\"preview\" data-preview=\"3\" aria-label=\"Comparar variante 4, esencial\">\n          <img src=\"qa/esencial-desktop.webp\" alt=\"Mapa de flota con tarjetas más compactas, pestañas segmentadas y jerarquía tipográfica sobria\" width=\"1440\" height=\"900\">\n          <span class=\"preview-hint\">Abrir",
+        "documentWidth": 1440,
+        "innerWidth": 1440,
+        "frameWidth": 0,
+        "fullLink": "esencial/"
+      }
+    },
+    {
+      "name": "Inner dialog gets native Escape first and restores focus",
+      "pass": true,
+      "evidence": {
+        "parent": {
+          "open": true,
+          "src": "esencial/",
+          "title": "4. Esencial — mapa de flota interactivo",
+          "frameUrl": "/round-3/esencial/",
+          "pressed": [
+            "3"
+          ],
+          "activeElement": "<iframe id=\"live-preview\" title=\"4. Esencial — mapa de flota interactivo\" src=\"esencial/\"></iframe>",
+          "documentWidth": 1440,
+          "innerWidth": 1440,
+          "frameWidth": 1440,
+          "fullLink": "esencial/"
+        },
+        "aboutFocus": "about"
+      }
+    },
+    {
+      "name": "Escape after inner dialog closes comparison",
+      "pass": true,
+      "evidence": {
+        "open": false,
+        "src": null,
+        "title": "4. Esencial — mapa de flota interactivo",
+        "frameUrl": "blank",
+        "pressed": [
+          "3"
+        ],
+        "activeElement": "<button class=\"preview\" data-preview=\"3\" aria-label=\"Comparar variante 4, esencial\">\n          <img src=\"qa/esencial-desktop.webp\" alt=\"Mapa de flota con tarjetas más compactas, pestañas segmentadas y jerarquía tipográfica sobria\" width=\"1440\" height=\"900\">\n          <span class=\"preview-hint\">Abrir",
+        "documentWidth": 1440,
+        "innerWidth": 1440,
+        "frameWidth": 0,
+        "fullLink": "esencial/"
+      }
+    },
+    {
+      "name": "Original points to unchanged original URL",
+      "pass": true,
+      "evidence": {
+        "open": true,
+        "src": "../round-2/mapa/",
+        "title": "1. Original — mapa de flota interactivo",
+        "frameUrl": "/round-2/mapa/",
+        "pressed": [
+          "0"
+        ],
+        "activeElement": "<button data-variant=\"0\" aria-pressed=\"true\">01 <span>Original</span></button>",
+        "documentWidth": 1440,
+        "innerWidth": 1440,
+        "frameWidth": 1440,
+        "fullLink": "../round-2/mapa/"
+      }
+    },
+    {
+      "name": "Switch loads Batería with matching state and link",
+      "pass": true,
+      "evidence": {
+        "open": true,
+        "src": "bateria/",
+        "title": "2. Batería integrada — mapa de flota interactivo",
+        "frameUrl": "/round-3/bateria/",
+        "pressed": [
+          "1"
+        ],
+        "activeElement": "<button data-variant=\"1\" aria-pressed=\"true\">02 <span>Batería</span></button>",
+        "documentWidth": 1440,
+        "innerWidth": 1440,
+        "frameWidth": 1440,
+        "fullLink": "bateria/"
+      }
+    },
+    {
+      "name": "Switch loads Cristal with matching state and link",
+      "pass": true,
+      "evidence": {
+        "open": true,
+        "src": "cristal/",
+        "title": "3. Cristal — mapa de flota interactivo",
+        "frameUrl": "/round-3/cristal/",
+        "pressed": [
+          "2"
+        ],
+        "activeElement": "<button data-variant=\"2\" aria-pressed=\"true\">03 <span>Cristal</span></button>",
+        "documentWidth": 1440,
+        "innerWidth": 1440,
+        "frameWidth": 1440,
+        "fullLink": "cristal/"
+      }
+    },
+    {
+      "name": "Rapid switching ends with latest selected variant",
+      "pass": true,
+      "evidence": {
+        "open": true,
+        "src": "esencial/",
+        "title": "4. Esencial — mapa de flota interactivo",
+        "frameUrl": "/round-3/esencial/",
+        "pressed": [
+          "3"
+        ],
+        "activeElement": "<button data-variant=\"3\" aria-pressed=\"true\">04 <span>Esencial</span></button>",
+        "documentWidth": 1440,
+        "innerWidth": 1440,
+        "frameWidth": 1440,
+        "fullLink": "esencial/"
+      }
+    },
+    {
+      "name": "Gallery 319 has no horizontal overflow",
+      "pass": true,
+      "evidence": {
+        "width": 319,
+        "documentWidth": 319,
+        "images": [
+          {
+            "src": "../round-2/qa/mapa-desktop.webp",
+            "loaded": true,
+            "naturalWidth": 1440
+          },
+          {
+            "src": "qa/bateria-desktop.webp",
+            "loaded": true,
+            "naturalWidth": 1440
+          },
+          {
+            "src": "qa/cristal-desktop.webp",
+            "loaded": true,
+            "naturalWidth": 1440
+          },
+          {
+            "src": "qa/esencial-desktop.webp",
+            "loaded": true,
+            "naturalWidth": 1440
+          }
+        ]
+      }
+    },
+    {
+      "name": "Comparison and embedded Esencial fit 319",
+      "pass": true,
+      "evidence": {
+        "parent": {
+          "open": true,
+          "src": "esencial/",
+          "title": "4. Esencial — mapa de flota interactivo",
+          "frameUrl": "/round-3/esencial/",
+          "pressed": [
+            "3"
+          ],
+          "activeElement": "<button data-variant=\"3\" aria-pressed=\"true\">04 <span>Esencial</span></button>",
+          "documentWidth": 319,
+          "innerWidth": 319,
+          "frameWidth": 319,
+          "fullLink": "esencial/"
+        },
+        "inside": {
+          "width": 319,
+          "documentWidth": 319,
+          "summaryLeft": 14,
+          "summaryRight": 305,
+          "mapReady": "true"
+        }
+      }
+    },
+    {
+      "name": "Keyboard close returns correct launcher focus at 319",
+      "pass": true,
+      "evidence": {
+        "open": false,
+        "src": null,
+        "title": "4. Esencial — mapa de flota interactivo",
+        "frameUrl": "blank",
+        "pressed": [
+          "3"
+        ],
+        "activeElement": "<button class=\"preview\" data-preview=\"3\" aria-label=\"Comparar variante 4, esencial\">\n          <img src=\"qa/esencial-desktop.webp\" alt=\"Mapa de flota con tarjetas más compactas, pestañas segmentadas y jerarquía tipográfica sobria\" width=\"1440\" height=\"900\">\n          <span class=\"preview-hint\">Abrir",
+        "documentWidth": 319,
+        "innerWidth": 319,
+        "frameWidth": 0,
+        "fullLink": "esencial/"
+      }
+    },
+    {
+      "name": "No JavaScript exceptions",
+      "pass": true,
+      "evidence": {
+        "errors": []
+      }
+    }
+  ],
+  "pageErrors": [],
+  "httpErrors": [],
+  "requestsFailed": [
+    {
+      "url": "https://tiles.openfreemap.org/fonts/Noto%20Sans%20Italic/0-255.pbf",
+      "failure": "net::ERR_ABORTED"
+    },
+    {
+      "url": "https://tiles.openfreemap.org/fonts/Noto%20Sans%20Regular/0-255.pbf",
+      "failure": "net::ERR_ABORTED"
+    }
+  ],
+  "finishedAt": "2026-10-15T04:38:10.814Z"
+}

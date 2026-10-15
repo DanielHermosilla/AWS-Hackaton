@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://tiles.openfreemap.org; worker-src 'self' blob:; child-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>ZMD Mobility · Identidad, ronda 02</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="options.js" defer></script>
+  <script src="app.js" defer></script>
+</head>
+<body data-theme="light" data-palette="blue">
+  <a class="skip-link" href="#gallery">Ir a las propuestas</a>
+  <header class="topbar">
+    <a class="back" href="../index.html"><span aria-hidden="true">←</span> Ronda 02</a>
+    <span class="brand-name">ZMD <span>Mobility</span></span>
+    <span class="edition">Identidad / 12 propuestas</span>
+  </header>
+  <main>
+    <section class="intro" aria-labelledby="page-title">
+      <p class="eyebrow">UNA NUEVA DIRECCIÓN</p>
+      <h1 id="page-title">ZMD. Movilidad eléctrica.</h1>
+      <p class="lede">El nombre, la carga y el recorrido en una misma marca.</p>
+      <div class="intro-foot">
+        <p>4 nombres tipográficos · 4 monogramas Z · 4 símbolos reconocibles</p>
+        <span class="proposal-note">Propuestas para comparar</span>
+      </div>
+    </section>
+
+    <section class="controls" aria-label="Controles de comparación">
+      <div class="filter-row">
+        <div class="filters" role="group" aria-label="Familia de logos">
+          <button type="button" data-filter="all" aria-pressed="true">Todas <span>12</span></button>
+          <button type="button" data-filter="typographic" aria-pressed="false">ZMD tipográfico <span>4</span></button>
+          <button type="button" data-filter="monogram" aria-pressed="false">Monograma Z <span>4</span></button>
+          <button type="button" data-filter="symbol" aria-pressed="false">Símbolo eléctrico <span>4</span></button>
+        </div>
+        <span id="count" class="count" aria-live="polite">12 propuestas</span>
+      </div>
+      <div class="appearance-row">
+        <div class="choice-group">
+          <span class="control-label">Fondo</span>
+          <div class="segmented" role="group" aria-label="Fondo de comparación">
+            <button type="button" data-theme-choice="light" aria-pressed="true">Claro</button>
+            <button type="button" data-theme-choice="dark" aria-pressed="false">Oscuro</button>
+          </div>
+        </div>
+        <div class="choice-group">
+          <span class="control-label">Acento</span>
+          <div class="palette" role="group" aria-label="Color del logo">
+            <button type="button" data-palette-choice="black" aria-pressed="false"><i class="swatch black" aria-hidden="true"></i>Negro</button>
+            <button type="button" data-palette-choice="blue" aria-pressed="true"><i class="swatch blue" aria-hidden="true"></i>Azul</button>
+            <button type="button" data-palette-choice="green" aria-pressed="false"><i class="swatch green" aria-hidden="true"></i>Verde</button>
+          </div>
+        </div>
+        <span class="appearance-note">El color no cambia la propuesta.</span>
+      </div>
+    </section>
+
+    <div id="gallery" class="gallery" tabindex="-1" aria-label="Doce logos de ZMD Mobility"></div>
+    <noscript><p class="noscript">Activa JavaScript para comparar las propuestas. Los SVG editables están en la carpeta <a href="assets/">assets</a>.</p></noscript>
+    <footer class="page-footer">
+      <p>ZMD Mobility es la consultora. CASE es el cliente del desafío.</p>
+      <p>Exploración vectorial original · 15 de octubre de 2026</p>
+    </footer>
+  </main>
+
+  <dialog id="detail" aria-labelledby="detail-title">
+    <div class="detail-top">
+      <span id="detail-family"></span>
+      <button id="close-detail" type="button" aria-label="Cerrar detalle">Cerrar <span aria-hidden="true">×</span></button>
+    </div>
+    <div id="detail-logo" class="detail-logo"></div>
+    <div class="detail-copy">
+      <p class="detail-number" id="detail-number"></p>
+      <h2 id="detail-title"></h2>
+      <p id="detail-meaning" class="detail-meaning"></p>
+      <div class="detail-risk">
+        <h3>Qué conviene revisar</h3>
+        <p id="detail-risk"></p>
+      </div>
+      <div class="small-use">
+        <div class="small-use-label"><span>Versión compacta</span><small>20 / 32 / 64 px</small></div>
+        <div id="detail-symbols" class="detail-symbols" aria-hidden="true"></div>
+      </div>
+      <div class="downloads">
+        <button id="download-current" type="button">Descargar esta vista <span aria-hidden="true">↓</span></button>
+        <a id="download-symbol" href="#" download>Símbolo SVG</a>
+      </div>
+      <p class="detail-note">Abrir o descargar un logo no lo aprueba como identidad.</p>
+    </div>
+  </dialog>
+</body>
+</html>

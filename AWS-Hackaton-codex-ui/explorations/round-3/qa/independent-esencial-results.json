@@ -1,0 +1,2773 @@
+{
+  "startedAt": "2026-10-15T04:28:50.139Z",
+  "scope": "Independent Esencial UI QA only",
+  "checks": [
+    {
+      "name": "Esencial layout 1440",
+      "pass": true,
+      "evidence": {
+        "viewport": {
+          "width": 1440,
+          "height": 900
+        },
+        "documentWidth": 1440,
+        "bodyWidth": 1440,
+        "map": {
+          "left": 352,
+          "right": 1440,
+          "top": 64,
+          "bottom": 900,
+          "width": 1088,
+          "height": 836
+        },
+        "summary": {
+          "left": 617.9765625,
+          "right": 1174.0234375,
+          "top": 87,
+          "bottom": 164,
+          "width": 556.046875,
+          "height": 77
+        },
+        "summaryInsideMap": true,
+        "allVisitsInsideMap": true,
+        "markers": [
+          {
+            "name": "Local 1 (V1)",
+            "left": 862.5,
+            "right": 891.5,
+            "top": 656.5,
+            "bottom": 685.5
+          },
+          {
+            "name": "Local 2 (V2)",
+            "left": 1054.5,
+            "right": 1083.5,
+            "top": 254.5,
+            "bottom": 283.5
+          },
+          {
+            "name": "Local 3 (V3)",
+            "left": 644.5,
+            "right": 673.5,
+            "top": 302.5,
+            "bottom": 331.5
+          },
+          {
+            "name": "Local 4 (V4)",
+            "left": 1112.5,
+            "right": 1141.5,
+            "top": 528.5,
+            "bottom": 557.5
+          },
+          {
+            "name": "Local 5 (V5)",
+            "left": 870.5,
+            "right": 899.5,
+            "top": 413.5,
+            "bottom": 442.5
+          },
+          {
+            "name": "Local 6 (V6)",
+            "left": 648.5,
+            "right": 677.5,
+            "top": 544.5,
+            "bottom": 573.5
+          },
+          {
+            "name": "Local 7 (V7)",
+            "left": 653.5,
+            "right": 682.5,
+            "top": 737.5,
+            "bottom": 766.5
+          },
+          {
+            "name": "Local 8 (V8)",
+            "left": 1044.5,
+            "right": 1073.5,
+            "top": 696.5,
+            "bottom": 725.5
+          },
+          {
+            "name": "Local 9 (V9)",
+            "left": 898.5,
+            "right": 927.5,
+            "top": 261.5,
+            "bottom": 290.5
+          },
+          {
+            "name": "Local 10 (V10)",
+            "left": 1049.5,
+            "right": 1078.5,
+            "top": 398.5,
+            "bottom": 427.5
+          },
+          {
+            "name": "Local 11 (V11)",
+            "left": 940.5,
+            "right": 969.5,
+            "top": 538.5,
+            "bottom": 567.5
+          },
+          {
+            "name": "Local 12 (V12)",
+            "left": 718.5,
+            "right": 747.5,
+            "top": 422.5,
+            "bottom": 451.5
+          },
+          {
+            "name": "Local 13 (V13)",
+            "left": 803.5,
+            "right": 832.5,
+            "top": 532.5,
+            "bottom": 561.5
+          },
+          {
+            "name": "Local 14 (V14)",
+            "left": 890.5,
+            "right": 919.5,
+            "top": 774.5,
+            "bottom": 803.5
+          },
+          {
+            "name": "Local 15 (V15)",
+            "left": 772.5,
+            "right": 801.5,
+            "top": 734.5,
+            "bottom": 763.5
+          },
+          {
+            "name": "Local 16 (V16)",
+            "left": 752.5,
+            "right": 781.5,
+            "top": 628.5,
+            "bottom": 657.5
+          },
+          {
+            "name": "Local 17 (V17)",
+            "left": 1029.5,
+            "right": 1058.5,
+            "top": 589.5,
+            "bottom": 618.5
+          },
+          {
+            "name": "Local 18 (V18)",
+            "left": 958.5,
+            "right": 987.5,
+            "top": 654.5,
+            "bottom": 683.5
+          },
+          {
+            "name": "Local 19 (V19)",
+            "left": 650.5,
+            "right": 679.5,
+            "top": 642.5,
+            "bottom": 671.5
+          },
+          {
+            "name": "Local 20 (V20)",
+            "left": 1025.5,
+            "right": 1054.5,
+            "top": 490.5,
+            "bottom": 519.5
+          }
+        ],
+        "models": [
+          "Nissan Leaf 2013",
+          "Nissan Leaf 2013"
+        ],
+        "cards": [
+          "Salida 60 %Regreso 37,5 %",
+          "Salida 60 %Regreso 41,3 %"
+        ],
+        "canvas": {
+          "width": 1088,
+          "height": 836
+        },
+        "mapReady": "true",
+        "mapStatus": ""
+      }
+    },
+    {
+      "name": "Existing fixture and two BASE occurrences",
+      "pass": true,
+      "evidence": {
+        "vehicles": [
+          {
+            "name": "Auto 1",
+            "model": "Nissan Leaf 2013",
+            "initialSoc": 60
+          },
+          {
+            "name": "Auto 2",
+            "model": "Nissan Leaf 2013",
+            "initialSoc": 60
+          }
+        ],
+        "visits": 20,
+        "uniqueVisits": 20,
+        "routes": [
+          {
+            "id": "auto-1",
+            "finalSoc": 37.5,
+            "totalEnergy": null,
+            "charge": 4.5,
+            "first": {
+              "nodeId": "BASE",
+              "arrivalSoc": 60,
+              "departureSoc": 60,
+              "chargeKwh": 0
+            },
+            "last": {
+              "nodeId": "BASE",
+              "arrivalSoc": 37.5,
+              "departureSoc": 37.5,
+              "chargeKwh": 0
+            }
+          },
+          {
+            "id": "auto-2",
+            "finalSoc": 41.25,
+            "totalEnergy": null,
+            "charge": 3.2,
+            "first": {
+              "nodeId": "BASE",
+              "arrivalSoc": 60,
+              "departureSoc": 60,
+              "chargeKwh": 0
+            },
+            "last": {
+              "nodeId": "BASE",
+              "arrivalSoc": 41.25,
+              "departureSoc": 41.25,
+              "chargeKwh": 0
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Repeated map BASE preserves return auto-1",
+      "pass": true,
+      "evidence": {
+        "hidden": false,
+        "inert": false,
+        "opacity": "1",
+        "transform": "matrix(1, 0, 0, 1, 0, 0)",
+        "title": "Regreso a base",
+        "eyebrow": "Auto 1 · BASE",
+        "soc": [
+          "37,5 %",
+          "37,5 %"
+        ],
+        "route": "auto-1",
+        "index": "12",
+        "status": "Auto 1. Regreso a base. Batería de ejemplo: llegada 37,5 %, salida 37,5 %.",
+        "activeElement": "<button class=\"stop-row active\" data-stop=\"BASE\" data-route=\"auto-1\" data-index=\"12\" aria-pressed=\"true\">\n            <span class=\"stop-number\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"m3 10 9-7 9 7v11H3V10Zm5 11v-8h8v8\"></path></svg></span>\n            <span class",
+        "muted": [
+          "Local 2 (V2)",
+          "Local 4 (V4)",
+          "Local 5 (V5)",
+          "Local 8 (V8)",
+          "Local 9 (V9)",
+          "Local 10 (V10)",
+          "Local 11 (V11)",
+          "Local 17 (V17)",
+          "Local 18 (V18)",
+          "Local 20 (V20)"
+        ]
+      }
+    },
+    {
+      "name": "Map BASE preserves departure auto-1",
+      "pass": true,
+      "evidence": {
+        "hidden": false,
+        "inert": false,
+        "opacity": "1",
+        "transform": "matrix(1, 0, 0, 1, 0, 0)",
+        "title": "Salida de base",
+        "eyebrow": "Auto 1 · BASE",
+        "soc": [
+          "60 %",
+          "60 %"
+        ],
+        "route": "auto-1",
+        "index": "0",
+        "status": "Auto 1. Salida de base. Batería de ejemplo: llegada 60 %, salida 60 %.",
+        "activeElement": "<button class=\"stop-row active\" data-stop=\"BASE\" data-route=\"auto-1\" data-index=\"0\" aria-pressed=\"true\">\n            <span class=\"stop-number\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"m3 10 9-7 9 7v11H3V10Zm5 11v-8h8v8\"></path></svg></span>\n            <span class=",
+        "muted": [
+          "Local 2 (V2)",
+          "Local 4 (V4)",
+          "Local 5 (V5)",
+          "Local 8 (V8)",
+          "Local 9 (V9)",
+          "Local 10 (V10)",
+          "Local 11 (V11)",
+          "Local 17 (V17)",
+          "Local 18 (V18)",
+          "Local 20 (V20)"
+        ]
+      }
+    },
+    {
+      "name": "Repeated map BASE preserves return auto-2",
+      "pass": false,
+      "evidence": {
+        "hidden": false,
+        "inert": false,
+        "opacity": "1",
+        "transform": "matrix(1, 0, 0, 1, 0, 0)",
+        "title": "Regreso a base",
+        "eyebrow": "Auto 2 · BASE",
+        "soc": [
+          "41,3 %",
+          "41,3 %"
+        ],
+        "route": "auto-2",
+        "index": "12",
+        "status": "Auto 2. Regreso a base. Batería de ejemplo: llegada 41,3 %, salida 41,3 %.",
+        "activeElement": "<button class=\"stop-row active\" data-stop=\"BASE\" data-route=\"auto-2\" data-index=\"12\" aria-pressed=\"true\">\n            <span class=\"stop-number\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"m3 10 9-7 9 7v11H3V10Zm5 11v-8h8v8\"></path></svg></span>\n            <span class",
+        "muted": [
+          "Local 1 (V1)",
+          "Local 3 (V3)",
+          "Local 6 (V6)",
+          "Local 7 (V7)",
+          "Local 12 (V12)",
+          "Local 13 (V13)",
+          "Local 14 (V14)",
+          "Local 15 (V15)",
+          "Local 16 (V16)",
+          "Local 19 (V19)"
+        ]
+      }
+    },
+    {
+      "name": "Map BASE preserves departure auto-2",
+      "pass": true,
+      "evidence": {
+        "hidden": false,
+        "inert": false,
+        "opacity": "1",
+        "transform": "matrix(1, 0, 0, 1, 0, 0)",
+        "title": "Salida de base",
+        "eyebrow": "Auto 2 · BASE",
+        "soc": [
+          "60 %",
+          "60 %"
+        ],
+        "route": "auto-2",
+        "index": "0",
+        "status": "Auto 2. Salida de base. Batería de ejemplo: llegada 60 %, salida 60 %.",
+        "activeElement": "<button class=\"stop-row active\" data-stop=\"BASE\" data-route=\"auto-2\" data-index=\"0\" aria-pressed=\"true\">\n            <span class=\"stop-number\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"m3 10 9-7 9 7v11H3V10Zm5 11v-8h8v8\"></path></svg></span>\n            <span class=",
+        "muted": [
+          "Local 1 (V1)",
+          "Local 3 (V3)",
+          "Local 6 (V6)",
+          "Local 7 (V7)",
+          "Local 12 (V12)",
+          "Local 13 (V13)",
+          "Local 14 (V14)",
+          "Local 15 (V15)",
+          "Local 16 (V16)",
+          "Local 19 (V19)"
+        ]
+      }
+    },
+    {
+      "name": "Cross vehicle selects Auto 2 consistently",
+      "pass": true,
+      "evidence": {
+        "hidden": false,
+        "inert": false,
+        "opacity": "0.101531",
+        "transform": "matrix(1, 0, 0, 1, 0, 7.18775)",
+        "title": "Local 5",
+        "eyebrow": "Auto 2 · V5",
+        "soc": [
+          "57 %",
+          "57 %"
+        ],
+        "route": "auto-2",
+        "index": "1",
+        "status": "Auto 2. Local 5. Batería de ejemplo: llegada 57 %, salida 57 %.",
+        "activeElement": "<body>\n<header class=\"topbar\"><a class=\"brand\" href=\"../\"><strong>ZMD</strong><span>Mobility</span></a><div class=\"app-name\">Planificación de flota eléctrica</div><div class=\"top-actions\"><span class=\"demo-tag\">Demostración</span><button id=\"about\" class=\"icon-button\" aria-label=\"Acerca de los datos\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.",
+        "muted": [
+          "Local 1 (V1)",
+          "Local 3 (V3)",
+          "Local 6 (V6)",
+          "Local 7 (V7)",
+          "Local 12 (V12)",
+          "Local 13 (V13)",
+          "Local 14 (V14)",
+          "Local 15 (V15)",
+          "Local 16 (V16)",
+          "Local 19 (V19)"
+        ]
+      }
+    },
+    {
+      "name": "Keyboard selection is immediate",
+      "pass": true,
+      "evidence": {
+        "hidden": false,
+        "inert": false,
+        "opacity": "1",
+        "transform": "matrix(1, 0, 0, 1, 0, 0)",
+        "title": "Local 5",
+        "eyebrow": "Auto 2 · V5",
+        "soc": [
+          "57 %",
+          "57 %"
+        ],
+        "route": "auto-2",
+        "index": "1",
+        "status": "Auto 2. Local 5. Batería de ejemplo: llegada 57 %, salida 57 %.",
+        "activeElement": "<button class=\"stop-row active\" data-stop=\"V5\" data-route=\"auto-2\" data-index=\"1\" aria-pressed=\"true\">\n            <span class=\"stop-number\">5</span>\n            <span class=\"stop-name\">Local 5<small>V5</small></span>\n            <strong>57 %</strong>\n          </button>",
+        "muted": [
+          "Local 1 (V1)",
+          "Local 3 (V3)",
+          "Local 6 (V6)",
+          "Local 7 (V7)",
+          "Local 12 (V12)",
+          "Local 13 (V13)",
+          "Local 14 (V14)",
+          "Local 15 (V15)",
+          "Local 16 (V16)",
+          "Local 19 (V19)"
+        ]
+      }
+    },
+    {
+      "name": "Escape returns focus to original row",
+      "pass": true,
+      "evidence": {
+        "hidden": true,
+        "inert": true,
+        "opacity": "0",
+        "transform": "none",
+        "title": "Local 5",
+        "eyebrow": "Auto 2 · V5",
+        "soc": [
+          "57 %",
+          "57 %"
+        ],
+        "route": "auto-2",
+        "index": "1",
+        "status": "Auto 2. Local 5. Batería de ejemplo: llegada 57 %, salida 57 %.",
+        "activeElement": "<button class=\"stop-row active\" data-stop=\"V5\" data-route=\"auto-2\" data-index=\"1\" aria-pressed=\"true\">\n            <span class=\"stop-number\">5</span>\n            <span class=\"stop-name\">Local 5<small>V5</small></span>\n            <strong>57 %</strong>\n          </button>",
+        "muted": [
+          "Local 1 (V1)",
+          "Local 3 (V3)",
+          "Local 6 (V6)",
+          "Local 7 (V7)",
+          "Local 12 (V12)",
+          "Local 13 (V13)",
+          "Local 14 (V14)",
+          "Local 15 (V15)",
+          "Local 16 (V16)",
+          "Local 19 (V19)"
+        ]
+      }
+    },
+    {
+      "name": "Pointer interruption preserves new stop after old exit",
+      "pass": true,
+      "evidence": {
+        "beforeClose": {
+          "hidden": false,
+          "inert": false,
+          "opacity": "0.027778",
+          "transform": "matrix(1, 0, 0, 1, 0, 7.77778)",
+          "title": "Local 5",
+          "eyebrow": "Auto 2 · V5",
+          "soc": [
+            "57 %",
+            "57 %"
+          ],
+          "route": "auto-2",
+          "index": "1",
+          "status": "Auto 2. Local 5. Batería de ejemplo: llegada 57 %, salida 57 %.",
+          "activeElement": "<button class=\"stop-row active\" data-stop=\"V5\" data-route=\"auto-2\" data-index=\"1\" aria-pressed=\"true\">\n            <span class=\"stop-number\">5</span>\n            <span class=\"stop-name\">Local 5<small>V5</small></span>\n            <strong>57 %</strong>\n          </button>",
+          "muted": [
+            "Local 1 (V1)",
+            "Local 3 (V3)",
+            "Local 6 (V6)",
+            "Local 7 (V7)",
+            "Local 12 (V12)",
+            "Local 13 (V13)",
+            "Local 14 (V14)",
+            "Local 15 (V15)",
+            "Local 16 (V16)",
+            "Local 19 (V19)"
+          ]
+        },
+        "whileClosing": {
+          "hidden": false,
+          "inert": true,
+          "opacity": "1",
+          "transform": "matrix(1, 0, 0, 1, 0, 0)",
+          "title": "Local 5",
+          "eyebrow": "Auto 2 · V5",
+          "soc": [
+            "57 %",
+            "57 %"
+          ],
+          "route": "auto-2",
+          "index": "1",
+          "status": "Auto 2. Local 5. Batería de ejemplo: llegada 57 %, salida 57 %.",
+          "activeElement": "<button class=\"stop-row active\" data-stop=\"V5\" data-route=\"auto-2\" data-index=\"1\" aria-pressed=\"true\">\n            <span class=\"stop-number\">5</span>\n            <span class=\"stop-name\">Local 5<small>V5</small></span>\n            <strong>57 %</strong>\n          </button>",
+          "muted": [
+            "Local 1 (V1)",
+            "Local 3 (V3)",
+            "Local 6 (V6)",
+            "Local 7 (V7)",
+            "Local 12 (V12)",
+            "Local 13 (V13)",
+            "Local 14 (V14)",
+            "Local 15 (V15)",
+            "Local 16 (V16)",
+            "Local 19 (V19)"
+          ]
+        },
+        "afterReopen": {
+          "hidden": false,
+          "inert": false,
+          "opacity": "1",
+          "transform": "matrix(1, 0, 0, 1, 0, 0)",
+          "title": "Local 9",
+          "eyebrow": "Auto 2 · V9",
+          "soc": [
+            "51 %",
+            "51 %"
+          ],
+          "route": "auto-2",
+          "index": "2",
+          "status": "Auto 2. Local 9. Batería de ejemplo: llegada 51 %, salida 51 %.",
+          "activeElement": "<button class=\"stop-row active\" data-stop=\"V9\" data-route=\"auto-2\" data-index=\"2\" aria-pressed=\"true\">\n            <span class=\"stop-number\">9</span>\n            <span class=\"stop-name\">Local 9<small>V9</small></span>\n            <strong>51 %</strong>\n          </button>",
+          "muted": [
+            "Local 1 (V1)",
+            "Local 3 (V3)",
+            "Local 6 (V6)",
+            "Local 7 (V7)",
+            "Local 12 (V12)",
+            "Local 13 (V13)",
+            "Local 14 (V14)",
+            "Local 15 (V15)",
+            "Local 16 (V16)",
+            "Local 19 (V19)"
+          ]
+        },
+        "afterOldExit": {
+          "hidden": false,
+          "inert": false,
+          "opacity": "1",
+          "transform": "matrix(1, 0, 0, 1, 0, 0)",
+          "title": "Local 9",
+          "eyebrow": "Auto 2 · V9",
+          "soc": [
+            "51 %",
+            "51 %"
+          ],
+          "route": "auto-2",
+          "index": "2",
+          "status": "Auto 2. Local 9. Batería de ejemplo: llegada 51 %, salida 51 %.",
+          "activeElement": "<button class=\"stop-row active\" data-stop=\"V9\" data-route=\"auto-2\" data-index=\"2\" aria-pressed=\"true\">\n            <span class=\"stop-number\">9</span>\n            <span class=\"stop-name\">Local 9<small>V9</small></span>\n            <strong>51 %</strong>\n          </button>",
+          "muted": [
+            "Local 1 (V1)",
+            "Local 3 (V3)",
+            "Local 6 (V6)",
+            "Local 7 (V7)",
+            "Local 12 (V12)",
+            "Local 13 (V13)",
+            "Local 14 (V14)",
+            "Local 15 (V15)",
+            "Local 16 (V16)",
+            "Local 19 (V19)"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Live reduced-motion interrupts and settles detail",
+      "pass": false,
+      "evidence": {
+        "hidden": false,
+        "inert": false,
+        "opacity": "0.66466",
+        "transform": "none",
+        "title": "Local 5",
+        "eyebrow": "Auto 2 · V5",
+        "soc": [
+          "57 %",
+          "57 %"
+        ],
+        "route": "auto-2",
+        "index": "1",
+        "status": "Auto 2. Local 5. Batería de ejemplo: llegada 57 %, salida 57 %.",
+        "activeElement": "<button class=\"stop-row active\" data-stop=\"V5\" data-route=\"auto-2\" data-index=\"1\" aria-pressed=\"true\">\n            <span class=\"stop-number\">5</span>\n            <span class=\"stop-name\">Local 5<small>V5</small></span>\n            <strong>57 %</strong>\n          </button>",
+        "muted": [
+          "Local 1 (V1)",
+          "Local 3 (V3)",
+          "Local 6 (V6)",
+          "Local 7 (V7)",
+          "Local 12 (V12)",
+          "Local 13 (V13)",
+          "Local 14 (V14)",
+          "Local 15 (V15)",
+          "Local 16 (V16)",
+          "Local 19 (V19)"
+        ],
+        "animationCount": 0
+      }
+    },
+    {
+      "name": "Provenance dialog has name and returns focus",
+      "pass": true,
+      "evidence": {
+        "open": true,
+        "label": "about-heading",
+        "labelText": "Un ejemplo para explorar el diseño",
+        "focus": true,
+        "aboutReturn": "about"
+      }
+    },
+    {
+      "name": "Esencial layout 900",
+      "pass": true,
+      "evidence": {
+        "viewport": {
+          "width": 900,
+          "height": 900
+        },
+        "documentWidth": 900,
+        "bodyWidth": 900,
+        "map": {
+          "left": 310,
+          "right": 900,
+          "top": 64,
+          "bottom": 900,
+          "width": 590,
+          "height": 836
+        },
+        "summary": {
+          "left": 418.578125,
+          "right": 791.421875,
+          "top": 87,
+          "bottom": 156,
+          "width": 372.84375,
+          "height": 69
+        },
+        "summaryInsideMap": true,
+        "allVisitsInsideMap": true,
+        "markers": [
+          {
+            "name": "Local 1 (V1)",
+            "left": 572.5,
+            "right": 601.5,
+            "top": 648.5,
+            "bottom": 677.5
+          },
+          {
+            "name": "Local 2 (V2)",
+            "left": 754.5,
+            "right": 783.5,
+            "top": 266.5,
+            "bottom": 295.5
+          },
+          {
+            "name": "Local 3 (V3)",
+            "left": 365.5,
+            "right": 394.5,
+            "top": 312.5,
+            "bottom": 341.5
+          },
+          {
+            "name": "Local 4 (V4)",
+            "left": 809.5,
+            "right": 838.5,
+            "top": 527.5,
+            "bottom": 556.5
+          },
+          {
+            "name": "Local 5 (V5)",
+            "left": 580.5,
+            "right": 609.5,
+            "top": 417.5,
+            "bottom": 446.5
+          },
+          {
+            "name": "Local 6 (V6)",
+            "left": 369.5,
+            "right": 398.5,
+            "top": 542.5,
+            "bottom": 571.5
+          },
+          {
+            "name": "Local 7 (V7)",
+            "left": 373.5,
+            "right": 402.5,
+            "top": 725.5,
+            "bottom": 754.5
+          },
+          {
+            "name": "Local 8 (V8)",
+            "left": 745.5,
+            "right": 774.5,
+            "top": 686.5,
+            "bottom": 715.5
+          },
+          {
+            "name": "Local 9 (V9)",
+            "left": 606.5,
+            "right": 635.5,
+            "top": 272.5,
+            "bottom": 301.5
+          },
+          {
+            "name": "Local 10 (V10)",
+            "left": 749.5,
+            "right": 778.5,
+            "top": 403.5,
+            "bottom": 432.5
+          },
+          {
+            "name": "Local 11 (V11)",
+            "left": 646.5,
+            "right": 675.5,
+            "top": 536.5,
+            "bottom": 565.5
+          },
+          {
+            "name": "Local 12 (V12)",
+            "left": 435.5,
+            "right": 464.5,
+            "top": 425.5,
+            "bottom": 454.5
+          },
+          {
+            "name": "Local 13 (V13)",
+            "left": 516.5,
+            "right": 545.5,
+            "top": 530.5,
+            "bottom": 559.5
+          },
+          {
+            "name": "Local 14 (V14)",
+            "left": 599.5,
+            "right": 628.5,
+            "top": 760.5,
+            "bottom": 789.5
+          },
+          {
+            "name": "Local 15 (V15)",
+            "left": 486.5,
+            "right": 515.5,
+            "top": 722.5,
+            "bottom": 751.5
+          },
+          {
+            "name": "Local 16 (V16)",
+            "left": 468.5,
+            "right": 497.5,
+            "top": 621.5,
+            "bottom": 650.5
+          },
+          {
+            "name": "Local 17 (V17)",
+            "left": 730.5,
+            "right": 759.5,
+            "top": 584.5,
+            "bottom": 613.5
+          },
+          {
+            "name": "Local 18 (V18)",
+            "left": 663.5,
+            "right": 692.5,
+            "top": 646.5,
+            "bottom": 675.5
+          },
+          {
+            "name": "Local 19 (V19)",
+            "left": 371.5,
+            "right": 400.5,
+            "top": 634.5,
+            "bottom": 663.5
+          },
+          {
+            "name": "Local 20 (V20)",
+            "left": 727.5,
+            "right": 756.5,
+            "top": 490.5,
+            "bottom": 519.5
+          }
+        ],
+        "models": [
+          "Nissan Leaf 2013",
+          "Nissan Leaf 2013"
+        ],
+        "cards": [
+          "Salida 60 %Regreso 37,5 %",
+          "Salida 60 %Regreso 41,3 %"
+        ],
+        "canvas": {
+          "width": 590,
+          "height": 836
+        },
+        "mapReady": "true",
+        "mapStatus": ""
+      }
+    },
+    {
+      "name": "Esencial layout 720",
+      "pass": true,
+      "evidence": {
+        "viewport": {
+          "width": 720,
+          "height": 900
+        },
+        "documentWidth": 720,
+        "bodyWidth": 720,
+        "map": {
+          "left": 310,
+          "right": 720,
+          "top": 64,
+          "bottom": 900,
+          "width": 410,
+          "height": 836
+        },
+        "summary": {
+          "left": 328.578125,
+          "right": 701.421875,
+          "top": 87,
+          "bottom": 156,
+          "width": 372.84375,
+          "height": 69
+        },
+        "summaryInsideMap": true,
+        "allVisitsInsideMap": true,
+        "markers": [
+          {
+            "name": "Local 1 (V1)",
+            "left": 489.5,
+            "right": 518.5,
+            "top": 587.5,
+            "bottom": 616.5
+          },
+          {
+            "name": "Local 2 (V2)",
+            "left": 598.5,
+            "right": 627.5,
+            "top": 357.5,
+            "bottom": 386.5
+          },
+          {
+            "name": "Local 3 (V3)",
+            "left": 365.5,
+            "right": 394.5,
+            "top": 385.5,
+            "bottom": 414.5
+          },
+          {
+            "name": "Local 4 (V4)",
+            "left": 631.5,
+            "right": 660.5,
+            "top": 514.5,
+            "bottom": 543.5
+          },
+          {
+            "name": "Local 5 (V5)",
+            "left": 494.5,
+            "right": 523.5,
+            "top": 448.5,
+            "bottom": 477.5
+          },
+          {
+            "name": "Local 6 (V6)",
+            "left": 368.5,
+            "right": 397.5,
+            "top": 523.5,
+            "bottom": 552.5
+          },
+          {
+            "name": "Local 7 (V7)",
+            "left": 370.5,
+            "right": 399.5,
+            "top": 633.5,
+            "bottom": 662.5
+          },
+          {
+            "name": "Local 8 (V8)",
+            "left": 593.5,
+            "right": 622.5,
+            "top": 609.5,
+            "bottom": 638.5
+          },
+          {
+            "name": "Local 9 (V9)",
+            "left": 509.5,
+            "right": 538.5,
+            "top": 361.5,
+            "bottom": 390.5
+          },
+          {
+            "name": "Local 10 (V10)",
+            "left": 596.5,
+            "right": 625.5,
+            "top": 439.5,
+            "bottom": 468.5
+          },
+          {
+            "name": "Local 11 (V11)",
+            "left": 534.5,
+            "right": 563.5,
+            "top": 519.5,
+            "bottom": 548.5
+          },
+          {
+            "name": "Local 12 (V12)",
+            "left": 407.5,
+            "right": 436.5,
+            "top": 453.5,
+            "bottom": 482.5
+          },
+          {
+            "name": "Local 13 (V13)",
+            "left": 455.5,
+            "right": 484.5,
+            "top": 516.5,
+            "bottom": 545.5
+          },
+          {
+            "name": "Local 14 (V14)",
+            "left": 505.5,
+            "right": 534.5,
+            "top": 654.5,
+            "bottom": 683.5
+          },
+          {
+            "name": "Local 15 (V15)",
+            "left": 438.5,
+            "right": 467.5,
+            "top": 631.5,
+            "bottom": 660.5
+          },
+          {
+            "name": "Local 16 (V16)",
+            "left": 427.5,
+            "right": 456.5,
+            "top": 570.5,
+            "bottom": 599.5
+          },
+          {
+            "name": "Local 17 (V17)",
+            "left": 584.5,
+            "right": 613.5,
+            "top": 548.5,
+            "bottom": 577.5
+          },
+          {
+            "name": "Local 18 (V18)",
+            "left": 544.5,
+            "right": 573.5,
+            "top": 585.5,
+            "bottom": 614.5
+          },
+          {
+            "name": "Local 19 (V19)",
+            "left": 368.5,
+            "right": 397.5,
+            "top": 578.5,
+            "bottom": 607.5
+          },
+          {
+            "name": "Local 20 (V20)",
+            "left": 582.5,
+            "right": 611.5,
+            "top": 492.5,
+            "bottom": 521.5
+          }
+        ],
+        "models": [
+          "Nissan Leaf 2013",
+          "Nissan Leaf 2013"
+        ],
+        "cards": [
+          "Salida 60 %Regreso 37,5 %",
+          "Salida 60 %Regreso 41,3 %"
+        ],
+        "canvas": {
+          "width": 410,
+          "height": 836
+        },
+        "mapReady": "true",
+        "mapStatus": ""
+      }
+    },
+    {
+      "name": "Esencial layout 701",
+      "pass": true,
+      "evidence": {
+        "viewport": {
+          "width": 701,
+          "height": 900
+        },
+        "documentWidth": 701,
+        "bodyWidth": 701,
+        "map": {
+          "left": 310,
+          "right": 701,
+          "top": 64,
+          "bottom": 900,
+          "width": 391,
+          "height": 836
+        },
+        "summary": {
+          "left": 319.078125,
+          "right": 691.921875,
+          "top": 87,
+          "bottom": 156,
+          "width": 372.84375,
+          "height": 69
+        },
+        "summaryInsideMap": true,
+        "allVisitsInsideMap": true,
+        "markers": [
+          {
+            "name": "Local 1 (V1)",
+            "left": 480.5,
+            "right": 509.5,
+            "top": 580.5,
+            "bottom": 609.5
+          },
+          {
+            "name": "Local 2 (V2)",
+            "left": 582.5,
+            "right": 611.5,
+            "top": 367.5,
+            "bottom": 396.5
+          },
+          {
+            "name": "Local 3 (V3)",
+            "left": 365.5,
+            "right": 394.5,
+            "top": 393.5,
+            "bottom": 422.5
+          },
+          {
+            "name": "Local 4 (V4)",
+            "left": 613.5,
+            "right": 642.5,
+            "top": 512.5,
+            "bottom": 541.5
+          },
+          {
+            "name": "Local 5 (V5)",
+            "left": 485.5,
+            "right": 514.5,
+            "top": 451.5,
+            "bottom": 480.5
+          },
+          {
+            "name": "Local 6 (V6)",
+            "left": 367.5,
+            "right": 396.5,
+            "top": 521.5,
+            "bottom": 550.5
+          },
+          {
+            "name": "Local 7 (V7)",
+            "left": 370.5,
+            "right": 399.5,
+            "top": 623.5,
+            "bottom": 652.5
+          },
+          {
+            "name": "Local 8 (V8)",
+            "left": 577.5,
+            "right": 606.5,
+            "top": 601.5,
+            "bottom": 630.5
+          },
+          {
+            "name": "Local 9 (V9)",
+            "left": 499.5,
+            "right": 528.5,
+            "top": 371.5,
+            "bottom": 400.5
+          },
+          {
+            "name": "Local 10 (V10)",
+            "left": 579.5,
+            "right": 608.5,
+            "top": 443.5,
+            "bottom": 472.5
+          },
+          {
+            "name": "Local 11 (V11)",
+            "left": 522.5,
+            "right": 551.5,
+            "top": 517.5,
+            "bottom": 546.5
+          },
+          {
+            "name": "Local 12 (V12)",
+            "left": 404.5,
+            "right": 433.5,
+            "top": 456.5,
+            "bottom": 485.5
+          },
+          {
+            "name": "Local 13 (V13)",
+            "left": 449.5,
+            "right": 478.5,
+            "top": 514.5,
+            "bottom": 543.5
+          },
+          {
+            "name": "Local 14 (V14)",
+            "left": 495.5,
+            "right": 524.5,
+            "top": 643.5,
+            "bottom": 672.5
+          },
+          {
+            "name": "Local 15 (V15)",
+            "left": 433.5,
+            "right": 462.5,
+            "top": 621.5,
+            "bottom": 650.5
+          },
+          {
+            "name": "Local 16 (V16)",
+            "left": 422.5,
+            "right": 451.5,
+            "top": 565.5,
+            "bottom": 594.5
+          },
+          {
+            "name": "Local 17 (V17)",
+            "left": 569.5,
+            "right": 598.5,
+            "top": 545.5,
+            "bottom": 574.5
+          },
+          {
+            "name": "Local 18 (V18)",
+            "left": 531.5,
+            "right": 560.5,
+            "top": 579.5,
+            "bottom": 608.5
+          },
+          {
+            "name": "Local 19 (V19)",
+            "left": 368.5,
+            "right": 397.5,
+            "top": 573.5,
+            "bottom": 602.5
+          },
+          {
+            "name": "Local 20 (V20)",
+            "left": 567.5,
+            "right": 596.5,
+            "top": 492.5,
+            "bottom": 521.5
+          }
+        ],
+        "models": [
+          "Nissan Leaf 2013",
+          "Nissan Leaf 2013"
+        ],
+        "cards": [
+          "Salida 60 %Regreso 37,5 %",
+          "Salida 60 %Regreso 41,3 %"
+        ],
+        "canvas": {
+          "width": 391,
+          "height": 836
+        },
+        "mapReady": "true",
+        "mapStatus": ""
+      }
+    },
+    {
+      "name": "Esencial layout 390",
+      "pass": true,
+      "evidence": {
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "documentWidth": 390,
+        "bodyWidth": 390,
+        "map": {
+          "left": 0,
+          "right": 390,
+          "top": 60,
+          "bottom": 540,
+          "width": 390,
+          "height": 480
+        },
+        "summary": {
+          "left": 14,
+          "right": 376,
+          "top": 74,
+          "bottom": 139,
+          "width": 362,
+          "height": 65
+        },
+        "summaryInsideMap": true,
+        "allVisitsInsideMap": true,
+        "markers": [
+          {
+            "name": "Local 1 (V1)",
+            "left": 171.5,
+            "right": 200.5,
+            "top": 383.5,
+            "bottom": 412.5
+          },
+          {
+            "name": "Local 2 (V2)",
+            "left": 260.5,
+            "right": 289.5,
+            "top": 196.5,
+            "bottom": 225.5
+          },
+          {
+            "name": "Local 3 (V3)",
+            "left": 70.5,
+            "right": 99.5,
+            "top": 218.5,
+            "bottom": 247.5
+          },
+          {
+            "name": "Local 4 (V4)",
+            "left": 287.5,
+            "right": 316.5,
+            "top": 323.5,
+            "bottom": 352.5
+          },
+          {
+            "name": "Local 5 (V5)",
+            "left": 175.5,
+            "right": 204.5,
+            "top": 270.5,
+            "bottom": 299.5
+          },
+          {
+            "name": "Local 6 (V6)",
+            "left": 72.5,
+            "right": 101.5,
+            "top": 331.5,
+            "bottom": 360.5
+          },
+          {
+            "name": "Local 7 (V7)",
+            "left": 74.5,
+            "right": 103.5,
+            "top": 420.5,
+            "bottom": 449.5
+          },
+          {
+            "name": "Local 8 (V8)",
+            "left": 256.5,
+            "right": 285.5,
+            "top": 401.5,
+            "bottom": 430.5
+          },
+          {
+            "name": "Local 9 (V9)",
+            "left": 188.5,
+            "right": 217.5,
+            "top": 199.5,
+            "bottom": 228.5
+          },
+          {
+            "name": "Local 10 (V10)",
+            "left": 258.5,
+            "right": 287.5,
+            "top": 263.5,
+            "bottom": 292.5
+          },
+          {
+            "name": "Local 11 (V11)",
+            "left": 207.5,
+            "right": 236.5,
+            "top": 328.5,
+            "bottom": 357.5
+          },
+          {
+            "name": "Local 12 (V12)",
+            "left": 104.5,
+            "right": 133.5,
+            "top": 274.5,
+            "bottom": 303.5
+          },
+          {
+            "name": "Local 13 (V13)",
+            "left": 144.5,
+            "right": 173.5,
+            "top": 325.5,
+            "bottom": 354.5
+          },
+          {
+            "name": "Local 14 (V14)",
+            "left": 184.5,
+            "right": 213.5,
+            "top": 437.5,
+            "bottom": 466.5
+          },
+          {
+            "name": "Local 15 (V15)",
+            "left": 129.5,
+            "right": 158.5,
+            "top": 418.5,
+            "bottom": 447.5
+          },
+          {
+            "name": "Local 16 (V16)",
+            "left": 120.5,
+            "right": 149.5,
+            "top": 369.5,
+            "bottom": 398.5
+          },
+          {
+            "name": "Local 17 (V17)",
+            "left": 249.5,
+            "right": 278.5,
+            "top": 351.5,
+            "bottom": 380.5
+          },
+          {
+            "name": "Local 18 (V18)",
+            "left": 216.5,
+            "right": 245.5,
+            "top": 382.5,
+            "bottom": 411.5
+          },
+          {
+            "name": "Local 19 (V19)",
+            "left": 73.5,
+            "right": 102.5,
+            "top": 376.5,
+            "bottom": 405.5
+          },
+          {
+            "name": "Local 20 (V20)",
+            "left": 247.5,
+            "right": 276.5,
+            "top": 305.5,
+            "bottom": 334.5
+          }
+        ],
+        "models": [
+          "Nissan Leaf 2013",
+          "Nissan Leaf 2013"
+        ],
+        "cards": [
+          "Salida 60 %Regreso 37,5 %",
+          "Salida 60 %Regreso 41,3 %"
+        ],
+        "canvas": {
+          "width": 390,
+          "height": 480
+        },
+        "mapReady": "true",
+        "mapStatus": ""
+      }
+    },
+    {
+      "name": "Esencial layout 319",
+      "pass": true,
+      "evidence": {
+        "viewport": {
+          "width": 319,
+          "height": 859
+        },
+        "documentWidth": 319,
+        "bodyWidth": 319,
+        "map": {
+          "left": 0,
+          "right": 319,
+          "top": 60,
+          "bottom": 540,
+          "width": 319,
+          "height": 480
+        },
+        "summary": {
+          "left": 14,
+          "right": 305,
+          "top": 74,
+          "bottom": 152.28125,
+          "width": 291,
+          "height": 78.28125
+        },
+        "summaryInsideMap": true,
+        "allVisitsInsideMap": true,
+        "markers": [
+          {
+            "name": "Local 1 (V1)",
+            "left": 136.5,
+            "right": 165.5,
+            "top": 383.5,
+            "bottom": 412.5
+          },
+          {
+            "name": "Local 2 (V2)",
+            "left": 225.5,
+            "right": 254.5,
+            "top": 196.5,
+            "bottom": 225.5
+          },
+          {
+            "name": "Local 3 (V3)",
+            "left": 35.5,
+            "right": 64.5,
+            "top": 218.5,
+            "bottom": 247.5
+          },
+          {
+            "name": "Local 4 (V4)",
+            "left": 252.5,
+            "right": 281.5,
+            "top": 323.5,
+            "bottom": 352.5
+          },
+          {
+            "name": "Local 5 (V5)",
+            "left": 139.5,
+            "right": 168.5,
+            "top": 270.5,
+            "bottom": 299.5
+          },
+          {
+            "name": "Local 6 (V6)",
+            "left": 37.5,
+            "right": 66.5,
+            "top": 331.5,
+            "bottom": 360.5
+          },
+          {
+            "name": "Local 7 (V7)",
+            "left": 39.5,
+            "right": 68.5,
+            "top": 420.5,
+            "bottom": 449.5
+          },
+          {
+            "name": "Local 8 (V8)",
+            "left": 220.5,
+            "right": 249.5,
+            "top": 401.5,
+            "bottom": 430.5
+          },
+          {
+            "name": "Local 9 (V9)",
+            "left": 152.5,
+            "right": 181.5,
+            "top": 199.5,
+            "bottom": 228.5
+          },
+          {
+            "name": "Local 10 (V10)",
+            "left": 222.5,
+            "right": 251.5,
+            "top": 263.5,
+            "bottom": 292.5
+          },
+          {
+            "name": "Local 11 (V11)",
+            "left": 172.5,
+            "right": 201.5,
+            "top": 328.5,
+            "bottom": 357.5
+          },
+          {
+            "name": "Local 12 (V12)",
+            "left": 69.5,
+            "right": 98.5,
+            "top": 274.5,
+            "bottom": 303.5
+          },
+          {
+            "name": "Local 13 (V13)",
+            "left": 108.5,
+            "right": 137.5,
+            "top": 325.5,
+            "bottom": 354.5
+          },
+          {
+            "name": "Local 14 (V14)",
+            "left": 149.5,
+            "right": 178.5,
+            "top": 437.5,
+            "bottom": 466.5
+          },
+          {
+            "name": "Local 15 (V15)",
+            "left": 94.5,
+            "right": 123.5,
+            "top": 418.5,
+            "bottom": 447.5
+          },
+          {
+            "name": "Local 16 (V16)",
+            "left": 85.5,
+            "right": 114.5,
+            "top": 369.5,
+            "bottom": 398.5
+          },
+          {
+            "name": "Local 17 (V17)",
+            "left": 213.5,
+            "right": 242.5,
+            "top": 351.5,
+            "bottom": 380.5
+          },
+          {
+            "name": "Local 18 (V18)",
+            "left": 180.5,
+            "right": 209.5,
+            "top": 382.5,
+            "bottom": 411.5
+          },
+          {
+            "name": "Local 19 (V19)",
+            "left": 37.5,
+            "right": 66.5,
+            "top": 376.5,
+            "bottom": 405.5
+          },
+          {
+            "name": "Local 20 (V20)",
+            "left": 211.5,
+            "right": 240.5,
+            "top": 305.5,
+            "bottom": 334.5
+          }
+        ],
+        "models": [
+          "Nissan Leaf 2013",
+          "Nissan Leaf 2013"
+        ],
+        "cards": [
+          "Salida 60 %Regreso 37,5 %",
+          "Salida 60 %Regreso 41,3 %"
+        ],
+        "canvas": {
+          "width": 319,
+          "height": 480
+        },
+        "mapReady": "true",
+        "mapStatus": ""
+      }
+    },
+    {
+      "name": "Original 18 baseline hashes unchanged",
+      "pass": true,
+      "evidence": {
+        "count": 18,
+        "changed": []
+      }
+    },
+    {
+      "name": "No JavaScript exceptions or HTTP failures",
+      "pass": true,
+      "evidence": {
+        "pageErrors": [],
+        "httpErrors": []
+      }
+    }
+  ],
+  "layouts": [
+    {
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "documentWidth": 1440,
+      "bodyWidth": 1440,
+      "map": {
+        "left": 352,
+        "right": 1440,
+        "top": 64,
+        "bottom": 900,
+        "width": 1088,
+        "height": 836
+      },
+      "summary": {
+        "left": 617.9765625,
+        "right": 1174.0234375,
+        "top": 87,
+        "bottom": 164,
+        "width": 556.046875,
+        "height": 77
+      },
+      "summaryInsideMap": true,
+      "allVisitsInsideMap": true,
+      "markers": [
+        {
+          "name": "Local 1 (V1)",
+          "left": 862.5,
+          "right": 891.5,
+          "top": 656.5,
+          "bottom": 685.5
+        },
+        {
+          "name": "Local 2 (V2)",
+          "left": 1054.5,
+          "right": 1083.5,
+          "top": 254.5,
+          "bottom": 283.5
+        },
+        {
+          "name": "Local 3 (V3)",
+          "left": 644.5,
+          "right": 673.5,
+          "top": 302.5,
+          "bottom": 331.5
+        },
+        {
+          "name": "Local 4 (V4)",
+          "left": 1112.5,
+          "right": 1141.5,
+          "top": 528.5,
+          "bottom": 557.5
+        },
+        {
+          "name": "Local 5 (V5)",
+          "left": 870.5,
+          "right": 899.5,
+          "top": 413.5,
+          "bottom": 442.5
+        },
+        {
+          "name": "Local 6 (V6)",
+          "left": 648.5,
+          "right": 677.5,
+          "top": 544.5,
+          "bottom": 573.5
+        },
+        {
+          "name": "Local 7 (V7)",
+          "left": 653.5,
+          "right": 682.5,
+          "top": 737.5,
+          "bottom": 766.5
+        },
+        {
+          "name": "Local 8 (V8)",
+          "left": 1044.5,
+          "right": 1073.5,
+          "top": 696.5,
+          "bottom": 725.5
+        },
+        {
+          "name": "Local 9 (V9)",
+          "left": 898.5,
+          "right": 927.5,
+          "top": 261.5,
+          "bottom": 290.5
+        },
+        {
+          "name": "Local 10 (V10)",
+          "left": 1049.5,
+          "right": 1078.5,
+          "top": 398.5,
+          "bottom": 427.5
+        },
+        {
+          "name": "Local 11 (V11)",
+          "left": 940.5,
+          "right": 969.5,
+          "top": 538.5,
+          "bottom": 567.5
+        },
+        {
+          "name": "Local 12 (V12)",
+          "left": 718.5,
+          "right": 747.5,
+          "top": 422.5,
+          "bottom": 451.5
+        },
+        {
+          "name": "Local 13 (V13)",
+          "left": 803.5,
+          "right": 832.5,
+          "top": 532.5,
+          "bottom": 561.5
+        },
+        {
+          "name": "Local 14 (V14)",
+          "left": 890.5,
+          "right": 919.5,
+          "top": 774.5,
+          "bottom": 803.5
+        },
+        {
+          "name": "Local 15 (V15)",
+          "left": 772.5,
+          "right": 801.5,
+          "top": 734.5,
+          "bottom": 763.5
+        },
+        {
+          "name": "Local 16 (V16)",
+          "left": 752.5,
+          "right": 781.5,
+          "top": 628.5,
+          "bottom": 657.5
+        },
+        {
+          "name": "Local 17 (V17)",
+          "left": 1029.5,
+          "right": 1058.5,
+          "top": 589.5,
+          "bottom": 618.5
+        },
+        {
+          "name": "Local 18 (V18)",
+          "left": 958.5,
+          "right": 987.5,
+          "top": 654.5,
+          "bottom": 683.5
+        },
+        {
+          "name": "Local 19 (V19)",
+          "left": 650.5,
+          "right": 679.5,
+          "top": 642.5,
+          "bottom": 671.5
+        },
+        {
+          "name": "Local 20 (V20)",
+          "left": 1025.5,
+          "right": 1054.5,
+          "top": 490.5,
+          "bottom": 519.5
+        }
+      ],
+      "models": [
+        "Nissan Leaf 2013",
+        "Nissan Leaf 2013"
+      ],
+      "cards": [
+        "Salida 60 %Regreso 37,5 %",
+        "Salida 60 %Regreso 41,3 %"
+      ],
+      "canvas": {
+        "width": 1088,
+        "height": 836
+      },
+      "mapReady": "true",
+      "mapStatus": ""
+    },
+    {
+      "viewport": {
+        "width": 900,
+        "height": 900
+      },
+      "documentWidth": 900,
+      "bodyWidth": 900,
+      "map": {
+        "left": 310,
+        "right": 900,
+        "top": 64,
+        "bottom": 900,
+        "width": 590,
+        "height": 836
+      },
+      "summary": {
+        "left": 418.578125,
+        "right": 791.421875,
+        "top": 87,
+        "bottom": 156,
+        "width": 372.84375,
+        "height": 69
+      },
+      "summaryInsideMap": true,
+      "allVisitsInsideMap": true,
+      "markers": [
+        {
+          "name": "Local 1 (V1)",
+          "left": 572.5,
+          "right": 601.5,
+          "top": 648.5,
+          "bottom": 677.5
+        },
+        {
+          "name": "Local 2 (V2)",
+          "left": 754.5,
+          "right": 783.5,
+          "top": 266.5,
+          "bottom": 295.5
+        },
+        {
+          "name": "Local 3 (V3)",
+          "left": 365.5,
+          "right": 394.5,
+          "top": 312.5,
+          "bottom": 341.5
+        },
+        {
+          "name": "Local 4 (V4)",
+          "left": 809.5,
+          "right": 838.5,
+          "top": 527.5,
+          "bottom": 556.5
+        },
+        {
+          "name": "Local 5 (V5)",
+          "left": 580.5,
+          "right": 609.5,
+          "top": 417.5,
+          "bottom": 446.5
+        },
+        {
+          "name": "Local 6 (V6)",
+          "left": 369.5,
+          "right": 398.5,
+          "top": 542.5,
+          "bottom": 571.5
+        },
+        {
+          "name": "Local 7 (V7)",
+          "left": 373.5,
+          "right": 402.5,
+          "top": 725.5,
+          "bottom": 754.5
+        },
+        {
+          "name": "Local 8 (V8)",
+          "left": 745.5,
+          "right": 774.5,
+          "top": 686.5,
+          "bottom": 715.5
+        },
+        {
+          "name": "Local 9 (V9)",
+          "left": 606.5,
+          "right": 635.5,
+          "top": 272.5,
+          "bottom": 301.5
+        },
+        {
+          "name": "Local 10 (V10)",
+          "left": 749.5,
+          "right": 778.5,
+          "top": 403.5,
+          "bottom": 432.5
+        },
+        {
+          "name": "Local 11 (V11)",
+          "left": 646.5,
+          "right": 675.5,
+          "top": 536.5,
+          "bottom": 565.5
+        },
+        {
+          "name": "Local 12 (V12)",
+          "left": 435.5,
+          "right": 464.5,
+          "top": 425.5,
+          "bottom": 454.5
+        },
+        {
+          "name": "Local 13 (V13)",
+          "left": 516.5,
+          "right": 545.5,
+          "top": 530.5,
+          "bottom": 559.5
+        },
+        {
+          "name": "Local 14 (V14)",
+          "left": 599.5,
+          "right": 628.5,
+          "top": 760.5,
+          "bottom": 789.5
+        },
+        {
+          "name": "Local 15 (V15)",
+          "left": 486.5,
+          "right": 515.5,
+          "top": 722.5,
+          "bottom": 751.5
+        },
+        {
+          "name": "Local 16 (V16)",
+          "left": 468.5,
+          "right": 497.5,
+          "top": 621.5,
+          "bottom": 650.5
+        },
+        {
+          "name": "Local 17 (V17)",
+          "left": 730.5,
+          "right": 759.5,
+          "top": 584.5,
+          "bottom": 613.5
+        },
+        {
+          "name": "Local 18 (V18)",
+          "left": 663.5,
+          "right": 692.5,
+          "top": 646.5,
+          "bottom": 675.5
+        },
+        {
+          "name": "Local 19 (V19)",
+          "left": 371.5,
+          "right": 400.5,
+          "top": 634.5,
+          "bottom": 663.5
+        },
+        {
+          "name": "Local 20 (V20)",
+          "left": 727.5,
+          "right": 756.5,
+          "top": 490.5,
+          "bottom": 519.5
+        }
+      ],
+      "models": [
+        "Nissan Leaf 2013",
+        "Nissan Leaf 2013"
+      ],
+      "cards": [
+        "Salida 60 %Regreso 37,5 %",
+        "Salida 60 %Regreso 41,3 %"
+      ],
+      "canvas": {
+        "width": 590,
+        "height": 836
+      },
+      "mapReady": "true",
+      "mapStatus": ""
+    },
+    {
+      "viewport": {
+        "width": 720,
+        "height": 900
+      },
+      "documentWidth": 720,
+      "bodyWidth": 720,
+      "map": {
+        "left": 310,
+        "right": 720,
+        "top": 64,
+        "bottom": 900,
+        "width": 410,
+        "height": 836
+      },
+      "summary": {
+        "left": 328.578125,
+        "right": 701.421875,
+        "top": 87,
+        "bottom": 156,
+        "width": 372.84375,
+        "height": 69
+      },
+      "summaryInsideMap": true,
+      "allVisitsInsideMap": true,
+      "markers": [
+        {
+          "name": "Local 1 (V1)",
+          "left": 489.5,
+          "right": 518.5,
+          "top": 587.5,
+          "bottom": 616.5
+        },
+        {
+          "name": "Local 2 (V2)",
+          "left": 598.5,
+          "right": 627.5,
+          "top": 357.5,
+          "bottom": 386.5
+        },
+        {
+          "name": "Local 3 (V3)",
+          "left": 365.5,
+          "right": 394.5,
+          "top": 385.5,
+          "bottom": 414.5
+        },
+        {
+          "name": "Local 4 (V4)",
+          "left": 631.5,
+          "right": 660.5,
+          "top": 514.5,
+          "bottom": 543.5
+        },
+        {
+          "name": "Local 5 (V5)",
+          "left": 494.5,
+          "right": 523.5,
+          "top": 448.5,
+          "bottom": 477.5
+        },
+        {
+          "name": "Local 6 (V6)",
+          "left": 368.5,
+          "right": 397.5,
+          "top": 523.5,
+          "bottom": 552.5
+        },
+        {
+          "name": "Local 7 (V7)",
+          "left": 370.5,
+          "right": 399.5,
+          "top": 633.5,
+          "bottom": 662.5
+        },
+        {
+          "name": "Local 8 (V8)",
+          "left": 593.5,
+          "right": 622.5,
+          "top": 609.5,
+          "bottom": 638.5
+        },
+        {
+          "name": "Local 9 (V9)",
+          "left": 509.5,
+          "right": 538.5,
+          "top": 361.5,
+          "bottom": 390.5
+        },
+        {
+          "name": "Local 10 (V10)",
+          "left": 596.5,
+          "right": 625.5,
+          "top": 439.5,
+          "bottom": 468.5
+        },
+        {
+          "name": "Local 11 (V11)",
+          "left": 534.5,
+          "right": 563.5,
+          "top": 519.5,
+          "bottom": 548.5
+        },
+        {
+          "name": "Local 12 (V12)",
+          "left": 407.5,
+          "right": 436.5,
+          "top": 453.5,
+          "bottom": 482.5
+        },
+        {
+          "name": "Local 13 (V13)",
+          "left": 455.5,
+          "right": 484.5,
+          "top": 516.5,
+          "bottom": 545.5
+        },
+        {
+          "name": "Local 14 (V14)",
+          "left": 505.5,
+          "right": 534.5,
+          "top": 654.5,
+          "bottom": 683.5
+        },
+        {
+          "name": "Local 15 (V15)",
+          "left": 438.5,
+          "right": 467.5,
+          "top": 631.5,
+          "bottom": 660.5
+        },
+        {
+          "name": "Local 16 (V16)",
+          "left": 427.5,
+          "right": 456.5,
+          "top": 570.5,
+          "bottom": 599.5
+        },
+        {
+          "name": "Local 17 (V17)",
+          "left": 584.5,
+          "right": 613.5,
+          "top": 548.5,
+          "bottom": 577.5
+        },
+        {
+          "name": "Local 18 (V18)",
+          "left": 544.5,
+          "right": 573.5,
+          "top": 585.5,
+          "bottom": 614.5
+        },
+        {
+          "name": "Local 19 (V19)",
+          "left": 368.5,
+          "right": 397.5,
+          "top": 578.5,
+          "bottom": 607.5
+        },
+        {
+          "name": "Local 20 (V20)",
+          "left": 582.5,
+          "right": 611.5,
+          "top": 492.5,
+          "bottom": 521.5
+        }
+      ],
+      "models": [
+        "Nissan Leaf 2013",
+        "Nissan Leaf 2013"
+      ],
+      "cards": [
+        "Salida 60 %Regreso 37,5 %",
+        "Salida 60 %Regreso 41,3 %"
+      ],
+      "canvas": {
+        "width": 410,
+        "height": 836
+      },
+      "mapReady": "true",
+      "mapStatus": ""
+    },
+    {
+      "viewport": {
+        "width": 701,
+        "height": 900
+      },
+      "documentWidth": 701,
+      "bodyWidth": 701,
+      "map": {
+        "left": 310,
+        "right": 701,
+        "top": 64,
+        "bottom": 900,
+        "width": 391,
+        "height": 836
+      },
+      "summary": {
+        "left": 319.078125,
+        "right": 691.921875,
+        "top": 87,
+        "bottom": 156,
+        "width": 372.84375,
+        "height": 69
+      },
+      "summaryInsideMap": true,
+      "allVisitsInsideMap": true,
+      "markers": [
+        {
+          "name": "Local 1 (V1)",
+          "left": 480.5,
+          "right": 509.5,
+          "top": 580.5,
+          "bottom": 609.5
+        },
+        {
+          "name": "Local 2 (V2)",
+          "left": 582.5,
+          "right": 611.5,
+          "top": 367.5,
+          "bottom": 396.5
+        },
+        {
+          "name": "Local 3 (V3)",
+          "left": 365.5,
+          "right": 394.5,
+          "top": 393.5,
+          "bottom": 422.5
+        },
+        {
+          "name": "Local 4 (V4)",
+          "left": 613.5,
+          "right": 642.5,
+          "top": 512.5,
+          "bottom": 541.5
+        },
+        {
+          "name": "Local 5 (V5)",
+          "left": 485.5,
+          "right": 514.5,
+          "top": 451.5,
+          "bottom": 480.5
+        },
+        {
+          "name": "Local 6 (V6)",
+          "left": 367.5,
+          "right": 396.5,
+          "top": 521.5,
+          "bottom": 550.5
+        },
+        {
+          "name": "Local 7 (V7)",
+          "left": 370.5,
+          "right": 399.5,
+          "top": 623.5,
+          "bottom": 652.5
+        },
+        {
+          "name": "Local 8 (V8)",
+          "left": 577.5,
+          "right": 606.5,
+          "top": 601.5,
+          "bottom": 630.5
+        },
+        {
+          "name": "Local 9 (V9)",
+          "left": 499.5,
+          "right": 528.5,
+          "top": 371.5,
+          "bottom": 400.5
+        },
+        {
+          "name": "Local 10 (V10)",
+          "left": 579.5,
+          "right": 608.5,
+          "top": 443.5,
+          "bottom": 472.5
+        },
+        {
+          "name": "Local 11 (V11)",
+          "left": 522.5,
+          "right": 551.5,
+          "top": 517.5,
+          "bottom": 546.5
+        },
+        {
+          "name": "Local 12 (V12)",
+          "left": 404.5,
+          "right": 433.5,
+          "top": 456.5,
+          "bottom": 485.5
+        },
+        {
+          "name": "Local 13 (V13)",
+          "left": 449.5,
+          "right": 478.5,
+          "top": 514.5,
+          "bottom": 543.5
+        },
+        {
+          "name": "Local 14 (V14)",
+          "left": 495.5,
+          "right": 524.5,
+          "top": 643.5,
+          "bottom": 672.5
+        },
+        {
+          "name": "Local 15 (V15)",
+          "left": 433.5,
+          "right": 462.5,
+          "top": 621.5,
+          "bottom": 650.5
+        },
+        {
+          "name": "Local 16 (V16)",
+          "left": 422.5,
+          "right": 451.5,
+          "top": 565.5,
+          "bottom": 594.5
+        },
+        {
+          "name": "Local 17 (V17)",
+          "left": 569.5,
+          "right": 598.5,
+          "top": 545.5,
+          "bottom": 574.5
+        },
+        {
+          "name": "Local 18 (V18)",
+          "left": 531.5,
+          "right": 560.5,
+          "top": 579.5,
+          "bottom": 608.5
+        },
+        {
+          "name": "Local 19 (V19)",
+          "left": 368.5,
+          "right": 397.5,
+          "top": 573.5,
+          "bottom": 602.5
+        },
+        {
+          "name": "Local 20 (V20)",
+          "left": 567.5,
+          "right": 596.5,
+          "top": 492.5,
+          "bottom": 521.5
+        }
+      ],
+      "models": [
+        "Nissan Leaf 2013",
+        "Nissan Leaf 2013"
+      ],
+      "cards": [
+        "Salida 60 %Regreso 37,5 %",
+        "Salida 60 %Regreso 41,3 %"
+      ],
+      "canvas": {
+        "width": 391,
+        "height": 836
+      },
+      "mapReady": "true",
+      "mapStatus": ""
+    },
+    {
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "documentWidth": 390,
+      "bodyWidth": 390,
+      "map": {
+        "left": 0,
+        "right": 390,
+        "top": 60,
+        "bottom": 540,
+        "width": 390,
+        "height": 480
+      },
+      "summary": {
+        "left": 14,
+        "right": 376,
+        "top": 74,
+        "bottom": 139,
+        "width": 362,
+        "height": 65
+      },
+      "summaryInsideMap": true,
+      "allVisitsInsideMap": true,
+      "markers": [
+        {
+          "name": "Local 1 (V1)",
+          "left": 171.5,
+          "right": 200.5,
+          "top": 383.5,
+          "bottom": 412.5
+        },
+        {
+          "name": "Local 2 (V2)",
+          "left": 260.5,
+          "right": 289.5,
+          "top": 196.5,
+          "bottom": 225.5
+        },
+        {
+          "name": "Local 3 (V3)",
+          "left": 70.5,
+          "right": 99.5,
+          "top": 218.5,
+          "bottom": 247.5
+        },
+        {
+          "name": "Local 4 (V4)",
+          "left": 287.5,
+          "right": 316.5,
+          "top": 323.5,
+          "bottom": 352.5
+        },
+        {
+          "name": "Local 5 (V5)",
+          "left": 175.5,
+          "right": 204.5,
+          "top": 270.5,
+          "bottom": 299.5
+        },
+        {
+          "name": "Local 6 (V6)",
+          "left": 72.5,
+          "right": 101.5,
+          "top": 331.5,
+          "bottom": 360.5
+        },
+        {
+          "name": "Local 7 (V7)",
+          "left": 74.5,
+          "right": 103.5,
+          "top": 420.5,
+          "bottom": 449.5
+        },
+        {
+          "name": "Local 8 (V8)",
+          "left": 256.5,
+          "right": 285.5,
+          "top": 401.5,
+          "bottom": 430.5
+        },
+        {
+          "name": "Local 9 (V9)",
+          "left": 188.5,
+          "right": 217.5,
+          "top": 199.5,
+          "bottom": 228.5
+        },
+        {
+          "name": "Local 10 (V10)",
+          "left": 258.5,
+          "right": 287.5,
+          "top": 263.5,
+          "bottom": 292.5
+        },
+        {
+          "name": "Local 11 (V11)",
+          "left": 207.5,
+          "right": 236.5,
+          "top": 328.5,
+          "bottom": 357.5
+        },
+        {
+          "name": "Local 12 (V12)",
+          "left": 104.5,
+          "right": 133.5,
+          "top": 274.5,
+          "bottom": 303.5
+        },
+        {
+          "name": "Local 13 (V13)",
+          "left": 144.5,
+          "right": 173.5,
+          "top": 325.5,
+          "bottom": 354.5
+        },
+        {
+          "name": "Local 14 (V14)",
+          "left": 184.5,
+          "right": 213.5,
+          "top": 437.5,
+          "bottom": 466.5
+        },
+        {
+          "name": "Local 15 (V15)",
+          "left": 129.5,
+          "right": 158.5,
+          "top": 418.5,
+          "bottom": 447.5
+        },
+        {
+          "name": "Local 16 (V16)",
+          "left": 120.5,
+          "right": 149.5,
+          "top": 369.5,
+          "bottom": 398.5
+        },
+        {
+          "name": "Local 17 (V17)",
+          "left": 249.5,
+          "right": 278.5,
+          "top": 351.5,
+          "bottom": 380.5
+        },
+        {
+          "name": "Local 18 (V18)",
+          "left": 216.5,
+          "right": 245.5,
+          "top": 382.5,
+          "bottom": 411.5
+        },
+        {
+          "name": "Local 19 (V19)",
+          "left": 73.5,
+          "right": 102.5,
+          "top": 376.5,
+          "bottom": 405.5
+        },
+        {
+          "name": "Local 20 (V20)",
+          "left": 247.5,
+          "right": 276.5,
+          "top": 305.5,
+          "bottom": 334.5
+        }
+      ],
+      "models": [
+        "Nissan Leaf 2013",
+        "Nissan Leaf 2013"
+      ],
+      "cards": [
+        "Salida 60 %Regreso 37,5 %",
+        "Salida 60 %Regreso 41,3 %"
+      ],
+      "canvas": {
+        "width": 390,
+        "height": 480
+      },
+      "mapReady": "true",
+      "mapStatus": ""
+    },
+    {
+      "viewport": {
+        "width": 319,
+        "height": 859
+      },
+      "documentWidth": 319,
+      "bodyWidth": 319,
+      "map": {
+        "left": 0,
+        "right": 319,
+        "top": 60,
+        "bottom": 540,
+        "width": 319,
+        "height": 480
+      },
+      "summary": {
+        "left": 14,
+        "right": 305,
+        "top": 74,
+        "bottom": 152.28125,
+        "width": 291,
+        "height": 78.28125
+      },
+      "summaryInsideMap": true,
+      "allVisitsInsideMap": true,
+      "markers": [
+        {
+          "name": "Local 1 (V1)",
+          "left": 136.5,
+          "right": 165.5,
+          "top": 383.5,
+          "bottom": 412.5
+        },
+        {
+          "name": "Local 2 (V2)",
+          "left": 225.5,
+          "right": 254.5,
+          "top": 196.5,
+          "bottom": 225.5
+        },
+        {
+          "name": "Local 3 (V3)",
+          "left": 35.5,
+          "right": 64.5,
+          "top": 218.5,
+          "bottom": 247.5
+        },
+        {
+          "name": "Local 4 (V4)",
+          "left": 252.5,
+          "right": 281.5,
+          "top": 323.5,
+          "bottom": 352.5
+        },
+        {
+          "name": "Local 5 (V5)",
+          "left": 139.5,
+          "right": 168.5,
+          "top": 270.5,
+          "bottom": 299.5
+        },
+        {
+          "name": "Local 6 (V6)",
+          "left": 37.5,
+          "right": 66.5,
+          "top": 331.5,
+          "bottom": 360.5
+        },
+        {
+          "name": "Local 7 (V7)",
+          "left": 39.5,
+          "right": 68.5,
+          "top": 420.5,
+          "bottom": 449.5
+        },
+        {
+          "name": "Local 8 (V8)",
+          "left": 220.5,
+          "right": 249.5,
+          "top": 401.5,
+          "bottom": 430.5
+        },
+        {
+          "name": "Local 9 (V9)",
+          "left": 152.5,
+          "right": 181.5,
+          "top": 199.5,
+          "bottom": 228.5
+        },
+        {
+          "name": "Local 10 (V10)",
+          "left": 222.5,
+          "right": 251.5,
+          "top": 263.5,
+          "bottom": 292.5
+        },
+        {
+          "name": "Local 11 (V11)",
+          "left": 172.5,
+          "right": 201.5,
+          "top": 328.5,
+          "bottom": 357.5
+        },
+        {
+          "name": "Local 12 (V12)",
+          "left": 69.5,
+          "right": 98.5,
+          "top": 274.5,
+          "bottom": 303.5
+        },
+        {
+          "name": "Local 13 (V13)",
+          "left": 108.5,
+          "right": 137.5,
+          "top": 325.5,
+          "bottom": 354.5
+        },
+        {
+          "name": "Local 14 (V14)",
+          "left": 149.5,
+          "right": 178.5,
+          "top": 437.5,
+          "bottom": 466.5
+        },
+        {
+          "name": "Local 15 (V15)",
+          "left": 94.5,
+          "right": 123.5,
+          "top": 418.5,
+          "bottom": 447.5
+        },
+        {
+          "name": "Local 16 (V16)",
+          "left": 85.5,
+          "right": 114.5,
+          "top": 369.5,
+          "bottom": 398.5
+        },
+        {
+          "name": "Local 17 (V17)",
+          "left": 213.5,
+          "right": 242.5,
+          "top": 351.5,
+          "bottom": 380.5
+        },
+        {
+          "name": "Local 18 (V18)",
+          "left": 180.5,
+          "right": 209.5,
+          "top": 382.5,
+          "bottom": 411.5
+        },
+        {
+          "name": "Local 19 (V19)",
+          "left": 37.5,
+          "right": 66.5,
+          "top": 376.5,
+          "bottom": 405.5
+        },
+        {
+          "name": "Local 20 (V20)",
+          "left": 211.5,
+          "right": 240.5,
+          "top": 305.5,
+          "bottom": 334.5
+        }
+      ],
+      "models": [
+        "Nissan Leaf 2013",
+        "Nissan Leaf 2013"
+      ],
+      "cards": [
+        "Salida 60 %Regreso 37,5 %",
+        "Salida 60 %Regreso 41,3 %"
+      ],
+      "canvas": {
+        "width": 319,
+        "height": 480
+      },
+      "mapReady": "true",
+      "mapStatus": ""
+    }
+  ],
+  "pageErrors": [],
+  "httpErrors": [],
+  "requestsFailed": [
+    {
+      "url": "https://tiles.openfreemap.org/planet/20261011_080001_pt/12/1096/1516.pbf",
+      "failure": "net::ERR_ABORTED"
+    },
+    {
+      "url": "https://tiles.openfreemap.org/planet/20261011_080001_pt/12/1096/1515.pbf",
+      "failure": "net::ERR_ABORTED"
+    },
+    {
+      "url": "https://tiles.openfreemap.org/planet/20261011_080001_pt/12/1096/1517.pbf",
+      "failure": "net::ERR_ABORTED"
+    },
+    {
+      "url": "https://tiles.openfreemap.org/planet/20261011_080001_pt/12/1094/1517.pbf",
+      "failure": "net::ERR_ABORTED"
+    },
+    {
+      "url": "https://tiles.openfreemap.org/planet/20261011_080001_pt/12/1095/1517.pbf",
+      "failure": "net::ERR_ABORTED"
+    },
+    {
+      "url": "https://tiles.openfreemap.org/planet/20261011_080001_pt/12/1093/1516.pbf",
+      "failure": "net::ERR_ABORTED"
+    },
+    {
+      "url": "https://tiles.openfreemap.org/planet/20261011_080001_pt/12/1093/1515.pbf",
+      "failure": "net::ERR_ABORTED"
+    },
+    {
+      "url": "https://tiles.openfreemap.org/planet/20261011_080001_pt/12/1093/1517.pbf",
+      "failure": "net::ERR_ABORTED"
+    },
+    {
+      "url": "https://tiles.openfreemap.org/planet/20261011_080001_pt/12/1096/1516.pbf",
+      "failure": "net::ERR_ABORTED"
+    },
+    {
+      "url": "https://tiles.openfreemap.org/planet/20261011_080001_pt/12/1096/1515.pbf",
+      "failure": "net::ERR_ABORTED"
+    },
+    {
+      "url": "https://tiles.openfreemap.org/planet/20261011_080001_pt/12/1095/1517.pbf",
+      "failure": "net::ERR_ABORTED"
+    },
+    {
+      "url": "https://tiles.openfreemap.org/planet/20261011_080001_pt/12/1094/1517.pbf",
+      "failure": "net::ERR_ABORTED"
+    },
+    {
+      "url": "https://tiles.openfreemap.org/planet/20261011_080001_pt/12/1096/1517.pbf",
+      "failure": "net::ERR_ABORTED"
+    },
+    {
+      "url": "https://tiles.openfreemap.org/planet/20261011_080001_pt/12/1096/1516.pbf",
+      "failure": "net::ERR_ABORTED"
+    },
+    {
+      "url": "https://tiles.openfreemap.org/planet/20261011_080001_pt/12/1096/1515.pbf",
+      "failure": "net::ERR_ABORTED"
+    },
+    {
+      "url": "https://tiles.openfreemap.org/planet/20261011_080001_pt/12/1094/1517.pbf",
+      "failure": "net::ERR_ABORTED"
+    },
+    {
+      "url": "https://tiles.openfreemap.org/planet/20261011_080001_pt/12/1095/1517.pbf",
+      "failure": "net::ERR_ABORTED"
+    },
+    {
+      "url": "https://tiles.openfreemap.org/planet/20261011_080001_pt/12/1093/1516.pbf",
+      "failure": "net::ERR_ABORTED"
+    },
+    {
+      "url": "https://tiles.openfreemap.org/planet/20261011_080001_pt/12/1093/1515.pbf",
+      "failure": "net::ERR_ABORTED"
+    },
+    {
+      "url": "https://tiles.openfreemap.org/planet/20261011_080001_pt/12/1093/1517.pbf",
+      "failure": "net::ERR_ABORTED"
+    },
+    {
+      "url": "https://tiles.openfreemap.org/planet/20261011_080001_pt/12/1096/1516.pbf",
+      "failure": "net::ERR_ABORTED"
+    },
+    {
+      "url": "https://tiles.openfreemap.org/planet/20261011_080001_pt/12/1096/1515.pbf",
+      "failure": "net::ERR_ABORTED"
+    },
+    {
+      "url": "https://tiles.openfreemap.org/planet/20261011_080001_pt/12/1096/1517.pbf",
+      "failure": "net::ERR_ABORTED"
+    }
+  ],
+  "finishedAt": "2026-10-15T04:29:04.200Z"
+}

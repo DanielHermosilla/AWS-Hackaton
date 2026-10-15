@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://tiles.openfreemap.org; worker-src 'self' blob:; child-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f7f8f7">
+  <title>Despacho eléctrico · ZMD Mobility</title>
+  <link rel="stylesheet" href="../shared/base.css">
+  <link rel="stylesheet" href="./style.css">
+  <script type="module" src="./app.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#workspace">Ir a las entregas</a>
+  <div class="dispatch-shell">
+    <aside class="sidebar" aria-label="Navegación">
+      <a class="brand" href="../">
+        <span class="brand-symbol" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M9 3v5m6-5v5M7 8h10v3a5 5 0 0 1-5 5v5M5 8h14"/></svg></span>
+        <span class="brand-wordmark">ZMD <span>Mobility</span></span>
+      </a>
+      <div class="nav-caption">Operación eléctrica</div>
+      <nav class="main-nav">
+        <button type="button" class="nav-item is-active" data-nav="deliveries">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01"/></svg><span>Entregas</span><span class="nav-count" id="nav-delivery-count">—</span>
+        </button>
+        <button type="button" class="nav-item" data-nav="fleet">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 7 1.5-3h11L19 7m-16 9V9l2-2h14l2 2v7H3Zm0-4h18M6 16v3m12-3v3M6 10h.01M18 10h.01"/></svg><span>Flota</span><span class="nav-count">2</span>
+        </button>
+        <button type="button" class="nav-item" data-nav="chargers">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 21V4h10v17M2 21h14M7 7h4M7 11h4m5-5 3 3v8a2 2 0 0 1-4 0v-4h-2M18 3v4"/></svg><span>Cargadores</span><span class="nav-count" id="nav-charger-count">—</span>
+        </button>
+      </nav>
+      <div class="sidebar-scenario"><span class="scenario-label">Escenario</span><strong>Ann Arbor</strong><span>Michigan, Estados Unidos</span></div>
+      <div class="sidebar-bottom">
+        <button type="button" class="nav-item" id="show-data"><svg viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 4 16 4 16 0V5M4 12c0 4 16 4 16 0"/></svg><span>Datos del escenario</span></button>
+        <a class="back-link" href="../"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 5-7 7 7 7M5 12h14"/></svg><span>Comparar propuestas</span></a>
+        <span class="client-note">Consultora ZMD · desafío CASE</span>
+      </div>
+    </aside>
+
+    <div class="dispatch-main">
+      <header class="topbar">
+        <div class="breadcrumbs"><span>Operación</span><span aria-hidden="true">/</span><strong>Ann Arbor</strong></div>
+        <span class="demo-badge"><span aria-hidden="true"></span>Demostración</span>
+      </header>
+      <div class="operating-grid">
+        <main class="workspace" id="workspace" tabindex="-1">
+          <div class="workspace-heading">
+            <div><span class="eyebrow">Reparto eléctrico</span><h1>Despacho</h1><p id="scenario-summary">Cargando escenario…</p></div>
+            <button type="button" class="primary-button" id="show-example"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5 11 7-11 7V5Z"/></svg>Ver plan de ejemplo</button>
+          </div>
+          <div class="plan-note" id="plan-note" role="status"></div>
+          <div class="vehicle-strip" id="vehicle-strip" aria-label="Batería de los vehículos"></div>
+          <div class="view-tabs" role="tablist" aria-label="Vista de despacho">
+            <button type="button" id="tab-deliveries" class="view-tab is-active" role="tab" aria-selected="true" aria-controls="deliveries-panel" data-tab="deliveries">Entregas <span id="delivery-tab-count">—</span></button>
+            <button type="button" id="tab-fleet" class="view-tab" role="tab" aria-selected="false" aria-controls="fleet-panel" tabindex="-1" data-tab="fleet">Flota <span>2</span></button>
+            <button type="button" class="quiet-button edit-soc-button" data-edit-soc><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m16 3 5 5-12 12-6 1 1-6L16 3Z"/></svg>Editar batería</button>
+          </div>
+          <section id="deliveries-panel" class="deliveries-panel" role="tabpanel" aria-labelledby="tab-deliveries">
+            <div class="filter-toolbar">
+              <div class="filter-group" role="group" aria-label="Filtrar puntos">
+                <button type="button" class="filter-button is-active" data-filter="all" aria-pressed="true">Todos</button>
+                <button type="button" class="filter-button" data-filter="auto-1" aria-pressed="false"><span class="route-dot auto-1-dot"></span>Auto 1</button>
+                <button type="button" class="filter-button" data-filter="auto-2" aria-pressed="false"><span class="route-dot auto-2-dot"></span>Auto 2</button>
+                <button type="button" class="filter-button" data-filter="chargers" aria-pressed="false">Cargadores</button>
+              </div>
+              <span class="filtered-count" id="filtered-count"></span>
+            </div>
+            <div class="list-scroll" id="list-scroll">
+              <table class="dispatch-table">
+                <caption class="sr-only" id="table-caption">Entregas del escenario</caption>
+                <thead id="table-head"></thead>
+                <tbody id="node-rows"></tbody>
+              </table>
+              <div class="empty-list" id="empty-list" hidden></div>
+            </div>
+          </section>
+          <section id="fleet-panel" class="fleet-panel" role="tabpanel" aria-labelledby="tab-fleet" hidden></section>
+          <footer class="workspace-footer"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7h.01"/></svg><span>Rutas y energía de ejemplo. No se ha ejecutado el motor.</span></footer>
+        </main>
+
+        <aside class="map-panel" aria-label="Mapa de Ann Arbor">
+          <div class="map-toolbar"><div><span class="map-location">Ann Arbor</span><span class="map-subtitle" id="map-subtitle">Ubicaciones del escenario</span></div><button type="button" class="icon-button" id="fit-map" title="Encuadrar el escenario" aria-label="Encuadrar el escenario"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5M8 8h8v8H8Z"/></svg></button></div>
+          <div class="map-canvas-wrap"><div id="map" class="map-canvas" aria-label="Mapa interactivo del escenario"></div><div class="map-plan-label" id="map-plan-label" hidden>Recorridos de ejemplo</div></div>
+          <div class="map-layer-bar"><label class="charger-switch"><input type="checkbox" id="charger-layer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m13 2-8 12h6l-1 8 9-12h-7l1-8Z"/></svg>Mostrar cargadores <span id="charger-layer-count"></span></label><span class="map-legend"><span class="base-dot"></span>Base</span></div>
+          <section class="selection-card" id="selection-card" aria-label="Punto seleccionado"></section>
+        </aside>
+      </div>
+    </div>
+  </div>
+
+  <dialog class="soc-dialog" id="soc-dialog" aria-labelledby="soc-title">
+    <form id="soc-form" novalidate>
+      <div class="dialog-heading"><div><span class="eyebrow">Configuración de flota</span><h2 id="soc-title">Batería inicial</h2></div><button type="button" class="icon-button" data-close-dialog="soc-dialog" aria-label="Cerrar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M6 18 18 6"/></svg></button></div>
+      <p class="dialog-description">Porcentaje de batería al salir de la base. Cambiarlo retira el plan de ejemplo; no calcula un plan nuevo.</p>
+      <div id="soc-fields"></div>
+      <p class="form-error" id="soc-error" role="alert" hidden></p>
+      <div class="dialog-actions"><button type="button" class="secondary-button" data-close-dialog="soc-dialog">Cancelar</button><button type="submit" class="primary-button">Guardar batería</button></div>
+    </form>
+  </dialog>
+  <dialog class="data-dialog" id="data-dialog" aria-labelledby="data-title">
+    <div class="dialog-heading"><div><span class="eyebrow">Escenario</span><h2 id="data-title">Ann Arbor</h2></div><button type="button" class="icon-button" data-close-dialog="data-dialog" aria-label="Cerrar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M6 18 18 6"/></svg></button></div>
+    <div id="scenario-data"></div>
+    <div class="dialog-actions"><button type="button" class="primary-button" data-close-dialog="data-dialog">Volver al despacho</button></div>
+  </dialog>
+  <div class="sr-only" id="announcement" role="status" aria-live="polite"></div>
+</body>
+</html>

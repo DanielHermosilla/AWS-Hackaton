@@ -1,0 +1,4 @@
+interface:
+  display_name: "Revisión y simplicidad ZMD Mobility"
+  short_description: "Revisa fallos y complejidad dentro del cambio pedido"
+  default_prompt: "Usa $zmd-code-review para revisar este cambio de ZMD Mobility y señalar fallos o complejidad innecesaria con evidencia."

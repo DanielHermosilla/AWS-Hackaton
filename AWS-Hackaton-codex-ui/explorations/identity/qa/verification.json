@@ -1,0 +1,277 @@
+{
+  "date_utc": "2026-10-15T00:49:53.982Z",
+  "browser": "155.0.8059.79",
+  "launch": "Chrome headless; temporary clean profile",
+  "viewports": [
+    1440,
+    390,
+    320
+  ],
+  "svg_assets": 18,
+  "checked": {
+    "gallery_backlink": true,
+    "selection_toggle": true,
+    "size_and_background_controls": true,
+    "keyboard_enter_and_tab": true,
+    "no_horizontal_overflow": true,
+    "svg_content_and_text_bounds": true,
+    "no_remote_requests": true
+  },
+  "failures": [],
+  "page_errors": [],
+  "remote_requests": [],
+  "bounds": [
+    {
+      "concept": "cauce",
+      "asset": "symbol",
+      "x": 11,
+      "y": 11,
+      "width": 42,
+      "height": 42,
+      "viewBox": [
+        0,
+        0,
+        64,
+        64
+      ]
+    },
+    {
+      "concept": "cauce",
+      "asset": "lockup_light",
+      "x": 11,
+      "y": 11,
+      "width": 242.50811767578125,
+      "height": 42,
+      "viewBox": [
+        0,
+        0,
+        350,
+        64
+      ]
+    },
+    {
+      "concept": "cauce",
+      "asset": "lockup_dark",
+      "x": 11,
+      "y": 11,
+      "width": 242.50811767578125,
+      "height": 42,
+      "viewBox": [
+        0,
+        0,
+        350,
+        64
+      ]
+    },
+    {
+      "concept": "acople",
+      "asset": "symbol",
+      "x": 8,
+      "y": 10,
+      "width": 48,
+      "height": 44,
+      "viewBox": [
+        0,
+        0,
+        64,
+        64
+      ]
+    },
+    {
+      "concept": "acople",
+      "asset": "lockup_light",
+      "x": 8,
+      "y": 10,
+      "width": 245.50811767578125,
+      "height": 44,
+      "viewBox": [
+        0,
+        0,
+        350,
+        64
+      ]
+    },
+    {
+      "concept": "acople",
+      "asset": "lockup_dark",
+      "x": 8,
+      "y": 10,
+      "width": 245.50811767578125,
+      "height": 44,
+      "viewBox": [
+        0,
+        0,
+        350,
+        64
+      ]
+    },
+    {
+      "concept": "umbral",
+      "asset": "symbol",
+      "x": 10,
+      "y": 8,
+      "width": 44,
+      "height": 46,
+      "viewBox": [
+        0,
+        0,
+        64,
+        64
+      ]
+    },
+    {
+      "concept": "umbral",
+      "asset": "lockup_light",
+      "x": 10,
+      "y": 8,
+      "width": 243.50811767578125,
+      "height": 46,
+      "viewBox": [
+        0,
+        0,
+        350,
+        64
+      ]
+    },
+    {
+      "concept": "umbral",
+      "asset": "lockup_dark",
+      "x": 10,
+      "y": 8,
+      "width": 243.50811767578125,
+      "height": 46,
+      "viewBox": [
+        0,
+        0,
+        350,
+        64
+      ]
+    },
+    {
+      "concept": "triada",
+      "asset": "symbol",
+      "x": 1.417314052581787,
+      "y": 5,
+      "width": 57.565372467041016,
+      "height": 52.970767974853516,
+      "viewBox": [
+        0,
+        0,
+        64,
+        64
+      ]
+    },
+    {
+      "concept": "triada",
+      "asset": "lockup_light",
+      "x": 1.417314052581787,
+      "y": 5,
+      "width": 252.09080505371094,
+      "height": 52.970767974853516,
+      "viewBox": [
+        0,
+        0,
+        350,
+        64
+      ]
+    },
+    {
+      "concept": "triada",
+      "asset": "lockup_dark",
+      "x": 1.417314052581787,
+      "y": 5,
+      "width": 252.09080505371094,
+      "height": 52.970767974853516,
+      "viewBox": [
+        0,
+        0,
+        350,
+        64
+      ]
+    },
+    {
+      "concept": "orbita",
+      "asset": "symbol",
+      "x": 7,
+      "y": 8,
+      "width": 50,
+      "height": 49,
+      "viewBox": [
+        0,
+        0,
+        64,
+        64
+      ]
+    },
+    {
+      "concept": "orbita",
+      "asset": "lockup_light",
+      "x": 7,
+      "y": 8,
+      "width": 246.50811767578125,
+      "height": 49,
+      "viewBox": [
+        0,
+        0,
+        350,
+        64
+      ]
+    },
+    {
+      "concept": "orbita",
+      "asset": "lockup_dark",
+      "x": 7,
+      "y": 8,
+      "width": 246.50811767578125,
+      "height": 49,
+      "viewBox": [
+        0,
+        0,
+        350,
+        64
+      ]
+    },
+    {
+      "concept": "modulo",
+      "asset": "symbol",
+      "x": 9,
+      "y": 9,
+      "width": 46,
+      "height": 46,
+      "viewBox": [
+        0,
+        0,
+        64,
+        64
+      ]
+    },
+    {
+      "concept": "modulo",
+      "asset": "lockup_light",
+      "x": 9,
+      "y": 9,
+      "width": 244.50811767578125,
+      "height": 46,
+      "viewBox": [
+        0,
+        0,
+        350,
+        64
+      ]
+    },
+    {
+      "concept": "modulo",
+      "asset": "lockup_dark",
+      "x": 9,
+      "y": 9,
+      "width": 244.50811767578125,
+      "height": 46,
+      "viewBox": [
+        0,
+        0,
+        350,
+        64
+      ]
+    }
+  ]
+}

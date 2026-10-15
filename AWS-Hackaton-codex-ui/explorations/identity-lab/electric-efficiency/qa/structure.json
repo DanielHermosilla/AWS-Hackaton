@@ -1,0 +1,55 @@
+{
+  "entries": 12,
+  "svg_count": 36,
+  "errors": [],
+  "paths_per_symbol": [
+    {
+      "id": "e01-veta",
+      "paths": 1
+    },
+    {
+      "id": "e02-contacto",
+      "paths": 1
+    },
+    {
+      "id": "e03-polar",
+      "paths": 1
+    },
+    {
+      "id": "e04-induccion",
+      "paths": 2
+    },
+    {
+      "id": "e05-rotor",
+      "paths": 3
+    },
+    {
+      "id": "e06-impulso",
+      "paths": 1
+    },
+    {
+      "id": "f01-atajo",
+      "paths": 1
+    },
+    {
+      "id": "f02-relevo",
+      "paths": 1
+    },
+    {
+      "id": "f03-reingreso",
+      "paths": 1
+    },
+    {
+      "id": "f04-ajuste",
+      "paths": 1
+    },
+    {
+      "id": "f05-convergencia",
+      "paths": 2
+    },
+    {
+      "id": "f06-equilibrio",
+      "paths": 1
+    }
+  ]
+}

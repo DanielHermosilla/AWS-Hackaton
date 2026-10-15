@@ -1,0 +1,1195 @@
+{
+  "timestampUtc": "2026-10-15T00:56:30.562Z",
+  "url": "http://127.0.0.1:4173/interfaces/balance/",
+  "browser": "Google Chrome",
+  "playwright": "1.62.1",
+  "scope": "Solo foco al seleccionar vehículos y encuadre de paradas/base/trazo en Balance",
+  "externalNetworkBlocked": true,
+  "focus": [
+    {
+      "state": "complete",
+      "view": "map",
+      "vehicle": "B",
+      "selected": "true",
+      "focusOnEquivalentButton": true,
+      "activeTag": "BUTTON",
+      "activeVehicle": "B",
+      "passed": true
+    },
+    {
+      "state": "complete",
+      "view": "map",
+      "vehicle": "A",
+      "selected": "true",
+      "focusOnEquivalentButton": true,
+      "activeTag": "BUTTON",
+      "activeVehicle": "A",
+      "passed": true
+    },
+    {
+      "state": "complete",
+      "view": "stops",
+      "vehicle": "B",
+      "selected": "true",
+      "focusOnEquivalentButton": true,
+      "activeTag": "BUTTON",
+      "activeVehicle": "B",
+      "passed": true
+    },
+    {
+      "state": "complete",
+      "view": "stops",
+      "vehicle": "A",
+      "selected": "true",
+      "focusOnEquivalentButton": true,
+      "activeTag": "BUTTON",
+      "activeVehicle": "A",
+      "passed": true
+    },
+    {
+      "state": "partial",
+      "view": "map",
+      "vehicle": "B",
+      "selected": "true",
+      "focusOnEquivalentButton": true,
+      "activeTag": "BUTTON",
+      "activeVehicle": "B",
+      "passed": true
+    },
+    {
+      "state": "partial",
+      "view": "map",
+      "vehicle": "A",
+      "selected": "true",
+      "focusOnEquivalentButton": true,
+      "activeTag": "BUTTON",
+      "activeVehicle": "A",
+      "passed": true
+    },
+    {
+      "state": "partial",
+      "view": "stops",
+      "vehicle": "B",
+      "selected": "true",
+      "focusOnEquivalentButton": true,
+      "activeTag": "BUTTON",
+      "activeVehicle": "B",
+      "passed": true
+    },
+    {
+      "state": "partial",
+      "view": "stops",
+      "vehicle": "A",
+      "selected": "true",
+      "focusOnEquivalentButton": true,
+      "activeTag": "BUTTON",
+      "activeVehicle": "A",
+      "passed": true
+    },
+    {
+      "state": "empty",
+      "view": "map",
+      "vehicle": "B",
+      "selected": "true",
+      "focusOnEquivalentButton": true,
+      "activeTag": "BUTTON",
+      "activeVehicle": "B",
+      "passed": true
+    },
+    {
+      "state": "empty",
+      "view": "map",
+      "vehicle": "A",
+      "selected": "true",
+      "focusOnEquivalentButton": true,
+      "activeTag": "BUTTON",
+      "activeVehicle": "A",
+      "passed": true
+    },
+    {
+      "state": "empty",
+      "view": "stops",
+      "vehicle": "B",
+      "selected": "true",
+      "focusOnEquivalentButton": true,
+      "activeTag": "BUTTON",
+      "activeVehicle": "B",
+      "passed": true
+    },
+    {
+      "state": "empty",
+      "view": "stops",
+      "vehicle": "A",
+      "selected": "true",
+      "focusOnEquivalentButton": true,
+      "activeTag": "BUTTON",
+      "activeVehicle": "A",
+      "passed": true
+    }
+  ],
+  "framing": [
+    {
+      "width": 1440,
+      "state": "complete",
+      "maps": [
+        {
+          "vehicle": "A",
+          "viewBox": "140 85 660 440",
+          "preserveAspectRatio": "xMidYMid meet",
+          "containers": [
+            {
+              "left": 65.796875,
+              "top": 616.640625,
+              "right": 707,
+              "bottom": 877.640625,
+              "width": 641.203125,
+              "height": 261
+            },
+            {
+              "left": 65.796875,
+              "top": 616.640625,
+              "right": 707,
+              "bottom": 877.640625,
+              "width": 641.203125,
+              "height": 261
+            },
+            {
+              "left": 65.796875,
+              "top": 615.640625,
+              "right": 707,
+              "bottom": 878.640625,
+              "width": 641.203125,
+              "height": 263
+            }
+          ],
+          "pins": [
+            {
+              "stop": "mercado",
+              "rectangle": {
+                "left": 289.11663818359375,
+                "top": 682.4838256835938,
+                "right": 317.58935546875,
+                "bottom": 710.95654296875,
+                "width": 28.47271728515625,
+                "height": 28.47271728515625
+              },
+              "fullyInside": true
+            },
+            {
+              "stop": "biblioteca",
+              "rectangle": {
+                "left": 437.4120788574219,
+                "top": 646.8928833007812,
+                "right": 465.8847961425781,
+                "bottom": 675.3656005859375,
+                "width": 28.47271728515625,
+                "height": 28.47271728515625
+              },
+              "fullyInside": true
+            },
+            {
+              "stop": "carga",
+              "rectangle": {
+                "left": 502.6620788574219,
+                "top": 724.0065307617188,
+                "right": 531.134765625,
+                "bottom": 752.479248046875,
+                "width": 28.472686767578125,
+                "height": 28.47271728515625
+              },
+              "fullyInside": true
+            },
+            {
+              "stop": "almacen",
+              "rectangle": {
+                "left": 428.51434326171875,
+                "top": 786.2906494140625,
+                "right": 456.987060546875,
+                "bottom": 814.7633666992188,
+                "width": 28.47271728515625,
+                "height": 28.47271728515625
+              },
+              "fullyInside": true
+            },
+            {
+              "stop": "galeria",
+              "rectangle": {
+                "left": 324.70751953125,
+                "top": 812.9838256835938,
+                "right": 353.1802673339844,
+                "bottom": 841.45654296875,
+                "width": 28.472747802734375,
+                "height": 28.47271728515625
+              },
+              "fullyInside": true
+            }
+          ],
+          "baseFullyInside": true,
+          "routeFullyInside": true,
+          "allExpectedPresent": true,
+          "passed": true
+        },
+        {
+          "vehicle": "B",
+          "viewBox": "140 365 835 410",
+          "preserveAspectRatio": "xMidYMid meet",
+          "containers": [
+            {
+              "left": 733,
+              "top": 616.640625,
+              "right": 1374.203125,
+              "bottom": 877.640625,
+              "width": 641.203125,
+              "height": 261
+            },
+            {
+              "left": 733,
+              "top": 616.640625,
+              "right": 1374.203125,
+              "bottom": 877.640625,
+              "width": 641.203125,
+              "height": 261
+            },
+            {
+              "left": 733,
+              "top": 615.640625,
+              "right": 1374.203125,
+              "bottom": 878.640625,
+              "width": 641.203125,
+              "height": 263
+            }
+          ],
+          "pins": [
+            {
+              "stop": "taller",
+              "rectangle": {
+                "left": 1144.9515380859375,
+                "top": 690.4844970703125,
+                "right": 1175.5076904296875,
+                "bottom": 721.0406494140625,
+                "width": 30.55615234375,
+                "height": 30.55615234375
+              },
+              "fullyInside": true
+            },
+            {
+              "stop": "local-sur",
+              "rectangle": {
+                "left": 1234.073486328125,
+                "top": 770.0576782226562,
+                "right": 1264.629638671875,
+                "bottom": 800.61376953125,
+                "width": 30.55615234375,
+                "height": 30.55609130859375
+              },
+              "fullyInside": true
+            },
+            {
+              "stop": "libreria",
+              "rectangle": {
+                "left": 1055.82958984375,
+                "top": 808.2528076171875,
+                "right": 1086.3857421875,
+                "bottom": 838.8088989257812,
+                "width": 30.55615234375,
+                "height": 30.55609130859375
+              },
+              "fullyInside": true
+            },
+            {
+              "stop": "cafe",
+              "rectangle": {
+                "left": 890.3173828125,
+                "top": 779.6064453125,
+                "right": 920.87353515625,
+                "bottom": 810.16259765625,
+                "width": 30.55615234375,
+                "height": 30.55615234375
+              },
+              "fullyInside": true
+            }
+          ],
+          "baseFullyInside": true,
+          "routeFullyInside": true,
+          "allExpectedPresent": true,
+          "passed": true
+        }
+      ],
+      "passed": true
+    },
+    {
+      "width": 1440,
+      "state": "partial",
+      "maps": [
+        {
+          "vehicle": "A",
+          "viewBox": "140 85 660 440",
+          "preserveAspectRatio": "xMidYMid meet",
+          "containers": [
+            {
+              "left": 65.796875,
+              "top": 430.640625,
+              "right": 707,
+              "bottom": 691.640625,
+              "width": 641.203125,
+              "height": 261
+            },
+            {
+              "left": 65.796875,
+              "top": 430.640625,
+              "right": 707,
+              "bottom": 691.640625,
+              "width": 641.203125,
+              "height": 261
+            },
+            {
+              "left": 65.796875,
+              "top": 429.640625,
+              "right": 707,
+              "bottom": 692.640625,
+              "width": 641.203125,
+              "height": 263
+            }
+          ],
+          "pins": [
+            {
+              "stop": "mercado",
+              "rectangle": {
+                "left": 289.11663818359375,
+                "top": 496.48382568359375,
+                "right": 317.58935546875,
+                "bottom": 524.95654296875,
+                "width": 28.47271728515625,
+                "height": 28.47271728515625
+              },
+              "fullyInside": true
+            },
+            {
+              "stop": "biblioteca",
+              "rectangle": {
+                "left": 437.4120788574219,
+                "top": 460.89288330078125,
+                "right": 465.8847961425781,
+                "bottom": 489.3656311035156,
+                "width": 28.47271728515625,
+                "height": 28.472747802734375
+              },
+              "fullyInside": true
+            },
+            {
+              "stop": "carga",
+              "rectangle": {
+                "left": 502.6620788574219,
+                "top": 538.0065307617188,
+                "right": 531.134765625,
+                "bottom": 566.479248046875,
+                "width": 28.472686767578125,
+                "height": 28.47271728515625
+              },
+              "fullyInside": true
+            },
+            {
+              "stop": "almacen",
+              "rectangle": {
+                "left": 428.51434326171875,
+                "top": 600.2906494140625,
+                "right": 456.987060546875,
+                "bottom": 628.7633666992188,
+                "width": 28.47271728515625,
+                "height": 28.47271728515625
+              },
+              "fullyInside": true
+            },
+            {
+              "stop": "galeria",
+              "rectangle": {
+                "left": 324.70751953125,
+                "top": 626.9838256835938,
+                "right": 353.1802673339844,
+                "bottom": 655.45654296875,
+                "width": 28.472747802734375,
+                "height": 28.47271728515625
+              },
+              "fullyInside": true
+            }
+          ],
+          "baseFullyInside": true,
+          "routeFullyInside": true,
+          "allExpectedPresent": true,
+          "passed": true
+        },
+        {
+          "vehicle": "B",
+          "viewBox": "140 365 835 350",
+          "preserveAspectRatio": "xMidYMid meet",
+          "containers": [
+            {
+              "left": 733,
+              "top": 430.640625,
+              "right": 1374.203125,
+              "bottom": 691.640625,
+              "width": 641.203125,
+              "height": 261
+            },
+            {
+              "left": 733,
+              "top": 430.640625,
+              "right": 1374.203125,
+              "bottom": 691.640625,
+              "width": 641.203125,
+              "height": 261
+            },
+            {
+              "left": 733,
+              "top": 429.640625,
+              "right": 1374.203125,
+              "bottom": 692.640625,
+              "width": 641.203125,
+              "height": 263
+            }
+          ],
+          "pins": [
+            {
+              "stop": "taller",
+              "rectangle": {
+                "left": 1160.611572265625,
+                "top": 517.1434936523438,
+                "right": 1196.4058837890625,
+                "bottom": 552.937744140625,
+                "width": 35.7943115234375,
+                "height": 35.79425048828125
+              },
+              "fullyInside": true
+            },
+            {
+              "stop": "local-sur",
+              "rectangle": {
+                "left": 1265.011474609375,
+                "top": 610.3577880859375,
+                "right": 1300.805908203125,
+                "bottom": 646.1520385742188,
+                "width": 35.79443359375,
+                "height": 35.79425048828125
+              },
+              "fullyInside": true
+            }
+          ],
+          "baseFullyInside": true,
+          "routeFullyInside": true,
+          "allExpectedPresent": true,
+          "passed": true
+        }
+      ],
+      "passed": true
+    },
+    {
+      "width": 768,
+      "state": "complete",
+      "maps": [
+        {
+          "vehicle": "A",
+          "viewBox": "140 85 660 440",
+          "preserveAspectRatio": "xMidYMid meet",
+          "containers": [
+            {
+              "left": 35.546875,
+              "top": 422.984375,
+              "right": 375.5,
+              "bottom": 650.984375,
+              "width": 339.953125,
+              "height": 228
+            },
+            {
+              "left": 35.546875,
+              "top": 422.984375,
+              "right": 375.5,
+              "bottom": 650.984375,
+              "width": 339.953125,
+              "height": 228
+            },
+            {
+              "left": 35.546875,
+              "top": 421.984375,
+              "right": 375.5,
+              "bottom": 651.984375,
+              "width": 339.953125,
+              "height": 230
+            }
+          ],
+          "pins": [
+            {
+              "stop": "mercado",
+              "rectangle": {
+                "left": 121.05023956298828,
+                "top": 480.8406066894531,
+                "right": 145.77410888671875,
+                "bottom": 505.564453125,
+                "width": 24.72386932373047,
+                "height": 24.723846435546875
+              },
+              "fullyInside": true
+            },
+            {
+              "stop": "biblioteca",
+              "rectangle": {
+                "left": 249.8203582763672,
+                "top": 449.9357604980469,
+                "right": 274.5442199707031,
+                "bottom": 474.6596374511719,
+                "width": 24.723861694335938,
+                "height": 24.723876953125
+              },
+              "fullyInside": true
+            },
+            {
+              "stop": "carga",
+              "rectangle": {
+                "left": 306.4792175292969,
+                "top": 516.896240234375,
+                "right": 331.20306396484375,
+                "bottom": 541.6201171875,
+                "width": 24.723846435546875,
+                "height": 24.723876953125
+              },
+              "fullyInside": true
+            },
+            {
+              "stop": "almacen",
+              "rectangle": {
+                "left": 242.09414672851562,
+                "top": 570.9796752929688,
+                "right": 266.8180236816406,
+                "bottom": 595.7035522460938,
+                "width": 24.723876953125,
+                "height": 24.723876953125
+              },
+              "fullyInside": true
+            },
+            {
+              "stop": "galeria",
+              "rectangle": {
+                "left": 151.95506286621094,
+                "top": 594.1583251953125,
+                "right": 176.67892456054688,
+                "bottom": 618.8822021484375,
+                "width": 24.723861694335938,
+                "height": 24.723876953125
+              },
+              "fullyInside": true
+            }
+          ],
+          "baseFullyInside": true,
+          "routeFullyInside": true,
+          "allExpectedPresent": true,
+          "passed": true
+        },
+        {
+          "vehicle": "B",
+          "viewBox": "140 365 835 410",
+          "preserveAspectRatio": "xMidYMid meet",
+          "containers": [
+            {
+              "left": 392.5,
+              "top": 422.984375,
+              "right": 732.453125,
+              "bottom": 650.984375,
+              "width": 339.953125,
+              "height": 228
+            },
+            {
+              "left": 392.5,
+              "top": 422.984375,
+              "right": 732.453125,
+              "bottom": 650.984375,
+              "width": 339.953125,
+              "height": 228
+            },
+            {
+              "left": 392.5,
+              "top": 421.984375,
+              "right": 732.453125,
+              "bottom": 651.984375,
+              "width": 339.953125,
+              "height": 230
+            }
+          ],
+          "pins": [
+            {
+              "stop": "taller",
+              "rectangle": {
+                "left": 620.899658203125,
+                "top": 500.7498474121094,
+                "right": 640.44189453125,
+                "bottom": 520.2920532226562,
+                "width": 19.542236328125,
+                "height": 19.542205810546875
+              },
+              "fullyInside": true
+            },
+            {
+              "stop": "local-sur",
+              "rectangle": {
+                "left": 677.8977661132812,
+                "top": 551.6410522460938,
+                "right": 697.4400024414062,
+                "bottom": 571.1832275390625,
+                "width": 19.542236328125,
+                "height": 19.54217529296875
+              },
+              "fullyInside": true
+            },
+            {
+              "stop": "libreria",
+              "rectangle": {
+                "left": 563.9014892578125,
+                "top": 576.0687866210938,
+                "right": 583.4437255859375,
+                "bottom": 595.6110229492188,
+                "width": 19.542236328125,
+                "height": 19.542236328125
+              },
+              "fullyInside": true
+            },
+            {
+              "stop": "cafe",
+              "rectangle": {
+                "left": 458.0478515625,
+                "top": 557.7479858398438,
+                "right": 477.5900573730469,
+                "bottom": 577.2901611328125,
+                "width": 19.542205810546875,
+                "height": 19.54217529296875
+              },
+              "fullyInside": true
+            }
+          ],
+          "baseFullyInside": true,
+          "routeFullyInside": true,
+          "allExpectedPresent": true,
+          "passed": true
+        }
+      ],
+      "passed": true
+    },
+    {
+      "width": 768,
+      "state": "partial",
+      "maps": [
+        {
+          "vehicle": "A",
+          "viewBox": "140 85 660 440",
+          "preserveAspectRatio": "xMidYMid meet",
+          "containers": [
+            {
+              "left": 35.546875,
+              "top": 419.234375,
+              "right": 375.5,
+              "bottom": 647.234375,
+              "width": 339.953125,
+              "height": 228
+            },
+            {
+              "left": 35.546875,
+              "top": 419.234375,
+              "right": 375.5,
+              "bottom": 647.234375,
+              "width": 339.953125,
+              "height": 228
+            },
+            {
+              "left": 35.546875,
+              "top": 418.234375,
+              "right": 375.5,
+              "bottom": 648.234375,
+              "width": 339.953125,
+              "height": 230
+            }
+          ],
+          "pins": [
+            {
+              "stop": "mercado",
+              "rectangle": {
+                "left": 121.05023956298828,
+                "top": 477.0906066894531,
+                "right": 145.77410888671875,
+                "bottom": 501.814453125,
+                "width": 24.72386932373047,
+                "height": 24.723846435546875
+              },
+              "fullyInside": true
+            },
+            {
+              "stop": "biblioteca",
+              "rectangle": {
+                "left": 249.8203582763672,
+                "top": 446.1857604980469,
+                "right": 274.5442199707031,
+                "bottom": 470.9096374511719,
+                "width": 24.723861694335938,
+                "height": 24.723876953125
+              },
+              "fullyInside": true
+            },
+            {
+              "stop": "carga",
+              "rectangle": {
+                "left": 306.4792175292969,
+                "top": 513.146240234375,
+                "right": 331.20306396484375,
+                "bottom": 537.8701171875,
+                "width": 24.723846435546875,
+                "height": 24.723876953125
+              },
+              "fullyInside": true
+            },
+            {
+              "stop": "almacen",
+              "rectangle": {
+                "left": 242.09414672851562,
+                "top": 567.2296752929688,
+                "right": 266.8180236816406,
+                "bottom": 591.9535522460938,
+                "width": 24.723876953125,
+                "height": 24.723876953125
+              },
+              "fullyInside": true
+            },
+            {
+              "stop": "galeria",
+              "rectangle": {
+                "left": 151.95506286621094,
+                "top": 590.4083251953125,
+                "right": 176.67892456054688,
+                "bottom": 615.1322021484375,
+                "width": 24.723861694335938,
+                "height": 24.723876953125
+              },
+              "fullyInside": true
+            }
+          ],
+          "baseFullyInside": true,
+          "routeFullyInside": true,
+          "allExpectedPresent": true,
+          "passed": true
+        },
+        {
+          "vehicle": "B",
+          "viewBox": "140 365 835 350",
+          "preserveAspectRatio": "xMidYMid meet",
+          "containers": [
+            {
+              "left": 392.5,
+              "top": 419.234375,
+              "right": 732.453125,
+              "bottom": 647.234375,
+              "width": 339.953125,
+              "height": 228
+            },
+            {
+              "left": 392.5,
+              "top": 419.234375,
+              "right": 732.453125,
+              "bottom": 647.234375,
+              "width": 339.953125,
+              "height": 228
+            },
+            {
+              "left": 392.5,
+              "top": 418.234375,
+              "right": 732.453125,
+              "bottom": 648.234375,
+              "width": 339.953125,
+              "height": 230
+            }
+          ],
+          "pins": [
+            {
+              "stop": "taller",
+              "rectangle": {
+                "left": 620.899658203125,
+                "top": 509.2137451171875,
+                "right": 640.44189453125,
+                "bottom": 528.7559814453125,
+                "width": 19.542236328125,
+                "height": 19.542236328125
+              },
+              "fullyInside": true
+            },
+            {
+              "stop": "local-sur",
+              "rectangle": {
+                "left": 677.8977661132812,
+                "top": 560.1049194335938,
+                "right": 697.4400024414062,
+                "bottom": 579.6471557617188,
+                "width": 19.542236328125,
+                "height": 19.542236328125
+              },
+              "fullyInside": true
+            }
+          ],
+          "baseFullyInside": true,
+          "routeFullyInside": true,
+          "allExpectedPresent": true,
+          "passed": true
+        }
+      ],
+      "passed": true
+    },
+    {
+      "width": 390,
+      "state": "complete",
+      "maps": [
+        {
+          "vehicle": "A",
+          "viewBox": "140 85 660 440",
+          "preserveAspectRatio": "xMidYMid meet",
+          "containers": [
+            {
+              "left": 21,
+              "top": 675.484375,
+              "right": 369,
+              "bottom": 958.484375,
+              "width": 348,
+              "height": 283
+            },
+            {
+              "left": 21,
+              "top": 675.484375,
+              "right": 369,
+              "bottom": 958.484375,
+              "width": 348,
+              "height": 283
+            },
+            {
+              "left": 21,
+              "top": 674.484375,
+              "right": 369,
+              "bottom": 959.484375,
+              "width": 348,
+              "height": 285
+            }
+          ],
+          "pins": [
+            {
+              "stop": "mercado",
+              "rectangle": {
+                "left": 108.52727508544922,
+                "top": 759.5116577148438,
+                "right": 133.83636474609375,
+                "bottom": 784.8207397460938,
+                "width": 25.30908966064453,
+                "height": 25.30908203125
+              },
+              "fullyInside": true
+            },
+            {
+              "stop": "biblioteca",
+              "rectangle": {
+                "left": 240.345458984375,
+                "top": 727.8753051757812,
+                "right": 265.654541015625,
+                "bottom": 753.1843872070312,
+                "width": 25.30908203125,
+                "height": 25.30908203125
+              },
+              "fullyInside": true
+            },
+            {
+              "stop": "carga",
+              "rectangle": {
+                "left": 298.345458984375,
+                "top": 796.4207153320312,
+                "right": 323.654541015625,
+                "bottom": 821.7298583984375,
+                "width": 25.30908203125,
+                "height": 25.30914306640625
+              },
+              "fullyInside": true
+            },
+            {
+              "stop": "almacen",
+              "rectangle": {
+                "left": 232.43637084960938,
+                "top": 851.7843627929688,
+                "right": 257.7454528808594,
+                "bottom": 877.0934448242188,
+                "width": 25.30908203125,
+                "height": 25.30908203125
+              },
+              "fullyInside": true
+            },
+            {
+              "stop": "galeria",
+              "rectangle": {
+                "left": 140.16363525390625,
+                "top": 875.5116577148438,
+                "right": 165.4727325439453,
+                "bottom": 900.8207397460938,
+                "width": 25.309097290039062,
+                "height": 25.30908203125
+              },
+              "fullyInside": true
+            }
+          ],
+          "baseFullyInside": true,
+          "routeFullyInside": true,
+          "allExpectedPresent": true,
+          "passed": true
+        },
+        {
+          "vehicle": "B",
+          "viewBox": "140 365 835 410",
+          "preserveAspectRatio": "xMidYMid meet",
+          "containers": [
+            {
+              "left": 21,
+              "top": 1344.484375,
+              "right": 369,
+              "bottom": 1627.484375,
+              "width": 348,
+              "height": 283
+            },
+            {
+              "left": 21,
+              "top": 1344.484375,
+              "right": 369,
+              "bottom": 1627.484375,
+              "width": 348,
+              "height": 283
+            },
+            {
+              "left": 21,
+              "top": 1343.484375,
+              "right": 369,
+              "bottom": 1628.484375,
+              "width": 348,
+              "height": 285
+            }
+          ],
+          "pins": [
+            {
+              "stop": "taller",
+              "rectangle": {
+                "left": 254.8059844970703,
+                "top": 1448.8922119140625,
+                "right": 274.810791015625,
+                "bottom": 1468.89697265625,
+                "width": 20.004806518554688,
+                "height": 20.0047607421875
+              },
+              "fullyInside": true
+            },
+            {
+              "stop": "local-sur",
+              "rectangle": {
+                "left": 313.1532897949219,
+                "top": 1500.9879150390625,
+                "right": 333.1580810546875,
+                "bottom": 1520.9927978515625,
+                "width": 20.004791259765625,
+                "height": 20.0048828125
+              },
+              "fullyInside": true
+            },
+            {
+              "stop": "libreria",
+              "rectangle": {
+                "left": 196.45867919921875,
+                "top": 1525.993896484375,
+                "right": 216.46347045898438,
+                "bottom": 1545.998779296875,
+                "width": 20.004791259765625,
+                "height": 20.0048828125
+              },
+              "fullyInside": true
+            },
+            {
+              "stop": "cafe",
+              "rectangle": {
+                "left": 88.09940338134766,
+                "top": 1507.239501953125,
+                "right": 108.10419464111328,
+                "bottom": 1527.2442626953125,
+                "width": 20.004791259765625,
+                "height": 20.0047607421875
+              },
+              "fullyInside": true
+            }
+          ],
+          "baseFullyInside": true,
+          "routeFullyInside": true,
+          "allExpectedPresent": true,
+          "passed": true
+        }
+      ],
+      "passed": true
+    },
+    {
+      "width": 390,
+      "state": "partial",
+      "maps": [
+        {
+          "vehicle": "A",
+          "viewBox": "140 85 660 440",
+          "preserveAspectRatio": "xMidYMid meet",
+          "containers": [
+            {
+              "left": 21,
+              "top": 72.484375,
+              "right": 369,
+              "bottom": 355.484375,
+              "width": 348,
+              "height": 283
+            },
+            {
+              "left": 21,
+              "top": 72.484375,
+              "right": 369,
+              "bottom": 355.484375,
+              "width": 348,
+              "height": 283
+            },
+            {
+              "left": 21,
+              "top": 71.484375,
+              "right": 369,
+              "bottom": 356.484375,
+              "width": 348,
+              "height": 285
+            }
+          ],
+          "pins": [
+            {
+              "stop": "mercado",
+              "rectangle": {
+                "left": 108.52727508544922,
+                "top": 156.51165771484375,
+                "right": 133.83636474609375,
+                "bottom": 181.82073974609375,
+                "width": 25.30908966064453,
+                "height": 25.30908203125
+              },
+              "fullyInside": true
+            },
+            {
+              "stop": "biblioteca",
+              "rectangle": {
+                "left": 240.345458984375,
+                "top": 124.87528228759766,
+                "right": 265.654541015625,
+                "bottom": 150.1843719482422,
+                "width": 25.30908203125,
+                "height": 25.30908966064453
+              },
+              "fullyInside": true
+            },
+            {
+              "stop": "carga",
+              "rectangle": {
+                "left": 298.345458984375,
+                "top": 193.42074584960938,
+                "right": 323.654541015625,
+                "bottom": 218.72982788085938,
+                "width": 25.30908203125,
+                "height": 25.30908203125
+              },
+              "fullyInside": true
+            },
+            {
+              "stop": "almacen",
+              "rectangle": {
+                "left": 232.43637084960938,
+                "top": 248.7843780517578,
+                "right": 257.7454528808594,
+                "bottom": 274.09344482421875,
+                "width": 25.30908203125,
+                "height": 25.309066772460938
+              },
+              "fullyInside": true
+            },
+            {
+              "stop": "galeria",
+              "rectangle": {
+                "left": 140.16363525390625,
+                "top": 272.51165771484375,
+                "right": 165.4727325439453,
+                "bottom": 297.82073974609375,
+                "width": 25.309097290039062,
+                "height": 25.30908203125
+              },
+              "fullyInside": true
+            }
+          ],
+          "baseFullyInside": true,
+          "routeFullyInside": true,
+          "allExpectedPresent": true,
+          "passed": true
+        },
+        {
+          "vehicle": "B",
+          "viewBox": "140 365 835 350",
+          "preserveAspectRatio": "xMidYMid meet",
+          "containers": [
+            {
+              "left": 21,
+              "top": 736.484375,
+              "right": 369,
+              "bottom": 1019.484375,
+              "width": 348,
+              "height": 283
+            },
+            {
+              "left": 21,
+              "top": 736.484375,
+              "right": 369,
+              "bottom": 1019.484375,
+              "width": 348,
+              "height": 283
+            },
+            {
+              "left": 21,
+              "top": 735.484375,
+              "right": 369,
+              "bottom": 1020.484375,
+              "width": 348,
+              "height": 285
+            }
+          ],
+          "pins": [
+            {
+              "stop": "taller",
+              "rectangle": {
+                "left": 254.8059844970703,
+                "top": 853.3951416015625,
+                "right": 274.810791015625,
+                "bottom": 873.3999633789062,
+                "width": 20.004806518554688,
+                "height": 20.00482177734375
+              },
+              "fullyInside": true
+            },
+            {
+              "stop": "local-sur",
+              "rectangle": {
+                "left": 313.1532897949219,
+                "top": 905.490966796875,
+                "right": 333.1580810546875,
+                "bottom": 925.4957275390625,
+                "width": 20.004791259765625,
+                "height": 20.0047607421875
+              },
+              "fullyInside": true
+            }
+          ],
+          "baseFullyInside": true,
+          "routeFullyInside": true,
+          "allExpectedPresent": true,
+          "passed": true
+        }
+      ],
+      "passed": true
+    }
+  ],
+  "passed": true
+}

@@ -1,0 +1,14 @@
+# Supuestos de la rama `modelamiento` de AWS-Hackaton (config/default.json, docs/validation.md,
+# commit 4cf45e0): 24 kWh útiles, reserva 2.4 kWh, SoC 60 %, 0.1567712473 kWh/km (eVED, huecos > 10 s
+# excluidos).
+# Su importador rechaza puntos a más de 100 m del cruce más cercano (max_snap_distance_m). Con la red
+# OSM "drive", V8 (competition) queda a 182 m de la calle más cercana, así que ese límite rechazaría la
+# instancia oficial: aquí queda desactivado. Para replicarlo: red.max_acceso_m: 100.
+tipos_vehiculo:
+  leaf2013:
+    bateria_kwh: 24.0
+    soc_inicial: 0.60
+    reserva_kwh: 2.4
+    consumo_kwh_km: 0.1567712473
+red:
+  max_acceso_m: null

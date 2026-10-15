@@ -1,0 +1,629 @@
+{
+  "date": "2026-10-15T05:15:28.442Z",
+  "checks": [
+    {
+      "name": "Layout y controles Esencial 1440px",
+      "status": "pass",
+      "detail": {
+        ".topbar": {
+          "x": 0,
+          "y": 0,
+          "width": 1440,
+          "height": 64,
+          "padding": "0px 24px",
+          "fontSize": "14px"
+        },
+        ".workspace": {
+          "x": 0,
+          "y": 64,
+          "width": 1440,
+          "height": 836,
+          "padding": "0px",
+          "fontSize": "14px"
+        },
+        ".sidebar": {
+          "x": 0,
+          "y": 64,
+          "width": 352,
+          "height": 836,
+          "padding": "0px",
+          "fontSize": "14px"
+        },
+        ".scenario": {
+          "x": 0,
+          "y": 64,
+          "width": 351,
+          "height": 139,
+          "padding": "28px 25px 23px",
+          "fontSize": "14px"
+        },
+        ".sidebar-tabs": {
+          "x": 22,
+          "y": 203,
+          "width": 307,
+          "height": 39,
+          "padding": "3px",
+          "fontSize": "14px"
+        },
+        ".vehicle-card": {
+          "x": 22,
+          "y": 262,
+          "width": 307,
+          "height": 208.296875,
+          "padding": "19px 17px 14px",
+          "fontSize": "14px"
+        },
+        ".car-drawing": {
+          "x": 220,
+          "y": 282,
+          "width": 94,
+          "height": 39.296875,
+          "padding": "0px",
+          "fontSize": "14px"
+        },
+        ".route-button": {
+          "x": 40,
+          "y": 425.296875,
+          "width": 271,
+          "height": 30,
+          "padding": "13px 0px 0px",
+          "fontSize": "12px"
+        },
+        ".map-summary": {
+          "x": 617.9765625,
+          "y": 87,
+          "width": 556.046875,
+          "height": 77,
+          "padding": "16px 22px",
+          "fontSize": "14px"
+        },
+        ".map-tools": {
+          "x": 1247.46875,
+          "y": 188,
+          "width": 170.53125,
+          "height": 42,
+          "padding": "0px",
+          "fontSize": "14px"
+        },
+        "#chargers": {
+          "x": 1247.46875,
+          "y": 188,
+          "width": 116.53125,
+          "height": 42,
+          "padding": "10px 12px",
+          "fontSize": "12px"
+        },
+        "#fit": {
+          "x": 1372,
+          "y": 188,
+          "width": 46,
+          "height": 42,
+          "padding": "10px 12px",
+          "fontSize": "12px"
+        }
+      }
+    },
+    {
+      "name": "Layout y controles Esencial 900px",
+      "status": "pass",
+      "detail": {
+        ".topbar": {
+          "x": 0,
+          "y": 0,
+          "width": 900,
+          "height": 64,
+          "padding": "0px 24px",
+          "fontSize": "14px"
+        },
+        ".workspace": {
+          "x": 0,
+          "y": 64,
+          "width": 900,
+          "height": 836,
+          "padding": "0px",
+          "fontSize": "14px"
+        },
+        ".sidebar": {
+          "x": 0,
+          "y": 64,
+          "width": 310,
+          "height": 836,
+          "padding": "0px",
+          "fontSize": "14px"
+        },
+        ".scenario": {
+          "x": 0,
+          "y": 64,
+          "width": 309,
+          "height": 139,
+          "padding": "28px 25px 23px",
+          "fontSize": "14px"
+        },
+        ".sidebar-tabs": {
+          "x": 16,
+          "y": 203,
+          "width": 277,
+          "height": 39,
+          "padding": "3px",
+          "fontSize": "14px"
+        },
+        ".vehicle-card": {
+          "x": 16,
+          "y": 260,
+          "width": 277,
+          "height": 201.125,
+          "padding": "17px 13px 13px",
+          "fontSize": "14px"
+        },
+        ".car-drawing": {
+          "x": 198,
+          "y": 278,
+          "width": 84,
+          "height": 35.125,
+          "padding": "0px",
+          "fontSize": "14px"
+        },
+        ".route-button": {
+          "x": 30,
+          "y": 417.125,
+          "width": 249,
+          "height": 30,
+          "padding": "13px 0px 0px",
+          "fontSize": "12px"
+        },
+        ".map-summary": {
+          "x": 418.578125,
+          "y": 87,
+          "width": 372.84375,
+          "height": 69,
+          "padding": "14px 17px",
+          "fontSize": "14px"
+        },
+        ".map-tools": {
+          "x": 707.46875,
+          "y": 174,
+          "width": 170.53125,
+          "height": 42,
+          "padding": "0px",
+          "fontSize": "14px"
+        },
+        "#chargers": {
+          "x": 707.46875,
+          "y": 174,
+          "width": 116.53125,
+          "height": 42,
+          "padding": "10px 12px",
+          "fontSize": "12px"
+        },
+        "#fit": {
+          "x": 832,
+          "y": 174,
+          "width": 46,
+          "height": 42,
+          "padding": "10px 12px",
+          "fontSize": "12px"
+        }
+      }
+    },
+    {
+      "name": "Layout y controles Esencial 701px",
+      "status": "pass",
+      "detail": {
+        ".topbar": {
+          "x": 0,
+          "y": 0,
+          "width": 701,
+          "height": 64,
+          "padding": "0px 24px",
+          "fontSize": "14px"
+        },
+        ".workspace": {
+          "x": 0,
+          "y": 64,
+          "width": 701,
+          "height": 836,
+          "padding": "0px",
+          "fontSize": "14px"
+        },
+        ".sidebar": {
+          "x": 0,
+          "y": 64,
+          "width": 310,
+          "height": 836,
+          "padding": "0px",
+          "fontSize": "14px"
+        },
+        ".scenario": {
+          "x": 0,
+          "y": 64,
+          "width": 309,
+          "height": 139,
+          "padding": "28px 25px 23px",
+          "fontSize": "14px"
+        },
+        ".sidebar-tabs": {
+          "x": 16,
+          "y": 203,
+          "width": 277,
+          "height": 39,
+          "padding": "3px",
+          "fontSize": "14px"
+        },
+        ".vehicle-card": {
+          "x": 16,
+          "y": 260,
+          "width": 277,
+          "height": 201.125,
+          "padding": "17px 13px 13px",
+          "fontSize": "14px"
+        },
+        ".car-drawing": {
+          "x": 198,
+          "y": 278,
+          "width": 84,
+          "height": 35.125,
+          "padding": "0px",
+          "fontSize": "14px"
+        },
+        ".route-button": {
+          "x": 30,
+          "y": 417.125,
+          "width": 249,
+          "height": 30,
+          "padding": "13px 0px 0px",
+          "fontSize": "12px"
+        },
+        ".map-summary": {
+          "x": 319.078125,
+          "y": 87,
+          "width": 372.84375,
+          "height": 69,
+          "padding": "14px 17px",
+          "fontSize": "14px"
+        },
+        ".map-tools": {
+          "x": 508.46875,
+          "y": 174,
+          "width": 170.53125,
+          "height": 42,
+          "padding": "0px",
+          "fontSize": "14px"
+        },
+        "#chargers": {
+          "x": 508.46875,
+          "y": 174,
+          "width": 116.53125,
+          "height": 42,
+          "padding": "10px 12px",
+          "fontSize": "12px"
+        },
+        "#fit": {
+          "x": 633,
+          "y": 174,
+          "width": 46,
+          "height": 42,
+          "padding": "10px 12px",
+          "fontSize": "12px"
+        }
+      }
+    },
+    {
+      "name": "Layout y controles Esencial 390px",
+      "status": "pass",
+      "detail": {
+        ".topbar": {
+          "x": 0,
+          "y": 0,
+          "width": 390,
+          "height": 60,
+          "padding": "0px 18px",
+          "fontSize": "14px"
+        },
+        ".workspace": {
+          "x": 0,
+          "y": 60,
+          "width": 390,
+          "height": 1026.125,
+          "padding": "0px",
+          "fontSize": "14px"
+        },
+        ".sidebar": {
+          "x": 0,
+          "y": 610,
+          "width": 390,
+          "height": 476.125,
+          "padding": "0px",
+          "fontSize": "14px"
+        },
+        ".scenario": {
+          "x": 0,
+          "y": 610,
+          "width": 390,
+          "height": 132,
+          "padding": "22px",
+          "fontSize": "14px"
+        },
+        ".sidebar-tabs": {
+          "x": 16,
+          "y": 742,
+          "width": 358,
+          "height": 39,
+          "padding": "3px",
+          "fontSize": "14px"
+        },
+        ".vehicle-card": {
+          "x": 16,
+          "y": 799,
+          "width": 275,
+          "height": 203.125,
+          "padding": "18px 16px 14px",
+          "fontSize": "14px"
+        },
+        ".car-drawing": {
+          "x": 193,
+          "y": 818,
+          "width": 84,
+          "height": 35.125,
+          "padding": "0px",
+          "fontSize": "14px"
+        },
+        ".route-button": {
+          "x": 33,
+          "y": 957.125,
+          "width": 241,
+          "height": 30,
+          "padding": "13px 0px 0px",
+          "fontSize": "12px"
+        },
+        ".map-summary": {
+          "x": 14,
+          "y": 74,
+          "width": 362,
+          "height": 66,
+          "padding": "13px",
+          "fontSize": "14px"
+        },
+        ".map-tools": {
+          "x": 205.46875,
+          "y": 159,
+          "width": 170.53125,
+          "height": 42,
+          "padding": "0px",
+          "fontSize": "14px"
+        },
+        "#chargers": {
+          "x": 205.46875,
+          "y": 159,
+          "width": 116.53125,
+          "height": 42,
+          "padding": "10px 12px",
+          "fontSize": "12px"
+        },
+        "#fit": {
+          "x": 330,
+          "y": 159,
+          "width": 46,
+          "height": 42,
+          "padding": "10px 12px",
+          "fontSize": "12px"
+        }
+      }
+    },
+    {
+      "name": "Layout y controles Esencial 319px",
+      "status": "pass",
+      "detail": {
+        ".topbar": {
+          "x": 0,
+          "y": 0,
+          "width": 319,
+          "height": 60,
+          "padding": "0px 18px",
+          "fontSize": "14px"
+        },
+        ".workspace": {
+          "x": 0,
+          "y": 60,
+          "width": 319,
+          "height": 1026.125,
+          "padding": "0px",
+          "fontSize": "14px"
+        },
+        ".sidebar": {
+          "x": 0,
+          "y": 610,
+          "width": 319,
+          "height": 476.125,
+          "padding": "0px",
+          "fontSize": "14px"
+        },
+        ".scenario": {
+          "x": 0,
+          "y": 610,
+          "width": 319,
+          "height": 132,
+          "padding": "22px",
+          "fontSize": "14px"
+        },
+        ".sidebar-tabs": {
+          "x": 16,
+          "y": 742,
+          "width": 287,
+          "height": 39,
+          "padding": "3px",
+          "fontSize": "14px"
+        },
+        ".vehicle-card": {
+          "x": 16,
+          "y": 799,
+          "width": 275,
+          "height": 203.125,
+          "padding": "18px 16px 14px",
+          "fontSize": "14px"
+        },
+        ".car-drawing": {
+          "x": 193,
+          "y": 818,
+          "width": 84,
+          "height": 35.125,
+          "padding": "0px",
+          "fontSize": "14px"
+        },
+        ".route-button": {
+          "x": 33,
+          "y": 957.125,
+          "width": 241,
+          "height": 30,
+          "padding": "13px 0px 0px",
+          "fontSize": "12px"
+        },
+        ".map-summary": {
+          "x": 14,
+          "y": 74,
+          "width": 291,
+          "height": 81,
+          "padding": "13px",
+          "fontSize": "14px"
+        },
+        ".map-tools": {
+          "x": 134.46875,
+          "y": 159,
+          "width": 170.53125,
+          "height": 42,
+          "padding": "0px",
+          "fontSize": "14px"
+        },
+        "#chargers": {
+          "x": 134.46875,
+          "y": 159,
+          "width": 116.53125,
+          "height": 42,
+          "padding": "10px 12px",
+          "fontSize": "12px"
+        },
+        "#fit": {
+          "x": 259,
+          "y": 159,
+          "width": 46,
+          "height": 42,
+          "padding": "10px 12px",
+          "fontSize": "12px"
+        }
+      }
+    },
+    {
+      "name": "Material cristal",
+      "status": "pass",
+      "detail": {
+        "filter": "blur(18px) saturate(1.3)",
+        "background": "rgba(255, 255, 255, 0.88)"
+      }
+    },
+    {
+      "name": "Contenido opaco",
+      "status": "pass",
+      "detail": [
+        "rgb(255, 255, 255)",
+        "rgb(255, 255, 255)",
+        "rgb(255, 255, 255)",
+        "rgb(255, 255, 255)"
+      ]
+    },
+    {
+      "name": "C3, batería y recarga de Auto 1",
+      "status": "pass",
+      "detail": "22 → 50,1 %, +4,5 kWh"
+    },
+    {
+      "name": "Cruce de vehículo",
+      "status": "pass",
+      "detail": "V5 actualiza Auto 2"
+    },
+    {
+      "name": "BASE repetida",
+      "status": "pass",
+      "detail": "Regreso mantiene índice 12"
+    },
+    {
+      "name": "Cierre y foco",
+      "status": "pass",
+      "detail": "Vuelve al pin de BASE"
+    },
+    {
+      "name": "Pestañas con teclado",
+      "status": "pass",
+      "detail": "Home/End actualizan selección y foco"
+    },
+    {
+      "name": "Procedencia y Escape",
+      "status": "pass",
+      "detail": "Diálogo nativo, retorno de foco"
+    },
+    {
+      "name": "Cargadores",
+      "status": "pass",
+      "detail": "60 registrados / 2 recargas del ejemplo"
+    },
+    {
+      "name": "prefers-reduced-transparency",
+      "status": "pass",
+      "detail": {
+        "filter": "none",
+        "bg": "rgb(238, 243, 247)"
+      }
+    },
+    {
+      "name": "prefers-contrast",
+      "status": "pass",
+      "detail": {
+        "filter": "none",
+        "bg": "rgb(238, 243, 247)"
+      }
+    },
+    {
+      "name": "forced-colors",
+      "status": "pass",
+      "detail": {
+        "filter": "none",
+        "bg": "rgb(0, 0, 0)"
+      }
+    },
+    {
+      "name": "Encuadre móvil 390px actualizado",
+      "status": "pass",
+      "detail": "Padding inferior135px; captura final actualizada."
+    },
+    {
+      "name": "Encuadre móvil 319px actualizado",
+      "status": "pass",
+      "detail": "Padding inferior135px; captura final actualizada."
+    },
+    {
+      "name": "Movimiento reducido",
+      "status": "pass",
+      "detail": {
+        "opacity": "1",
+        "animations": 0
+      }
+    },
+    {
+      "name": "Original preservada",
+      "status": "pass",
+      "detail": "18 hashes coinciden"
+    },
+    {
+      "name": "Consola y HTTP",
+      "status": "pass",
+      "detail": "Sin excepciones JS ni respuestas HTTP >=400"
+    },
+    {
+      "name": "Distribución Esencial de escritorio",
+      "status": "pass",
+      "detail": "Posiciones x/y, padding y tipografía coinciden en1440,900,701px con la referencia medida."
+    }
+  ],
+  "errors": [],
+  "httpErrors": [],
+  "status": "pass",
+  "completedAt": "2026-10-15T05:16:56.640Z"
+}

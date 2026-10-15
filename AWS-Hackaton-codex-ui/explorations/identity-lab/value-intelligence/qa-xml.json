@@ -1,0 +1,295 @@
+{
+  "passed": true,
+  "concepts": 12,
+  "svg_count": 36,
+  "files": [
+    {
+      "file": "intelligence-anticipo/lockup-dark.svg",
+      "xml_valid": true,
+      "external_or_raster_content": false,
+      "shape_count": 3,
+      "editable_text": true,
+      "viewBox": "0 0 320 80"
+    },
+    {
+      "file": "intelligence-anticipo/lockup-light.svg",
+      "xml_valid": true,
+      "external_or_raster_content": false,
+      "shape_count": 2,
+      "editable_text": true,
+      "viewBox": "0 0 320 80"
+    },
+    {
+      "file": "intelligence-anticipo/symbol.svg",
+      "xml_valid": true,
+      "external_or_raster_content": false,
+      "shape_count": 2,
+      "editable_text": false,
+      "viewBox": "0 0 64 64"
+    },
+    {
+      "file": "intelligence-coautoria/lockup-dark.svg",
+      "xml_valid": true,
+      "external_or_raster_content": false,
+      "shape_count": 3,
+      "editable_text": true,
+      "viewBox": "0 0 320 80"
+    },
+    {
+      "file": "intelligence-coautoria/lockup-light.svg",
+      "xml_valid": true,
+      "external_or_raster_content": false,
+      "shape_count": 2,
+      "editable_text": true,
+      "viewBox": "0 0 320 80"
+    },
+    {
+      "file": "intelligence-coautoria/symbol.svg",
+      "xml_valid": true,
+      "external_or_raster_content": false,
+      "shape_count": 2,
+      "editable_text": false,
+      "viewBox": "0 0 64 64"
+    },
+    {
+      "file": "intelligence-criterio/lockup-dark.svg",
+      "xml_valid": true,
+      "external_or_raster_content": false,
+      "shape_count": 2,
+      "editable_text": true,
+      "viewBox": "0 0 320 80"
+    },
+    {
+      "file": "intelligence-criterio/lockup-light.svg",
+      "xml_valid": true,
+      "external_or_raster_content": false,
+      "shape_count": 1,
+      "editable_text": true,
+      "viewBox": "0 0 320 80"
+    },
+    {
+      "file": "intelligence-criterio/symbol.svg",
+      "xml_valid": true,
+      "external_or_raster_content": false,
+      "shape_count": 1,
+      "editable_text": false,
+      "viewBox": "0 0 64 64"
+    },
+    {
+      "file": "intelligence-perspectiva/lockup-dark.svg",
+      "xml_valid": true,
+      "external_or_raster_content": false,
+      "shape_count": 3,
+      "editable_text": true,
+      "viewBox": "0 0 320 80"
+    },
+    {
+      "file": "intelligence-perspectiva/lockup-light.svg",
+      "xml_valid": true,
+      "external_or_raster_content": false,
+      "shape_count": 2,
+      "editable_text": true,
+      "viewBox": "0 0 320 80"
+    },
+    {
+      "file": "intelligence-perspectiva/symbol.svg",
+      "xml_valid": true,
+      "external_or_raster_content": false,
+      "shape_count": 2,
+      "editable_text": false,
+      "viewBox": "0 0 64 64"
+    },
+    {
+      "file": "intelligence-sintesis/lockup-dark.svg",
+      "xml_valid": true,
+      "external_or_raster_content": false,
+      "shape_count": 4,
+      "editable_text": true,
+      "viewBox": "0 0 320 80"
+    },
+    {
+      "file": "intelligence-sintesis/lockup-light.svg",
+      "xml_valid": true,
+      "external_or_raster_content": false,
+      "shape_count": 3,
+      "editable_text": true,
+      "viewBox": "0 0 320 80"
+    },
+    {
+      "file": "intelligence-sintesis/symbol.svg",
+      "xml_valid": true,
+      "external_or_raster_content": false,
+      "shape_count": 3,
+      "editable_text": false,
+      "viewBox": "0 0 64 64"
+    },
+    {
+      "file": "intelligence-trama/lockup-dark.svg",
+      "xml_valid": true,
+      "external_or_raster_content": false,
+      "shape_count": 4,
+      "editable_text": true,
+      "viewBox": "0 0 320 80"
+    },
+    {
+      "file": "intelligence-trama/lockup-light.svg",
+      "xml_valid": true,
+      "external_or_raster_content": false,
+      "shape_count": 3,
+      "editable_text": true,
+      "viewBox": "0 0 320 80"
+    },
+    {
+      "file": "intelligence-trama/symbol.svg",
+      "xml_valid": true,
+      "external_or_raster_content": false,
+      "shape_count": 3,
+      "editable_text": false,
+      "viewBox": "0 0 64 64"
+    },
+    {
+      "file": "value-contrapeso/lockup-dark.svg",
+      "xml_valid": true,
+      "external_or_raster_content": false,
+      "shape_count": 2,
+      "editable_text": true,
+      "viewBox": "0 0 320 80"
+    },
+    {
+      "file": "value-contrapeso/lockup-light.svg",
+      "xml_valid": true,
+      "external_or_raster_content": false,
+      "shape_count": 1,
+      "editable_text": true,
+      "viewBox": "0 0 320 80"
+    },
+    {
+      "file": "value-contrapeso/symbol.svg",
+      "xml_valid": true,
+      "external_or_raster_content": false,
+      "shape_count": 1,
+      "editable_text": false,
+      "viewBox": "0 0 64 64"
+    },
+    {
+      "file": "value-recircula/lockup-dark.svg",
+      "xml_valid": true,
+      "external_or_raster_content": false,
+      "shape_count": 2,
+      "editable_text": true,
+      "viewBox": "0 0 320 80"
+    },
+    {
+      "file": "value-recircula/lockup-light.svg",
+      "xml_valid": true,
+      "external_or_raster_content": false,
+      "shape_count": 1,
+      "editable_text": true,
+      "viewBox": "0 0 320 80"
+    },
+    {
+      "file": "value-recircula/symbol.svg",
+      "xml_valid": true,
+      "external_or_raster_content": false,
+      "shape_count": 1,
+      "editable_text": false,
+      "viewBox": "0 0 64 64"
+    },
+    {
+      "file": "value-repliegue/lockup-dark.svg",
+      "xml_valid": true,
+      "external_or_raster_content": false,
+      "shape_count": 2,
+      "editable_text": true,
+      "viewBox": "0 0 320 80"
+    },
+    {
+      "file": "value-repliegue/lockup-light.svg",
+      "xml_valid": true,
+      "external_or_raster_content": false,
+      "shape_count": 1,
+      "editable_text": true,
+      "viewBox": "0 0 320 80"
+    },
+    {
+      "file": "value-repliegue/symbol.svg",
+      "xml_valid": true,
+      "external_or_raster_content": false,
+      "shape_count": 1,
+      "editable_text": false,
+      "viewBox": "0 0 64 64"
+    },
+    {
+      "file": "value-reserva/lockup-dark.svg",
+      "xml_valid": true,
+      "external_or_raster_content": false,
+      "shape_count": 2,
+      "editable_text": true,
+      "viewBox": "0 0 320 80"
+    },
+    {
+      "file": "value-reserva/lockup-light.svg",
+      "xml_valid": true,
+      "external_or_raster_content": false,
+      "shape_count": 1,
+      "editable_text": true,
+      "viewBox": "0 0 320 80"
+    },
+    {
+      "file": "value-reserva/symbol.svg",
+      "xml_valid": true,
+      "external_or_raster_content": false,
+      "shape_count": 1,
+      "editable_text": false,
+      "viewBox": "0 0 64 64"
+    },
+    {
+      "file": "value-semilla/lockup-dark.svg",
+      "xml_valid": true,
+      "external_or_raster_content": false,
+      "shape_count": 2,
+      "editable_text": true,
+      "viewBox": "0 0 320 80"
+    },
+    {
+      "file": "value-semilla/lockup-light.svg",
+      "xml_valid": true,
+      "external_or_raster_content": false,
+      "shape_count": 1,
+      "editable_text": true,
+      "viewBox": "0 0 320 80"
+    },
+    {
+      "file": "value-semilla/symbol.svg",
+      "xml_valid": true,
+      "external_or_raster_content": false,
+      "shape_count": 1,
+      "editable_text": false,
+      "viewBox": "0 0 64 64"
+    },
+    {
+      "file": "value-tres-usos/lockup-dark.svg",
+      "xml_valid": true,
+      "external_or_raster_content": false,
+      "shape_count": 2,
+      "editable_text": true,
+      "viewBox": "0 0 320 80"
+    },
+    {
+      "file": "value-tres-usos/lockup-light.svg",
+      "xml_valid": true,
+      "external_or_raster_content": false,
+      "shape_count": 1,
+      "editable_text": true,
+      "viewBox": "0 0 320 80"
+    },
+    {
+      "file": "value-tres-usos/symbol.svg",
+      "xml_valid": true,
+      "external_or_raster_content": false,
+      "shape_count": 1,
+      "editable_text": false,
+      "viewBox": "0 0 64 64"
+    }
+  ]
+}
