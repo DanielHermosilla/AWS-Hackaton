@@ -26,6 +26,52 @@ const fleet = {num_vehicles: 2, battery_capacity_kwh: 10, reserve_kwh: 1, initia
 const response = body => ({ok: true, status: 200, json: async () => body});
 const deferred = () => {let resolve; const promise = new Promise(r => {resolve = r;}); return {promise, resolve};};
 
+test('native uploads reject duplicate physical keys before any value can be overwritten', () => {
+  const text = JSON.stringify(native());
+  for (const [field, duplicate] of [
+    ['"battery_capacity_kwh":10', '"battery_capacity_kwh":10,"battery_capacity_kwh":20'],
+    ['"energy_kwh":1', '"energy_kwh":1,"energy_kwh":-5'],
+    ['"energy_margin_fraction":0.1', '"energy_margin_fraction":0.1,"energy_margin_fraction":0']
+  ]) {
+    assert.throws(() => parseInstanceFile(text.replace(field, duplicate), 'ambigua.json'),
+      /claves JSON duplicadas.*una sola definición/i);
+  }
+});
+
+test('escaped-equivalent keys are duplicates inside native objects', () => {
+  const text = JSON.stringify(native());
+  assert.throws(() => parseInstanceFile(text.replace('"battery_capacity_kwh":10',
+    String.raw`"battery_capacity_kwh":10,"\u0062attery_capacity_kwh":20`), 'ambigua.json'),
+  /claves JSON duplicadas/i);
+  assert.throws(() => parseInstanceFile(text.replace('"source":"operator"',
+    String.raw`"quote\"key":1,"quote\u0022key":2`), 'ambigua.json'),
+  /claves JSON duplicadas/i);
+});
+
+test('the same key in separate objects and array entries preserves the original native input', () => {
+  const original = native();
+  original.provenance.records = [{source: 'first'}, {source: 'second', nested: {source: 'third'}}];
+  original.provenance.empty = {};
+  assert.deepEqual(parseInstanceFile(JSON.stringify(original), 'native.json').instance, original);
+});
+
+test('strings containing braces, key-like text and escaped quotes remain unchanged', () => {
+  const original = native();
+  original.provenance.note = String.raw`{"battery_capacity_kwh":10,"battery_capacity_kwh":20} · [}, {] · \"source\": "\\path"`;
+  original.provenance.nested = {'quote"key': 'escaped \\ slash and " quote', tail: 'next'};
+  assert.deepEqual(parseInstanceFile(JSON.stringify(original, null, 2), 'native.json').instance, original);
+});
+
+test('invalid JSON syntax still returns the existing actionable syntax error', () => {
+  for (const text of [
+    '{"schema_version":"1.0",}',
+    '{"schema_version":"1.0","schema_version":"1.0",}',
+    '{"schema_version":"1.0","schema_version":"1.0" "nodes":[]}',
+    '{"schema_version":"1.0","provenance":{"note":"unfinished}}',
+    String.raw`{"schema_version":"1.0","provenance":{"bad\qkey":1}}`
+  ]) assert.throws(() => parseInstanceFile(text, 'invalid.json'), /no contiene JSON válido/i);
+});
+
 test('native JSON preserves every physical field including absent coordinates and signed arcs', () => {
   const original = native();
   const input = parseInstanceFile(JSON.stringify(original), 'native.json');

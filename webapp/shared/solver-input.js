@@ -106,6 +106,35 @@ export function inputNodes(input) {
   throw new Error('Selecciona un CSV o una ProblemInstance nativa 1.0.');
 }
 
+function parseJsonWithUniqueKeys(text) {
+  // Inspect the original text before JSON.parse can overwrite a duplicate field.
+  // Strings are skipped intact; JSON.parse still validates syntax and decodes keys.
+  const objects = [];
+  for (let i = 0; i < text.length; i++) {
+    if (text[i] === '{') objects.push(new Set());
+    else if (text[i] === '}') objects.pop();
+    else if (text[i] === '"') {
+      const start = i;
+      for (i++; i < text.length && text[i] !== '"'; i++) {
+        if (text[i] === '\\') i++;
+      }
+      let next = i + 1;
+      while (/[ \t\r\n]/.test(text[next] || '')) next++;
+      if (text[next] === ':' && objects.length) {
+        const key = JSON.parse(text.slice(start, i + 1));
+        const keys = objects.at(-1);
+        if (keys.has(key)) {
+          // Malformed documents retain the syntax error; no parsed value is used.
+          JSON.parse(text);
+          throw new Error(`El archivo contiene claves JSON duplicadas. Usa una sola definición para ${JSON.stringify(key)}.`);
+        }
+        keys.add(key);
+      }
+    }
+  }
+  return JSON.parse(text);
+}
+
 export function parseInstanceFile(text, filename = '') {
   let value, preparationAttempt;
   const cleaned = text.replace(/^\ufeff/, '');
@@ -123,8 +152,11 @@ export function parseInstanceFile(text, filename = '') {
       }));
     })};
   } else {
-    try { value = JSON.parse(cleaned); }
-    catch { throw new Error('El archivo no contiene JSON válido.'); }
+    try { value = parseJsonWithUniqueKeys(cleaned); }
+    catch (error) {
+      if (error instanceof SyntaxError) throw new Error('El archivo no contiene JSON válido.');
+      throw error;
+    }
     if (value?.schema_version === 'zmd.integration-beta.attempt/2') {
       if (value.prepare_request && !value.request?.instance && value.request != null) {
         preparationAttempt = value.request;
