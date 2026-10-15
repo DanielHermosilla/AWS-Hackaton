@@ -1,0 +1,712 @@
+{
+  "pequenas": [
+    {
+      "instancia": "peq_bateria_corta",
+      "n_clientes": 6,
+      "n_cargadores": 1,
+      "n_veh": 1,
+      "bateria_kwh": 3.2,
+      "reserva_kwh": 0.4,
+      "pista": "0<N*<6",
+      "oraculo": {
+        "n_estrella": 3,
+        "energia": 4.059065,
+        "t_s": 0.148
+      },
+      "motor_compacta": {
+        "n_motor": 3,
+        "energia": 4.059065,
+        "formulacion": "compacta",
+        "fallback": false,
+        "heur_entregas": 3,
+        "t_total_s": 0.396,
+        "traza": {
+          "compacta": {
+            "formulacion": "compacta",
+            "columnas": 83,
+            "filas": 181,
+            "limite_s": 20.0,
+            "fase1": {
+              "estado": "Optimal",
+              "N*": 3
+            },
+            "fase2": {
+              "estado": "Optimal",
+              "energia": 4.059065208844885,
+              "cota": 4.059065208844885,
+              "gap": 0.0
+            },
+            "N*": 3,
+            "tiempo_s": 0.037
+          },
+          "completa": {
+            "conectividad": "cortes",
+            "columnas": 59,
+            "filas": 114,
+            "fase1": {
+              "estado": "Optimal",
+              "iteraciones": 1,
+              "N*": 3
+            },
+            "fase2": {
+              "estado": "Optimal",
+              "iteraciones": 3,
+              "cortes": 5,
+              "energia": 4.059065208844885,
+              "cota": 4.059065208844885,
+              "gap": 0.0
+            },
+            "N*": 3,
+            "tiempo_s": 0.111
+          }
+        }
+      },
+      "motor_completa": {
+        "n_motor": 3,
+        "energia": 4.059065,
+        "formulacion": "completa",
+        "fallback": false,
+        "heur_entregas": 3,
+        "t_total_s": 0.118,
+        "traza": {
+          "conectividad": "cortes",
+          "columnas": 59,
+          "filas": 114,
+          "fase1": {
+            "estado": "Optimal",
+            "iteraciones": 1,
+            "N*": 3
+          },
+          "fase2": {
+            "estado": "Optimal",
+            "iteraciones": 3,
+            "cortes": 5,
+            "energia": 4.059065208844885,
+            "cota": 4.059065208844885,
+            "gap": 0.0
+          },
+          "N*": 3,
+          "tiempo_s": 0.111
+        }
+      },
+      "ok_n_compacta": true,
+      "ok_n_completa": true,
+      "ok_energia_completa": true
+    },
+    {
+      "instancia": "peq_incompatibles",
+      "n_clientes": 5,
+      "n_cargadores": 2,
+      "n_veh": 1,
+      "bateria_kwh": 5.0,
+      "reserva_kwh": 0.4,
+      "pista": "0<N*<5 (cargadores inútiles)",
+      "oraculo": {
+        "n_estrella": 2,
+        "energia": 2.48054,
+        "t_s": 0.007
+      },
+      "motor_compacta": {
+        "n_motor": 2,
+        "energia": 2.48054,
+        "formulacion": "compacta",
+        "fallback": false,
+        "heur_entregas": 2,
+        "t_total_s": 0.599,
+        "traza": {
+          "compacta": {
+            "formulacion": "compacta",
+            "columnas": 45,
+            "filas": 100,
+            "limite_s": 20.0,
+            "fase1": {
+              "estado": "Optimal",
+              "N*": 2
+            },
+            "fase2": {
+              "estado": "Optimal",
+              "energia": 2.4805398498496523,
+              "cota": 2.4805398498496523,
+              "gap": 0.0
+            },
+            "N*": 2,
+            "tiempo_s": 0.179
+          },
+          "completa": {
+            "conectividad": "cortes",
+            "columnas": 40,
+            "filas": 80,
+            "fase1": {
+              "estado": "Optimal",
+              "iteraciones": 1,
+              "N*": 2
+            },
+            "fase2": {
+              "estado": "Optimal",
+              "iteraciones": 1,
+              "cortes": 0,
+              "energia": 2.4805398498496523,
+              "cota": 2.4805398498496523,
+              "gap": 0.0
+            },
+            "N*": 2,
+            "tiempo_s": 0.408
+          }
+        }
+      },
+      "motor_completa": {
+        "n_motor": 2,
+        "energia": 2.48054,
+        "formulacion": "completa",
+        "fallback": false,
+        "heur_entregas": 2,
+        "t_total_s": 0.377,
+        "traza": {
+          "conectividad": "cortes",
+          "columnas": 40,
+          "filas": 80,
+          "fase1": {
+            "estado": "Optimal",
+            "iteraciones": 1,
+            "N*": 2
+          },
+          "fase2": {
+            "estado": "Optimal",
+            "iteraciones": 1,
+            "cortes": 0,
+            "energia": 2.4805398498496523,
+            "cota": 2.4805398498496523,
+            "gap": 0.0
+          },
+          "N*": 2,
+          "tiempo_s": 0.369
+        }
+      },
+      "ok_n_compacta": true,
+      "ok_n_completa": true,
+      "ok_energia_completa": true
+    },
+    {
+      "instancia": "peq_lejano_aislado",
+      "n_clientes": 8,
+      "n_cargadores": 1,
+      "n_veh": 1,
+      "bateria_kwh": 3.0,
+      "reserva_kwh": 0.3,
+      "pista": "~6",
+      "oraculo": {
+        "n_estrella": 6,
+        "energia": 4.284569,
+        "t_s": 17.965
+      },
+      "motor_compacta": {
+        "n_motor": 6,
+        "energia": 4.284569,
+        "formulacion": "compacta+completa",
+        "fallback": true,
+        "heur_entregas": 6,
+        "t_total_s": 4.139,
+        "traza": {
+          "compacta": {
+            "formulacion": "compacta",
+            "columnas": 109,
+            "filas": 227,
+            "limite_s": 20.0,
+            "fase1": {
+              "estado": "Optimal",
+              "N*": 6
+            },
+            "fase2": {
+              "estado": "Optimal",
+              "energia": 4.2845688315584844,
+              "cota": 4.2845688315584844,
+              "gap": 0.0
+            },
+            "N*": 6,
+            "tiempo_s": 3.663
+          },
+          "completa": {
+            "conectividad": "cortes",
+            "columnas": 73,
+            "filas": 136,
+            "fase1": {
+              "estado": "Optimal",
+              "iteraciones": 1,
+              "N*": 6
+            },
+            "fase2": {
+              "estado": "Optimal",
+              "iteraciones": 3,
+              "cortes": 11,
+              "energia": 4.28456883155849,
+              "cota": 4.28456883155849,
+              "gap": 0.0
+            },
+            "N*": 6,
+            "tiempo_s": 0.42
+          }
+        }
+      },
+      "motor_completa": {
+        "n_motor": 6,
+        "energia": 4.284569,
+        "formulacion": "completa",
+        "fallback": false,
+        "heur_entregas": 6,
+        "t_total_s": 0.513,
+        "traza": {
+          "conectividad": "cortes",
+          "columnas": 73,
+          "filas": 136,
+          "fase1": {
+            "estado": "Optimal",
+            "iteraciones": 1,
+            "N*": 6
+          },
+          "fase2": {
+            "estado": "Optimal",
+            "iteraciones": 3,
+            "cortes": 11,
+            "energia": 4.28456883155849,
+            "cota": 4.28456883155849,
+            "gap": 0.0
+          },
+          "N*": 6,
+          "tiempo_s": 0.499
+        }
+      },
+      "ok_n_compacta": true,
+      "ok_n_completa": true,
+      "ok_energia_completa": true
+    },
+    {
+      "instancia": "peq_cadena_F_F",
+      "n_clientes": 4,
+      "n_cargadores": 2,
+      "n_veh": 1,
+      "bateria_kwh": 4.0,
+      "reserva_kwh": 0.3,
+      "pista": "4 (requiere F->F)",
+      "oraculo": {
+        "n_estrella": 4,
+        "energia": 12.628203,
+        "t_s": 0.023
+      },
+      "motor_compacta": {
+        "n_motor": 4,
+        "energia": 12.628203,
+        "formulacion": "compacta+completa",
+        "fallback": true,
+        "heur_entregas": 3,
+        "t_total_s": 0.485,
+        "traza": {
+          "compacta": {
+            "formulacion": "compacta",
+            "columnas": 39,
+            "filas": 63,
+            "limite_s": 20.0,
+            "fase1": {
+              "estado": "Optimal",
+              "N*": 3
+            },
+            "fase2": {
+              "estado": "Optimal",
+              "energia": 3.608057963417676,
+              "cota": 3.608057963417676,
+              "gap": 0.0
+            },
+            "N*": 3,
+            "tiempo_s": 0.08
+          },
+          "completa": {
+            "conectividad": "cortes",
+            "columnas": 35,
+            "filas": 45,
+            "fase1": {
+              "estado": "Optimal",
+              "iteraciones": 2,
+              "N*": 4
+            },
+            "fase2": {
+              "estado": "Optimal",
+              "iteraciones": 4,
+              "cortes": 10,
+              "energia": 12.628202871961868,
+              "cota": 12.628202871961868,
+              "gap": 0.0
+            },
+            "N*": 4,
+            "tiempo_s": 0.39
+          }
+        }
+      },
+      "motor_completa": {
+        "n_motor": 4,
+        "energia": 12.628203,
+        "formulacion": "completa",
+        "fallback": false,
+        "heur_entregas": 3,
+        "t_total_s": 0.332,
+        "traza": {
+          "conectividad": "cortes",
+          "columnas": 35,
+          "filas": 45,
+          "fase1": {
+            "estado": "Optimal",
+            "iteraciones": 2,
+            "N*": 4
+          },
+          "fase2": {
+            "estado": "Optimal",
+            "iteraciones": 4,
+            "cortes": 10,
+            "energia": 12.628202871961868,
+            "cota": 12.628202871961868,
+            "gap": 0.0
+          },
+          "N*": 4,
+          "tiempo_s": 0.326
+        }
+      },
+      "ok_n_compacta": true,
+      "ok_n_completa": true,
+      "ok_energia_completa": true
+    },
+    {
+      "instancia": "peq_dos_veh",
+      "n_clientes": 6,
+      "n_cargadores": 2,
+      "n_veh": 2,
+      "bateria_kwh": 3.2,
+      "reserva_kwh": 0.4,
+      "pista": "0<N*<6",
+      "oraculo": {
+        "n_estrella": 4,
+        "energia": 6.765109,
+        "t_s": 0.645
+      },
+      "motor_compacta": {
+        "n_motor": 4,
+        "energia": 6.765109,
+        "formulacion": "compacta+completa",
+        "fallback": true,
+        "heur_entregas": 4,
+        "t_total_s": 0.178,
+        "traza": {
+          "compacta": {
+            "formulacion": "compacta",
+            "columnas": 81,
+            "filas": 157,
+            "limite_s": 20.0,
+            "fase1": {
+              "estado": "Optimal",
+              "N*": 4
+            },
+            "fase2": {
+              "estado": "Optimal",
+              "energia": 6.765108681408142,
+              "cota": 6.765108681408142,
+              "gap": 0.0
+            },
+            "N*": 4,
+            "tiempo_s": 0.04
+          },
+          "completa": {
+            "conectividad": "cortes",
+            "columnas": 61,
+            "filas": 93,
+            "fase1": {
+              "estado": "Optimal",
+              "iteraciones": 1,
+              "N*": 4
+            },
+            "fase2": {
+              "estado": "Optimal",
+              "iteraciones": 3,
+              "cortes": 6,
+              "energia": 6.765108681408142,
+              "cota": 6.765108681408142,
+              "gap": 0.0
+            },
+            "N*": 4,
+            "tiempo_s": 0.114
+          }
+        }
+      },
+      "motor_completa": {
+        "n_motor": 4,
+        "energia": 6.765109,
+        "formulacion": "completa",
+        "fallback": false,
+        "heur_entregas": 4,
+        "t_total_s": 0.12,
+        "traza": {
+          "conectividad": "cortes",
+          "columnas": 61,
+          "filas": 93,
+          "fase1": {
+            "estado": "Optimal",
+            "iteraciones": 1,
+            "N*": 4
+          },
+          "fase2": {
+            "estado": "Optimal",
+            "iteraciones": 3,
+            "cortes": 6,
+            "energia": 6.765108681408142,
+            "cota": 6.765108681408142,
+            "gap": 0.0
+          },
+          "N*": 4,
+          "tiempo_s": 0.111
+        }
+      },
+      "ok_n_compacta": true,
+      "ok_n_completa": true,
+      "ok_energia_completa": true
+    }
+  ],
+  "grandes": [
+    {
+      "instancia": "g20_bateria_pequena",
+      "n_clientes": 20,
+      "n_cargadores": 3,
+      "n_veh": 2,
+      "bateria_kwh": 4.0,
+      "reserva_kwh": 0.4,
+      "pista": "<20 (anillo lejano fuera)",
+      "motor_compacta": {
+        "n_motor": 11,
+        "energia": 19.737911,
+        "formulacion": "compacta+completa",
+        "fallback": true,
+        "heur_entregas": 7,
+        "t_total_s": 60.194,
+        "traza": {
+          "compacta": {
+            "formulacion": "compacta",
+            "columnas": 544,
+            "filas": 1334,
+            "limite_s": 30.0,
+            "fase1": {
+              "estado": "Time limit reached",
+              "N*": 11
+            },
+            "fase2": {
+              "estado": "Time limit reached",
+              "energia": 27.77407603041141,
+              "cota": 11.854135150350594,
+              "gap": 0.5731942572141435
+            },
+            "N*": 11,
+            "tiempo_s": 30.008
+          },
+          "completa": {
+            "conectividad": "cortes",
+            "columnas": 304,
+            "filas": 660,
+            "fase1": {
+              "estado": "Optimal",
+              "iteraciones": 1,
+              "N*": 11
+            },
+            "fase2": {
+              "estado": "Time limit reached",
+              "iteraciones": 1,
+              "cortes": 0,
+              "energia": 19.737911387465452,
+              "cota": 12.215217139067436,
+              "gap": 0.38112919349588825
+            },
+            "N*": 11,
+            "tiempo_s": 30.006
+          }
+        }
+      },
+      "motor_completa": {
+        "n_motor": 11,
+        "energia": 22.131914,
+        "formulacion": "completa",
+        "fallback": false,
+        "heur_entregas": 7,
+        "t_total_s": 30.059,
+        "traza": {
+          "conectividad": "cortes",
+          "columnas": 304,
+          "filas": 660,
+          "fase1": {
+            "estado": "Optimal",
+            "iteraciones": 1,
+            "N*": 11
+          },
+          "fase2": {
+            "estado": "Time limit reached",
+            "iteraciones": 1,
+            "cortes": 0,
+            "energia": 22.131913797635733,
+            "cota": 12.843150222941068,
+            "gap": 0.41969997080356186
+          },
+          "N*": 11,
+          "tiempo_s": 30.007
+        }
+      },
+      "ok_n_coinciden": true,
+      "ok_energia": false
+    },
+    {
+      "instancia": "g20_dos_veh_anillo",
+      "n_clientes": 20,
+      "n_cargadores": 3,
+      "n_veh": 2,
+      "bateria_kwh": 5.0,
+      "reserva_kwh": 0.5,
+      "pista": "<20 (anillo lejano fuera)",
+      "motor_compacta": {
+        "n_motor": 15,
+        "energia": 28.32057,
+        "formulacion": "compacta",
+        "fallback": false,
+        "heur_entregas": 15,
+        "t_total_s": 60.24,
+        "traza": {
+          "compacta": {
+            "formulacion": "compacta",
+            "columnas": 688,
+            "filas": 1650,
+            "limite_s": 30.0,
+            "fase1": {
+              "estado": "Optimal",
+              "N*": 15
+            },
+            "fase2": {
+              "estado": "Time limit reached",
+              "energia": 28.320569721113067,
+              "cota": 21.246152150148774,
+              "gap": 0.24979785507952879
+            },
+            "N*": 15,
+            "tiempo_s": 30.01
+          },
+          "completa": {
+            "conectividad": "cortes",
+            "columnas": 368,
+            "filas": 759,
+            "fase1": {
+              "estado": "Optimal",
+              "iteraciones": 1,
+              "N*": 15
+            },
+            "fase2": {
+              "estado": "Time limit reached (cortes pendientes)",
+              "iteraciones": 1,
+              "cortes": 14,
+              "energia": null,
+              "cota": 23.062747540812744,
+              "gap": null
+            },
+            "N*": 15,
+            "tiempo_s": 30.015
+          }
+        }
+      },
+      "motor_completa": {
+        "n_motor": 0,
+        "energia": null,
+        "formulacion": "completa",
+        "fallback": false,
+        "heur_entregas": 15,
+        "t_total_s": 30.069,
+        "traza": {
+          "conectividad": "cortes",
+          "columnas": 368,
+          "filas": 759,
+          "fase1": {
+            "estado": "Optimal",
+            "iteraciones": 1,
+            "N*": 15
+          },
+          "fase2": {
+            "estado": "Time limit reached (cortes pendientes)",
+            "iteraciones": 1,
+            "cortes": 15,
+            "energia": null,
+            "cota": 23.803541504704103,
+            "gap": null
+          },
+          "N*": 15,
+          "tiempo_s": 30.012
+        }
+      },
+      "ok_n_coinciden": false,
+      "ok_energia": false
+    },
+    {
+      "instancia": "g20_cadena_F_F",
+      "n_clientes": 20,
+      "n_cargadores": 2,
+      "n_veh": 2,
+      "bateria_kwh": 4.0,
+      "reserva_kwh": 0.3,
+      "pista": "<=20 (brazo requiere F->F)",
+      "motor_compacta": {
+        "n_motor": 4,
+        "energia": 3.382583,
+        "formulacion": "compacta",
+        "fallback": false,
+        "heur_entregas": 4,
+        "t_total_s": 34.795,
+        "traza": {
+          "compacta": {
+            "formulacion": "compacta",
+            "columnas": 610,
+            "filas": 1652,
+            "limite_s": 30.0,
+            "fase1": {
+              "estado": "Time limit reached",
+              "N*": 4
+            },
+            "fase2": {
+              "estado": "Optimal",
+              "energia": 3.3825827520675538,
+              "cota": 3.3825827520675538,
+              "gap": 0.0
+            },
+            "N*": 4,
+            "tiempo_s": 19.57
+          },
+          "completa": {
+            "conectividad": "cortes",
+            "columnas": 394,
+            "filas": 949,
+            "fase1": {
+              "estado": "Time limit reached (cortes pendientes)",
+              "iteraciones": 1,
+              "N*": null
+            }
+          }
+        }
+      },
+      "motor_completa": {
+        "n_motor": 0,
+        "energia": null,
+        "formulacion": "completa",
+        "fallback": false,
+        "heur_entregas": 4,
+        "t_total_s": 15.072,
+        "traza": {
+          "conectividad": "cortes",
+          "columnas": 394,
+          "filas": 949,
+          "fase1": {
+            "estado": "Time limit reached (cortes pendientes)",
+            "iteraciones": 1,
+            "N*": null
+          }
+        }
+      },
+      "ok_n_coinciden": false,
+      "ok_energia": false
+    }
+  ]
+}
