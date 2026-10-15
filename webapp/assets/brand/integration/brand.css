@@ -1,0 +1,38 @@
+:root {
+  --zmd-brand-green: #08795f;
+  --zmd-brand-ink: #19332c;
+  --zmd-brand-paper: #f5f6f1;
+  --zmd-brand-night: #14251f;
+  --zmd-brand-mint: #88e1bd;
+  --zmd-brand-inverse: #f4f7f3;
+}
+.zmd-brand {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  text-decoration: none;
+  border-radius: 6px;
+}
+.zmd-brand__logo {
+  display: block;
+  width: var(--zmd-brand-width, 204px);
+  max-width: 100%;
+  height: auto;
+}
+.zmd-brand--symbol {
+  min-width: 48px;
+  min-height: 48px;
+}
+.zmd-brand__symbol {
+  display: block;
+  width: 32px;
+  height: 32px;
+}
+.zmd-brand:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 3px;
+}
+@media (max-width: 480px) {
+  .zmd-brand__logo { --zmd-brand-width: 170px; }
+}

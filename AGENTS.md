@@ -1,5 +1,7 @@
 # Guía de trabajo del proyecto
 
+**Organización de la webapp, solicitada por Diego el 15-10-2026:** esta carpeta `AWS-Hackaton/` es el repositorio principal. El frontend vigente está en `webapp/`; leer `webapp/README.md` para ejecutarlo y conocer el origen de sus datos. La consolidación parte de `main` actualizado y se prepara en `codex/webapp`. Conserva el motor y la historia de las otras ramas; no inicia una migración a `master`. La interfaz actual es una aplicación HTML/CSS/JavaScript con datos de ejemplo, aún sin conexión al solver ni autenticación. Memorias, skills, herramientas y exploraciones anteriores son recursos locales ignorados: `.local/`, `.agents/`, `.claude/` y `.kiro/`. El trabajo antiguo de UI tiene una copia recuperable en `.local/archive/ui-history-2026-10-15/`; no desarrollar sobre las exploraciones archivadas. Solo incorporar cambios de producto y sus dependencias necesarias, sin datos reales, credenciales ni archivos auxiliares.
+
 ## 1. Propósito y fuentes de verdad
 
 Construimos un planificador de entregas para vehículos eléctricos para la hackatón AWS Breaking Barriers Chile 2026. El beneficiario del desafío es CASE, Centro de Aceleración Sostenible de Electromovilidad de la FCFM de la Universidad de Chile.

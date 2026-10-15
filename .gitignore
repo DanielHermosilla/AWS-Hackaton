@@ -1,1 +1,26 @@
-data/
+/data/
+
+# Herramientas, memoria y archivos personales de desarrollo
+/.local/
+/.agents/
+/.claude/
+/.kiro/
+/CLAUDE.md
+/memoria-hackaton/
+/skillset/
+/bb-env/
+/.credenciales-evento.md
+/memoria-hackaton-equipo.zip
+
+# La demostración compartida es sintética; los escenarios reales quedan locales
+/webapp/data/*.local.json
+
+# Entornos y archivos generados
+.DS_Store
+__pycache__/
+*.py[cod]
+.venv/
+node_modules/
+.env
+.env.*
+!.env.example

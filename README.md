@@ -8,6 +8,18 @@ El escenario del desafío considera dos Nissan Leaf 2013 con un 60 % de carga in
 
 **Estado:** definición del proyecto y de su modelo matemático. La arquitectura y las integraciones descritas aquí son el plan de implementación.
 
+## Interfaz web
+
+La interfaz funcional de demostración está en **[webapp/](webapp/README.md)**, con Inicio, mapa del Plan, vehículos, paradas y batería ilustrativa.
+
+Desde la raíz del repositorio:
+
+```bash
+python3 -m http.server 4173 --bind 127.0.0.1 --directory webapp
+```
+
+Abrir `http://127.0.0.1:4173/`. Un clon utiliza el ejemplo sintético incluido. Los datos reales se mantienen locales e ignorados; el frontend todavía no ejecuta ni valida el motor. La guía de `webapp/` explica las vistas, la procedencia y las dependencias cartográficas.
+
 ## Nuestro modelamiento
 
 **La formulación que implementaremos está en [modelamiento.pdf](modelamiento.pdf).** Es un modelo de programación lineal entera mixta (MILP) sobre una **red vial dirigida**, cuyas decisiones incluyen las calles recorridas, las entregas realizadas y la energía recargada.
