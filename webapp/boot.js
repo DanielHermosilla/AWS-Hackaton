@@ -6,7 +6,7 @@ import { homeHref } from './home-navigation.js';
 const page = document.body.dataset.page === 'plan' ? 'plan' : 'home';
 const main = document.getElementById(page === 'plan' ? 'plan-main' : 'home-main');
 
-function showLoadError() {
+function showLoadError(error) {
   if (!main) return;
   const section = document.createElement('section');
   section.className = 'load-error';
@@ -15,6 +15,7 @@ function showLoadError() {
     <p>Los datos del escenario no están disponibles en este momento. Puedes volver a intentar cargarlos.</p>
     <button type="button" class="primary">Volver a intentar</button>`;
   section.querySelector('button').addEventListener('click', () => location.reload());
+  if (error?.message) section.querySelector('p').textContent = `${error.message} Puedes cargar otra instancia desde «Cargar y calcular».`;
   if (page === 'plan') {
     const home = document.createElement('a');
     home.href = homeHref();
@@ -25,13 +26,19 @@ function showLoadError() {
   main.replaceChildren(section);
 }
 
+let runPanel;
 try {
   const { initShell } = await import('./app-shell.js');
   initShell(page);
+  const { initRunPanel } = await import('./run-panel.js');
+  runPanel = initRunPanel();
+  const data = await import('./shared/data.js');
+  runPanel.setData(data);
   await import(page === 'plan' ? './plan.js' : './home.js');
 } catch (error) {
   console.error('No se pudo cargar la página:', error);
-  showLoadError();
+  runPanel?.fail(error);
+  showLoadError(error);
 } finally {
   main?.setAttribute('aria-busy', 'false');
 }

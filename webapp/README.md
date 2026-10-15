@@ -1,8 +1,21 @@
 # ZMD Mobility · Webapp
 
-Interfaz estática para planificar una flota eléctrica de reparto, desarrollada por ZMD Mobility. Tiene dos pantallas, Inicio y Plan, con cabecera y navegación compartidas. No requiere instalar paquetes ni compilar.
+Interfaz HTML/CSS/JavaScript para planificar una flota eléctrica de reparto, desarrollada por ZMD Mobility. Tiene dos pantallas, Inicio y Plan, con cabecera y navegación compartidas. No requiere paquetes JavaScript ni compilación.
 
-Desde la raíz del repositorio:
+Esta rama incorpora una **integración beta local con evrp/HiGHS**. Para cargar una
+instancia y ejecutar el motor, seguir [la guía de integración](../docs/integration-beta.md):
+
+```sh
+# Desde la raíz, con el Python del checkout fijado del proveedor:
+/ruta/al/proveedor/.venv/bin/python -m backend.local_server --port 8000
+```
+
+Abrir `http://127.0.0.1:8000/` y elegir **Cargar y calcular**. CSV y preparadas se
+revisan antes del cálculo; Inicio y Plan comparten la ejecución y sus descargas.
+El consumo efectivo y los certificados no disponibles se muestran explícitamente.
+El servidor temporal conserva hasta cuatro resultados, que expiran al reiniciarlo.
+
+Para consultar únicamente el ejemplo de diseño, desde la raíz:
 
 ```sh
 python3 -m http.server 4173 --bind 127.0.0.1 --directory webapp
@@ -36,7 +49,12 @@ Usa HTTP: los módulos JavaScript y el mapa no funcionan abriendo el HTML como a
 - Solo un **404** del archivo local activa el ejemplo sintético. Un JSON corrupto o cualquier otro error muestra un fallo de carga con opción de reintentar, sin sustituir los datos en silencio.
 - La cartografía de fondo necesita internet para acceder a OpenFreeMap. La lista de paradas sigue disponible si falla el mapa. Abrir la webapp no consulta OSRM.
 
-Las entregas son asignaciones del plan de ejemplo, no entregas completadas. Consumo, recarga y batería no son resultados del motor ni una validación energética, y la disponibilidad de estaciones no está verificada. No hay backend, autenticación, facturación, permisos, ejecución de solver, telemetría en vivo ni importador de CSV. El formato de los ejemplos es interno de diseño, no el contrato del motor.
+En modo ejemplo, las entregas, consumo, recarga y batería siguen siendo ilustrativos.
+En modo motor, se presenta el resultado identificado de evrp con su alcance de
+validación, servicio explícito y supuestos. Editar marca el resultado anterior;
+un fallo nunca activa el ejemplo como reemplazo. «Dejar de esperar» no cancela el
+solver. No hay autenticación, facturación, permisos ni telemetría en vivo.
+El formato del ejemplo continúa separado del contrato HTTP beta.
 
 ## Código
 
@@ -47,6 +65,8 @@ Las entregas son asignaciones del plan de ejemplo, no entregas completadas. Cons
 - `state.js`: preferencias y selección del Plan. `home-navigation.js`: rutas a Inicio y Plan.
 - `theme.js` (en `<head>`, antes de pintar) y `theme.css` (última hoja): tema global.
 - `shared/`: estilos, iconos, movimiento, lectura y comprobación de la estructura de los ejemplos. Inicio y Plan comparten el recuento de locales únicos; los textos interpolados se escapan antes de renderizar.
+- `run-panel.js`, `run-panel.css`: carga, revisión, estado y descarga de ejecuciones.
+- `shared/solver-input.js`, `solver-client.js`, `solver-adapter.js`: entrada, transporte y presentación versionada del motor; pruebas en `tests/`.
 - `salida.html`: confirmación después de cerrar el plan.
 
 La identidad es **Batería en marcha**; sus SVG, favicons y estilos están en `assets/brand/`. La marca no representa el estado de batería.
@@ -62,7 +82,9 @@ El estilo cartográfico usa OpenFreeMap y datos de OpenStreetMap; se conserva la
 Con Node.js, desde la raíz:
 
 ```sh
-node --test webapp/tests/fixture.test.mjs
+node --test webapp/tests/*.test.mjs
 ```
 
-Estas pruebas comprueban referencias, geometría y tipos usados por la interfaz; no certifican factibilidad energética ni resultados del solver.
+Estas pruebas comprueban referencias, unidades, estados y tipos usados por la
+interfaz; no certifican factibilidad energética. La guía beta incluye las pruebas
+Python con HTTP y HiGHS reales.

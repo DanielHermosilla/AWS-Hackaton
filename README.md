@@ -6,7 +6,11 @@ Queremos ayudar a un operador a planificar entregas sin quedarse sin batería: c
 
 El escenario del desafío considera dos Nissan Leaf 2013 con un 60 % de carga inicial. Las entradas actuales contienen un depósito, 20 locales y 60 cargadores. El mismo código deberá aceptar nuevas instancias y flotas parametrizadas.
 
-**Estado:** definición del proyecto y de su modelo matemático. La arquitectura y las integraciones descritas aquí son el plan de implementación.
+**Estado de esta rama:** interfaz vigente con integración beta local al proveedor
+`evrp`/HiGHS, probada con entradas sintéticas. Su contrato, instalación y límites
+están en [docs/integration-beta.md](docs/integration-beta.md). La arquitectura
+Pyomo–AWS descrita más abajo sigue siendo el objetivo del proyecto; esta beta
+no acredita esa integración completa ni equivalencia del motor con el PDF.
 
 ## Interfaz web
 
@@ -18,7 +22,10 @@ Desde la raíz del repositorio:
 python3 -m http.server 4173 --bind 127.0.0.1 --directory webapp
 ```
 
-Abrir `http://127.0.0.1:4173/`. Un clon utiliza el ejemplo sintético incluido. Los datos reales se mantienen locales e ignorados; el frontend todavía no ejecuta ni valida el motor. La guía de `webapp/` explica las vistas, la procedencia y las dependencias cartográficas.
+Abrir `http://127.0.0.1:4173/` para el ejemplo sintético. Para cargar y calcular
+instancias, usar el servidor beta indicado en la guía. Los datos reales se
+mantienen locales e ignorados. La guía de `webapp/` explica las vistas, la
+procedencia y las dependencias cartográficas.
 
 ## Nuestro modelamiento
 
@@ -59,7 +66,10 @@ Los KPI principales son factibilidad, entregas cumplidas, consumo energético y 
 
 Trabajaremos con un backend Python modular, Pyomo, un único solver inicial, una UI en Streamlit y un cliente AWS centralizado. Priorizamos código simple y bibliotecas existentes, sin overkill ni reinventar herramientas.
 
-Los equipos de datos, optimización, UI/UX y LLM trabajarán con contratos compartidos, ramas y worktrees separados, e integración coordinada en `master`.
+Los equipos de datos, optimización, UI/UX y LLM trabajan con contratos compartidos,
+ramas y worktrees separados. La consolidación vigente parte de `codex/webapp`;
+esta rama beta conserva sus cambios para revisión, sin iniciar una migración a
+`master` ni integrar historias de otras ramas.
 
 Documentos de referencia:
 
