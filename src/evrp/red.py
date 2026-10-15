@@ -71,13 +71,18 @@ class RedOSM(Red):
     nombre = "osm"
 
     def __init__(self, margen_km: float = 2.0, cache: str = ".cache/osm", grafo: str | None = None,
-                 max_acceso_m: float | None = None, permitir_descarga: bool = True):
+                 max_acceso_m: float | None = None, permitir_descarga: bool = True,
+                 algoritmo_caminos: str | None = None, cache_adyacencia: bool = True):
         self.margen_km = margen_km
         self.cache = Path(cache)
         self.grafo = grafo
         self.max_acceso_m = max_acceso_m
         self.permitir_descarga = permitir_descarga
+        # Algoritmo de caminos más cortos. None = el mejor medido (ver caminos.py).
+        self.algoritmo_caminos = algoritmo_caminos
+        self.cache_adyacencia = cache_adyacencia
         self.origen_grafo = ""
+        self.tiempos: dict[str, float] = {}       # etapas de preparar(), en segundos
         self._pos: dict[str, tuple[float, float]] = {}
         self._snap: dict[str, int] = {}
         self._stub_km: dict[str, float] = {}
@@ -139,13 +144,32 @@ class RedOSM(Red):
         return G
 
     def preparar(self, nodos, energia):
-        import numpy as np
+        import time
 
-        G = self._descargar(nodos)
+        t0 = time.perf_counter()
+        G = self._descargar(nodos)        # carga/descompresión del grafo
+        self.tiempos["carga_grafo"] = time.perf_counter() - t0
         self.G = G
         self._pos = {n.id: (n.lat, n.lon) for n in nodos}
-        ids = list(G.nodes)
         elev = {v: float(d.get("elevation", 0.0) or 0.0) for v, d in G.nodes(data=True)}
+
+        t0 = time.perf_counter()
+        self._ajustar_calle(nodos, G)     # snap de nodos clave a la calle
+        self.tiempos["ajuste_calle"] = time.perf_counter() - t0
+
+        t0 = time.perf_counter()
+        pot = self._construir_adyacencia(G, elev, energia)  # adyacencia con costo reducido
+        self.tiempos["adyacencia"] = time.perf_counter() - t0
+
+        t0 = time.perf_counter()
+        self._resolver_caminos(nodos, energia, pot)         # caminos entre pares
+        self.tiempos["caminos"] = time.perf_counter() - t0
+        self._energia = energia
+
+    def _ajustar_calle(self, nodos, G):
+        """Ajusta cada nodo clave a la calle (geometría vectorizada con numpy)."""
+        import numpy as np
+
         # Puntos de la geometría de cada calle: (lat, lon, nodo extremo más cercano por la calle,
         # km a lo largo de la calle hasta ese nodo). Así el acceso se mide a la calle, no al cruce.
         plat, plon, pnodo, pkm = [], [], [], []
@@ -176,8 +200,19 @@ class RedOSM(Red):
                                  f"(máximo {self.max_acceso_m} m)")
             self._snap[n.id] = pnodo[k]
             self._stub_km[n.id] = float(d[k] + pkm_arr[k])
-        del ids
-        # Adyacencia con el mejor arco paralelo por energía.
+
+    def _construir_adyacencia(self, G, elev, energia):
+        """Adyacencia con el mejor arco paralelo por energía y costo reducido ≥ 0.
+
+        El resultado (independiente de los nodos clave) se cachea en .npz con el hash
+        del grafo y los parámetros de energía, porque dominarla toma tiempo.
+        """
+        import time
+
+        cacheado = self._cargar_adyacencia(energia)
+        if cacheado is not None:
+            self._ady, self._tramo_arco, pot = cacheado
+            return pot
         pot = {v: energia.kappa * energia.eta_regeneracion * elev[v] if energia.usar_pendiente else 0.0
                for v in G.nodes}
         self._ady: dict[int, list[tuple[int, float, float, float]]] = {}
@@ -192,20 +227,82 @@ class RedOSM(Red):
             red = energia.tramo(km, dh) + pot[u] - pot[v]
             self._ady.setdefault(u, []).append((v, max(red, 0.0), km, dh))
         self._tramo_arco = {(u, v): t for (u, v), t in mejor.items()}
-        destinos = {self._snap[n.id] for n in nodos}
-        for n in nodos:
-            pred = self._dijkstra(self._snap[n.id], destinos)
-            for m in nodos:
-                if m.id == n.id:
-                    continue
-                camino = [self._snap[m.id]]
-                while camino[-1] != self._snap[n.id]:
-                    p = pred.get(camino[-1])
-                    if p is None:
-                        raise RuntimeError(f"Sin camino vial {n.id}→{m.id}")
-                    camino.append(p)
-                self._caminos[(n.id, m.id)] = camino[::-1]
-        self._energia = energia
+        self._guardar_adyacencia(energia, pot)
+        return pot
+
+    def _firma_adyacencia(self, energia) -> str:
+        """Hash estable del grafo de origen + parámetros de energía relevantes."""
+        import hashlib
+
+        h = hashlib.sha256()
+        ruta = Path(self.origen_grafo)
+        try:
+            st = ruta.stat()
+            h.update(f"{ruta.name}:{st.st_size}:{int(st.st_mtime)}".encode())
+        except OSError:
+            h.update(self.origen_grafo.encode())
+        h.update(f"{energia.consumo_kwh_km}:{energia.masa_kg}:{energia.eta_traccion}:"
+                 f"{energia.eta_regeneracion}:{energia.usar_pendiente}".encode())
+        return h.hexdigest()[:16]
+
+    def _ruta_cache_ady(self, energia) -> Path:
+        return self.cache / "ady" / f"{self._firma_adyacencia(energia)}.npz"
+
+    def _cargar_adyacencia(self, energia):
+        if not self.cache_adyacencia:
+            return None
+        ruta = self._ruta_cache_ady(energia)
+        if not ruta.exists():
+            return None
+        try:
+            import numpy as np
+
+            z = np.load(ruta, allow_pickle=False)
+            u = z["u"]; v = z["v"]; w = z["w"]; km = z["km"]; dh = z["dh"]
+            pn = z["pot_nodo"]; pv = z["pot_val"]
+        except Exception:
+            return None
+        ady: dict[int, list[tuple[int, float, float, float]]] = {}
+        tramo_arco: dict[tuple[int, int], tuple[float, float]] = {}
+        for a, b, c, kk, hh in zip(u, v, w, km, dh):
+            ia, ib = int(a), int(b)
+            ady.setdefault(ia, []).append((ib, float(c), float(kk), float(hh)))
+            tramo_arco[(ia, ib)] = (float(kk), float(hh))
+        pot = {int(a): float(b) for a, b in zip(pn, pv)}
+        return ady, tramo_arco, pot
+
+    def _guardar_adyacencia(self, energia, pot) -> None:
+        if not self.cache_adyacencia:
+            return
+        try:
+            import numpy as np
+
+            u, v, w, km, dh = [], [], [], [], []
+            for a, vecinos in self._ady.items():
+                for b, c, kk, hh in vecinos:
+                    u.append(a); v.append(b); w.append(c); km.append(kk); dh.append(hh)
+            ruta = self._ruta_cache_ady(energia)
+            ruta.parent.mkdir(parents=True, exist_ok=True)
+            np.savez(ruta, u=np.array(u, dtype=np.int64), v=np.array(v, dtype=np.int64),
+                     w=np.array(w), km=np.array(km), dh=np.array(dh),
+                     pot_nodo=np.array(list(pot.keys()), dtype=np.int64),
+                     pot_val=np.array(list(pot.values())))
+        except Exception as exc:  # la caché es solo una optimización
+            log.debug("No se pudo guardar la caché de adyacencia: %s", exc)
+
+    def _resolver_caminos(self, nodos, energia, pot):
+        from .caminos import GrafoCaminos, resolver_caminos
+
+        orig = {n.id: self._snap[n.id] for n in nodos}
+        lat_lon = {}
+        for v in self._ady:
+            lat_lon[v] = (self.G.nodes[v]["y"], self.G.nodes[v]["x"])
+        for n in nodos:                      # asegura coordenadas de los snaps
+            s = self._snap[n.id]
+            lat_lon.setdefault(s, (self.G.nodes[s]["y"], self.G.nodes[s]["x"]))
+        g = GrafoCaminos(self._ady, pot, lat_lon, energia.consumo_kwh_km)
+        pares = [(n.id, m.id) for n in nodos for m in nodos if n.id != m.id]
+        self._caminos = resolver_caminos(g, orig, pares, self.algoritmo_caminos)
 
     def _dijkstra(self, origen, destinos):
         dist = {origen: 0.0}
@@ -250,5 +347,6 @@ def crear_red(cfg: dict) -> Red:
     if tipo == "osm":
         r = cfg["red"]
         return RedOSM(r["osm_margen_km"], r["osm_cache"], r.get("osm_grafo"), r.get("max_acceso_m"),
-                      bool(r.get("osm_permitir_descarga", True)))
+                      bool(r.get("osm_permitir_descarga", True)),
+                      r.get("algoritmo_caminos"), bool(r.get("cache_adyacencia", True)))
     raise ValueError(tipo)
