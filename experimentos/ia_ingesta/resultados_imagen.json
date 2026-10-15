@@ -1,0 +1,28 @@
+{
+  "corpus_casos": 23,
+  "corpus_pedidos": 40,
+  "resultados": [
+    {
+      "modelo": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+      "casos": 23,
+      "pedidos_esperados": 40,
+      "pedidos_extraidos": 39,
+      "precision": 0.949,
+      "recall": 0.925,
+      "f1": 0.937,
+      "exactitud_cantidad": 0.952,
+      "exactitud_ventana": 0.875,
+      "pct_geocodificado": 0.919,
+      "error_geo_mediana_m": 0.0,
+      "error_geo_p90_m": 0.0,
+      "error_geo_max_m": 1811.85,
+      "latencia_p50_s": 2.88,
+      "latencia_p95_s": 3.94,
+      "tokens_in": 29891,
+      "tokens_out": 6694,
+      "tokens_total": 36585,
+      "modalidad": "imagen",
+      "segundos_totales": 66.8
+    }
+  ]
+}
