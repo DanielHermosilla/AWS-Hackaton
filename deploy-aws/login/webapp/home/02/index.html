@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" href="../../assets/brand/icons/favicon.ico" sizes="16x16 32x32 48x48">
+  <link rel="icon" href="../../assets/brand/icons/favicon.svg" type="image/svg+xml" sizes="any">
+  <link rel="apple-touch-icon" href="../../assets/brand/icons/apple-touch-icon.png" sizes="180x180">
+  <title>Matriz · Inicio · ZMD Mobility</title>
+  <link rel="stylesheet" href="../../shared/base.css"><link rel="stylesheet" href="../../material.css"><link rel="stylesheet" href="../../app.css?v=brand-v1">
+  <link rel="stylesheet" href="../shared/common.css"><link rel="stylesheet" href="../shared/visual.css"><link rel="stylesheet" href="../shared/visual-compositions.css">
+</head>
+<body class="page-home" data-page="home" data-preview="02">
+<div id="app-shell"></div>
+<main id="home-main" class="home-main visual-home matriz" tabindex="-1" aria-busy="true"><div class="vision-content">
+<header class="vision-header"><div class="vision-title"><p class="eyebrow">Inicio <span aria-hidden="true">/</span> <span data-value="scenario.name">—</span><span class="example-label">Plan ilustrativo</span></p><h1>Cada auto, en contexto.</h1></div></header>
+<div class="matrix-layout">
+  <aside class="matrix-summary" aria-label="Resumen y continuación del plan">
+    <div class="summary-title"><p class="eyebrow" data-value="resume.title">Tu plan a mano</p><h2 data-value="scenario.name">—</h2><p class="resume-context" data-value="resume.context">Cargando contexto…</p></div>
+    <dl class="summary-stats">
+      <div class="summary-stat"><dt>Locales asignados</dt><dd><span data-value="stats.assigned">—</span><small>/ <span data-value="stats.visits">—</span></small></dd></div>
+      <div class="summary-stat"><dt>Vehículos con asignación</dt><dd><span data-visual-value="assignedFleet">—</span><small>/ <span data-value="stats.vehicles">—</span></small></dd></div>
+      <div class="summary-stat"><dt>Consumo total · ejemplo</dt><dd><span data-value="stats.energyKwh">—</span><small>kWh</small></dd></div>
+    </dl><a class="primary-link" data-link="resume"><span data-value="resume.cta">Abrir plan</span><span aria-hidden="true">→</span></a>
+  </aside>
+  <section class="vision-panel matrix-panel" aria-labelledby="matrix-heading">
+    <div class="panel-heading"><div><h2 id="matrix-heading">Cómo se distribuye el plan</h2><p class="chart-caption">Asignación, consumo y batería de cada vehículo</p></div><span class="panel-index"><span data-value="stats.vehicles">—</span> AUTOS</span></div>
+    <div data-visual="matrix"></div>
+    <div class="matrix-charge"><p><strong data-value="stats.chargeStops">—</strong> paradas de recarga en el ejemplo</p><div data-widget="charge-links"></div></div>
+    <div class="panel-foot"><p>Las barras parten de cero. La marca indica la batería de salida.</p><a class="text-link" data-link="fleet">Abrir flota <span aria-hidden="true">↗</span></a></div>
+  </section>
+</div><footer class="vision-footer">
+  <div class="vision-footer-top"><p>Plan ilustrativo · Validación del motor pendiente</p><a class="text-link" data-link="chargers"><span data-value="stats.stations">—</span> estaciones registradas <span aria-hidden="true">↗</span></a></div>
+  <div class="vision-footer-bottom"><details class="data-note"><summary>Sobre estos indicadores</summary><div data-motion-detail><p>Los locales asignados son parte del plan de ejemplo; no representan entregas completadas. La flota con asignación no acredita disponibilidad ni actividad en vivo. Consumo, recarga y batería al regreso son ilustrativos, iguales a los del Plan. Las barras de batería usan una escala de 0 a 100 % y una marca para la salida. No implican validación energética. <span data-source-text="stations">Estaciones del ejemplo; disponibilidad sin verificar.</span></p></div></details><a class="compare-link" href="../index.html">Comparar propuestas</a></div>
+</footer>
+</div></main>
+<noscript><p class="load-error">Activa JavaScript para consultar el escenario y sus visualizaciones.</p></noscript>
+<script type="module" src="../shared/visual-core.js"></script>
+</body></html>

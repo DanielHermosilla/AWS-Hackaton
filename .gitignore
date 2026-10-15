@@ -1,1 +1,34 @@
 data/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.pytest_cache/
+
+# Entornos virtuales
+.venv/
+venv/
+
+# Credenciales y secretos (NUNCA subir)
+.aws/
+**/credentials
+*.pem
+*.key
+.env
+.env.*
+.streamlit/secrets.toml
+
+# Bases de datos locales
+*.db
+*.db-wal
+*.db-shm
+
+# Datasets pesados (exceden limite de GitHub)
+Electromovilidad/
+*.csv
+!data_ejemplo/*.csv
+
+# SO
+.DS_Store
