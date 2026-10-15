@@ -36,6 +36,11 @@ def _parse():
     p.add_argument("--hilos", type=int, default=1)
     p.add_argument("--max-snap-m", type=float, default=100.0)
     p.add_argument("--solver-pyomo", default="appsi_highs")
+    # Flujo PROPIO del companero: usa ev_routing.solve.solve_instance tal cual, con
+    # SolverConfig(solver=...). No reimplementa la logica lexicografica.
+    p.add_argument("--flujo-companero", action="store_true")
+    p.add_argument("--solver", default="scip",
+                   help="solver para SolverConfig cuando --flujo-companero (auto|gurobi|scip)")
     return p.parse_args()
 
 
@@ -43,7 +48,7 @@ def main() -> int:
     a = _parse()
     t0 = time.perf_counter()
     salida = {"motor": "ev_routing", "estado": "error", "movement_limit": a.movement_limit,
-              "solver": a.solver_pyomo}
+              "solver": a.solver if a.flujo_companero else a.solver_pyomo}
     try:
         from ev_routing.contracts import ModelParameters, SolverConfig
         from ev_routing.inputs import load_routing_nodes
@@ -58,14 +63,23 @@ def main() -> int:
             movement_limit=a.movement_limit,
             vehicle_connector_types=[c.strip() for c in a.conectores.split(",") if c.strip()],
         )
+        t_build0 = time.perf_counter()
         instance = build_osm_instance(
             nodes, params, a.consumo_kwh_km,
             graphml_path=a.graphml, allow_download=False,
             max_snap_distance_m=a.max_snap_m, name=Path(a.csv).stem)
+        salida["tiempo_construccion_s"] = round(time.perf_counter() - t_build0, 3)
         salida["nodos_red"] = len(instance.nodes)
         salida["arcos_red"] = len(instance.arcs)
+        # Accesos de servicio (para registrar el max_snap necesario por instancia).
+        snaps = instance.provenance.get("network", {}).get("service_access", [])
+        salida["accesos_m"] = {s["service_node_id"]: round(s["access_distance_m"], 1)
+                               for s in snaps}
 
-        res = _resolver_lexicografico(instance, a, SolverConfig)
+        if a.flujo_companero:
+            res = _resolver_flujo_companero(instance, a, SolverConfig)
+        else:
+            res = _resolver_lexicografico(instance, a, SolverConfig)
         salida.update(res)
     except Exception as exc:  # noqa: BLE001  -- la arena lo registra como resultado
         salida["estado"] = "error"
@@ -76,6 +90,71 @@ def main() -> int:
     print(json.dumps({"estado": salida["estado"], "entregas": salida.get("entregas"),
                       "tiempo_s": salida["tiempo_s"]}, ensure_ascii=False))
     return 0
+
+
+def _resolver_flujo_companero(instance, a, SolverConfig) -> dict:
+    """Usa el flujo PROPIO del companero: ev_routing.solve.solve_instance con
+    SolverConfig(solver=a.solver). No reimplementa la logica lexicografica ni cambia
+    tolerancias/objetivos. SCIP se detecta via Pyomo si scip.exe esta en PATH.
+
+    Devuelve rutas condensadas a nodos de servicio + tramos por paso (de los arcos de
+    la propia solucion) para la revalidacion neutral, mas certificados por fase.
+    """
+    import time as _t
+
+    from ev_routing.solve import solve_instance
+
+    cfg = SolverConfig(
+        solver=a.solver,
+        time_limit_seconds=max(1.0, float(a.presupuesto_s)),
+        relative_gap=0.0,
+        threads=int(a.hilos) or 1,
+        seed=0,
+    )
+    t0 = _t.perf_counter()
+    result = solve_instance(instance, cfg)
+    t_solver = round(_t.perf_counter() - t0, 3)
+
+    fases = {}
+    for ph in result.phases:
+        fases[ph.name] = {
+            "estado": ph.status,
+            "termino": ph.termination_condition,
+            "optimo_probado": ph.proven_optimal,
+            "incumbente": ph.incumbent,
+            "cota": ph.best_bound,
+            "gap_abs": ph.absolute_gap,
+            "gap_rel": ph.relative_gap,
+            "tiempo_s": round(ph.runtime_seconds, 3),
+        }
+
+    salida = {
+        "estado": result.status,
+        "solver_usado": result.used_solver,
+        "solver_version": result.solver_version,
+        "fallback": result.fallback_reason,
+        "optimo_lexicografico": result.lexicographic_optimal,
+        "fases": fases,
+        "mensaje": result.message,
+        "tiempo_solver_s": t_solver,
+        "gap": fases.get("energy", {}).get("gap_rel"),
+    }
+    sol = result.solution
+    if sol is None:
+        salida["entregas"] = 0
+        salida["rutas"] = {}
+        salida["tramos_por_paso"] = {}
+        salida["tipo_rutas"] = "clave"
+        return salida
+
+    rutas, tramos = _rutas_clave(sol, instance)
+    salida["entregas"] = len(sol.served_visit_ids)
+    salida["entregas_ids"] = list(sol.served_visit_ids)
+    salida["energia_neta_motor_kwh"] = round(float(sol.net_energy_kwh), 4)
+    salida["rutas"] = rutas
+    salida["tramos_por_paso"] = tramos
+    salida["tipo_rutas"] = "calle"
+    return salida
 
 
 def _resolver_lexicografico(instance, a, SolverConfig) -> dict:

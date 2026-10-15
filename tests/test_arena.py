@@ -154,3 +154,107 @@ def test_materializar_subconjunto(tmp_path):
     texto = Path(out).read_text(encoding="utf-8")
     assert "V1" in texto and "V2" in texto and "V3" not in texto
     assert "C1" in texto and "BASE" in texto
+
+
+def test_materializar_cargadores_cercanos(tmp_path):
+    from arena.instancias import materializar
+    filas = [
+        "BASE,base,42.280,-83.740,,,,,,,",
+        "V1,visit,42.281,-83.741,,,,,,,",
+        "C1,charger,42.2805,-83.7405,,,2,0,2,J1772,6.6",  # muy cerca
+        "C2,charger,42.350,-83.900,,,2,0,2,J1772,6.6",     # lejos
+    ]
+    csv = _csv(tmp_path, filas)
+    out = materializar({"nombre": "sub", "csv": csv, "max_cargadores": 1}, tmp_path / "mat")
+    texto = Path(out).read_text(encoding="utf-8")
+    assert "C1" in texto and "C2" not in texto
+
+
+# -------------------------------------------------- validador neutral OSM
+def _graphml_minimo(tmp_path):
+    """GraphML dirigido con una cadena de 3 intersecciones y una recta de ~0.5 km/arco."""
+    import networkx as nx
+    g = nx.MultiDiGraph()
+    g.graph["crs"] = "epsg:4326"
+    # 3 nodos en linea; ~0.0045 deg lat ~ 500 m.
+    puntos = {"n0": (42.2800, -83.7400), "n1": (42.2845, -83.7400),
+              "n2": (42.2890, -83.7400)}
+    for nid, (y, x) in puntos.items():
+        g.add_node(nid, y=y, x=x)
+    # Arcos bidireccionales con length en metros.
+    for a, b in [("n0", "n1"), ("n1", "n2")]:
+        g.add_edge(a, b, length=500.0)
+        g.add_edge(b, a, length=500.0)
+    p = tmp_path / "mini.graphml"
+    nx.write_graphml(g, str(p))
+    return str(p)
+
+
+def _csv_osm(tmp_path):
+    """BASE en n0, V1 en n2, cargador C1 en n1 (todos pegados a una interseccion)."""
+    filas = [
+        "BASE,base,42.2800,-83.7400,,,,,,,",
+        "V1,visit,42.2890,-83.7400,,,,,,,",
+        "C1,charger,42.2845,-83.7400,,,2,0,2,J1772,6.6",
+    ]
+    return _csv(tmp_path, filas)
+
+
+def test_validador_osm_ruta_factible(tmp_path):
+    from arena.validador_osm import ValidadorOSM
+    gml = _graphml_minimo(tmp_path)
+    csv = _csv_osm(tmp_path)
+    v = ValidadorOSM(csv, gml, bateria_kwh=24.0, reserva_kwh=2.4, soc_inicial=0.6,
+                     consumo_kwh_km=0.1567712473, conectores_vehiculo={"J1772"},
+                     max_snap_distance_m=100.0)
+    out = v.validar_clave({"veh1": ["BASE", "V1", "BASE"], "veh2": ["BASE", "BASE"]})
+    assert out.factible, out.errores
+    assert out.entregas == 1 and out.clientes == 1
+    # BASE->V1->BASE son 4 arcos de 500 m = 2 km.
+    assert abs(out.km_total - 2.0) < 1e-3
+    assert out.energia_total_kwh > 0
+
+
+def test_validador_osm_cliente_repetido(tmp_path):
+    from arena.validador_osm import ValidadorOSM
+    gml = _graphml_minimo(tmp_path)
+    csv = _csv_osm(tmp_path)
+    v = ValidadorOSM(csv, gml, bateria_kwh=24.0, reserva_kwh=2.4, soc_inicial=0.6,
+                     consumo_kwh_km=0.1567712473, conectores_vehiculo={"J1772"})
+    out = v.validar_clave({"a": ["BASE", "V1", "BASE"], "b": ["BASE", "V1", "BASE"]})
+    assert not out.factible
+    assert any("repetido" in e for e in out.errores)
+
+
+def test_validador_osm_cargador_incompatible(tmp_path):
+    from arena.validador_osm import ValidadorOSM
+    gml = _graphml_minimo(tmp_path)
+    csv = _csv_osm(tmp_path)
+    # Vehiculo solo CHAdeMO; C1 es J1772 -> incompatible.
+    v = ValidadorOSM(csv, gml, bateria_kwh=24.0, reserva_kwh=2.4, soc_inicial=0.6,
+                     consumo_kwh_km=0.1567712473, conectores_vehiculo={"CHADEMO"})
+    out = v.validar_clave({"a": ["BASE", "C1", "V1", "BASE"]})
+    assert not out.factible
+    assert any("incompatible" in e for e in out.errores)
+
+
+def test_validador_osm_no_inicia_en_base(tmp_path):
+    from arena.validador_osm import ValidadorOSM
+    gml = _graphml_minimo(tmp_path)
+    csv = _csv_osm(tmp_path)
+    v = ValidadorOSM(csv, gml, bateria_kwh=24.0, reserva_kwh=2.4, soc_inicial=0.6,
+                     consumo_kwh_km=0.1567712473, conectores_vehiculo={"J1772"})
+    out = v.validar_clave({"a": ["V1", "BASE"]})
+    assert not out.factible
+    assert any("BASE" in e for e in out.errores)
+
+
+def test_scip_arena_importa_y_expone_api():
+    from arena import scip_arena
+    assert scip_arena.H_SWEEP == [30, 60, 100]
+    assert set(scip_arena.CLIENTES) == {"c1", "c2", "c3", "c5"}
+    assert scip_arena.SCIP_BIN.name == "bin"
+    # El runner existe y acepta el flujo del companero.
+    runner = (RAIZ / "arena" / "adaptadores" / "ev_routing_runner.py").read_text(encoding="utf-8")
+    assert "--flujo-companero" in runner
+    assert "solve_instance" in runner
