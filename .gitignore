@@ -1,0 +1,17 @@
+# Datos generados / locales (nunca versionar)
+*.local.json
+osrm-*.json
+fixture.local.json
+
+# Entornos y cachés
+.venv/
+__pycache__/
+*.pyc
+.DS_Store
+Thumbs.db
+
+# Secretos (defensa en profundidad; aquí no debe haber ninguno)
+*.pem
+*.key
+id_ed25519*
+.env

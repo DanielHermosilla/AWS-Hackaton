@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://tiles.openfreemap.org; worker-src 'self' blob:; child-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Secuencia · ZMD Mobility</title>
+  <link rel="stylesheet" href="../../shared/demo.css">
+  <link rel="stylesheet" href="style.css">
+  <script defer src="../../shared/demo.js"></script>
+  <script defer src="app.js"></script>
+</head>
+<body class="secuencia">
+  <a class="skip-link" href="#decisions">Ir a las decisiones</a>
+  <div class="demo-strip"><span>Exploración · datos sintéticos · motor no ejecutado</span><a href="../../index.html">← Todas las propuestas</a></div>
+  <header class="topbar"><a class="mark" href="../../index.html"><span class="brand-symbol" aria-hidden="true">Z</span>ZMD Mobility</a><span class="workspace-name">Secuencia <span>Un plan, paso a paso.</span></span><label class="scene-label">Escena de ejemplo<select id="scene" class="scenario-select"><option value="complete">Completo</option><option value="partial">Diagnóstico parcial</option><option value="empty">Sin resultado</option><option value="error">Error de ubicación</option><option value="stale">Desactualizado</option></select></label></header>
+  <nav class="step-nav" aria-label="Etapas del escenario"><button id="step-0" aria-current="step"><span>01</span><strong>Preparar</strong><small>Definir el escenario</small></button><button id="step-1" aria-current="false"><span>02</span><strong>Revisar</strong><small>Ver qué falta</small></button><button id="step-2" aria-current="false"><span>03</span><strong>Plan</strong><small>Entender el resultado</small></button></nav>
+  <main class="decision-layout" id="decisions">
+    <section class="decision-column" aria-label="Decisión actual">
+      <div class="panel" id="panel-0"><p class="eyebrow">01 · Preparar</p><h1>Comienza por<br>el escenario.</h1><p class="intro">Antes de mirar un plan, reconoce los pedidos y los vehículos que deben volver al centro.</p><div class="scenario-summary"><div><span>Pedidos obligatorios</span><strong>8 <small>sintéticos</small></strong></div><div><span>Vehículos del ejemplo</span><strong>2 <small>Nissan Leaf 2013</small></strong></div></div><div class="config-field"><label for="soc">Batería inicial de ejemplo</label><div class="number-input"><input id="soc" type="number" value="60" min="0" max="100" step="1"><span>% SoC</span></div><p>Modificar el escenario retira las métricas del ejemplo anterior. No ejecuta una optimización.</p></div><div class="principle"><span class="principle-index">↩</span><p><strong>Todos los pedidos. Ambos de vuelta.</strong> Nuestro objetivo operativo es completar todos los pedidos y volver con batería.</p></div><button class="btn" id="use-example">Usar el ejemplo inicial</button></div>
+      <div class="panel" id="panel-1" hidden><p class="eyebrow">02 · Revisar</p><h1>Lo que debe<br>estar claro.</h1><p class="intro">Este paso organiza las condiciones de la operación. La muestra no acredita una validación del motor.</p><div id="review-list"></div><div class="review-note"><p class="eyebrow">Recarga</p><h3>Registrada no significa disponible.</h3><p>Una estación de ejemplo se incluye en la secuencia. Compatibilidad, potencia y disponibilidad requieren datos del escenario real.</p></div></div>
+      <div class="panel" id="panel-2" hidden><p class="eyebrow">03 · Plan</p><h1>Un resultado<br>que puedas leer.</h1><p class="intro">Selecciona un vehículo y recorre sus paradas. Los valores y las líneas siguen siendo ilustrativos.</p><div class="result-metrics"><div><span>Pedidos · ejemplo</span><strong id="served">—</strong></div><div><span>Energía · ejemplo</span><strong><span id="energy">—</span><small> kWh</small></strong></div><div><span>SoC de regreso · ejemplo</span><strong id="return-soc">—</strong></div></div><div class="selected-vehicle"><h2 id="selected-name">Vehículo A</h2><p id="selected-detail"></p></div><div id="battery"></div><p class="profile-note">Perfil sintético. No acredita validación energética.</p><div id="itinerary"></div></div>
+      <div class="state-notice"><strong id="status" role="status" aria-live="polite">Ejemplo completo</strong><p id="state-caption"></p><button class="quiet" id="review-issues" hidden>Revisar pedidos pendientes →</button><div id="issues" hidden></div></div>
+      <footer class="step-actions"><button class="btn" id="previous" disabled>Anterior</button><span id="step-caption">1 de 3</span><button class="btn primary" id="next">Continuar</button></footer>
+    </section>
+    <aside class="context-column" aria-label="Contexto espacial de la decisión">
+      <div class="context-head"><div><p class="eyebrow">Contexto del escenario</p><h2>Siempre en el mapa.</h2></div><div class="tabs" aria-label="Vehículos"><button id="vehicle-all" aria-pressed="true">Todos</button><button id="vehicle-a" aria-pressed="false"><span class="route-dot" style="--route-color:#27756c"></span>A</button><button id="vehicle-b" aria-pressed="false"><span class="route-dot" style="--route-color:#6372a3"></span>B</button></div></div>
+      <div class="map-frame"><div id="map"></div><span class="map-caption">Esquema · no red vial</span><div class="zoom-controls" aria-label="Vista del esquema"><button id="zoom-out" aria-label="Alejar">−</button><span id="zoom-label">100 %</span><button id="zoom-in" aria-label="Acercar">+</button><button id="fit">Encajar</button></div></div>
+      <div class="context-footer"><div class="legend"><span><i class="route-dot" style="--route-color:#27756c"></i>Vehículo A</span><span><i class="route-dot" style="--route-color:#6372a3"></i>Vehículo B</span></div><p>Las líneas vinculan paradas de ejemplo. No representan calles, distancias ni resultados de un solver.</p><button class="quiet" id="reset-scene">Restablecer ejemplo</button></div>
+    </aside>
+  </main>
+</body>
+</html>

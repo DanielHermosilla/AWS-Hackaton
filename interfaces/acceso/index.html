@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://tiles.openfreemap.org; worker-src 'self' blob:; child-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Acceso — ZMD Mobility</title>
+<link rel="icon" href="data:, ">
+<link rel="stylesheet" href="../../shared/demo.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="demo-strip">
+  <a href="../../index.html">← Las cuatro propuestas</a>
+  <span>Acceso · exploración de diseño</span>
+  <span>Prototipo de interfaz · sin autenticación real</span>
+</div>
+
+<header class="topbar">
+  <a href="../../index.html" class="mark"><span class="brand-symbol">z</span>ZMD <span class="brand-light">Mobility</span></a>
+  <div class="account">Panel de flota</div>
+</header>
+
+<main class="auth">
+  <!-- Columna de marca / contexto -->
+  <section class="auth-aside" aria-hidden="true">
+    <div class="aside-top">
+      <div class="eyebrow">Planificación de flota eléctrica</div>
+      <h1>Todo encaja<br>en un plan.</h1>
+      <p>Entra para revisar los recorridos, la energía<br>y la validación de cada escenario.</p>
+    </div>
+    <ul class="aside-points">
+      <li><span class="dot"></span>Dos recorridos, una operación</li>
+      <li><span class="dot square"></span>Energía y batería por vehículo</li>
+      <li><span class="dot ring"></span>Validación independiente del motor</li>
+    </ul>
+    <div class="aside-foot">Datos sintéticos · motor sin conectar</div>
+  </section>
+
+  <!-- Columna del formulario -->
+  <section class="auth-panel">
+    <div class="panel-inner">
+      <div class="eyebrow">Acceso al panel</div>
+      <h2 id="auth-title">Inicia sesión</h2>
+      <p class="panel-lead">Usa tu cuenta de operación de flota para continuar.</p>
+
+      <form id="login-form" novalidate>
+        <div class="field">
+          <label for="email">Correo de la cuenta</label>
+          <input type="email" id="email" name="email" autocomplete="username"
+                 placeholder="nombre@case.cl" required aria-describedby="email-error">
+          <small class="field-error" id="email-error" hidden></small>
+        </div>
+
+        <div class="field">
+          <div class="label-row">
+            <label for="password">Contraseña</label>
+            <button type="button" class="link-quiet" id="toggle-pass" aria-pressed="false">Mostrar</button>
+          </div>
+          <input type="password" id="password" name="password" autocomplete="current-password"
+                 placeholder="········" required minlength="8" aria-describedby="password-error">
+          <small class="field-error" id="password-error" hidden></small>
+        </div>
+
+        <div class="field-row">
+          <label class="check">
+            <input type="checkbox" id="remember" name="remember">
+            <span>Mantener la sesión</span>
+          </label>
+          <a href="#" class="link-quiet" id="forgot">¿Olvidaste tu contraseña?</a>
+        </div>
+
+        <button type="submit" class="btn primary block" id="submit">Entrar al panel</button>
+
+        <p class="form-note" id="form-note" role="status" aria-live="polite" hidden></p>
+      </form>
+
+      <div class="divider"><span>o</span></div>
+
+      <button type="button" class="btn block" id="sso">Continuar con acceso corporativo</button>
+
+      <p class="switch">¿Tu equipo aún no tiene cuenta? <a href="#" id="to-register">Solicitar acceso</a></p>
+    </div>
+    <footer class="panel-foot">
+      <span>ZMD Mobility / Acceso</span>
+      <span>Prototipo · la autenticación se conecta aparte</span>
+    </footer>
+  </section>
+</main>
+
+<script src="app.js"></script>
+</body>
+</html>
