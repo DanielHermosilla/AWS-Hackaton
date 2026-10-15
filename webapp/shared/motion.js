@@ -1,10 +1,10 @@
 import '../vendor/motion/motion-14.2.0.js';
+import { prefersReducedMotion, onReducedMotionChange } from '../state.js';
 
 // Motion's browser distribution includes the same animation engine as Framer Motion.
 // The DOM-only API commits native styles synchronously on stop. The hybrid API
 // can queue a MotionValue render after a keyboard action has settled the panel.
 const { animateMini: animate, spring } = globalThis.Motion;
-const reduced = matchMedia('(prefers-reduced-motion: reduce)');
 let keyboard = false;
 document.addEventListener('keydown', () => { keyboard = true; }, true);
 document.addEventListener('pointerdown', () => { keyboard = false; }, true);
@@ -12,6 +12,7 @@ document.addEventListener('pointerdown', () => { keyboard = false; }, true);
 /**
  * A reversible, nonmodal detail surface. Changing the selected stop while open
  * updates its text immediately; only entering/leaving the surface has motion.
+ * Keyboard use and reduced motion (system or local preference) settle at once.
  */
 export function detailSurface(element) {
   let controls;
@@ -28,6 +29,7 @@ export function detailSurface(element) {
     const wasAnimating = !!controls;
     wanted = open;
     if (controls) {
+      // Interrupt from the current visual state instead of jumping to an endpoint.
       const visual = getComputedStyle(element);
       const opacity = visual.opacity, transform = visual.transform;
       controls.stop();
@@ -36,7 +38,7 @@ export function detailSurface(element) {
       controls = undefined;
     }
     element.inert = !open;
-    if (reduced.matches || keyboard || (open && !wasHidden && !wasAnimating)) {
+    if (prefersReducedMotion() || keyboard || (open && !wasHidden && !wasAnimating)) {
       settle(open);
       return;
     }
@@ -56,8 +58,8 @@ export function detailSurface(element) {
       settle(open);
     });
   }
-  reduced.addEventListener('change', () => {
-    if (!reduced.matches) return;
+  onReducedMotionChange(reduced => {
+    if (!reduced) return;
     ++generation;
     // Settle at the intended endpoint when the preference changes mid-flight.
     controls?.complete();

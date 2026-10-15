@@ -1,8 +1,9 @@
-import { applyDataProvenance, SOURCE_DETAILS, SCENARIO, NODES, VEHICLES, ROUTES, nodeById, number } from './shared/data.js';
+import { applyDataProvenance, SOURCE_DETAILS, SCENARIO, NODES, VEHICLES, ROUTES, nodeById, routeById, routesForNode, visitLabel, number, visitIdsForRoute, deliveryCount, chargeCount } from './shared/data.js';
 import { createMap } from './map.js';
 import { icon, carDrawing } from './shared/icons.js';
 import { detailSurface } from './shared/motion.js';
 import { readPlanContext, savePlanContext } from './state.js';
+import { escapeHtml as esc } from './shared/html.js';
 
 applyDataProvenance();
 
@@ -11,10 +12,9 @@ const detail = detailSurface($('selection'));
 let selected = null, tab = 'fleet', selectedStop = null, map, returnFocus;
 let detailOpen = false;
 const mobile = matchMedia('(max-width:760px)');
-const routeById = id => ROUTES.find(r => r.vehicleId === id);
 const vehicleById = id => VEHICLES.find(v => v.id === id);
-const deliveryCount = r => r.stops.filter(s => nodeById(s.nodeId).type === 'visit').length;
-const chargeCount = r => r.stops.filter(s => s.chargeKwh > 0).length;
+const batteryStyle = (value, property) => Number.isFinite(value) && value >= 0 && value <= 100
+  ? `style="${property}:${value}%"` : 'hidden';
 const saved = readPlanContext();
 const previous = saved?.scenario === SCENARIO.id ? saved : {};
 const params = new URLSearchParams(location.search);
@@ -58,7 +58,7 @@ addEventListener('pageshow', () => { delete document.body.dataset.leavingDemo; }
 $('scenario-location').textContent = SCENARIO.name;
 $('fleet-tab').querySelector('span').textContent = VEHICLES.length;
 $('stops-tab').querySelector('span').textContent = NODES.filter(n => n.type === 'visit').length;
-$('plan-deliveries').textContent = new Set(ROUTES.flatMap(r => r.stopIds).filter(id => nodeById(id)?.type === 'visit')).size;
+$('plan-deliveries').textContent = new Set(ROUTES.flatMap(r => [...visitIdsForRoute(r)])).size;
 $('plan-demand').textContent = `/ ${NODES.filter(n => n.type === 'visit').length}`;
 $('plan-energy').textContent = number(ROUTES.every(r => Number.isFinite(r.energyKwh)) ? ROUTES.reduce((sum, r) => sum + r.energyKwh, 0) : NaN);
 $('plan-charges').textContent = ROUTES.reduce((sum, r) => sum + chargeCount(r), 0);
@@ -69,6 +69,14 @@ for (const [id, name, size] of [
 ]) $(id).innerHTML = icon(name, size);
 $('chargers').innerHTML = icon('plug', 17) + 'Cargadores';
 $('base-legend').innerHTML = icon('base', 13) + 'Base';
+for (const vehicle of VEHICLES) {
+  const label = document.createElement('span');
+  const dot = document.createElement('i');
+  dot.className = 'dot';
+  dot.style.backgroundColor = vehicle.color;
+  label.append(dot, document.createTextNode(vehicle.name));
+  $('base-legend').before(label);
+}
 
 function render() {
   for (const key of ['fleet', 'stops']) {
@@ -82,33 +90,33 @@ function render() {
       const r = routeById(v.id);
       return `<article class="vehicle-card ${selected === v.id ? 'active' : ''}" style="--route:${v.color}">
         <div class="vehicle-heading"><div>
-          <div class="vehicle-name"><i class="vehicle-dot"></i>${v.name}</div>
-          <p class="vehicle-model">${v.model}</p>
+          <div class="vehicle-name"><i class="vehicle-dot"></i>${esc(v.name)}</div>
+          <p class="vehicle-model">${esc(v.model || 'Modelo sin indicar')}</p>
         </div>${carDrawing(v.color)}</div>
-        <div class="soc-row"><span>Salida <strong>${number(v.initialSoc)} %</strong></span><span>Regreso <strong>${number(r.finalSoc)} %</strong></span></div>
-        <div class="battery-track" aria-hidden="true"><span style="width:${r.finalSoc}%"></span><i style="left:${v.initialSoc}%"></i></div>
+        <div class="soc-row"><span>Salida <strong>${number(v.initialSoc)} %</strong></span><span>Regreso <strong>${number(r?.finalSoc)} %</strong></span></div>
+        <div class="battery-track" aria-hidden="true"><span ${batteryStyle(r?.finalSoc, 'width')}></span><i ${batteryStyle(v.initialSoc, 'left')}></i></div>
         <div class="vehicle-stats">
-          <span><strong>${deliveryCount(r)}</strong> entregas</span>
-          <span><strong>${number(r.energyKwh)}</strong> kWh</span>
-          <span><strong>${chargeCount(r)}</strong> recarga</span>
+          <span><strong>${r ? deliveryCount(r) : '—'}</strong> entregas</span>
+          <span><strong>${number(r?.energyKwh)}</strong> kWh</span>
+          <span><strong>${r ? chargeCount(r) : '—'}</strong> recargas</span>
         </div>
-        <button class="route-button" data-vehicle="${v.id}" aria-label="Explorar recorrido de ${v.name}">Explorar recorrido ${icon('arrow', 16)}</button>
+        <button class="route-button" data-vehicle="${esc(v.id)}" ${r ? '' : 'disabled'} aria-label="${r ? 'Explorar recorrido de' : 'Sin recorrido asignado a'} ${esc(v.name)}">${r ? `Explorar recorrido ${icon('arrow', 16)}` : 'Sin recorrido asignado'}</button>
       </article>`;
     }).join('');
     return;
   }
   const routes = selected ? [routeById(selected)] : ROUTES;
   $('sidebar-content').innerHTML =
-    (selected ? `<button class="all-routes" id="all-routes">${icon('back', 14)} Ambos vehículos</button>` : '') +
+    (selected ? `<button class="all-routes" id="all-routes">${icon('back', 14)} Toda la flota</button>` : '') +
     routes.map(r => {
       const v = vehicleById(r.vehicleId);
-      return `<section class="route-group" style="--route:${v.color}"><div class="route-head"><i class="vehicle-dot"></i>${v.name}<small>${deliveryCount(r)} entregas · ${number(r.distanceKm)} km de demostración</small></div>` +
+      return `<section class="route-group" style="--route:${v.color}"><div class="route-head"><i class="vehicle-dot"></i>${esc(v.name)}<small>${deliveryCount(r)} entregas · ${number(r.distanceKm)} km de ejemplo</small></div>` +
         r.stops.map((s, i) => {
           const n = nodeById(s.nodeId);
           const active = selectedStop?.vehicleId === v.id && selectedStop.index === i;
-          return `<button class="stop-row ${active ? 'active' : ''}" data-stop="${n.id}" data-route="${v.id}" data-index="${i}" aria-pressed="${active}">
-            <span class="stop-number">${n.type === 'base' ? icon('base', 16) : n.type === 'charger' ? icon('plug', 16) : n.id.substring(1)}</span>
-            <span class="stop-name">${n.type === 'base' ? (i === 0 ? 'Salida de base' : 'Regreso a base') : n.label}<small>${n.type === 'charger' ? `Recarga · +${number(s.chargeKwh)} kWh` : n.id}</small></span>
+          return `<button class="stop-row ${active ? 'active' : ''}" data-stop="${esc(n.id)}" data-route="${esc(v.id)}" data-index="${i}" aria-pressed="${active}">
+            <span class="stop-number">${n.type === 'base' ? icon('base', 16) : n.type === 'charger' ? icon('plug', 16) : visitLabel(n.id)}</span>
+            <span class="stop-name">${n.type === 'base' ? (i === 0 ? 'Salida de base' : 'Regreso a base') : esc(n.label)}<small>${n.type === 'charger' ? `Recarga · +${number(s.chargeKwh)} kWh` : esc(n.id)}</small></span>
             <strong>${number(s.arrivalSoc)} %</strong>
           </button>`;
         }).join('') + '</section>';
@@ -116,6 +124,7 @@ function render() {
 }
 
 function vehicle(id, focus = false, refit = true) {
+  if (!routeById(id)) return;
   selected = id;
   selectedStop = null;
   tab = 'stops';
@@ -128,9 +137,9 @@ function vehicle(id, focus = false, refit = true) {
 }
 
 function stop(node, routeId, index, trigger, move = true) {
-  let route = routeById(routeId || node.vehicleId || selected);
+  let route = routeById(routeId || selected);
   if (!route?.stopIds.includes(node.id)) {
-    route = ROUTES.find(r => r.stopIds.includes(node.id));
+    route = routesForNode(node.id)[0];
   }
   const sameOccurrence = route && selectedStop?.vehicleId === route.vehicleId &&
     route.stops[selectedStop.index]?.nodeId === node.id;
@@ -151,14 +160,14 @@ function stop(node, routeId, index, trigger, move = true) {
   returnFocus = trigger?.isConnected ? trigger : (trigger ? currentRow : previousControl) || currentRow || $('stops-tab');
   const title = node.type === 'base' && state ? (stopIndex === 0 ? 'Salida de base' : 'Regreso a base') : node.label;
   $('selection').innerHTML = `<button class="close" id="close-selection" aria-label="Cerrar detalle">${icon('close', 16)}</button>
-    <p class="detail-eyebrow">${route ? vehicleById(route.vehicleId).name + ' · ' : ''}${node.id}</p>
-    <h3>${title}</h3>
-    <p>${node.type === 'charger' ? SOURCE_DETAILS.charger : node.type === 'base' ? 'Centro de distribución' : 'Entrega prevista'}</p>
+    <p class="detail-eyebrow">${route ? esc(vehicleById(route.vehicleId).name) + ' · ' : ''}${esc(node.id)}</p>
+    <h3>${esc(title)}</h3>
+    <p>${node.type === 'charger' ? SOURCE_DETAILS.charger : node.type === 'base' ? 'Centro de distribución' : state ? 'Entrega prevista' : 'Sin asignar en este plan'}</p>
     ${state ? `<div class="stop-battery"><span>Batería al llegar<strong>${number(state.arrivalSoc)} <small>%</small></strong></span><span>Al salir<strong>${number(state.departureSoc)} <small>%</small></strong></span></div>${state.chargeKwh ? `<p class="charge-note">${icon('plug', 14)} Recarga de ejemplo: +${number(state.chargeKwh)} kWh</p>` : ''}`
-      : node.type === 'charger' ? `<p>${node.connectors || 'Conectores sin información'}</p><p>Disponibilidad no verificada.</p>` : ''}`;
+      : node.type === 'charger' ? `<p>${esc(node.connectors || 'Conectores sin información')}</p><p>Disponibilidad no verificada.</p>` : ''}`;
   $('selection-status').textContent = state
     ? `${vehicleById(route.vehicleId).name}. ${title}. Batería de ejemplo: llegada ${number(state.arrivalSoc)} %, salida ${number(state.departureSoc)} %.`
-    : `${title}. ${node.type === 'charger' ? 'Disponibilidad no verificada.' : ''}`;
+    : `${title}. ${node.type === 'charger' ? 'Disponibilidad no verificada.' : node.type === 'visit' ? 'Sin asignar en este plan.' : ''}`;
   detail.show();
   detailOpen = true;
   map?.selectNode(node.id, move);

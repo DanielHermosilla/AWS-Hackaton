@@ -1,6 +1,10 @@
 import * as maplibre from './vendor/maplibre/maplibre-gl.mjs';
-import { NODES, ROUTES, VEHICLES } from './shared/data.js';
+import { NODES, ROUTES, VEHICLES, routesForNode, visitLabel } from './shared/data.js';
 import { icon } from './shared/icons.js';
+import { prefersReducedMotion, onReducedMotionChange } from './state.js';
+
+// Business IDs are opaque; they must not collide with the basemap's own sources.
+const mapRoutes = ROUTES.map((route, index) => ({ route, sourceId: `zmd-route-${index}` }));
 
 const css = document.createElement('link');
 css.rel = 'stylesheet';
@@ -15,7 +19,6 @@ export async function createMap(container, options = {}) {
   let map, ready = false, vehicleId = null, planVisible = options.showRoutes !== false;
   let chargersVisible = false, selectedId = null, cameraMode = 'fit';
   const markers = [];
-  const reduce = matchMedia('(prefers-reduced-motion: reduce)');
   const noop = () => {};
   let observer;
   try {
@@ -38,6 +41,7 @@ export async function createMap(container, options = {}) {
   }
   host.append(status);
   status.textContent = 'Cargando cartografía…';
+  const stopMotionListener = onReducedMotionChange(reduced => { if (reduced) map.stop(); });
   map.addControl(new maplibre.NavigationControl({showCompass:false}), 'bottom-right');
   map.addControl(new maplibre.ScaleControl({unit:'metric'}), 'bottom-left');
   const timer = setTimeout(() => {
@@ -60,23 +64,28 @@ export async function createMap(container, options = {}) {
       : {...requestedPadding};
     // Attribution wraps on narrow maps; keep the full marker above that area.
     if (host.clientWidth < 700) padding.bottom = Math.max(padding.bottom || 0, 80);
-    map.fitBounds(bounds, {padding, maxZoom:14, duration:reduce.matches || !animate ? 0 : 450});
+    map.fitBounds(bounds, {padding, maxZoom:14, duration:prefersReducedMotion() || !animate ? 0 : 450});
   }
   function update() {
     for (const {node,el} of markers) {
-      const usedCharger = ROUTES.some(r => (!vehicleId || r.vehicleId === vehicleId) && r.stopIds.includes(node.id));
+      const owners = routesForNode(node.id);
+      const selectedOwner = owners.find(route => route.vehicleId === vehicleId);
+      const usedCharger = vehicleId ? !!selectedOwner : owners.length > 0;
       el.hidden = node.type === 'charger' && !chargersVisible && !(planVisible && usedCharger);
-      el.classList.toggle('is-muted', !!vehicleId && node.type === 'visit' && node.vehicleId !== vehicleId && planVisible);
+      el.classList.toggle('is-muted', !!vehicleId && node.type === 'visit' && !selectedOwner && planVisible);
       el.classList.toggle('is-selected', node.id === selectedId);
       el.setAttribute('aria-pressed', String(node.id === selectedId));
-      if (node.type === 'visit') el.style.background = planVisible ? VEHICLES.find(v => v.id === node.vehicleId)?.color || '#576b7e' : '#576b7e';
+      if (node.type === 'visit') {
+        const owner = selectedOwner || owners[0];
+        el.style.background = planVisible ? VEHICLES.find(v => v.id === owner?.vehicleId)?.color || '#576b7e' : '#576b7e';
+      }
     }
     if (!ready) return;
-    for (const r of ROUTES) {
+    for (const { route: r, sourceId } of mapRoutes) {
       const active = !vehicleId || r.vehicleId === vehicleId;
       for (const suffix of ['halo','line']) {
-        map.setLayoutProperty(`${r.vehicleId}-${suffix}`, 'visibility', planVisible ? 'visible' : 'none');
-        map.setPaintProperty(`${r.vehicleId}-${suffix}`, 'line-opacity', active ? (suffix === 'halo' ? .95 : .9) : .12);
+        map.setLayoutProperty(`${sourceId}-${suffix}`, 'visibility', planVisible ? 'visible' : 'none');
+        map.setPaintProperty(`${sourceId}-${suffix}`, 'line-opacity', active ? (suffix === 'halo' ? .95 : .9) : .12);
       }
     }
   }
@@ -95,7 +104,7 @@ export async function createMap(container, options = {}) {
         zoom:move ? Math.max(map.getZoom(),12.5) : map.getZoom(),
         padding:0,
         offset:[target.x - host.clientWidth / 2,target.y - host.clientHeight / 2],
-        duration:reduce.matches ? 0 : 350
+        duration:prefersReducedMotion() ? 0 : 350
       });
     }
   }
@@ -103,12 +112,12 @@ export async function createMap(container, options = {}) {
     ready = true;
     clearTimeout(timer);
     status.textContent = '';
-    for (const route of ROUTES) {
-      map.addSource(route.vehicleId, {type:'geojson', data:{type:'Feature', properties:{}, geometry:route.geometry}});
+    for (const { route, sourceId } of mapRoutes) {
+      map.addSource(sourceId, {type:'geojson', data:{type:'Feature', properties:{}, geometry:route.geometry}});
       const color = VEHICLES.find(v => v.id === route.vehicleId).color;
-      map.addLayer({id:`${route.vehicleId}-halo`,type:'line',source:route.vehicleId,layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':'#ffffff','line-width':8}});
-      map.addLayer({id:`${route.vehicleId}-line`,type:'line',source:route.vehicleId,layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':color,'line-width':4}});
-      map.on('click', `${route.vehicleId}-line`, () => options.onVehicleSelect?.(route.vehicleId));
+      map.addLayer({id:`${sourceId}-halo`,type:'line',source:sourceId,layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':'#ffffff','line-width':8}});
+      map.addLayer({id:`${sourceId}-line`,type:'line',source:sourceId,layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':color,'line-width':4}});
+      map.on('click', `${sourceId}-line`, () => options.onVehicleSelect?.(route.vehicleId));
     }
     for (const node of NODES) {
       const el = document.createElement('button');
@@ -116,7 +125,8 @@ export async function createMap(container, options = {}) {
       el.className = `zmd-pin type-${node.type}`;
       el.title = node.label;
       el.setAttribute('aria-label',`${node.label} (${node.id})`);
-      el.innerHTML = node.type === 'base' ? icon('base',19) : node.type === 'charger' ? icon('plug',14) : node.id.substring(1);
+      if (node.type === 'visit') el.textContent = visitLabel(node.id);
+      else el.innerHTML = node.type === 'base' ? icon('base',19) : icon('plug',14);
       el.addEventListener('click', event => {
         event.stopPropagation();
         selectedId = node.id;
@@ -161,6 +171,6 @@ export async function createMap(container, options = {}) {
       map.jumpTo({center:view.center,zoom:view.zoom,padding});
       return true;
     },
-    destroy() {clearTimeout(timer);observer.disconnect();map.remove();}
+    destroy() {clearTimeout(timer);stopMotionListener();observer.disconnect();map.remove();}
   };
 }

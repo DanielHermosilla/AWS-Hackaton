@@ -1,31 +1,221 @@
-import { applyDataProvenance, SCENARIO, VEHICLES, NODES, number } from './shared/data.js';
-import { icon, carDrawing } from './shared/icons.js';
+// Inicio: overview of the illustrative Plan fixture. boot.js creates the shared
+// shell first; any error thrown here is shown by boot.js as a load failure.
+// Values are design fixtures: no solver, completed deliveries or live telemetry.
+import { applyDataProvenance, SCENARIO, VEHICLES, NODES, ROUTES, SOURCE_DETAILS, number, visitIdsForRoute as visitsOf, routeById, chargeCount } from './shared/data.js';
+import { readPlanContext } from './state.js';
+import { planHref } from './home-navigation.js';
+import { escapeHtml as esc } from './shared/html.js';
 
 applyDataProvenance();
 
-if (!SCENARIO?.demonstration || !Array.isArray(VEHICLES) || !Array.isArray(NODES)) {
-  throw new Error('El escenario de demostración no tiene la estructura esperada.');
+const main = document.getElementById('home-main');
+const finite = value => Number.isFinite(value) ? value : null;
+const count = value => number(value, 0);
+const percent = value => Number.isFinite(value) ? `${number(value)} %` : '—';
+const ratio = (part, whole) => Number.isFinite(part) && part >= 0 && whole > 0 ? part / whole * 100 : null;
+const inScale = (value, max) => Number.isFinite(value) && value >= 0 && value <= max && max > 0;
+const planLink = (params = {}) => {
+  const url = new URL(planHref);
+  for (const [key, value] of Object.entries(params)) url.searchParams.set(key, value);
+  return url.href;
+};
+
+// ---- Model -------------------------------------------------------------
+const palette = ['#1664ec', '#8152d9', '#0f8a6a', '#c2571a', '#b23a7a', '#5b6b7f'];
+const nodeById = new Map(NODES.map(node => [node.id, node]));
+const stopsOf = route => Array.isArray(route?.stops) ? route.stops : [];
+
+const visitTotal = new Set(NODES.filter(node => node.type === 'visit').map(node => node.id)).size;
+const stationTotal = NODES.filter(node => node.type === 'charger').length;
+const assignedTotal = new Set(ROUTES.flatMap(route => [...visitsOf(route)])).size;
+const unassigned = Math.max(0, visitTotal - assignedTotal);
+// Zero is a valid total; a missing value on any route makes the total unavailable.
+const energyTotal = ROUTES.length && ROUTES.every(route => Number.isFinite(route?.energyKwh))
+  ? ROUTES.reduce((sum, route) => sum + route.energyKwh, 0) : null;
+const chargeTotal = ROUTES.reduce((sum, route) => sum + chargeCount(route), 0);
+
+const owners = new Map();
+const fleet = VEHICLES.map((vehicle, index) => {
+  const route = routeById(vehicle.id);
+  const visits = route ? visitsOf(route) : null;
+  for (const id of visits || []) owners.set(id, (owners.get(id) || 0) + 1);
+  const assigned = visits ? visits.size : null;
+  return {
+    id: String(vehicle.id ?? ''),
+    name: String(vehicle.name ?? vehicle.id ?? 'Vehículo'),
+    model: String(vehicle.model ?? ''),
+    color: /^#[0-9a-f]{6}$/i.test(vehicle.color) ? vehicle.color : palette[index % palette.length],
+    active: !!route,
+    initialSoc: finite(vehicle.initialSoc),
+    assigned,
+    assignmentShare: ratio(assigned, visitTotal),
+    energyKwh: route ? finite(route.energyKwh) : null,
+    finalSoc: route ? finite(route.finalSoc) : null,
+    chargeStops: route ? chargeCount(route) : null,
+  };
+});
+const active = fleet.filter(vehicle => vehicle.active);
+const overlapCount = [...owners.values()].filter(owned => owned > 1).length;
+const distributed = active.reduce((sum, vehicle) => sum + vehicle.assigned, 0);
+const assignmentValid = visitTotal > 0 && overlapCount === 0 && distributed === assignedTotal;
+const representedEnergy = active.reduce((sum, vehicle) => sum + (vehicle.energyKwh ?? 0), 0);
+const energyValid = energyTotal !== null
+  && active.every(vehicle => vehicle.energyKwh !== null && vehicle.energyKwh >= 0)
+  && Math.abs(representedEnergy - energyTotal) < 1e-9 * Math.max(1, Math.abs(energyTotal));
+const energyMax = Math.max(2, Math.ceil(Math.max(0, ...active.map(vehicle => vehicle.energyKwh ?? 0)) / 2) * 2);
+
+// Session context saved by the Plan; invalid or foreign context is ignored.
+function resumeFrom(saved) {
+  const fallback = {
+    title: 'Tu plan',
+    cta: 'Abrir plan',
+    context: `${SCENARIO.name} · ${count(VEHICLES.length)} vehículos · ${SOURCE_DETAILS?.context || 'Datos de ejemplo'}`,
+  };
+  if (!saved || typeof saved !== 'object' || saved.scenario !== SCENARIO.id) return fallback;
+  const vehicle = fleet.find(item => item.id === saved.vehicle);
+  const stopRoute = routeById(saved.stop?.vehicleId);
+  const stop = saved.stop && Number.isInteger(saved.stop.index) ? stopsOf(stopRoute)[saved.stop.index] : null;
+  const valid = (saved.vehicle === null || !!vehicle)
+    && ['fleet', 'stops'].includes(saved.tab)
+    && (saved.stop === null || (!!stop && saved.stop.vehicleId === saved.vehicle))
+    && typeof saved.chargers === 'boolean';
+  if (!valid) return fallback;
+  const node = stop ? nodeById.get(stop.nodeId) : null;
+  const stopLabel = !stop ? null : node?.type === 'base'
+    ? (saved.stop.index === 0 ? 'Salida de base' : saved.stop.index === stopsOf(stopRoute).length - 1 ? 'Regreso a base' : 'Base')
+    : node?.label || stop.nodeId;
+  return {
+    title: 'Donde lo dejaste',
+    cta: 'Continuar plan',
+    context: [vehicle?.name || 'Toda la flota', saved.tab === 'stops' ? 'Paradas' : 'Vehículos', stopLabel,
+      saved.chargers ? 'Estaciones visibles' : null].filter(Boolean).join(' · '),
+  };
 }
-const $ = id => document.getElementById(id);
-$('home-location').textContent = SCENARIO.name;
-$('home-deliveries').textContent = number(NODES.filter(node => node.type === 'visit').length, 0);
-$('home-vehicles').textContent = number(VEHICLES.length, 0);
-$('home-chargers').textContent = number(NODES.filter(node => node.type === 'charger').length, 0);
-$('result-icon').innerHTML = icon('route', 22);
-for (const vehicle of VEHICLES) {
-  const card = document.createElement('a');
-  card.className = 'home-vehicle';
-  card.href = `plan.html?${new URLSearchParams({ vehicle: vehicle.id })}`;
-  const color = /^#[a-f\d]{6}$/i.test(vehicle.color) ? vehicle.color : '#526a86';
-  card.style.setProperty('--route', color);
-  card.innerHTML = `<span class="vehicle-overview"><span class="vehicle-label"></span><span class="vehicle-caption"></span></span>
-    ${carDrawing(color)}
-    <span class="vehicle-charge"><strong><span class="soc-value"></span><small>%</small></strong><span>Batería inicial</span></span>
-    <span class="vehicle-link">Ver recorrido ${icon('arrow', 14)}</span>`;
-  card.querySelector('.vehicle-label').textContent = vehicle.name;
-  card.querySelector('.vehicle-caption').textContent = vehicle.model;
-  card.querySelector('.soc-value').textContent = number(vehicle.initialSoc);
-  card.setAttribute('aria-label', `Explorar recorrido de ${vehicle.name}, ${vehicle.model}, batería inicial ${number(vehicle.initialSoc)} %`);
-  $('home-fleet-list').append(card);
+// ---- Text, links and the shell's single Continue action -----------------
+const values = {
+  scenario: SCENARIO.name,
+  assignedFleet: count(active.filter(vehicle => vehicle.assigned > 0).length),
+  vehicles: count(VEHICLES.length),
+  assigned: count(assignedTotal),
+  visits: count(visitTotal),
+  energy: number(energyTotal),
+  chargeStops: count(chargeTotal),
+  stations: count(stationTotal),
+};
+for (const element of main.querySelectorAll('[data-value]')) element.textContent = values[element.dataset.value] ?? '—';
+const links = { fleet: planLink({ tab: 'fleet' }), stops: planLink({ tab: 'stops' }), chargers: planLink({ chargers: '1' }) };
+for (const anchor of main.querySelectorAll('[data-link]')) anchor.href = links[anchor.dataset.link];
+
+// The shell owns the only Continue link (#continue-plan); only its text is updated.
+function renderResume() {
+  const resume = resumeFrom(readPlanContext());
+  main.querySelector('[data-value="resumeTitle"]').textContent = `${resume.title}:`;
+  main.querySelector('[data-value="resumeContext"]').textContent = resume.context;
+  const continueLink = document.getElementById('continue-plan');
+  if (continueLink) {
+    continueLink.textContent = resume.cta;
+    continueLink.title = resume.context;
+    document.getElementById('continue-plan-description').textContent = resume.context;
+  }
 }
-$('home-loading').hidden = true;
+renderResume();
+addEventListener('pageshow', event => { if (event.persisted) renderResume(); });
+
+// ---- Visualizations ------------------------------------------------------
+// Vehicles without a route open the Plan fleet list instead of an empty selection.
+const vehicleHref = vehicle => esc(vehicle.active ? planLink({ vehicle: vehicle.id }) : links.fleet);
+const mark = (vehicle, style = '') => `data-viz-vehicle="${esc(vehicle.id)}" style="--vehicle-color:${vehicle.color};${style}"`;
+const track = (value, max, extra = '') => `<span class="viz-track" aria-hidden="true">${inScale(value, max)
+  ? `<span class="viz-fill viz-ink" style="width:${value / max * 100}%"></span>` : ''}${extra}</span>`;
+const noRoute = '<small>Sin recorrido</small>';
+
+function gauges() {
+  return `<div class="gauge-grid">${fleet.map(vehicle => {
+    const start = vehicle.initialSoc;
+    // Departure battery mark on the 0–100 % arc.
+    const angle = Math.PI * (1 - (start ?? 0) / 100);
+    const at = radius => [110 + radius * Math.cos(angle), 110 - radius * Math.sin(angle)].map(n => n.toFixed(2));
+    const [x1, y1] = at(81);
+    const [x2, y2] = at(100);
+    const tick = inScale(start, 100) ? `<line class="gauge-initial" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/>` : '';
+    const fill = inScale(vehicle.finalSoc, 100) && vehicle.finalSoc > 0
+      ? `<path class="gauge-fill viz-ink" d="M20 110 A90 90 0 0 1 200 110" pathLength="100" stroke-dasharray="${vehicle.finalSoc} 100"/>` : '';
+    const value = vehicle.finalSoc === null ? '—' : `${number(vehicle.finalSoc)}<small>%</small>`;
+    const facts = vehicle.active
+      ? `<span><strong>${count(vehicle.assigned)}</strong> locales</span><span><strong>${count(vehicle.chargeStops)}</strong> recarga${vehicle.chargeStops === 1 ? '' : 's'}</span>`
+      : '<span>Sin recorrido en este plan</span>';
+    return `<a class="gauge-card${vehicle.active ? '' : ' is-inactive'}" ${mark(vehicle)} href="${vehicleHref(vehicle)}">
+      <span class="gauge-name"><i class="vehicle-dot viz-ink" aria-hidden="true"></i>${esc(vehicle.name)}<span aria-hidden="true">↗</span></span>
+      <span class="gauge-figure"><svg viewBox="0 0 220 138" aria-hidden="true"><path class="gauge-track" d="M20 110 A90 90 0 0 1 200 110"/>${fill}${tick}</svg>
+        <span class="gauge-value"><strong>${value}</strong><span>${vehicle.active ? 'al regreso' : 'sin datos de regreso'}</span></span></span>
+      <span class="gauge-axis" aria-hidden="true"><span>0 %</span><span>100 %</span></span>
+      <span class="gauge-departure"><i class="tick-key" aria-hidden="true"></i>Salida ${percent(start)}</span>
+      ${vehicle.finalSoc !== null && !inScale(vehicle.finalSoc, 100) ? '<span class="scale-note">Valor fuera de escala</span>' : ''}
+      <span class="gauge-facts">${facts}</span></a>`;
+  }).join('')}</div>`;
+}
+
+function assignment() {
+  // The bar is decorative for assistive technology: the legend carries the same links and numbers.
+  const segments = fleet.filter(vehicle => vehicle.assigned > 0).map(vehicle =>
+    `<a class="allocation-segment" tabindex="-1" href="${vehicleHref(vehicle)}" ${mark(vehicle, `width:${vehicle.assignmentShare}%`)}><span class="viz-ink"></span></a>`).join('');
+  const rest = unassigned > 0 ? `<span class="allocation-unassigned" style="width:${ratio(unassigned, visitTotal)}%"></span>` : '';
+  const bar = assignmentValid
+    ? `<div class="allocation-track" aria-hidden="true">${segments}${rest}</div>`
+    : `<p class="chart-empty">${visitTotal === 0 ? 'Este escenario no contiene locales.'
+      : 'Hay locales asignados a más de un vehículo o a recorridos fuera de la flota. El total cuenta locales únicos; revisa los vehículos en el Plan.'}</p>`;
+  const rows = fleet.map(vehicle => `<li><a class="legend-row" ${mark(vehicle)} href="${vehicleHref(vehicle)}">
+    <span class="legend-name"><i class="vehicle-dot viz-ink" aria-hidden="true"></i>${esc(vehicle.name)}</span>
+    <strong>${vehicle.active ? `${count(vehicle.assigned)} <span class="sr-only">locales,</span><small>· ${percent(vehicle.assignmentShare)}</small>` : noRoute}</strong></a></li>`).join('');
+  return `${bar}<ul class="viz-legend">${rows}<li class="legend-row legend-unassigned"><span>Sin asignar</span><strong>${count(unassigned)}</strong></li></ul>`;
+}
+
+function energy() {
+  const rows = fleet.map(vehicle => `<a class="bar-row" ${mark(vehicle)} href="${vehicleHref(vehicle)}">
+    <span class="chart-row-label"><span>${esc(vehicle.name)}</span><strong>${vehicle.active ? `${number(vehicle.energyKwh)} <small>kWh</small>` : noRoute}</strong></span>${track(vehicle.energyKwh, energyMax)}</a>`).join('');
+  const note = energyValid ? ''
+    : energyTotal === null ? 'Consumo no disponible: al menos un recorrido no informa energía.'
+    : 'Los consumos por vehículo no coinciden con el total del plan. Revísalos en el Plan.';
+  return `<div class="energy-chart"><div class="chart-axis" aria-hidden="true"><span>0</span><span>${number(energyMax)} kWh</span></div>${rows}
+    ${note ? `<p class="chart-caption">${note}</p>` : ''}</div>`;
+}
+
+const widgets = { 'soc-gauges': gauges, 'assignment-bar': assignment, 'energy-bars': energy };
+for (const node of main.querySelectorAll('[data-visual]')) node.innerHTML = widgets[node.dataset.visual]?.() || '';
+
+// Cross-highlighting changes chart marks and borders, never text contrast.
+let hovered = null;
+let focused = null;
+const vehicleAt = element => element instanceof Element ? element.closest('[data-viz-vehicle]')?.dataset.vizVehicle || null : null;
+const highlight = () => {
+  const id = hovered || focused;
+  for (const element of main.querySelectorAll('[data-viz-vehicle]')) {
+    element.classList.toggle('is-other', !!id && element.dataset.vizVehicle !== id);
+    element.classList.toggle('is-highlighted', !!id && element.dataset.vizVehicle === id);
+  }
+};
+main.addEventListener('pointerover', event => { hovered = vehicleAt(event.target); highlight(); });
+main.addEventListener('pointerleave', () => { hovered = null; highlight(); });
+main.addEventListener('focusin', event => { focused = vehicleAt(event.target); highlight(); });
+main.addEventListener('focusout', event => { focused = vehicleAt(event.relatedTarget); highlight(); });
+
+// Optional disclosure motion. Honors the OS setting and the shared preference
+// (html[data-reduced-motion], updated live with 'zmd:preferences-changed').
+const osReduced = matchMedia('(prefers-reduced-motion: reduce)');
+const reduceMotion = () => osReduced.matches || document.documentElement.dataset.reducedMotion === 'true';
+const running = new Set();
+const settleMotion = () => { for (const animation of running) animation.finish(); running.clear(); };
+osReduced.addEventListener('change', settleMotion);
+document.addEventListener('zmd:preferences-changed', () => { if (reduceMotion()) settleMotion(); });
+for (const note of main.querySelectorAll('.data-note')) {
+  const detail = note.querySelector('[data-motion-detail]');
+  note.addEventListener('toggle', () => {
+    if (!note.open || !detail?.animate || reduceMotion()) return;
+    const animation = detail.animate(
+      [{ opacity: 0, transform: 'translateY(-3px)' }, { opacity: 1, transform: 'none' }],
+      { duration: 150, easing: 'cubic-bezier(.22, 1, .36, 1)' });
+    running.add(animation);
+    animation.onfinish = animation.oncancel = () => running.delete(animation);
+  });
+}
+main.dataset.visualReady = 'true';

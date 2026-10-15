@@ -12,10 +12,7 @@
 
 body { color:var(--text); background:var(--paper); }
 .topbar { background:#fbfcfe; border-color:#dfe5ed; }
-.brand span { color:#596778; }
-.app-name { color:#566477; border-color:#dfe5ed; }
 .top-actions .icon-button { background:transparent; color:#526275; border-radius:50%; }
-.demo-tag { background:#edf1f7; color:#526274; border-radius:20px; box-shadow:inset 0 0 0 1px #e2e7ef; }
 .sidebar { background:var(--sidebar); border-color:#dbe2eb; }
 .scenario p { color:var(--secondary); }
 .file-tag { color:#58697d; background:#edf1f7; box-shadow:inset 0 0 0 1px #dbe2eb; }

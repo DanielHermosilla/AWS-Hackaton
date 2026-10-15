@@ -1,24 +1,20 @@
 // Design examples only. This module neither solves nor validates an energy model.
+import { validateFixture } from './validate-fixture.js';
+
 let response = await fetch(new URL('../data/fixture.local.json', import.meta.url));
 export const DATA_SOURCE = response.status === 404 ? 'synthetic' : 'local';
 if (DATA_SOURCE === 'synthetic') {
   response = await fetch(new URL('../data/demo.synthetic.json', import.meta.url));
 }
-if (!response.ok) throw new Error(`No se pudo cargar el escenario de demostración (${response.status}).`);
-const fixture = await response.json();
-if (fixture.SCENARIO?.demonstration !== true ||
-    !Array.isArray(fixture.VEHICLES) || !fixture.VEHICLES.length ||
-    !Array.isArray(fixture.NODES) || !fixture.NODES.length ||
-    !Array.isArray(fixture.ROUTES) || !fixture.ROUTES.length) {
-  throw new Error('El escenario de demostración no tiene la estructura esperada.');
-}
+if (!response.ok) throw new Error(`No se pudo cargar el escenario (${response.status}).`);
+const fixture = validateFixture(await response.json());
 if (DATA_SOURCE === 'synthetic' && fixture.SCENARIO.synthetic !== true) {
   throw new Error('El ejemplo de respaldo debe identificarse como sintético.');
 }
 export const { SCENARIO, VEHICLES, NODES, ROUTES } = fixture;
 export const SOURCE_DETAILS = DATA_SOURCE === 'synthetic' ? {
   title: 'Ejemplo sintético',
-  file: 'Demo',
+  file: 'Ejemplo',
   context: 'Ejemplo sintético',
   description: 'Ubicaciones y recorridos inventados para probar la interfaz. No representan el escenario de CASE. ZMD Mobility es la consultora que desarrolla esta experiencia.',
   geometry: 'Los trazados son líneas ilustrativas entre puntos, no rutas viales. Consumo, recarga y batería también son inventados; no son resultados del motor ni una validación energética.',
@@ -34,7 +30,7 @@ export const SOURCE_DETAILS = DATA_SOURCE === 'synthetic' ? {
   geometry: 'Los recorridos siguen calles de OpenStreetMap mediante OSRM, con un orden de visitas preparado para el diseño. Consumo, recarga y batería son ilustrativos: el motor aún no los ha calculado ni validado.',
   stations: 'Estaciones registradas en el escenario público de CASE; disponibilidad sin verificar.',
   summary: 'Datos del escenario público de CASE. Recorridos y batería de ejemplo; disponibilidad de estaciones sin verificar.',
-  route: 'Trazado vial de demostración',
+  route: 'Trazado vial de ejemplo',
   charger: 'Estación registrada',
 };
 export function applyDataProvenance(root = document) {
@@ -46,4 +42,15 @@ export function applyDataProvenance(root = document) {
 }
 export const nodeById = id => NODES.find(node => node.id === id);
 export const routeById = id => ROUTES.find(route => route.vehicleId === id);
+export const routesForNode = id => ROUTES.filter(route => route.stops.some(stop => stop.nodeId === id));
+// Compact location labels shared by pins and rows; not IDs or itinerary positions.
+const visitLabels = new Map(NODES.filter(node => node.type === 'visit')
+  .map((node, index) => [node.id, String(index + 1)]));
+export const visitLabel = id => visitLabels.get(id) || '';
 export const number = (n, digits = 1) => Number.isFinite(n) ? n.toLocaleString('es-CL', {maximumFractionDigits: digits}) : '—';
+// These design fixtures describe assigned visits, not completed deliveries.
+// The motor's eventual served-delivery contract must replace this interpretation.
+export const visitIdsForRoute = route => new Set((route?.stops || [])
+  .map(stop => stop.nodeId).filter(id => nodeById(id)?.type === 'visit'));
+export const deliveryCount = route => visitIdsForRoute(route).size;
+export const chargeCount = route => (route?.stops || []).filter(stop => stop.chargeKwh > 0).length;
