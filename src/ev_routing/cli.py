@@ -42,7 +42,11 @@ def main(argv: list[str] | None = None) -> int:
             args.instance.read_text(encoding="utf-8-sig"),
             object_pairs_hook=_pairs, parse_constant=_invalid_number,
         )
-        instance = ProblemInstance.model_validate(payload)
+        # Match the HTTP boundary: JSON arrays may represent native tuples,
+        # but booleans/strings must not become physical numeric values.
+        instance = ProblemInstance.model_validate_json(
+            json.dumps(payload, allow_nan=False), strict=True,
+        )
         config = SolverConfig(
             solver="scip-routes", time_limit_seconds=args.time_limit_seconds,
             threads=1, seed=0, relative_gap=0,

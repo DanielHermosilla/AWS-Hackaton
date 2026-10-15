@@ -87,3 +87,14 @@ def test_cli_rejects_ambiguous_or_nonfinite_json(tmp_path, text):
     with pytest.raises(SystemExit) as error:
         cli.main(["run", "--instance", str(instance), "--output", str(tmp_path / "result.json")])
     assert error.value.code == 2
+
+
+def test_cli_rejects_boolean_energy_like_the_web(tmp_path, monkeypatch):
+    payload = json.loads((EXAMPLES / "toy_recharge.json").read_text())
+    payload["arcs"][0]["energy_kwh"] = True
+    source = tmp_path / "boolean-energy.json"
+    source.write_text(json.dumps(payload))
+    monkeypatch.setattr(cli, "run_instance", lambda *a, **kw: pytest.fail("solver called"))
+    with pytest.raises(SystemExit) as error:
+        cli.main(["run", "--instance", str(source), "--output", str(tmp_path / "result.json")])
+    assert error.value.code == 2
