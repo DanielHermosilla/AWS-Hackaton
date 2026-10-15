@@ -4,13 +4,14 @@ from pathlib import Path
 
 from pydantic import Field
 
-from ev_routing.contracts import Contract, ModelParameters, SolverConfig
+from ev_routing.contracts import Contract, ModelParameters, Operations, SolverConfig
 
 
 class ProjectConfig(Contract):
     """No contiene configuración LLM: esta rama nunca invoca AWS."""
 
     model: ModelParameters = Field(default_factory=ModelParameters)
+    operations: Operations = Field(default_factory=Operations)
     solver: SolverConfig = Field(default_factory=SolverConfig)
 
 

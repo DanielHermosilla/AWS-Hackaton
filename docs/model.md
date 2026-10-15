@@ -1,10 +1,20 @@
 # Modelo de ruteo eléctrico
 
+**Vigente:** `scip-routes` implementa (25)–(29) del PDF sin H;
+ver [maestro por rutas, pricing y demostraciones](dantzig-wolfe.md).
+El texto siguiente documenta la referencia posicional Pyomo (1)–(24),
+seleccionable explícitamente con `auto`, `gurobi`, `scip` o `gcg`.
+
 La fuente matemática es [`modelamiento.pdf`](../modelamiento.pdf). El módulo
 `src/ev_routing/model.py` implementa sus dominios, ecuaciones (1)–(15) y objetivo
 lexicográfico (16) directamente en Pyomo. No utiliza un TSP sobre una matriz de
 caminos entre clientes: la entrada contiene una **red vial dirigida de tramos
 elementales**, y cada variable `x[i, j, k, r]` selecciona un tramo.
+
+Esto describe la versión base. La [variante opcional entre servicios](service-graph.md)
+reutiliza las ecuaciones sobre otro grafo, con caminos fijos no negativos.
+Allí un movimiento cuenta un traslado entre servicios. No es equivalente a
+la formulación vial con su `H`; su procedencia y certificados lo identifican.
 
 ## Parámetros, conjuntos y representación
 
@@ -62,6 +72,28 @@ restricción de signo. Las energías se expresan en kWh.
 | (14) | `eq14_effective_energy` | Consumo neto efectivo de cada movimiento. |
 | (15) | `eq15_total_energy` | Suma de los consumos efectivos. |
 | (16) | `deliveries_objective`, `energy_objective`, `served_count_constraint` | Dos fases con cumplimiento fijado en la segunda. |
+
+La actualización del PDF incorpora estas extensiones opcionales. La fuente
+editable es `modelamiento.tex`; los detalles de configuración están en
+[operations.md](operations.md).
+
+| Ecuación | Implementación | Significado |
+|---|---|---|
+| (17) | `operations.arc_energy`, `chargers_for` | Margen sobre descargas nominales y estaciones deshabilitadas. |
+| (18) | `eq18_final_reserve` | Reserva adicional solo en el regreso final. |
+| (19) | `station_charge`, `eq19_station_charge_bound`, `eq19_station_charge_sum` | Localizar recarga con variables continuas, sin productos de variables. |
+| (20) | `service_duration`, `charging_duration`, `travel_duration` | Componentes temporales en segundos. |
+| (21) | `route_duration`, `eq21_duration_limit` | Jornada agregada sin relojes, si no hay ventanas. |
+| (22) | `arrival_time`, `activity_start`, `eq22_*` | Relojes y espera cuando se activan ventanas. |
+| (23) | `eq23_window_open`, `eq23_window_close` | Ventanas de entrega completa; grandes M derivados de la jornada. |
+| (24) | Los dos objetivos originales y extensiones activas | Conserva la prioridad lexicográfica. |
+
+Con margen, `e` y `M` se construyen con energía del escenario; `Arc.energy_kwh`
+continúa nominal. El validador y la expansión aplican el mismo escenario una
+sola vez. La extracción publica el calendario más temprano de las mismas
+rutas y recargas; quitar espera sobrante es válido bajo tiempos constantes,
+sin colas, cierres de cargadores ni consumo auxiliar durante esperas.
+Se comprueba independientemente el calendario publicado.
 
 Pasar por un cliente no activa automáticamente `y`: el servicio se decide con
 `a[i,k,r]`. Se permite repetir clientes sin repetir su entrega, así como repetir

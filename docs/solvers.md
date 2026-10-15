@@ -1,7 +1,15 @@
 # Resolución y certificados
 
+El backend predeterminado es **`scip-routes`**, con PySCIPOpt y modelo sin H.
+Incluye pricing/Farkas de recursos continuos, cortes compatibles y reducción
+certificada a DFJ cuando se verifican sus hipótesis. Una llamada Bedrock previa
+es opcional (`adaptive`); los callbacks son locales.
+Ver [formulación, presupuesto y certificados](dantzig-wolfe.md).
+Las secciones Gurobi/SCIP siguientes describen los adaptadores posicionales
+heredados, que solo se ejecutan al seleccionarlos explícitamente.
+
 `solve_instance(instance, config)` construye la formulación de `modelamiento.pdf`
-y resuelve sus dos fases. No utiliza un LLM y no modifica el problema físico.
+y resuelve sus dos fases. El flujo Gurobi/SCIP no utiliza un LLM y no modifica el problema físico.
 El resultado extraído requiere posteriormente la comprobación independiente de
 `validation.py`.
 
@@ -80,3 +88,32 @@ solución, falla o entrega un incumbente peor, se conserva la solución de la
 primera. Una solución retenida todavía debe pasar el validador independiente.
 La optimalidad se refiere únicamente a la instancia, red, modelo energético y
 `movement_limit` configurados.
+
+## Solución inicial opcional
+
+`solve_instance(..., initial_solution=solution)` valida el testigo antes de
+construir el MILP. Gurobi lo recibe con `gurobi_direct` y `warmstart=True`, sin
+fijar variables ni cambiar el problema. El SCIPAMPL actual no admite ese
+arranque y se informa `unsupported`. En ambos casos se conserva el testigo
+si no se encuentra un incumbente mejor, indicando su origen y la terminación
+real de cada fase. Una ruta conservada no implica que el backend funcionó
+ni que se demostró optimalidad. Detalles y certificados de H:
+[docs/heuristics.md](heuristics.md).
+
+## GCG experimental
+
+`solver="gcg"` activa Dantzig–Wolfe del mismo modelo mediante PyGCGOpt.
+Requiere `uv sync --locked --extra dw`; usa GCG 4.0.0/SCIP 10.0.0 con
+PyGCGOpt 1.0.0b0 y PySCIPOpt 6.0.0. No usa SCIPAMPL ni exige el ejecutable
+`.nl` del respaldo de Pyomo. No forma parte del fallback de `auto`.
+
+`solve_instance(..., search_config=SearchConfig(...))` selecciona política
+estándar, determinista o adaptativa con Bedrock. La fuente de ecuaciones sigue
+siendo Pyomo; la integración nativa es necesaria para los callbacks de
+descomposición, pricing y cortes. Los presupuestos, tolerancias y criterios
+de prueba son comunes; el LLM no los modifica.
+
+GCG recibe un arranque validado en variables originales y conserva el testigo
+ante timeout. Sus cotas provienen del problema original, no del LP restringido.
+El benchmark añade supervisión externa de procesos; el `run` individual mantiene
+un presupuesto blando. [Arquitectura, parámetros y comandos](dantzig-wolfe.md).

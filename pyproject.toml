@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "ev-routing-hackathon"
 version = "0.1.0"
-description = "Modelo Pyomo de rutas eléctricas, basado en modelamiento.pdf."
+description = "Rutas eléctricas sin H con SCIP; referencia posicional Pyomo."
 readme = "README.md"
 requires-python = ">=3.12,<3.14"
 dependencies = [
@@ -14,9 +14,18 @@ dependencies = [
   "pandas>=2.2,<3",
   "numpy>=1.26,<3",
   "networkx>=3.4,<4",
+  "scipy>=1.15,<2",
   "gurobipy>=12,<14",
   "osmnx>=2,<3",
   "pyproj>=3.6,<4",
+  "pyscipopt==6.0.0",
+]
+
+[project.optional-dependencies]
+dw = [
+  # PyGCGOpt's extension types must match the documented PySCIPOpt ABI.
+  "pygcgopt==1.0.0b0",
+  "boto3>=1.40,<2",
 ]
 
 [dependency-groups]

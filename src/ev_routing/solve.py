@@ -10,7 +10,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from math import isclose
 from time import monotonic
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import pyomo.environ as pyo
 from pyomo.opt import SolutionStatus, SolverStatus, TerminationCondition
@@ -24,6 +24,11 @@ from ev_routing.contracts import (
     finite_or_none,
 )
 from ev_routing.model import activate_energy_phase, build_model, extract_solution
+from ev_routing.operations import arc_energy
+from ev_routing.validation import validate_solution
+
+if TYPE_CHECKING:
+    from ev_routing.search_policy import SearchConfig
 
 # La fase 2 recibe todo el tiempo restante, incluido el que no usa la fase 1.
 DELIVERY_BUDGET_FRACTION = 0.7
@@ -222,6 +227,121 @@ def _empty_phase(name: str, status: str, termination: str, message: str) -> Phas
     )
 
 
+def _load_initial_values(
+    model: pyo.ConcreteModel, instance: ProblemInstance, solution: Solution
+) -> None:
+    """Dar valores iniciales, nunca fijar variables ni añadir restricciones.
+
+    ``solve_instance`` valida la ruta antes de llegar aquí. Las auxiliares
+    reproducen (11)–(15), incluida saturación, también para otros incumbentes
+    válidos que no provengan de nuestra heurística sin recarga.
+    """
+    for component in (model.y, model.z, model.x, model.a, model.gamma):
+        for variable in component.values():
+            variable.set_value(0)
+    energies = {
+        (a.from_node_id, a.to_node_id): arc_energy(a, instance.operations) for a in instance.arcs
+    }
+    if hasattr(model, "station_charge"):
+        for variable in model.station_charge.values():
+            variable.set_value(0)
+    energies[instance.depot_id, instance.depot_id] = 0.0
+    for customer in solution.served_visit_ids:
+        model.y[customer].set_value(1)
+    for route in solution.routes:
+        k = route.vehicle_id
+        for r, step in enumerate(route.steps):
+            model.z[step.node_id, k, r].set_value(1)
+            model.b[k, r].set_value(step.battery_arrival_kwh)
+            if hasattr(model, "arrival_time"):
+                model.arrival_time[k, r].set_value(step.arrival_seconds)
+            if r == instance.parameters.movement_limit:
+                continue
+            if hasattr(model, "activity_start"):
+                model.activity_start[k, r].set_value(step.service_start_seconds)
+            if hasattr(model, "station_charge") and (step.node_id, k) in model.charging_pairs:
+                model.station_charge[step.node_id, k, r].set_value(step.charged_to_battery_kwh)
+            model.x[step.node_id, step.next_node_id, k, r].set_value(1)
+            for customer in step.delivered_visit_ids:
+                model.a[customer, k, r].set_value(1)
+            model.q[k, r].set_value(step.charged_to_battery_kwh)
+            model.b_departure[k, r].set_value(step.battery_departure_kwh)
+            unsaturated = step.battery_departure_kwh - energies[step.node_id, step.next_node_id]
+            model.u[k, r].set_value(unsaturated)
+            model.gamma[k, r].set_value(int(unsaturated > instance.parameters.battery_capacity_kwh))
+            model.E[k, r].set_value(
+                step.battery_departure_kwh - route.steps[r + 1].battery_arrival_kwh
+            )
+    model.E_total.set_value(solution.net_energy_kwh)
+
+
+def _retain_incumbent(
+    phase: PhaseResult, candidate: Solution | None, initial: Solution, config: SolverConfig
+) -> tuple[PhaseResult, Solution]:
+    """No perder un testigo validado por timeout, backend sin arranque o error."""
+    count_mismatch = (
+        phase.name == "energy" and candidate is not None
+        and len(candidate.served_visit_ids) != len(initial.served_visit_ids)
+    )
+    if count_mismatch:
+        phase.message += "; cambió el número fijado de entregas: se conserva el incumbente"
+        phase.best_bound = None
+        phase.proven_optimal = False
+        candidate = None
+    better = candidate is None or (
+        phase.name == "deliveries"
+        and len(initial.served_visit_ids) > len(candidate.served_visit_ids)
+    ) or (
+        candidate is not None
+        and len(initial.served_visit_ids) == len(candidate.served_visit_ids)
+        and initial.net_energy_kwh < candidate.net_energy_kwh
+    )
+    if not better:
+        return phase, candidate
+    old_incumbent = phase.incumbent
+    old_proof = phase.proven_optimal
+    phase.incumbent = (
+        float(len(initial.served_visit_ids)) if phase.name == "deliveries"
+        else initial.net_energy_kwh
+    )
+    phase.has_solution = True
+    phase.incumbent_source = "provided_incumbent"
+    phase.message += "; se conserva el incumbente proporcionado y validado"
+    contradicted_proof = old_proof and old_incumbent is not None and (
+        (phase.name == "deliveries" and phase.incumbent > old_incumbent + _CERTIFICATE_TOLERANCE)
+        or (phase.name == "energy" and phase.incumbent < old_incumbent - _CERTIFICATE_TOLERANCE)
+    )
+    bound = phase.best_bound
+    if bound is not None and (
+        (phase.name == "deliveries" and bound < phase.incumbent - _CERTIFICATE_TOLERANCE)
+        or (phase.name == "energy" and bound > phase.incumbent + _CERTIFICATE_TOLERANCE)
+    ):
+        phase.best_bound = None
+        phase.message += "; cota incompatible con el incumbente conservado"
+    try:
+        termination = TerminationCondition(phase.termination_condition)
+    except ValueError:
+        termination = TerminationCondition.unknown
+    phase.proven_optimal = _proven_optimal(
+        phase.name, termination, phase.incumbent, phase.best_bound, config.relative_gap
+    )
+    if phase.best_bound is None:
+        # OPTIMAL sin vector/cota no prueba que el testigo externo sea óptimo.
+        # Solo se puede conservar la prueba sin cota de un incumbente nativo
+        # completo cuyo valor objetivo coincide con el que estamos reteniendo.
+        phase.proven_optimal = (
+            phase.proven_optimal and old_proof and old_incumbent is not None
+            and abs(old_incumbent - phase.incumbent) <= _CERTIFICATE_TOLERANCE
+        )
+    if "cota incompatible" in phase.message or contradicted_proof or count_mismatch:
+        phase.proven_optimal = False
+    if contradicted_proof:
+        phase.message += "; certificado anterior incompatible con el incumbente conservado"
+    phase.status = "optimal" if phase.proven_optimal else "feasible"
+    phase.absolute_gap, phase.relative_gap = _gaps(phase.incumbent, phase.best_bound)
+    return phase, initial
+
+
 def _solve_phase(
     model: pyo.ConcreteModel,
     instance: ProblemInstance,
@@ -229,17 +349,29 @@ def _solve_phase(
     backend: _Backend,
     name: str,
     seconds: float,
+    initial_solution: Solution | None = None,
 ) -> tuple[PhaseResult, Solution | None]:
     _set_options(backend, config, seconds)
+    warm_start = "not_requested"
     try:
-        results = backend.solver.solve(model, load_solutions=False, tee=config.tee)
+        kwargs = {"load_solutions": False, "tee": config.tee}
+        if initial_solution is not None:
+            if backend.solver.warm_start_capable():
+                _load_initial_values(model, instance, initial_solution)
+                kwargs["warmstart"] = True
+                warm_start = "submitted"
+            else:
+                warm_start = "unsupported"
+        results = backend.solver.solve(model, **kwargs)
     except Exception as error:
         reason = _unavailable_reason(error, backend.name)
         if reason is not None:
             raise _BackendUnavailable(reason) from error
-        return _empty_phase(
+        failed = _empty_phase(
             name, "error", "error", f"{backend.name}: error de solver ({type(error).__name__})"
-        ), None
+        )
+        failed.warm_start = warm_start
+        return failed, None
     termination = results.solver.termination_condition
     if termination == TerminationCondition.licensingProblems:
         raise _BackendUnavailable(f"{backend.name}: licencia no disponible o no válida")
@@ -260,12 +392,14 @@ def _solve_phase(
                 raise ValueError("objetivo no finito")
             solution = extract_solution(model, instance)
         except (ValueError, TypeError, KeyError, AttributeError) as error:
-            return _empty_phase(
+            failed = _empty_phase(
                 name,
                 "error",
                 str(termination),
                 f"{message}; no se pudo extraer un incumbente completo ({type(error).__name__})",
-            ), None
+            )
+            failed.warm_start = warm_start
+            return failed, None
     if incumbent is not None and bound is not None:
         wrong_direction = (
             bound < incumbent - _CERTIFICATE_TOLERANCE
@@ -291,6 +425,8 @@ def _solve_phase(
         absolute_gap=absolute_gap,
         relative_gap=relative_gap,
         message=message,
+        warm_start=warm_start,
+        incumbent_source="solver" if solution is not None else None,
     ), solution
 
 
@@ -302,6 +438,7 @@ def _run_phase(
     deadline: float,
     backend: _Backend | None,
     fallbacks: list[str],
+    initial_solution: Solution | None = None,
 ) -> tuple[PhaseResult, Solution | None, _Backend | None]:
     started = monotonic()
     while True:
@@ -323,7 +460,9 @@ def _run_phase(
             remaining = deadline - monotonic()
             if remaining <= 0:
                 continue
-            phase, solution = _solve_phase(model, instance, config, backend, name, remaining)
+            phase, solution = _solve_phase(
+                model, instance, config, backend, name, remaining, initial_solution
+            )
             break
         except _BackendUnavailable as error:
             if backend is not None:
@@ -341,11 +480,16 @@ def _run_phase(
             )
             solution = None
             break
+    if initial_solution is not None:
+        phase, solution = _retain_incumbent(phase, solution, initial_solution, config)
     phase.runtime_seconds = max(0.0, monotonic() - started)
     return phase, solution, backend
 
 
-def solve_instance(instance: ProblemInstance, config: SolverConfig) -> SolveResult:
+def solve_instance(
+    instance: ProblemInstance, config: SolverConfig, *, initial_solution: Solution | None = None,
+    search_config: SearchConfig | None = None,
+) -> SolveResult:
     """Resolver (16) en dos fases y conservar el mejor incumbente extraído.
 
     ``auto`` permite fallback Gurobi -> SCIP solo por disponibilidad/licencia.
@@ -353,9 +497,32 @@ def solve_instance(instance: ProblemInstance, config: SolverConfig) -> SolveResu
     El presupuesto total incluye construcción, intentos fallidos y extracción;
     los límites de los backends son blandos y pueden excederse por sobrecostos.
     """
+    if config.solver == "scip-routes":
+        try:
+            from ev_routing.route_solver import solve_routes
+        except ImportError as error:
+            raise RuntimeError("Instalar el backend por rutas con uv sync --extra dw") from error
+        return solve_routes(instance, config, search_config, initial_solution=initial_solution)
+    if config.solver == "gcg":
+        try:
+            from ev_routing.dw import solve_dantzig_wolfe
+            return solve_dantzig_wolfe(
+                instance, config, search_config, initial_solution=initial_solution,
+            )
+        except ImportError as error:
+            raise RuntimeError("Instalar el backend DW con uv sync --extra dw") from error
+    if search_config is not None:
+        raise ValueError("Las políticas de búsqueda requieren solver='scip-routes' o 'gcg'")
     started = monotonic()
+    if initial_solution is not None:
+        report = validate_solution(instance, initial_solution)
+        if not report.feasible:
+            raise ValueError(f"Solución inicial inválida: {report.violations}")
     deadline = started + config.time_limit_seconds
     outcome = SolveResult(requested_solver=config.solver, status="error")
+    if initial_solution is not None:
+        outcome.solution = initial_solution
+        outcome.solution_source = "initial_solution"
     backend = None
     fallbacks: list[str] = []
     try:
@@ -363,13 +530,16 @@ def solve_instance(instance: ProblemInstance, config: SolverConfig) -> SolveResu
         remaining = max(0.0, deadline - monotonic())
         delivery_deadline = monotonic() + DELIVERY_BUDGET_FRACTION * remaining
         first, solution, backend = _run_phase(
-            model, instance, config, "deliveries", delivery_deadline, backend, fallbacks
+            model, instance, config, "deliveries", delivery_deadline, backend, fallbacks,
+            initial_solution,
         )
         if backend is not None:
             outcome.used_solver = backend.name
             outcome.solver_version = backend.version
         outcome.phases.append(first)
         outcome.solution = solution
+        if solution is not None and first.incumbent_source != "provided_incumbent":
+            outcome.solution_source = "solver"
         if solution is None:
             outcome.status = first.status
             outcome.message = first.message
@@ -377,7 +547,8 @@ def solve_instance(instance: ProblemInstance, config: SolverConfig) -> SolveResu
         outcome.status = "feasible"
         activate_energy_phase(model, len(solution.served_visit_ids))
         second, candidate, backend = _run_phase(
-            model, instance, config, "energy", deadline, backend, fallbacks
+            model, instance, config, "energy", deadline, backend, fallbacks,
+            solution if initial_solution is not None else None,
         )
         outcome.phases.append(second)
         if candidate is not None:
@@ -387,6 +558,8 @@ def solve_instance(instance: ProblemInstance, config: SolverConfig) -> SolveResu
                 second.message += "; cambió el número fijado de entregas: se conserva la fase 1"
             elif candidate.net_energy_kwh <= solution.net_energy_kwh:
                 outcome.solution = candidate
+                if second.incumbent_source != "provided_incumbent":
+                    outcome.solution_source = "solver"
             else:
                 second.message += "; se conserva el incumbente de fase 1, de menor energía"
                 if second.proven_optimal and not isclose(
@@ -400,7 +573,7 @@ def solve_instance(instance: ProblemInstance, config: SolverConfig) -> SolveResu
             outcome.message = "Óptimo lexicográfico numérico para el modelo y H configurados."
         elif not first.proven_optimal:
             outcome.message = (
-                "Solución factible del solver; la fase energética está condicionada "
+                "Incumbente factible; la fase energética está condicionada "
                 "al cumplimiento encontrado, sin demostrar el máximo de entregas."
             )
         else:

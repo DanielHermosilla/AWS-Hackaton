@@ -12,6 +12,7 @@ from numbers import Integral
 import pyomo.environ as pyo
 
 from ev_routing.contracts import ProblemInstance, RouteStep, Solution, VehicleRoute
+from ev_routing.operations import arc_energy, schedule_solution, travel_seconds
 
 
 def build_model(instance: ProblemInstance) -> pyo.ConcreteModel:
@@ -19,14 +20,15 @@ def build_model(instance: ProblemInstance) -> pyo.ConcreteModel:
     parameters = instance.parameters
     depot = instance.depot_id
     horizon = parameters.movement_limit
-    arc_energy = {
-        (arc.from_node_id, arc.to_node_id): arc.energy_kwh for arc in instance.arcs
+    energies = {
+        (arc.from_node_id, arc.to_node_id): arc_energy(arc, instance.operations)
+        for arc in instance.arcs
     }
     # El único arco añadido es la permanencia artificial en el depósito.
-    arc_energy[depot, depot] = 0.0
+    energies[depot, depot] = 0.0
     outgoing = {node.node_id: [] for node in instance.nodes}
     incoming = {node.node_id: [] for node in instance.nodes}
-    for origin, destination in arc_energy:
+    for origin, destination in energies:
         outgoing[origin].append(destination)
         incoming[destination].append(origin)
 
@@ -34,7 +36,7 @@ def build_model(instance: ProblemInstance) -> pyo.ConcreteModel:
     model.depot_id = depot
     # Conjuntos del PDF: nodos, arcos, clientes, estaciones y vehículos.
     model.V = pyo.Set(initialize=[node.node_id for node in instance.nodes], ordered=True)
-    model.A = pyo.Set(dimen=2, initialize=list(arc_energy), ordered=True)
+    model.A = pyo.Set(dimen=2, initialize=list(energies), ordered=True)
     model.C = pyo.Set(initialize=instance.customer_ids, within=model.V, ordered=True)
     model.F = pyo.Set(initialize=instance.charger_ids, within=model.V, ordered=True)
     model.K = pyo.Set(initialize=instance.vehicle_ids, ordered=True)
@@ -57,9 +59,9 @@ def build_model(instance: ProblemInstance) -> pyo.ConcreteModel:
     model.initial_energy = pyo.Param(
         initialize=parameters.initial_energy_kwh, within=pyo.PositiveReals
     )
-    model.e = pyo.Param(model.A, initialize=arc_energy, within=pyo.Reals)
+    model.e = pyo.Param(model.A, initialize=energies, within=pyo.Reals)
     model.M = pyo.Param(
-        initialize=parameters.battery_capacity_kwh + max(map(abs, arc_energy.values())),
+        initialize=parameters.battery_capacity_kwh + max(map(abs, energies.values())),
         within=pyo.PositiveReals,
     )
     battery_bounds = (parameters.reserve_kwh, parameters.battery_capacity_kwh)
@@ -187,7 +189,103 @@ def build_model(instance: ProblemInstance) -> pyo.ConcreteModel:
         expr=model.served_count == model.served_count_target
     )
     model.served_count_constraint.deactivate()
+    _add_operations(model, instance)
     return model
+
+
+def _add_operations(model: pyo.ConcreteModel, instance: ProblemInstance) -> None:
+    """(17)–(24) del PDF: construir solo los bloques habilitados."""
+    ops = instance.operations
+    if ops.final_reserve_soc is not None:
+        model.eq18_final_reserve = pyo.Constraint(
+            model.K, rule=lambda m, k: m.b[k, m.H] >= ops.final_reserve_soc * m.B
+        )
+    if not ops.timing_enabled:
+        return
+    times = {
+        (a.from_node_id, a.to_node_id): travel_seconds(a, ops) for a in instance.arcs
+    }
+    times[instance.depot_id, instance.depot_id] = 0.0
+    model.travel_seconds = pyo.Param(model.A, initialize=times)
+    model.service_duration = pyo.Expression(
+        model.K, model.R_moves,
+        rule=lambda m, k, r: sum(ops.service_duration(i) * m.a[i, k, r] for i in m.C),
+    )
+    model.travel_duration = pyo.Expression(
+        model.K, model.R_moves,
+        rule=lambda m, k, r: sum(m.travel_seconds[i, j] * m.x[i, j, k, r] for i, j in m.A),
+    )
+    if ops.include_charging_time:
+        model.charging_pairs = pyo.Set(
+            dimen=2, initialize=[(f, k) for k in model.K for f in model.F_compatible[k]]
+        )
+        model.station_charge = pyo.Var(
+            model.charging_pairs, model.R_moves, domain=pyo.NonNegativeReals,
+        )
+        # (19) Localizar la recarga: no multiplicar q por la binaria z.
+        model.eq19_station_charge_bound = pyo.Constraint(
+            model.charging_pairs, model.R_moves,
+            rule=lambda m, f, k, r: m.station_charge[f, k, r] <= m.B * m.z[f, k, r],
+        )
+        model.eq19_station_charge_sum = pyo.Constraint(
+            model.K, model.R_moves,
+            rule=lambda m, k, r: m.q[k, r] == sum(
+                m.station_charge[f, k, r] for f in m.F_compatible[k]
+            ),
+        )
+    model.charging_duration = pyo.Expression(
+        model.K, model.R_moves,
+        rule=lambda m, k, r: sum(
+            3600 * m.station_charge[f, k, r] / (ops.charging_efficiency * ops.charging_power(f))
+            for f in m.F_compatible[k]
+        ) if ops.include_charging_time else 0,
+    )
+    if not ops.use_customer_time_windows:
+        # (21) Sin ventanas no hacen falta relojes ni binarias adicionales.
+        model.route_duration = pyo.Expression(
+            model.K, rule=lambda m, k: sum(
+                m.travel_duration[k, r] + m.service_duration[k, r] + m.charging_duration[k, r]
+                for r in m.R_moves
+            ),
+        )
+        if ops.max_route_seconds is not None:
+            model.eq21_duration_limit = pyo.Constraint(
+                model.K, rule=lambda m, k: m.route_duration[k] <= ops.max_route_seconds,
+            )
+        return
+    horizon = ops.max_route_seconds  # El contrato exige una cota temporal finita.
+    model.arrival_time = pyo.Var(model.K, model.R, bounds=(0, horizon))
+    model.activity_start = pyo.Var(model.K, model.R_moves, bounds=(0, horizon))
+    model.eq22_initial_time = pyo.Constraint(
+        model.K, rule=lambda m, k: m.arrival_time[k, 0] == 0,
+    )
+    model.eq22_wait = pyo.Constraint(
+        model.K, model.R_moves,
+        rule=lambda m, k, r: m.activity_start[k, r] >= m.arrival_time[k, r],
+    )
+    model.eq22_clock = pyo.Constraint(
+        model.K, model.R_moves,
+        rule=lambda m, k, r: m.arrival_time[k, r + 1] == (
+            m.activity_start[k, r] + m.service_duration[k, r]
+            + m.charging_duration[k, r] + m.travel_duration[k, r]
+        ),
+    )
+    model.window_customers = pyo.Set(initialize=list(ops.customer_time_windows), within=model.C)
+    # (23) M de apertura = L_i; M de cierre = max(0,T-U_i).
+    model.eq23_window_open = pyo.Constraint(
+        model.window_customers, model.K, model.R_moves,
+        rule=lambda m, i, k, r: m.activity_start[k, r]
+        >= ops.customer_time_windows[i].open_seconds * m.a[i, k, r],
+    )
+    model.eq23_window_close = pyo.Constraint(
+        model.window_customers, model.K, model.R_moves,
+        rule=lambda m, i, k, r: m.activity_start[k, r] + ops.service_duration(i) * m.a[i, k, r]
+        <= ops.customer_time_windows[i].close_seconds
+        + max(0, horizon - ops.customer_time_windows[i].close_seconds) * (1 - m.a[i, k, r]),
+    )
+    model.route_duration = pyo.Expression(
+        model.K, rule=lambda m, k: m.arrival_time[k, m.H],
+    )
 
 
 def activate_energy_phase(model: pyo.ConcreteModel, served_count: int) -> None:
@@ -278,9 +376,12 @@ def extract_solution(model: pyo.ConcreteModel, instance: ProblemInstance) -> Sol
                 net_energy_kwh=sum(_number(model.E[vehicle, r]) for r in model.R_moves),
             )
         )
-    return Solution(
+    solution = Solution(
         routes=routes,
         served_visit_ids=served,
         unserved_visit_ids=[customer for customer in instance.customer_ids if customer not in served],
         net_energy_kwh=_number(model.E_total),
     )
+    # La espera sobrante no mejora los objetivos. Se publica el calendario más
+    # temprano de las mismas rutas/recargas; su factibilidad se audita aparte.
+    return schedule_solution(instance, solution)

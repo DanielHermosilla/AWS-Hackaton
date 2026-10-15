@@ -53,4 +53,18 @@ def compute_metrics(
         charging_stops=sum(step.charged_to_battery_kwh > 1e-5 for step in steps),
         minimum_battery_kwh=min(step.battery_arrival_kwh for step in steps),
     )
+    if instance.operations.timing_enabled:
+        durations = {route.vehicle_id: route.duration_seconds for route in solution.routes}
+        result["route_duration_seconds"] = durations
+        result["operational_duration_seconds"] = max(durations.values(), default=0.0)
+        result["total_vehicle_time_seconds"] = sum(durations.values())
+        result["operational_duration_definition"] = (
+            "Tiempo hasta el último retorno (máximo por vehículo), con salida común en t=0."
+        )
+        result["unavailable_reasons"].pop("operational_duration_seconds")
+    if instance.operations.include_charging_time:
+        result["grid_energy_kwh"] = (
+            result["charged_to_battery_kwh"] / instance.operations.charging_efficiency
+        )
+        result["unavailable_reasons"].pop("grid_energy_kwh")
     return result

@@ -110,7 +110,7 @@ def example():
 def fake_solver(monkeypatch, example):
     calls = []
 
-    def execute(instance, config):
+    def execute(instance, config, **options):
         calls.append((instance.model_copy(deep=True), config.model_copy(deep=True)))
         return example.solved.model_copy(deep=True)
 

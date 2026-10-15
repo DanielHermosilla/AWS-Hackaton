@@ -11,7 +11,7 @@ import hashlib
 import json
 from math import asin, cos, isfinite, radians, sin, sqrt
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 import networkx as nx
 from pyproj import CRS
@@ -19,6 +19,20 @@ from pyproj import CRS
 from ev_routing.contracts import Arc, ModelParameters, Node, ProblemInstance
 from ev_routing.energy import file_sha256
 from ev_routing.inputs import load_instance, save_instance, validate_routing_nodes
+
+# OSMnx "drive" excluye calles de servicio; "drive_service" también excluye
+# parking_aisle. Los cargadores/locales pueden requerir esos accesos. Este
+# filtro incluye vías motorizadas y de servicio sin admitir etiquetas
+# explícitas de acceso privado, prohibido o exclusivo de emergencias.
+# No verifica permisos condicionales, barreras o cierres actuales.
+DELIVERY_NETWORK_FILTER = (
+    '["highway"~"^(motorway|motorway_link|trunk|trunk_link|primary|primary_link|'
+    "secondary|secondary_link|tertiary|tertiary_link|unclassified|residential|"
+    'living_street|service)$"]'
+    '["area"!~"yes"]["access"!~"private|no"]'
+    '["motor_vehicle"!~"no|private"]["motorcar"!~"no|private"]'
+    '["service"!~"emergency_access|private"]'
+)
 
 
 def haversine_m(first: tuple[float, float], second: tuple[float, float]) -> float:
@@ -242,6 +256,7 @@ def build_osm_instance(
     *,
     graphml_path: str | Path,
     allow_download: bool = False,
+    network_profile: Literal["drive", "delivery"] = "drive",
     bbox: tuple[float, float, float, float] | None = None,
     bbox_padding_m: float = 1500.0,
     max_snap_distance_m: float = 100.0,
@@ -252,8 +267,12 @@ def build_osm_instance(
     bbox usa (west, south, east, north), como OSMnx 2. El GraphML existente
     siempre se reutiliza; un bbox distinto no sobrescribe ni cambia esa caché.
     La descarga utiliza simplify=False para conservar los tramos viales.
+    delivery añade calles de servicio y pasillos de estacionamiento. Su caché
+    debe acreditar el mismo perfil/filtro; no reutilizar una antigua red drive.
     """
     validate_routing_nodes(nodes)
+    if network_profile not in {"drive", "delivery"}:
+        raise ValueError("network_profile debe ser drive o delivery")
     path = Path(graphml_path)
     if not path.exists() and not allow_download:
         raise FileNotFoundError(
@@ -265,6 +284,20 @@ def build_osm_instance(
     requested_bbox = bbox
     if path.exists():
         graph = ox.load_graphml(path)
+        recorded_profile = graph.graph.get("ev_routing_network_profile")
+        if (
+            recorded_profile is not None and recorded_profile != network_profile
+        ) or (
+            network_profile == "delivery"
+            and (
+                recorded_profile != "delivery"
+                or graph.graph.get("ev_routing_custom_filter") != DELIVERY_NETWORK_FILTER
+            )
+        ):
+            raise ValueError(
+                f"{path}: la caché no acredita el perfil {network_profile!r} solicitado; "
+                "usar otro archivo GraphML o el perfil con que se creó"
+            )
     else:
         if bbox is None:
             if not isfinite(bbox_padding_m) or bbox_padding_m <= 0:
@@ -286,11 +319,22 @@ def build_osm_instance(
         original_cache_folder = ox.settings.cache_folder
         try:
             ox.settings.cache_folder = path.parent / "osm_http_cache"
+            # custom_filter cambia las vías incluidas, no convierte calles
+            # en bidireccionales: se conserva su sentido de circulación.
+            options = {"network_type": "drive"}
+            if network_profile == "delivery":
+                options = {
+                    "network_type": "drive_service",
+                    "custom_filter": DELIVERY_NETWORK_FILTER,
+                }
             graph = ox.graph_from_bbox(
-                bbox, network_type="drive", simplify=False, retain_all=True, truncate_by_edge=True
+                bbox, **options, simplify=False, retain_all=True, truncate_by_edge=True
             )
         finally:
             ox.settings.cache_folder = original_cache_folder
+        graph.graph["ev_routing_network_profile"] = network_profile
+        if network_profile == "delivery":
+            graph.graph["ev_routing_custom_filter"] = DELIVERY_NETWORK_FILTER
         ox.save_graphml(graph, filepath=path)
         downloaded = True
     return build_instance_from_graph(
@@ -300,6 +344,10 @@ def build_osm_instance(
             "graphml_path": str(path.resolve()),
             "graphml_sha256": file_sha256(path),
             "graphml_downloaded_this_run": downloaded,
+            "requested_network_profile": network_profile,
+            # Un GraphML externo/antiguo sin etiqueta no acredita su filtro.
+            "graphml_network_profile": graph.graph.get("ev_routing_network_profile"),
+            "graphml_custom_filter": graph.graph.get("ev_routing_custom_filter"),
             "download_bbox": list(bbox) if downloaded else None,
             "requested_bbox": list(requested_bbox) if requested_bbox is not None else None,
             "osm_attribution": "© OpenStreetMap contributors (ODbL)",

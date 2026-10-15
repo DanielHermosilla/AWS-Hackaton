@@ -1,9 +1,15 @@
-# Tuning futuro, no integrado en esta rama
+# Control de búsqueda mediante Bedrock
 
-- No conectar AWS, cargar credenciales ni hacer llamadas a un LLM en esta fase.
-- `tuning.py` define dónde preparar el perfil y solicitar una propuesta futura.
-- La integración futura deberá usar Bedrock de la cuenta AWS asignada y
+- El usuario autorizó la política adaptativa de la variante Dantzig–Wolfe.
+  Centralizar llamadas reales en `bedrock.py`, con credenciales estándar,
+  timeout, presupuesto de llamadas y registro de uso sin secretos.
+- La integración debe usar Bedrock de la cuenta AWS asignada y
   reutilizar material de LLM4MIP con licencia/procedencia documentadas.
 - Mantener inalterados la instancia, formulación, presupuesto y certificación.
-- Una futura respuesta será JSON validado contra opciones reales del solver.
+- Cada respuesta será JSON validado contra acciones implementadas del solver.
   Nunca ejecutar código generado ni aplicar parámetros desconocidos.
+- En el maestro sin H, usar `RoutePolicy`: una llamada antes de ambas fases,
+  ninguna llamada remota por nodo, corte o ronda de pricing.
+- El LLM puede elegir descomposiciones verificadas y políticas de cortes/pricing.
+  No puede declarar infactibilidad, optimalidad ni ausencia de columnas.
+- Los tests habituales usan dobles; identificar aparte la prueba real de AWS.

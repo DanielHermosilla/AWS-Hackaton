@@ -15,7 +15,7 @@ def test_default_scenario_and_solver_selection_are_explicit():
     assert config.model.initial_energy_kwh == pytest.approx(
         0.6 * config.model.battery_capacity_kwh
     )
-    assert config.solver.solver == "auto"
+    assert config.solver.solver == "scip-routes"
     assert config.solver.relative_gap == 0
     assert "llm" not in config.model_dump()
 

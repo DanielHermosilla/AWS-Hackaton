@@ -8,7 +8,7 @@
     "vehicle_connector_types": ["J1772", "CHAdeMO"]
   },
   "solver": {
-    "solver": "auto",
+    "solver": "scip-routes",
     "time_limit_seconds": 60.0,
     "relative_gap": 0.0,
     "threads": 1,

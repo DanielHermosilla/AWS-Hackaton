@@ -6,11 +6,11 @@ Queremos ayudar a un operador a planificar entregas sin quedarse sin batería: c
 
 El escenario del desafío considera dos Nissan Leaf 2013 con un 60 % de carga inicial. Las entradas actuales contienen un depósito, 20 locales y 60 cargadores. El mismo código deberá aceptar nuevas instancias y flotas parametrizadas.
 
-**Estado de la rama `modelamiento`:** flujo ejecutable por CLI, desde CSV y red vial hasta Pyomo, solver, verificación independiente y JSON. **Gurobi es la primera opción; SCIP es el respaldo si Gurobi no está disponible o su licencia no permite resolver la instancia.** El LLM y la UI corresponden a etapas posteriores.
+**Estado de la rama `modelamiento`:** flujo CLI con maestro por rutas **sin H** y SCIP/PySCIPOpt, verificación independiente y JSON. La política adaptativa consulta Bedrock una vez antes de ambas fases. Pyomo/Gurobi/SCIP y GCG posicional se conservan como referencias explícitas. La UI queda pendiente.
 
 ## Nuestro modelamiento
 
-**La formulación implementada está en [modelamiento.pdf](modelamiento.pdf).** Es un modelo de programación lineal entera mixta (MILP) sobre una **red vial dirigida**, cuyas decisiones incluyen las calles recorridas, las entregas realizadas y la energía recargada. [docs/model.md](docs/model.md) relaciona cada ecuación con su componente Pyomo.
+**La formulación está en [modelamiento.pdf](modelamiento.pdf).** Las ecuaciones (25)–(29) describen el maestro vigente sin H; (1)–(24) documentan la referencia Pyomo. Ambos conservan calles, servicio y recursos físicos. [docs/dantzig-wolfe.md](docs/dantzig-wolfe.md) explica la equivalencia y los límites de los certificados.
 
 Su objetivo es lexicográfico:
 
@@ -25,7 +25,7 @@ El modelo:
 - Exige salida y regreso al depósito, continuidad del recorrido y batería dentro de su capacidad y reserva.
 - Permite repetir calles, intersecciones y cargadores, pero atender cada cliente como máximo una vez. Pasar por un cliente no implica realizar su entrega.
 - Decide recargas parciales en estaciones compatibles y representa la regeneración, incluyendo la energía que no puede almacenarse cuando la batería está llena.
-- Usa `H` como cota del número de movimientos, no como duración de jornada. Esa cota limita el alcance del certificado de optimalidad.
+- El backend predeterminado `scip-routes` no usa H ni limita visitas a cargadores. El H de snapshots antiguos solo afecta a los backends posicionales heredados.
 - Supone consumos deterministas y tramos viales elementales. La versión base no incluye carga en el depósito, jornada, tiempos de servicio, capacidad de paquetes ni colas.
 
 Los nodos de los CSV no constituyen por sí solos la red de calles. El comando `prepare` utiliza un GraphML de OSMnx o descarga una red dirigida sin simplificar, solo cuando se solicita. Integra eVED con intervalos reales por vehículo/viaje y obtiene una referencia descriptiva de kWh/km. Este estimador inicial **no es un predictor validado del consumo futuro** y no produce regeneración en los arcos OSM; el modelo sí admite consumos firmados y saturación en instancias JSON.
@@ -50,24 +50,105 @@ Preparar los datos locales, conservando los originales:
 ```bash
 uv run ev-routing prepare \
   --nodes data/competition_routing_nodes.csv \
-  --graphml artifacts/network/ann_arbor.graphml \
+  --graphml artifacts/network/competition_delivery.graphml \
   --download-network \
+  --network-profile delivery \
   --eved data/eVED_EV.csv \
   --energy-cache artifacts/energy/eved-summary.json \
   --config config/default.json \
   --output artifacts/instances/competition.json
-
-uv run ev-routing run \
-  --instance artifacts/instances/competition.json \
-  --config config/default.json \
-  --output artifacts/results/competition.json
 ```
 
 Si el GraphML ya existe, se reutiliza sin descargar ni reemplazarlo. Omitir `--download-network` exige una red local. `--energy-rate 0.16` permite usar un coeficiente explícitamente supuesto en lugar de `--eved`. `--visit-id ID`, repetible, y `--charger-id ID` o `--no-chargers` permiten ensayos con subconjuntos; esa selección queda registrada.
 
-**Antes de interpretar una corrida real**, revisar `config/default.json`: 24 kWh útiles, reserva de 2.4 kWh y `movement_limit=30` son supuestos de ejemplo, no requisitos acreditados por la hackatón. En una red vial grande, 30 movimientos pueden excluir muchas entregas; aumentar `H` también aumenta el MILP. El grafo conserva intersecciones y tramos, y añade accesos bidireccionales cortos desde los servicios: su factibilidad vehicular es un supuesto registrado. El importador rechaza accesos mayores que `--max-snap-distance-m` (100 m por defecto) y registra servicios sin retorno vial.
+Para las ubicaciones de la hackatón usamos `--network-profile delivery`: incluye
+calles de servicio y pasillos de estacionamiento, conservando los sentidos de
+circulación y excluyendo etiquetas de acceso privado/prohibido y de emergencias.
+El perfil `drive` original omitía accesos necesarios y dejaba siete puntos fuera
+del umbral de 100 m. No reutilizar `competition_full.graphml` como si tuviera el
+nuevo perfil: la caché y el filtro quedan identificados y se valida su coincidencia.
+La proximidad a la red sigue siendo un supuesto de acceso, no una verificación
+de barreras, permisos condicionales ni cierres actuales.
+
+Para preparar con logs y errores visibles, ejecutar
+`bash scripts/prepare_hackathon.sh config/default.json`.
+El script solo prepara: revisar el tamaño antes de lanzar el MILP.
+Ejecutar los scripts mediante `bash archivo.sh`, no pegando su contenido ni con
+`source`: `set -e` dentro de una shell interactiva puede terminarla ante un error.
+Si falla la validación de accesos, revisar la ubicación y su conexión vial;
+ampliar `MAX_SNAP_DISTANCE_M` admite accesos supuestos más largos y cambia ese
+supuesto del problema.
+
+**Antes de interpretar una corrida real**, revisar `config/default.json`: 24 kWh útiles y reserva de 2.4 kWh son supuestos de ejemplo, no requisitos acreditados por la hackatón. `movement_limit` es heredado y no restringe `scip-routes`. El grafo conserva intersecciones y tramos, y añade accesos cortos a servicios bajo un supuesto registrado. El importador rechaza accesos mayores que `--max-snap-distance-m` (100 m por defecto) y registra servicios sin retorno vial.
 
 `run` utiliza los parámetros físicos guardados en la instancia; de `--config` solo toma la sección `solver`. Así no cambia el problema después de prepararlo. La salida incluye rutas completas, energía, recargas, entregas pendientes, cotas/gaps por fase, tiempos, procedencia y comprobación de factibilidad. Sin referencia de comparación, los ahorros de tiempo y CO2e quedan en `null`.
+
+### Probar los 20 locales y 60 cargadores completos
+
+Para una primera ejecución en un portátil, incorporamos una **variante opcional
+sobre las 81 ubicaciones de servicio**, conectadas mediante caminos viales
+de mínima energía precalculados con Dijkstra de SciPy. Se adapta únicamente el
+preprocesamiento de `codex/optimizacion-contraida`; el modelo de optimización
+es nuestro maestro por rutas sin H. El solver recibe depósito,
+clientes y cargadores, y la validación recupera las calles de cada conexión.
+Conserva los dos vehículos y las restricciones de batería.
+La optimalidad corresponde a los caminos fijos disponibles, sin límite de traslados.
+
+```bash
+# Solo si todavía no está preparada la instancia vial:
+bash scripts/prepare_hackathon.sh config/default.json
+
+# 120 segundos de presupuesto del solver; sin H:
+bash scripts/run_pptx.sh 120
+```
+
+El JSON queda en `artifacts/hackathon/service-result.json` y el log en
+`artifacts/hackathon/service-solve.log`. Cada resultado se expande y comprueba
+calle por calle. Solo se admite energía no negativa; no se oculta regeneración
+sumándola dentro de caminos. Ver [alcance, comandos y lectura del resultado](docs/service-graph.md),
+incluida la distinción entre factibilidad física y cumplimiento del `H` vial original.
+
+Si se verifica que una ruta completa cabe en la batería inicial y la matriz
+es métrica no negativa sin restricciones temporales, se aplica una reducción
+exacta a tour con cortes DFJ. Los demás casos usan pricing con recursos continuos.
+Ver [formulación y certificados](docs/dantzig-wolfe.md). El análisis de
+[H y arranques posicionales](docs/heuristics.md) es una referencia heredada.
+
+### Supuestos operacionales opcionales
+
+El PDF actualizado conserva la base y añade las ecuaciones (17)–(24).
+`operations` permite configurar duración de entregas, jornada, tiempo y
+eficiencia de recarga, reserva al regresar, margen energético, cargadores
+deshabilitados y ventanas horarias. Sus valores neutros conservan la base.
+La fuente editable es [modelamiento.tex](modelamiento.tex).
+
+Con la red vial ya preparada:
+
+```bash
+  bash scripts/run_pptx.sh 60 none config/operations.example.json
+```
+
+Los parámetros del ejemplo son **supuestos ilustrativos**: 5 minutos por
+entrega, jornada de 4 horas, velocidad constante de 30 km/h donde falta tiempo,
+potencia efectiva de 3 kW, eficiencia 90 %, reserva final 15 % y margen de
+consumo 10 %. No provienen del PPTX ni acreditan características de los cargadores.
+Las ventanas quedan desactivadas hasta introducir horarios del cliente.
+
+La jornada y reserva final adicional se representan en las rutas factibles,
+sin elegir H. Pueden impedir la reducción a un solo tour y requerir pricing.
+Los caminos permanecen fijos; las restricciones temporales no habilitan
+automáticamente caminos alternativos más rápidos.
+
+Para reutilizar caminos generados con esta versión, sin ejecutar Dijkstra:
+
+```bash
+HACKATHON_REUSE_SERVICE_GRAPH=1 \
+  bash scripts/run_pptx.sh 60 none config/operations.example.json
+```
+
+Al actualizar desde contratos antiguos, regenerar una vez los artefactos:
+las nuevas opciones forman parte del hash. Ver [todos los parámetros,
+validaciones y comandos para conservar el baseline](docs/operations.md).
 
 ## Pruebas
 
@@ -82,11 +163,37 @@ Las pruebas habituales no descargan mapas ni llaman a AWS. Incluyen integración
 
 Resultados medidos y alcance de los ensayos: [docs/validation.md](docs/validation.md).
 
-## Próxima etapa: tuning mediante AWS
+## Dantzig–Wolfe y LLM mediante AWS
 
-El flujo actual es **datos → instancia → Pyomo → Gurobi/SCIP → verificación → JSON**, sin llamadas a LLM. `llm/tuning.py` documenta el punto de integración y genera un perfil local; `propose_tuning` permanece desactivado.
+`--solver scip-routes` utiliza un maestro por rutas sin H y pricing continuo.
+El LLM toma una decisión estratégica antes de ambas fases: cortes compatibles,
+lotes y branching. Los callbacks de pricing son locales. El motor conserva
+control de los certificados y el checker valida toda la física.
 
-Posteriormente adaptaremos el análisis estructural de [LLM4MIP](https://llm4mip.github.io/) para proponer opciones del solver mediante **Amazon Bedrock y un modelo habilitado para la cuenta, región y plan/créditos AWS de la hackatón**. El LLM no cambiará datos, restricciones, objetivos ni tolerancias. Las propuestas se validarán contra una lista de opciones permitidas y se compararán con la configuración estándar bajo iguales recursos y presupuesto. La futura UI en Streamlit consumirá el mismo backend.
+```bash
+uv sync --locked --extra dw
+# Ejemplo probado con el perfil hackathon; se puede indicar otro modelo:
+export BEDROCK_MODEL_ID='us.amazon.nova-micro-v1:0'
+bash scripts/benchmark_dw.sh \
+  --instance examples/toy_recharge.json \
+  --bedrock-model "$BEDROCK_MODEL_ID" \
+  --aws-region us-east-1 --aws-profile hackathon \
+  --time-limit-seconds 60 --threads 1 --seeds 0 \
+  --output-dir artifacts/benchmark-dw-toy
+```
+
+Ejecuta las tres políticas en procesos separados y genera `summary.csv`,
+`summary.json`, manifiesto, resultados y logs. `us-east-1` y `hackathon` son
+valores iniciales configurables; no se fija un modelo ni se guardan credenciales.
+Ejecutar el `export` en la misma terminal antes del benchmark. También se puede
+pasar el identificador directamente: `--bedrock-model us.amazon.nova-micro-v1:0`.
+Para los servicios del concurso hay que añadir red original, archivo de caminos
+y, opcionalmente, el arranque compartido.
+
+Ver [comando completo, políticas, callbacks y límites](docs/dantzig-wolfe.md)
+y [procedencia de la adaptación de LLM4MIP](docs/llm4mip-adaptation.md).
+El adaptador Gurobi/SCIP y el antiguo `llm/tuning.py::propose_tuning` permanecen
+sin llamadas a AWS.
 
 Priorizamos código simple, modular y bibliotecas existentes. [STRUCTURE.md](STRUCTURE.md) explica brevemente cada archivo y sus funciones. Los equipos trabajan en ramas y worktrees separados; la integración objetivo del proyecto es `master`.
 

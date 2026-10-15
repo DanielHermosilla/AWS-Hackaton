@@ -9,10 +9,12 @@ from __future__ import annotations
 from math import isclose, isfinite
 
 from ev_routing.contracts import ProblemInstance, Solution, ValidationReport
+from ev_routing.operations import arc_energy, travel_seconds
 
 
 def validate_solution(
-    instance: ProblemInstance, solution: Solution, *, tolerance: float = 1e-5
+    instance: ProblemInstance, solution: Solution, *, tolerance: float = 1e-5,
+    enforce_movement_limit: bool = True,
 ) -> ValidationReport:
     """Reproducir (1)–(15) del PDF desde las rutas y las energías originales.
 
@@ -41,8 +43,10 @@ def validate_solution(
     depot = instance.depot_id
     node_ids = {node.node_id for node in instance.nodes}
     customers = set(instance.customer_ids)
-    arc_energy = {(a.from_node_id, a.to_node_id): a.energy_kwh for a in instance.arcs}
-    arc_energy[depot, depot] = 0.0  # Arco ficticio de permanencia del PDF.
+    energies = {
+        (a.from_node_id, a.to_node_id): arc_energy(a, instance.operations) for a in instance.arcs
+    }
+    energies[depot, depot] = 0.0  # Arco ficticio de permanencia del PDF.
     seen_deliveries: list[str] = []
     effective_total = 0.0
     vehicle_ids = [route.vehicle_id for route in solution.routes]
@@ -56,7 +60,7 @@ def validate_solution(
             continue
         steps = route.steps
         compatible = set(instance.chargers_for(label))
-        if len(steps) != params.movement_limit + 1:
+        if enforce_movement_limit and len(steps) != params.movement_limit + 1:
             fail("topology", f"{label}: se requieren H+1 posiciones")
         if not steps:
             fail("topology", f"{label}: ruta vacía")
@@ -111,10 +115,10 @@ def validate_solution(
             if step.next_node_id != following.node_id:
                 fail("topology", f"{prefix}: next_node_id no coincide con la ruta")
             pair = (step.node_id, following.node_id)
-            if pair not in arc_energy:
+            if pair not in energies:
                 fail("topology", f"{prefix}: arco no permitido {pair}")
                 continue
-            predicted = arc_energy[pair]
+            predicted = energies[pair]
             # La recuperación que excede B se pierde: nunca aumenta la batería
             # sobre su capacidad ni reduce artificialmente el consumo informado.
             expected_arrival = min(capacity, departure - predicted)
@@ -138,6 +142,13 @@ def validate_solution(
         if not equal(route_energy, initial + route_charge - steps[-1].battery_arrival_kwh):
             fail("energy", f"{label}: balance energético global incorrecto")
         effective_total += route_energy
+        if instance.operations.final_reserve_soc is not None:
+            if steps[-1].battery_arrival_kwh < capacity * instance.operations.final_reserve_soc - tolerance:
+                fail("battery", f"{label}: reserva final insuficiente")
+        if instance.operations.timing_enabled:
+            checks.setdefault("time", True)
+            for message in _time_violations(instance, route, tolerance):
+                fail("time", f"{label}: {message}")
 
     if len(seen_deliveries) != len(set(seen_deliveries)):
         fail("deliveries", "Una entrega se contabilizó más de una vez")
@@ -148,3 +159,69 @@ def validate_solution(
     if not equal(solution.net_energy_kwh, effective_total):
         fail("energy", "El consumo total reportado no coincide con las rutas")
     return ValidationReport(feasible=not violations, violations=violations, checks=checks)
+
+
+def _time_violations(instance, route, tolerance):
+    """Reproducir el calendario publicado sin consultar Pyomo ni reconstruirlo."""
+    ops = instance.operations
+    arcs = {(a.from_node_id, a.to_node_id): a for a in instance.arcs}
+    expected_arrival = 0.0
+    for step in route.steps:
+        values = (
+            step.arrival_seconds, step.service_start_seconds, step.departure_seconds,
+            step.service_duration_seconds, step.charging_duration_seconds,
+        )
+        if any(v is None or not isfinite(v) or v < -tolerance for v in values):
+            yield f"posición {step.position}: calendario ausente o inválido"
+            return
+        arrival, start, departure, service, charge = values
+        if not isclose(arrival, expected_arrival, abs_tol=tolerance, rel_tol=1e-8):
+            yield f"posición {step.position}: llegada no coincide con salida y viaje previos"
+        if start < arrival - tolerance:
+            yield f"posición {step.position}: actividad anterior a la llegada"
+        expected_service = sum(ops.service_duration(i) for i in step.delivered_visit_ids)
+        expected_charge = 0.0
+        if ops.include_charging_time and step.charged_to_battery_kwh > 0:
+            power = ops.charging_power(step.node_id)
+            if power is None:
+                yield f"posición {step.position}: recarga sin potencia configurada"
+                return
+            expected_charge = 3600 * step.charged_to_battery_kwh / (power * ops.charging_efficiency)
+        for value, expected, label in (
+            (service, expected_service, "servicio"),
+            (charge, expected_charge, "recarga"),
+            (departure, start + expected_service + expected_charge, "salida"),
+        ):
+            if not isclose(value, expected, abs_tol=tolerance, rel_tol=1e-8):
+                yield f"posición {step.position}: duración/hora de {label} incorrecta"
+        if ops.use_customer_time_windows:
+            for customer in step.delivered_visit_ids:
+                window = ops.customer_time_windows.get(customer)
+                if window and (
+                    start < window.open_seconds - tolerance
+                    or start + expected_service > window.close_seconds + tolerance
+                ):
+                    yield f"{customer}: entrega fuera de ventana horaria"
+        if step.next_node_id is None:
+            if step.travel_time_seconds is not None:
+                yield "posición terminal con tiempo de viaje"
+            expected_arrival = arrival
+            continue
+        pair = step.node_id, step.next_node_id
+        if pair == (instance.depot_id, instance.depot_id):
+            travel = 0.0
+        elif pair in arcs:
+            travel = travel_seconds(arcs[pair], ops)
+        else:
+            continue  # La auditoría topológica ya informa este error.
+        if step.travel_time_seconds is None or not isclose(
+            step.travel_time_seconds, travel, abs_tol=tolerance, rel_tol=1e-8
+        ):
+            yield f"posición {step.position}: tiempo de viaje incorrecto"
+        expected_arrival = departure + travel
+    if route.duration_seconds is None or not isclose(
+        route.duration_seconds, expected_arrival, abs_tol=tolerance, rel_tol=1e-8
+    ):
+        yield "duración total incorrecta o ausente"
+    if ops.max_route_seconds is not None and expected_arrival > ops.max_route_seconds + tolerance:
+        yield "se supera max_route_seconds"

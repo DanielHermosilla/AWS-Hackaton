@@ -270,7 +270,7 @@ def test_model_build_time_is_charged_to_total_budget(instance, harness, monkeypa
 def test_auto_falls_back_on_missing_backend(instance, harness):
     harness.scripts["gurobi"] = solve._BackendUnavailable("gurobi: no disponible")
     harness.scripts["scip"] = [Reply(count=2, bound=2), Reply(count=2, energy=3, bound=3)]
-    result = solve.solve_instance(instance, SolverConfig())
+    result = solve.solve_instance(instance, SolverConfig(solver="auto"))
     assert result.used_solver == "scip" and result.lexicographic_optimal
     assert result.fallback_reason == "gurobi: no disponible"
     assert harness.requests == ["gurobi", "scip"]
@@ -282,7 +282,7 @@ def test_license_failure_in_actual_attempt_falls_back_without_resetting_budget(
 ):
     harness.scripts["gurobi"] = [Reply(error=LicenseError(errno), elapsed=4)]
     harness.scripts["scip"] = [Reply(count=2, bound=2, elapsed=2), Reply(energy=3, bound=3)]
-    result = solve.solve_instance(instance, SolverConfig(time_limit_seconds=100))
+    result = solve.solve_instance(instance, SolverConfig(solver="auto", time_limit_seconds=100))
     assert result.used_solver == "scip"
     assert result.fallback_reason and "licencia" in result.fallback_reason
     assert "sensitive" not in result.model_dump_json()
@@ -295,7 +295,7 @@ def test_license_failure_in_actual_attempt_falls_back_without_resetting_budget(
 def test_license_size_failure_in_second_phase_preserves_delivery_certificate(instance, harness):
     harness.scripts["gurobi"] = [Reply(count=2, bound=2), Reply(error=LicenseError(10010))]
     harness.scripts["scip"] = [Reply(count=2, energy=3, bound=3)]
-    result = solve.solve_instance(instance, SolverConfig())
+    result = solve.solve_instance(instance, SolverConfig(solver="auto"))
     assert result.used_solver == "scip" and result.lexicographic_optimal
     assert "gurobi" in result.phases[0].message
     assert "scip" in result.phases[1].message
@@ -305,7 +305,7 @@ def test_license_size_failure_in_second_phase_preserves_delivery_certificate(ins
 def test_failed_second_phase_fallback_retains_first_backend_provenance(instance, harness):
     harness.scripts["gurobi"] = [Reply(count=2, bound=2), Reply(error=LicenseError(10010))]
     harness.scripts["scip"] = solve._BackendUnavailable("scip: no disponible")
-    result = solve.solve_instance(instance, SolverConfig())
+    result = solve.solve_instance(instance, SolverConfig(solver="auto"))
     assert result.solution is not None and result.status == "feasible"
     assert result.used_solver == "gurobi" and result.solver_version == "test.1"
     assert result.phases[1].status == "unavailable"
@@ -333,7 +333,7 @@ def test_explicit_solver_does_not_fall_back(instance, harness):
 )
 def test_model_failure_never_triggers_fallback(instance, harness, termination, status):
     harness.scripts["gurobi"] = [Reply(count=None, bound=None, termination=termination)]
-    result = solve.solve_instance(instance, SolverConfig())
+    result = solve.solve_instance(instance, SolverConfig(solver="auto"))
     assert result.status == status and result.solution is None
     assert result.fallback_reason is None
     assert harness.requests == ["gurobi"]
@@ -395,7 +395,7 @@ def test_inconsistent_bound_cannot_certify_optimality(instance, harness):
 def test_both_backends_unavailable_produces_structured_result(instance, harness):
     harness.scripts["gurobi"] = solve._BackendUnavailable("gurobi: no disponible")
     harness.scripts["scip"] = solve._BackendUnavailable("scip: no disponible")
-    result = solve.solve_instance(instance, SolverConfig())
+    result = solve.solve_instance(instance, SolverConfig(solver="auto"))
     assert result.status == "unavailable"
     assert result.used_solver is None
     assert result.fallback_reason == "gurobi: no disponible"

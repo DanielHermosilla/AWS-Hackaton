@@ -11,8 +11,15 @@ from typing import Any
 from uuid import uuid4
 
 from ev_routing import __version__
-from ev_routing.contracts import ProblemInstance, SolverConfig
+from ev_routing.contracts import ProblemInstance, Solution, SolverConfig
 from ev_routing.metrics import compute_metrics
+from ev_routing.search_policy import SearchConfig
+from ev_routing.service_graph import (
+    REPRESENTATION,
+    PathArchive,
+    check_service_context,
+    expand_and_validate,
+)
 from ev_routing.solve import solve_instance
 from ev_routing.validation import validate_solution
 
@@ -22,18 +29,74 @@ def run_instance(
     config: SolverConfig | None = None,
     *,
     output_path: str | Path | None = None,
+    road_instance: ProblemInstance | None = None,
+    path_archive: PathArchive | None = None,
+    initial_solution: Solution | None = None,
+    search_config: SearchConfig | None = None,
 ) -> dict[str, Any]:
-    """Resolver sin LLM y conservar solución, certificados y auditoría separadas."""
+    """Resolver y conservar solución, certificados y auditoría separadas."""
     started = time.perf_counter()
     config = config or SolverConfig()
+    without_h = config.solver == "scip-routes"
+    is_service_graph = instance.provenance.get("representation", {}).get("kind") == REPRESENTATION
+    if is_service_graph:
+        if road_instance is None or path_archive is None:
+            raise ValueError("Esta variante requiere --road-instance y --path-archive para validarse")
+        check_service_context(instance, road_instance, path_archive)
+    elif road_instance is not None or path_archive is not None:
+        raise ValueError("Los caminos externos solo corresponden a la variante de servicios")
+    initial_checking = time.perf_counter()
+    if initial_solution is not None:
+        report = validate_solution(instance, initial_solution, enforce_movement_limit=not without_h)
+        if not report.feasible:
+            raise ValueError(f"Solución inicial inválida: {report.violations}")
+        if is_service_graph:
+            _, report, _ = expand_and_validate(
+                instance, road_instance, path_archive, initial_solution, without_h=without_h,
+            )
+            if not report.feasible:
+                raise ValueError(f"Solución inicial vial inválida: {report.violations}")
+    initial_validation_seconds = time.perf_counter() - initial_checking
     canonical = json.dumps(
         instance.model_dump(mode="json"), sort_keys=True, allow_nan=False
     ).encode()
-    solved = solve_instance(instance, config)
+    options = {}
+    if initial_solution is not None:
+        options["initial_solution"] = initial_solution
+    if search_config is not None:
+        options["search_config"] = search_config
+    solved = solve_instance(instance, config, **options)
     checking = time.perf_counter()
     validation = (
-        validate_solution(instance, solved.solution) if solved.solution is not None else None
+        validate_solution(instance, solved.solution, enforce_movement_limit=not without_h)
+        if solved.solution is not None else None
     )
+    road_audit = None
+    if is_service_graph and validation is not None and validation.feasible:
+        try:
+            expanded, report, counts = expand_and_validate(
+                instance, road_instance, path_archive, solved.solution, without_h=without_h,
+            )
+            road_audit = {
+                **report.model_dump(),
+                "road_movement_counts": counts,
+                "original_road_movement_limit": road_instance.parameters.movement_limit,
+                "within_original_movement_limit": all(
+                    count <= road_instance.parameters.movement_limit for count in counts.values()
+                ),
+                "routes": [route.model_dump(mode="json") for route in expanded.routes],
+                "scope": "Arcos, entregas, batería y opciones operacionales; H vial original separado.",
+            }
+            validation.checks["expanded_roads"] = report.feasible
+            if not report.feasible:
+                validation.feasible = False
+                validation.violations.extend(report.violations)
+                validation.checks["expanded_roads"] = False
+        except (ValueError, KeyError) as error:
+            validation.feasible = False
+            validation.violations.append(f"Expansión vial inválida: {error}")
+            validation.checks["expanded_roads"] = False
+            road_audit = {"feasible": False, "violations": [str(error)]}
     validation_seconds = time.perf_counter() - checking
     status = solved.status
     if validation is not None and not validation.feasible:
@@ -47,22 +110,36 @@ def run_instance(
         "instance_name": instance.name,
         "instance_sha256": hashlib.sha256(canonical).hexdigest(),
         "parameters": instance.parameters.model_dump(),
+        "formulation": {
+            "kind": "complete_routes_without_h" if without_h else "legacy_position_indexed",
+            "movement_limit_used": None if without_h else instance.parameters.movement_limit,
+        },
+        "operations": instance.operations.model_dump(mode="json"),
         "provenance": instance.provenance,
         "solver_config": config.model_dump(),
         "status": status,
         "solve": solved.model_dump(mode="json"),
         "validation": validation.model_dump() if validation else None,
+        "road_validation": road_audit,
+        "initial_solution": {
+            "provided": initial_solution is not None,
+            "validated": initial_solution is not None,
+            "deliveries": len(initial_solution.served_visit_ids) if initial_solution else None,
+            "energy_kwh": initial_solution.net_energy_kwh if initial_solution else None,
+        },
         "kpis": compute_metrics(instance, solved.solution, validation),
-        "tuning": {
+        "tuning": solved.search["controller"] if solved.search else {
             "status": "disabled",
-            "reason": "Esta rama resuelve sin LLM ni llamadas a AWS.",
+            "reason": "El backend seleccionado resuelve sin LLM ni llamadas a AWS.",
             "future_entry_point": "ev_routing.llm.tuning.propose_tuning",
         },
         "runtime_seconds": {
             "resolution_including_model": solved.runtime_seconds,
             "validation": validation_seconds,
+            "initial_solution_validation": initial_validation_seconds,
             "total": time.perf_counter() - started,
-            "llm": 0.0,
+            # Incluido en resolución/total; puede solaparse con solver en DW.
+            "llm": solved.search["controller"]["runtime_seconds"] if solved.search else 0.0,
         },
     }
     # No serializar Infinity/NaN: no son JSON y suelen ocultar cotas ausentes.
