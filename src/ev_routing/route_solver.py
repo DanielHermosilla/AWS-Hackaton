@@ -393,6 +393,7 @@ def solve_routes(instance, config: SolverConfig, search_config=None, *, initial_
     profile = {
         "formulation": "complete_feasible_routes_without_H",
         "customers": len(instance.customer_ids), "vehicles": len(instance.vehicle_ids),
+        "chargers": len(instance.charger_ids),
         "nodes": len(instance.nodes), "arcs": len(instance.arcs),
         "single_tour_certificate": certificate,
         "operations": instance.operations.model_dump(exclude={

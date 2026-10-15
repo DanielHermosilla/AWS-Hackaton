@@ -48,6 +48,7 @@ class SearchConfig(Contract):
     min_pricing_calls_between_decisions: int = Field(default=10, ge=1, strict=True)
     # Ruta local de logs; no se transmite al LLM.
     log_directory: str | None = None
+    show_llm_trace: bool = False
 
     @model_validator(mode="after")
     def adaptive_requires_model(self):

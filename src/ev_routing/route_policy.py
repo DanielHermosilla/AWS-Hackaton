@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import json
+from pathlib import Path
 from time import monotonic
 from typing import Literal
 
@@ -38,6 +40,18 @@ This is one strategic call shared by both lexicographic phases, not a pricing ca
 """
 
 
+def _save_decision(config: SearchConfig, report: dict) -> None:
+    if config.log_directory:
+        directory = Path(config.log_directory)
+        directory.mkdir(parents=True, exist_ok=True)
+        (directory / "llm-decision.json").write_text(
+            json.dumps(report, ensure_ascii=False, indent=2, allow_nan=False) + "\n",
+            encoding="utf-8",
+        )
+    if config.show_llm_trace and not report["calls"]:
+        print("[LLM] Sin llamada: " + json.dumps(report, ensure_ascii=False), flush=True)
+
+
 def choose_route_policy(config: SearchConfig, profile: dict, deadline: float, provider=None):
     policy = RoutePolicy()
     if config.policy == "deterministic":
@@ -49,18 +63,29 @@ def choose_route_policy(config: SearchConfig, profile: dict, deadline: float, pr
         "callback_calls": 0, "policy": policy.model_dump(),
     }
     if config.policy != "adaptive":
+        _save_decision(config, report)
         return policy, report
     if deadline - monotonic() <= config.bedrock.timeout_seconds:
         report.update(status="fallback", active_policy="standard", reason="insufficient_call_budget")
+        _save_decision(config, report)
         return policy, report
     if provider is None:
         from ev_routing.llm.bedrock import BedrockPolicyClient
-        provider = BedrockPolicyClient(config.bedrock, system_prompt=ROUTE_PROMPT, temperature=0)
+        provider = BedrockPolicyClient(
+            config.bedrock, system_prompt=ROUTE_PROMPT, temperature=0,
+            trace_directory=config.log_directory,
+        )
     request = {
         "event": "before_decomposition", "phase": "both_lexicographic_phases",
         "structure": profile, "allowed_policy_schema": RoutePolicy.model_json_schema(),
         "current_policy": policy.model_dump(),
     }
+    before = policy.model_dump()
+    if config.show_llm_trace:
+        print("\n[LLM] Prompt del sistema:\n" + ROUTE_PROMPT, flush=True)
+        print("[LLM] Prompt del usuario:\n" + json.dumps(
+            request, ensure_ascii=False, indent=2, allow_nan=False,
+        ), flush=True)
     started = monotonic()
     record = {
         "event": "before_decomposition", "phase": "both_lexicographic_phases",
@@ -85,4 +110,27 @@ def choose_route_policy(config: SearchConfig, profile: dict, deadline: float, pr
     report.update(
         calls=1, decisions=[record], runtime_seconds=elapsed, policy=policy.model_dump(),
     )
+    applicable = profile.get("applicable_actions", [
+        key for key in before if key != "rationale"
+    ])
+    if policy.route_cuts == "none":
+        applicable = [key for key in applicable if key != "max_subset_rows"]
+    after = policy.model_dump()
+    changes = {
+        key: {"before": before[key], "after": after[key]}
+        for key in applicable if before[key] != after[key]
+    }
+    record.update(
+        before_policy=before, effective_settings={key: after[key] for key in applicable},
+        effective_changes=changes,
+        inactive_settings={key: after[key] for key in after
+                           if key not in applicable and key != "rationale"},
+    )
+    _save_decision(config, report)
+    if config.show_llm_trace:
+        print("[LLM] Decisión validada:\n" + json.dumps(
+            record, ensure_ascii=False, indent=2, allow_nan=False,
+        ), flush=True)
+        if record["status"] == "applied" and not changes:
+            print("[LLM] Propuesta aceptada; no cambia los parámetros efectivos.", flush=True)
     return policy, report

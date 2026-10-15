@@ -115,6 +115,8 @@ def build_parser() -> argparse.ArgumentParser:
     run.add_argument("--llm-timeout-seconds", type=float, default=8)
     run.add_argument("--decision-interval-seconds", type=float, default=15)
     run.add_argument("--solver-log-directory", type=Path)
+    run.add_argument("--show-llm-trace", action="store_true",
+                     help="Mostrar prompt y cambios de la decisión estratégica sin H")
     return parser
 
 
@@ -218,6 +220,7 @@ def _run(args: argparse.Namespace) -> int:
             max_llm_calls=args.llm_max_calls,
             decision_interval_seconds=args.decision_interval_seconds,
             log_directory=str(args.solver_log_directory) if args.solver_log_directory else None,
+            show_llm_trace=args.show_llm_trace,
         )
     if args.road_instance is not None:
         extra["road_instance"] = load_instance(args.road_instance)

@@ -1,5 +1,26 @@
 # Verificación de la rama `modelamiento`
 
+## Ensayo visible 20/60: 15 de octubre de 2026
+
+`scripts/test_20_clients.sh` se ejecutó con los snapshots preparados de
+`artifacts/hackathon/`, 60 segundos, un hilo y semilla 0.
+Los artefactos están en `artifacts/test-20c-60s/validation-verbose/`.
+Obtuvo **20/20 entregas, 10,557740840522953 kWh y óptimo lexicográfico** sobre
+los caminos disponibles, con expansión y validación vial satisfactoria.
+
+Una llamada real a Bedrock (`us.amazon.nova-micro-v1:0`, `us-east-1`,
+perfil `hackathon`) consumió 924 tokens y cambió `subtour_batch_size` de
+100 a 150 y `branching` de `relpscost` a `mostinf`. Se verificó que el prompt
+guardado corresponde al cuerpo de Converse, la decisión coincide con el
+resultado y `run.log` contiene tanto los prompts como el log nativo de SCIP.
+Este ensayo verifica funcionamiento y trazabilidad; no mide aceleración.
+
+La suite final pasó **560 pruebas**; Ruff, sintaxis Bash y `git diff --check`
+también pasaron. Los ocho casos nuevos cubren prompts, respuestas inválidas,
+cambios efectivos, ausencia de llamada, salida íntegra, códigos de error,
+recuento de nodos y conservación de logs. La corrección posterior del directorio
+de logs en el manifiesto quedó cubierta por la suite; no requirió otra llamada AWS.
+
 ## Reformulación sin H: 15 de octubre de 2026
 
 La suite completa pasó **552 pruebas** y Ruff no encontró errores. Los nuevos

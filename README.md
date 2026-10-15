@@ -195,6 +195,42 @@ y [procedencia de la adaptación de LLM4MIP](docs/llm4mip-adaptation.md).
 El adaptador Gurobi/SCIP y el antiguo `llm/tuning.py::propose_tuning` permanecen
 sin llamadas a AWS.
 
+### Ensayo visible con 20 clientes y 60 estaciones
+
+Con los archivos de `artifacts/hackathon/` ya preparados:
+
+```bash
+bash scripts/test_20_clients.sh \
+  --bedrock-model us.amazon.nova-micro-v1:0 \
+  --time-limit-seconds 60 --threads 1 --seed 0
+```
+
+El script comprueba **20 clientes y 60 estaciones** y usa `scip-routes`, sin H.
+Muestra el log completo de SCIP, el prompt del sistema y del usuario, y la decisión
+validada antes de resolver. Hace como máximo una llamada Bedrock por ejecución.
+Región/perfil iniciales: `us-east-1`/`hackathon`; se pueden cambiar con
+`--aws-region`/`--aws-profile`. El modelo también admite `BEDROCK_MODEL_ID`.
+
+Cada ejecución crea un directorio nuevo en `artifacts/test-20c-60s/`, o el
+directorio vacío indicado mediante `--output-dir`. Conserva:
+
+- `run.log`: salida íntegra de SCIP, prompts y decisiones mostradas.
+- `logs/energy.scip.log` y, si se ejecuta, `logs/deliveries.scip.log`: logs nativos.
+- `logs/llm-request.json`: cuerpo exacto de Converse, incluidos ambos prompts.
+- `logs/llm-response.json`: respuesta y tokens cuando AWS responde, incluso si
+  el JSON fue rechazado.
+- `logs/llm-decision.json`: propuesta, configuración anterior, cambios efectivos,
+  parámetros no aplicables al algoritmo elegido y estado de aceptación/fallback.
+- `result.json` y `run-config.json`: solución, auditoría vial, configuración y hashes.
+
+Aceptar una propuesta no implica cambiar parámetros: se indica explícitamente
+cuando coincide con la configuración previa. Las opciones ajenas al algoritmo
+elegido no se presentan como cambios aplicados. Si la cota de entregas se obtiene
+por un testigo completo, solo la fase energética necesita un log nativo SCIP.
+Los logs se muestran sin resumir para conservar la evidencia exacta.
+`--search-policy standard` permite la misma corrida sin AWS.
+`--help` muestra las opciones para otras rutas de archivos y arranque opcional.
+
 Priorizamos código simple, modular y bibliotecas existentes. [STRUCTURE.md](STRUCTURE.md) explica brevemente cada archivo y sus funciones. Los equipos trabajan en ramas y worktrees separados; la integración objetivo del proyecto es `master`.
 
 Documentos de referencia:

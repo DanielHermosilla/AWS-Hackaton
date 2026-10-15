@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from pathlib import Path
 from typing import Any
 
 from ev_routing.search_policy import BedrockConfig
@@ -50,12 +51,39 @@ class BedrockResponseError(ValueError):
 
 class BedrockPolicyClient:
     def __init__(self, config: BedrockConfig, *, client: Any = None, system_prompt: str = SYSTEM_PROMPT,
-                 temperature: float | None = None):
+                 temperature: float | None = None, trace_directory: str | None = None):
         self.config, self.client = config, client
         self.system_prompt = system_prompt
         self.temperature = temperature
+        self.trace_directory = trace_directory
+
+    def request_payload(self, request: dict[str, Any]) -> dict[str, Any]:
+        """Cuerpo exacto de Converse; no contiene credenciales ni cabeceras."""
+        text = json.dumps(request, ensure_ascii=False, allow_nan=False)
+        if len(text.encode("utf-8")) > 40_000:
+            raise ValueError("El perfil excede el límite de entrada de Bedrock")
+        inference = {"maxTokens": self.config.max_output_tokens}
+        if self.temperature is not None:
+            inference["temperature"] = self.temperature
+        return {
+            "modelId": self.config.model_id,
+            "system": [{"text": self.system_prompt}],
+            "messages": [{"role": "user", "content": [{"text": text}]}],
+            "inferenceConfig": inference,
+        }
+
+    def _trace(self, name: str, data: dict) -> None:
+        if self.trace_directory:
+            directory = Path(self.trace_directory)
+            directory.mkdir(parents=True, exist_ok=True)
+            (directory / name).write_text(
+                json.dumps(data, ensure_ascii=False, indent=2, allow_nan=False) + "\n",
+                encoding="utf-8",
+            )
 
     def __call__(self, request: dict[str, Any]) -> dict[str, Any]:
+        payload = self.request_payload(request)
+        self._trace("llm-request.json", payload)
         if self.client is None:
             import boto3
             from botocore.config import Config
@@ -71,18 +99,12 @@ class BedrockPolicyClient:
                     retries={"total_max_attempts": 1},
                 ),
             )
-        text = json.dumps(request, ensure_ascii=False, allow_nan=False)
-        if len(text.encode("utf-8")) > 40_000:
-            raise ValueError("El perfil excede el límite de entrada de Bedrock")
-        inference = {"maxTokens": self.config.max_output_tokens}
-        if self.temperature is not None:
-            inference["temperature"] = self.temperature
-        response = self.client.converse(
-            modelId=self.config.model_id,
-            system=[{"text": self.system_prompt}],
-            messages=[{"role": "user", "content": [{"text": text}]}],
-            inferenceConfig=inference,
-        )
+        response = self.client.converse(**payload)
+        # La respuesta del modelo, incluso inválida, permite diagnosticar fallback.
+        # Omitir cabeceras HTTP y metadatos de transporte.
+        self._trace("llm-response.json", {
+            key: response.get(key) for key in ("output", "usage", "stopReason", "metrics")
+        })
         if response.get("stopReason") not in {"end_turn", "stop_sequence"}:
             raise BedrockResponseError("incomplete_response", response)
         answer = "".join(

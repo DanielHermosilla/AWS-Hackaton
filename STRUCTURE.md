@@ -37,6 +37,7 @@ Pyomo/Gurobi/SCIP y GCG posicional se conservan como referencias explícitas.
 | `scripts/prepare_hackathon.sh` | Prepara los datos completos; conserva el error original y no lanza el solver. |
 | `scripts/run_pptx.sh` | Ejecuta todos los servicios con caminos precalculados; dos fases y auditoría vial. |
 | `scripts/benchmark_dw.sh` | Benchmark sin H: estándar, determinista y adaptativo mediante Bedrock. |
+| `scripts/test_20_clients.sh`, `scripts/test_routing_verbose.py` | Corrida 20/60 con SCIP en vivo, prompt exacto, respuesta LLM y cambios efectivos por ejecución. |
 | `examples/` | Dos instancias sintéticas pequeñas con óptimo conocido. |
 | `tests/` | Pruebas de datos, modelo, solvers, auditoría y flujo completo. |
 | `tests/oracle.py` | Enumeración independiente de casos pequeños para contrastar el MILP. |
