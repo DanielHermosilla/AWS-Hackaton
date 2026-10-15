@@ -73,7 +73,7 @@ class Polytope:
                 charges.append((self.charges[i] + weight * (self.charges[j] - self.charges[i]))[None])
         return Polytope(np.vstack(points), np.vstack(charges)).hull()
 
-    def dominates(self, other: Polytope) -> bool:
+    def dominates(self, other: Polytope, *, vertices_only: bool = False) -> bool:
         # Menos carga acumulada, más batería y menor tiempo dominan incluso con
         # regeneración: E_final = b_inicial + Q_total - b_final.
         signs = np.array([-1.0, 1.0, 1.0])
@@ -81,8 +81,26 @@ class Polytope:
         for target in b:
             if np.any(np.all(a <= target, axis=1)):
                 continue
-            if len(a) == 1:
+            if vertices_only or len(a) == 1 or np.any(a.min(axis=0) > target):
                 return False
+            if len(a) == 2:
+                # Intersección de intervalos de theta para una combinación de dos
+                # vértices: evitar miles de LP de dominancia en aristas de recarga.
+                low, high = 0.0, 1.0
+                for start, slope, bound in zip(a[0], a[1] - a[0], target):
+                    if slope > 0:
+                        high = min(high, (bound - start) / slope)
+                    elif slope < 0:
+                        low = max(low, (bound - start) / slope)
+                    elif start > bound:
+                        low, high = 1.0, 0.0
+                if low > high:
+                    return False
+                if any(np.all((1 - theta) * a[0] + theta * a[1] <= target)
+                       for theta in (low, high, (low + high) / 2)):
+                    continue
+                # Si el redondeo impide comprobar el testigo, conservar el LP
+                # anterior; nunca declarar dominancia aproximada.
             result = linprog(
                 np.zeros(len(a)), A_ub=a.T, b_ub=target,
                 A_eq=np.ones((1, len(a))), b_eq=[1.0],
@@ -110,9 +128,9 @@ class Label:
 
 
 def route_from_walk(
-    instance: ProblemInstance, vehicle: str, walk, services, charges, *, arc_ids=None,
+    instance: ProblemInstance, vehicle: str, walk, services, charges, *, arc_ids=None, arc_lookup=None,
 ) -> VehicleRoute:
-    arcs = {arc_key(a): a for a in instance.arcs}
+    arcs = arc_lookup if arc_lookup is not None else {arc_key(a): a for a in instance.arcs}
     b = instance.parameters.initial_energy_kwh
     steps, energy = [], 0.0
     for index, node in enumerate(walk):
@@ -160,12 +178,16 @@ def assemble_solution(instance: ProblemInstance, routes: list[VehicleRoute]) -> 
 class RouteOracle:
     """Exploración reutilizable entre duales y fases; ninguna cota de movimientos."""
 
-    def __init__(self, instance: ProblemInstance, vehicle: str):
+    def __init__(self, instance: ProblemInstance, vehicle: str, *,
+                 search: str = "breadth_first", dominance: str = "convex", network=None):
         self.instance, self.vehicle = instance, vehicle
         self.bits = {node: 1 << i for i, node in enumerate(instance.customer_ids)}
-        self.outgoing = defaultdict(list)
-        for arc in instance.arcs:
-            self.outgoing[arc.from_node_id].append(arc)
+        self.outgoing = network.outgoing if network is not None else defaultdict(list)
+        if network is None:
+            for arc in instance.arcs:
+                self.outgoing[arc.from_node_id].append(arc)
+        self.arc_lookup = (network.arc_lookup if network is not None
+                           else {arc_key(a): a for a in instance.arcs})
         self.chargers = set(instance.chargers_for(vehicle))
         self.timed = instance.operations.max_route_seconds is not None
         initial = Label((instance.depot_id,), (), 0, Polytope(
@@ -177,15 +199,18 @@ class RouteOracle:
         self.routes: dict[int, VehicleRoute] = {}
         self.expanded = 0
         self.complete = False
+        self.search, self.dominance = search, dominance
 
     def _insert(self, label: Label) -> None:
         key = label.walk[-1], label.mask
         frontier = self.frontiers[key]
-        if any(old.resources.dominates(label.resources) for old in frontier):
+        vertices_only = self.dominance == "vertices_only"
+        if any(old.resources.dominates(label.resources, vertices_only=vertices_only)
+               for old in frontier):
             return
         kept = []
         for old in frontier:
-            if label.resources.dominates(old.resources):
+            if label.resources.dominates(old.resources, vertices_only=vertices_only):
                 old.active = False
             else:
                 kept.append(old)
@@ -228,7 +253,7 @@ class RouteOracle:
         if not self.queue:
             self.complete = True
             return changed
-        label = self.queue.popleft()
+        label = self.queue.pop() if self.search == "depth_first" else self.queue.popleft()
         if not label.active:
             return changed
         self.expanded += 1
@@ -245,7 +270,7 @@ class RouteOracle:
                 if previous is None or values[index] < previous.net_energy_kwh - 1e-9:
                     route = route_from_walk(
                         instance, self.vehicle, label.walk, label.services, poly.charges[index],
-                        arc_ids=label.arc_ids,
+                        arc_ids=label.arc_ids, arc_lookup=self.arc_lookup,
                     )
                     self.routes[label.mask] = changed[label.mask] = route
         for mask, services, poly in self._service(label):

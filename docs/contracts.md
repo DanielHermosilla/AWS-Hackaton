@@ -28,7 +28,8 @@ configuración, procedencia, hash de instancia y tiempos. Tiene
 `schema_version="1.0"`; sin política adaptativa, `tuning.status="disabled"`. Los campos desconocidos
 por falta de datos se expresan como `null`, nunca como `NaN` o un ahorro cero.
 
-En la referencia posicional cada ruta conserva **H+1 posiciones**, incluidas permanencias en el depósito.
+En la referencia posicional, cada ruta conserva **H+1 posiciones**, incluidas
+permanencias en el depósito. En `scip-routes` su longitud es variable.
 La última posición no tiene recarga, arco siguiente ni consumo de movimiento.
 Las entregas están en `delivered_visit_ids`; visitar físicamente el nodo no
 alcanza para considerarlo atendido.
@@ -136,3 +137,24 @@ el solver; no es un intervalo adicional que deba sumarse.
 `solve.search.phases[].native_optimize_seconds` mide la llamada nativa a GCG.
 Una decisión aplicada no demuestra aceleración. Ver [benchmark y
 certificados](dantzig-wolfe.md).
+
+En el motor por rutas, `solve.search.controller` registra las decisiones por
+evento, estados `adaptive`, `partial_fallback`, `fallback` o `disabled`, uso,
+tiempo y campos inactivos. `solve.search.phases` identifica cada etapa con
+`restricted_pool`; su cota nativa nunca acredita el maestro completo.
+`first_full_delivery_seconds` identifica el primer testigo de servicio completo
+y `energy_relaxation` documenta una cota energética independiente, su alcance
+y su margen numérico. `native_parameter_changes` contiene cambios ejecutados
+en SCIP, incluidos presets. Ver [orquestación](orchestration.md).
+
+En `codex/evrp-llm-search`, `callback_control` registra contadores, revisiones
+efectivamente observadas, cambios nativos y errores por maestro. El controlador
+registra modelo por decisión, `effective_changes`, campos inactivos, vencimientos,
+uso recibido y solicitudes cuyo consumo todavía se desconoce. `runtime_seconds.llm`
+puede solaparse con resolución; nunca debe sumarse nuevamente. Una decisión
+vencida no impide nuevas consultas presupuestadas ni se aplica tardíamente.
+`completed_inference_seconds` excluye solicitudes sin respuesta.
+`instance_scope` distingue grafo completo de extracto; la huella identifica siempre
+el grafo completo exportado. `restricted_master` identifica explícitamente el MPS
+del conjunto actual de columnas, sin la física del pricing ni columnas futuras.
+Ver [contrato de ejecución y pruebas](llm-head-search.md).

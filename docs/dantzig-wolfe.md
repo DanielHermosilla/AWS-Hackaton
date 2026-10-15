@@ -92,26 +92,27 @@ En la instancia local de 20 clientes: testigo de 11,67963408 kWh, óptimo de
 El certificado es sobre caminos fijos disponibles; no recupera opciones
 eliminadas por Dijkstra.
 
-## Una decisión estratégica de Bedrock
+## Orquestación de Bedrock por eventos
 
 Las políticas comparten formulación, reducción certificada, recursos y pruebas:
 
 | Política | Acción |
 |---|---|
 | `standard` | Valores explícitos de `RoutePolicy`, sin AWS |
-| `deterministic` | Lotes de 20 columnas y hasta 50 ternas, sin AWS |
-| `adaptive` | Una llamada previa, compartida por ambas fases |
+| `deterministic` | Más inicios de inserción y pricing, sin AWS |
+| `adaptive` | Decisiones antes de buscar, después del arranque y ante estancamiento |
 
-El LLM elige familia/cantidad de ternas, lotes de columnas y subtours, y regla
-nativa de branching `relpscost`/`mostinf`. El perfil indica qué opciones aplican
-al algoritmo elegido. No decide física, objetivos, presupuesto, validez de la
-reducción ni certificados. Respuestas inválidas producen fallback registrado.
+El LLM controla construcción y mejora de incumbentes, reparto del tiempo,
+relajaciones para cotas, maestros restringidos, pricing, cortes compatibles y
+tuning nativo. El perfil indica qué opciones siguen siendo aplicables.
+No decide física, objetivos, presupuesto global, validez de la reducción ni
+certificados. Respuestas inválidas conservan la última política válida.
 
 Los callbacks de pricing son locales. No hay AWS por nodo, corte o ronda.
-Consultas excepcionales durante la búsqueda quedan fuera de esta implementación:
-requerirían un evento de utilidad medible, acciones seguras y presupuesto.
-`--llm-max-calls` se conserva por compatibilidad; `scip-routes` hace como máximo
-una llamada incluso si se configura un valor superior.
+Las consultas entre etapas requieren eventos explícitos y presupuesto.
+`--llm-max-calls` tiene default 4; `--llm-time-fraction` asigna por defecto
+25 % del presupuesto global a inferencia. Ver [opciones, flujo y
+demostración de las cotas adicionales](orchestration.md).
 
 Región inicial `us-east-1`, perfil `hackathon`; modelo/perfil de inferencia
 parametrizable y obligatorio para `adaptive`. Se registran uso y tiempo;
@@ -121,14 +122,16 @@ coste monetario desconocido sin tarifa verificada. No se guardan claves.
 
 ```bash
 uv sync --locked --extra dw
-export BEDROCK_MODEL_ID='us.amazon.nova-micro-v1:0'
+export BEDROCK_MODEL_ID='us.anthropic.claude-fable-5'
 bash scripts/benchmark_dw.sh \
   --instance artifacts/hackathon/service-instance.json \
   --road-instance artifacts/hackathon/instance.json \
   --path-archive artifacts/hackathon/service-paths.json \
   --initial-solution artifacts/hackathon/service-instance.start.json \
   --bedrock-model "$BEDROCK_MODEL_ID" \
-  --time-limit-seconds 60 --threads 1 --seeds 0 1 2 \
+  --llm-reasoning-effort high --llm-max-output-tokens 4096 \
+  --llm-max-calls 3 --llm-timeout-seconds 25 --llm-time-fraction .5 \
+  --time-limit-seconds 120 --threads 1 --seeds 0 1 2 \
   --output-dir artifacts/benchmark-routes
 ```
 

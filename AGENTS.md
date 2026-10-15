@@ -53,11 +53,21 @@ Nunca ejecutar código generado por el LLM ni aceptar sus afirmaciones como
 certificados. El motor debe conservar pricing exacto o cotas válidas,
 también ante fallos de AWS. Las llamadas reales deben estar acotadas y
 registradas; una prueba con dobles no acredita acceso a AWS.
-La política vigente está en `route_policy.py`: **una llamada Bedrock antes de
-resolver, compartida por ambas fases**, ninguna llamada remota por nodo, corte
-o ronda de pricing. Consultas excepcionales futuras requieren un evento y
-presupuesto explícitos; no están habilitadas. `RoutePolicy` solo admite cortes,
-lotes y branching implementados. `dw.py`, `dw_bridge.py`, `dw_callbacks.py`
+En `codex/evrp-llm-search`, el usuario autorizó integrar el preprocesamiento de
+`codex/investigacion-caminos-recursos` (`b14b976`) y ampliar el control del LLM
+al branch-price-and-cut, ALNS, matheurísticas y búsqueda memética eléctrica.
+`llm_head.py` consulta Bedrock de forma asíncrona antes de buscar y desde eventos
+de progreso, árbol, LP, incumbentes, separación y pricing. Los callbacks
+continúan con la política local; solo el hilo de SCIP accede a objetos nativos.
+`route_orchestrator.py` conserva la referencia anterior por etapas.
+El máximo predeterminado es cuatro llamadas, con asignación de inferencia del
+25 % del presupuesto global, ambos configurables. Se guardan solicitudes,
+respuestas, uso, cambios efectivos y propuestas inactivas o rechazadas.
+`RoutePolicy` controla construcción de incumbentes, búsqueda local, recargas
+heurísticas, reparto de tiempo, relajación energética, maestros restringidos,
+pricing, cortes compatibles y parámetros nativos verificados. El LLM no puede
+alterar física, tolerancias, presupuesto global ni certificados.
+`dw.py`, `dw_bridge.py`, `dw_callbacks.py`
 y su controlador conservan el experimento GCG heredado.
 `movement_limit` de snapshots 1.0 es metadato heredado en `scip-routes`, sin
 efecto en pricing, arranque ni validación. No construir `model.py` en ese flujo.
@@ -285,7 +295,8 @@ Los snapshots 1.1 de `resource_paths` requieren `scip-routes`; la referencia
 posicional los rechaza. Actualizar fuente y PDF (30)–(31) junto con cambios
 físicos. `road_optimum_preserved` no reemplaza la prueba de ambas fases.
 La caché y sus límites están en `docs/resource-paths.md`. No añadir llamadas LLM
-por preparación o callback sin un ensayo que justifique su costo.
+por preparación. Los eventos de callbacks autorizados en esta rama están sujetos
+a los presupuestos de `llm_head.py`; nunca se consulta remotamente por cada nodo.
 
 **El resto de esta sección describe la reducción original de Dijkstra y
 continúa rigiendo cuando se selecciona esa variante.**

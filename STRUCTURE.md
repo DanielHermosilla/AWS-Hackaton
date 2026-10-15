@@ -24,7 +24,15 @@ Pyomo/Gurobi/SCIP y GCG posicional se conservan como referencias explícitas.
 | `src/ev_routing/solve.py` | `solve_instance`: dos fases; Gurobi primero, SCIP si no está disponible/licenciado. |
 | `src/ev_routing/route_solver.py` | Maestro sin H, pricing SCIP/Farkas, cortes de ternas y reducción certificada DFJ. |
 | `src/ev_routing/route_resources.py` | Etiquetas con poliedros de recursos continuos, dominancia y reconstrucción física. |
-| `src/ev_routing/route_policy.py` | Una decisión Bedrock previa a ambas fases; acciones cerradas y fallback. |
+| `src/ev_routing/route_policy.py` | Esquema de acciones implementadas y prompt del orquestador. |
+| `src/ev_routing/llm_head.py` | Cabeza Bedrock asíncrona, instancia física, MPS, presupuestos y decisiones vencidas. |
+| `src/ev_routing/route_callbacks.py` | Eventos, branching, selección de nodos, separación compatible y sub-SCIP primal. |
+| `src/ev_routing/route_pricing.py` | Potenciales del multigrafo, reparación física y cotas de completación por dual. |
+| `src/ev_routing/route_hybrid.py` | ALNS, población memética, recombinación y reparación sobre nodos de pricing. |
+| `src/ev_routing/route_orchestrator.py` | Referencia anterior de decisiones Bedrock entre etapas. |
+| `src/ev_routing/route_heuristics.py` | Inserción, búsqueda local, ruin/repair, recarga parcial, partición y pricing heurístico. |
+| `src/ev_routing/route_relaxation.py` | Cotas inferiores de asignación y tour sin recursos; no sustituye el maestro físico. |
+| `src/ev_routing/scip_tuning.py` | Catálogo instalado, validación y aplicación de presets/parámetros nativos. |
 | `src/ev_routing/dw.py` | `solve_dantzig_wolfe`: dos fases con GCG, recuperación y cotas originales. |
 | `src/ev_routing/dw_bridge.py` | Traducción lineal Pyomo/GCG y dos particiones de restricciones. |
 | `src/ev_routing/dw_callbacks.py` | Observación de pricing, selección de cortes nativos y aplicación de políticas. |
@@ -39,7 +47,7 @@ Pyomo/Gurobi/SCIP y GCG posicional se conservan como referencias explícitas.
 | `scripts/prepare_hackathon.sh` | Prepara los datos completos; conserva el error original y no lanza el solver. |
 | `scripts/run_pptx.sh` | Ejecuta todos los servicios con caminos precalculados; dos fases y auditoría vial. |
 | `scripts/benchmark_dw.sh` | Benchmark sin H: estándar, determinista y adaptativo mediante Bedrock. |
-| `scripts/test_clients.sh`, `scripts/test_routing_verbose.py` | Corrida con SCIP en vivo, prompt exacto, respuesta LLM y cambios efectivos; `--simulate-customers` permite aumentar la demanda. `test_20_clients.sh` conserva el alias original. |
+| `scripts/test_clients.sh`, `scripts/test_routing_verbose.py` | Corrida con SCIP en vivo y decisiones LLM registradas; `--simulate-customers` permite aumentar la demanda. `test_20_clients.sh` conserva el alias original. |
 | `examples/` | Dos instancias sintéticas pequeñas con óptimo conocido. |
 | `tests/` | Pruebas de datos, modelo, solvers, auditoría y flujo completo. |
 | `tests/oracle.py` | Enumeración independiente de casos pequeños para contrastar el MILP. |
@@ -50,6 +58,9 @@ Pyomo/Gurobi/SCIP y GCG posicional se conservan como referencias explícitas.
 | `docs/heuristics.md` | H automático, condiciones de la prueba y arranque de Gurobi/SCIP. |
 | `docs/solvers.md` | Licencias, fallback, tiempos y certificados por fase. |
 | `docs/dantzig-wolfe.md` | Formulación descompuesta, decisiones admitidas, presupuesto y benchmark. |
+| `docs/orchestration.md` | Flujo del orquestador, acciones, presupuestos y demostración de las cotas energéticas. |
+| `docs/llm-head-search.md` | Integración actual, API de SCIP, trazabilidad, validación y mediciones. |
+| `docs/performance-orchestrator.md` | Comparación medida, acceso real a modelos Bedrock, hashes y límites de la evidencia. |
 | `docs/llm4mip-adaptation.md` | Material reutilizado, cambios, licencia y alcance. |
 | `docs/contracts.md` | Campos de entrada/salida y sus límites. |
 | `docs/validation.md` | Pruebas ejecutadas, resultados y límites de los ensayos. |

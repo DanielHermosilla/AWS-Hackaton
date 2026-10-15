@@ -5,8 +5,9 @@
 - El flujo predeterminado es `scip-routes`, maestro por rutas sin H con
   PySCIPOpt. Preservar batería, carga continua, regeneración, tiempos y revisitas.
   Pyomo y GCG posicional siguen como referencia seleccionable explícitamente.
-- Bedrock decide una política previa para ambas fases. No consultar al LLM en
-  cada callback. No acreditar pricing completo después de interrumpir el oráculo.
+- Bedrock orquesta etapas y callbacks mediante eventos asíncronos y presupuestos
+  explícitos. No pasar objetos SCIP al hilo remoto. Conservar el oráculo exacto y no acreditar pricing completo
+  después de interrumpirlo. Una cota del maestro restringido no es global.
 - Contratos compartidos en `contracts.py`; coordinar cambios antes de editarlo.
 - El validador no usa restricciones ni valores auxiliares de Pyomo para decidir
   factibilidad: reproduce la física desde la instancia y el resultado.

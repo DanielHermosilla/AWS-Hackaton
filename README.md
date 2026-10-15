@@ -6,7 +6,7 @@ Queremos ayudar a un operador a planificar entregas sin quedarse sin batería: c
 
 El escenario del desafío considera dos Nissan Leaf 2013 con un 60 % de carga inicial. Las entradas actuales contienen un depósito, 20 locales y 60 cargadores. El mismo código deberá aceptar nuevas instancias y flotas parametrizadas.
 
-**Estado de la rama `modelamiento`:** flujo CLI con maestro por rutas **sin H** y SCIP/PySCIPOpt, verificación independiente y JSON. La política adaptativa consulta Bedrock una vez antes de ambas fases. Pyomo/Gurobi/SCIP y GCG posicional se conservan como referencias explícitas. La UI queda pendiente.
+**Estado de `codex/evrp-llm-search`:** integra el preprocesamiento de `b14b976` y el motor previo en un worktree aislado. Maestro por rutas **sin H**, pricing por coste reducido, ALNS, búsqueda memética y sub-SCIP de recombinación. Bedrock coordina políticas desde callbacks mediante inferencia asíncrona. Se conservan la verificación independiente y las referencias Pyomo/Gurobi/SCIP y GCG. La UI queda pendiente.
 
 ## Nuestro modelamiento
 
@@ -169,19 +169,47 @@ Resultados medidos y alcance de los ensayos: [docs/validation.md](docs/validatio
 ## Dantzig–Wolfe y LLM mediante AWS
 
 `--solver scip-routes` utiliza un maestro por rutas sin H y pricing continuo.
-El LLM toma una decisión estratégica antes de ambas fases: cortes compatibles,
-lotes y branching. Los callbacks de pricing son locales. El motor conserva
-control de los certificados y el checker valida toda la física.
+El LLM decide antes de buscar y a partir de eventos del árbol, LP, pricing,
+incumbentes y heurísticas. Controla opciones de algoritmo y
+un catálogo de parámetros nativos verificados. El presupuesto predeterminado
+es de hasta cuatro llamadas y un 25 % del tiempo global para inferencia.
+Los callbacks ejecutan la política local mientras la inferencia avanza en otro
+hilo. El motor conserva control de los certificados y el checker valida la física.
+Ver [implementación, API de SCIP, mediciones y límites](docs/llm-head-search.md).
+La mejora histórica de 2/40 a 40/40 corresponde al motor anterior; no acredita
+una mejora adicional de esta rama ni del LLM.
+
+Para resolver una instancia preparada con control asíncrono:
+
+```bash
+uv run ev-routing run --instance artifacts/service-instance.json \
+  --road-instance artifacts/instance.json --path-archive artifacts/service-paths.json \
+  --solver scip-routes --search-policy adaptive --time-limit-seconds 120 \
+  --bedrock-model us.anthropic.claude-fable-5 \
+  --bedrock-fast-model us.amazon.nova-micro-v1:0 \
+  --llm-timeout-seconds 45 --llm-fast-timeout-seconds 8 \
+  --llm-reasoning-effort high --llm-max-output-tokens 4096 \
+  --llm-instance-context-bytes 8000 \
+  --llm-max-calls 2 --llm-time-fraction .5 --decision-interval-seconds 15 \
+  --solver-log-directory artifacts/solve/native --output artifacts/solve/result.json
+```
+
+Los modelos y presupuestos son configurables. `--llm-instance-context-bytes`
+controla cuánto grafo se envía; todo recorte se declara. El grafo completo, el
+catálogo de SCIP y los maestros `.mps` se exportan al directorio de logs.
+Un `.mps` restringido no contiene la familia implícita de rutas futuras.
 
 ```bash
 uv sync --locked --extra dw
-# Ejemplo probado con el perfil hackathon; se puede indicar otro modelo:
-export BEDROCK_MODEL_ID='us.amazon.nova-micro-v1:0'
+# Modelo de alta capacidad permitido por el perfil hackathon:
+export BEDROCK_MODEL_ID='us.anthropic.claude-fable-5'
 bash scripts/benchmark_dw.sh \
   --instance examples/toy_recharge.json \
   --bedrock-model "$BEDROCK_MODEL_ID" \
   --aws-region us-east-1 --aws-profile hackathon \
-  --time-limit-seconds 60 --threads 1 --seeds 0 \
+  --llm-reasoning-effort high --llm-max-output-tokens 4096 \
+  --llm-max-calls 3 --llm-timeout-seconds 25 --llm-time-fraction .5 \
+  --time-limit-seconds 120 --threads 1 --seeds 0 \
   --output-dir artifacts/benchmark-dw-toy
 ```
 
@@ -189,7 +217,7 @@ Ejecuta las tres políticas en procesos separados y genera `summary.csv`,
 `summary.json`, manifiesto, resultados y logs. `us-east-1` y `hackathon` son
 valores iniciales configurables; no se fija un modelo ni se guardan credenciales.
 Ejecutar el `export` en la misma terminal antes del benchmark. También se puede
-pasar el identificador directamente: `--bedrock-model us.amazon.nova-micro-v1:0`.
+pasar el identificador directamente: `--bedrock-model us.anthropic.claude-fable-5`.
 Para los servicios del concurso hay que añadir red original, archivo de caminos
 y, opcionalmente, el arranque compartido.
 
@@ -204,15 +232,19 @@ Con los archivos de `artifacts/hackathon/` ya preparados:
 
 ```bash
 bash scripts/test_clients.sh \
-  --bedrock-model us.amazon.nova-micro-v1:0 \
-  --time-limit-seconds 60 --threads 1 --seed 0
+  --bedrock-model us.anthropic.claude-fable-5 \
+  --llm-reasoning-effort high --llm-max-output-tokens 4096 \
+  --llm-max-calls 3 --llm-timeout-seconds 25 --llm-time-fraction .5 \
+  --time-limit-seconds 120 --threads 1 --seed 0
 ```
 
 La instancia predeterminada contiene **20 clientes y 60 estaciones**.
 El script usa `scip-routes`, sin H, y comprueba que se conservan 60 estaciones.
 `scripts/test_20_clients.sh` sigue disponible como alias.
-Muestra el log completo de SCIP, el prompt del sistema y del usuario, y la decisión
-validada antes de resolver. Hace como máximo una llamada Bedrock por ejecución.
+Muestra los logs de SCIP y las decisiones validadas del orquestador.
+Cada solicitud y respuesta se conserva en `logs/decisions/`.
+El máximo predeterminado es de cuatro llamadas Bedrock; se controla con
+`--llm-max-calls`, `--llm-time-fraction` y `--llm-timeout-seconds`.
 Región/perfil iniciales: `us-east-1`/`hackathon`; se pueden cambiar con
 `--aws-region`/`--aws-profile`. El modelo también admite `BEDROCK_MODEL_ID`.
 
@@ -220,9 +252,9 @@ Cada ejecución crea un directorio nuevo en `artifacts/test-20c-60s/`, o el
 directorio vacío indicado mediante `--output-dir`. Conserva:
 
 - `run.log`: salida íntegra de SCIP, prompts y decisiones mostradas.
-- `logs/energy.scip.log` y, si se ejecuta, `logs/deliveries.scip.log`: logs nativos.
-- `logs/llm-request.json`: cuerpo exacto de Converse, incluidos ambos prompts.
-- `logs/llm-response.json`: respuesta y tokens cuando AWS responde, incluso si
+- `logs/*.scip.log`: logs nativos por fase y etapa.
+- `logs/decisions/NN-evento/llm-request.json`: cuerpo exacto de Converse.
+- `logs/decisions/NN-evento/llm-response.json`: respuesta y tokens, incluso si
   el JSON fue rechazado.
 - `logs/llm-decision.json`: propuesta, configuración anterior, cambios efectivos,
   parámetros no aplicables al algoritmo elegido y estado de aceptación/fallback.
@@ -241,9 +273,11 @@ Para simular **40 clientes totales** (los 20 originales más 20 sintéticos):
 ```bash
 bash scripts/test_clients.sh \
   --simulate-customers 40 --simulation-seed 0 \
-  --bedrock-model us.amazon.nova-micro-v1:0 \
+  --bedrock-model us.anthropic.claude-fable-5 \
   --aws-region us-east-1 --aws-profile hackathon \
-  --time-limit-seconds 60 --threads 1 --seed 0
+  --llm-reasoning-effort high --llm-max-output-tokens 4096 \
+  --llm-max-calls 3 --llm-timeout-seconds 25 --llm-time-fraction .5 \
+  --time-limit-seconds 120 --threads 1 --seed 0
 ```
 
 `--simulate-customers N` admite otros totales mayores que la demanda de la red

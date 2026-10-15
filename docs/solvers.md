@@ -2,8 +2,12 @@
 
 El backend predeterminado es **`scip-routes`**, con PySCIPOpt y modelo sin H.
 Incluye pricing/Farkas de recursos continuos, cortes compatibles y reducción
-certificada a DFJ cuando se verifican sus hipótesis. Una llamada Bedrock previa
-es opcional (`adaptive`); los callbacks son locales.
+certificada a DFJ cuando se verifican sus hipótesis. La orquestación Bedrock
+se activa con `adaptive`: observa eventos entre etapas y en callbacks,
+con inferencia asíncrona y acciones locales verificadas. Ver
+[motor y API de control](llm-head-search.md).
+Las mejoras primales y las cotas energéticas están descritas en
+[orchestration.md](orchestration.md).
 Ver [formulación, presupuesto y certificados](dantzig-wolfe.md).
 El pricing admite conexiones paralelas con perfiles de batería y tiempo del
 [preprocesador de recursos](resource-paths.md). El contrato `arc_id` conserva

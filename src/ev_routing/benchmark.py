@@ -60,8 +60,11 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--bedrock-model", default=os.getenv("BEDROCK_MODEL_ID"))
     parser.add_argument("--aws-region", default=os.getenv("AWS_DEFAULT_REGION", "us-east-1"))
     parser.add_argument("--aws-profile", default=os.getenv("AWS_PROFILE", "hackathon"))
-    parser.add_argument("--llm-max-calls", type=int, default=1)
+    parser.add_argument("--llm-max-calls", type=int, default=4)
     parser.add_argument("--llm-timeout-seconds", type=float, default=8)
+    parser.add_argument("--llm-max-output-tokens", type=int, default=2048)
+    parser.add_argument("--llm-reasoning-effort", choices=["low", "medium", "high", "xhigh", "max"])
+    parser.add_argument("--llm-time-fraction", type=float, default=.25)
     parser.add_argument("--decision-interval-seconds", type=float, default=15)
     parser.add_argument("--resume", action="store_true")
     return parser
@@ -88,7 +91,8 @@ def summarize_run(policy, seed, repetition, elapsed, returncode, result):
         "llm_calls": tuning.get("calls", 0),
         "llm_applied": tuning.get("applied_decisions", 0),
         "llm_updates_during_solve": sum(
-            d["status"] == "applied" and d["event"] != "before_decomposition"
+            d["status"] == "applied"
+            and d["event"] not in {"before_decomposition", "before_search", "after_seed"}
             for d in tuning.get("decisions", [])
         ),
         "llm_comparison_eligible": policy != "adaptive" or tuning.get("applied_decisions", 0) > 0,
@@ -127,8 +131,11 @@ def run_benchmark(args) -> int:
         bedrock=BedrockConfig(
             model_id=args.bedrock_model, region=args.aws_region,
             profile=args.aws_profile or None, timeout_seconds=args.llm_timeout_seconds,
+            max_output_tokens=args.llm_max_output_tokens,
+            reasoning_effort=args.llm_reasoning_effort,
         ),
         max_llm_calls=args.llm_max_calls,
+        llm_time_fraction=args.llm_time_fraction,
         decision_interval_seconds=args.decision_interval_seconds,
     )
     paths = {"instance": args.instance.resolve()}
@@ -242,11 +249,15 @@ def run_benchmark(args) -> int:
                 "--aws-region", args.aws_region, "--aws-profile", args.aws_profile,
                 "--llm-max-calls", str(args.llm_max_calls),
                 "--llm-timeout-seconds", str(args.llm_timeout_seconds),
+                "--llm-max-output-tokens", str(args.llm_max_output_tokens),
+                "--llm-time-fraction", str(args.llm_time_fraction),
                 "--decision-interval-seconds", str(args.decision_interval_seconds),
                 "--solver-log-directory", str(directory / "native"),
             ]
             if args.bedrock_model:
                 command += ["--bedrock-model", args.bedrock_model]
+            if args.llm_reasoning_effort:
+                command += ["--llm-reasoning-effort", args.llm_reasoning_effort]
             for key in ("road_instance", "path_archive", "initial_solution"):
                 if key in paths:
                     command += ["--" + key.replace("_", "-"), str(paths[key])]

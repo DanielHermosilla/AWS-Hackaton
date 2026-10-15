@@ -60,17 +60,24 @@ class BedrockPolicyClient:
     def request_payload(self, request: dict[str, Any]) -> dict[str, Any]:
         """Cuerpo exacto de Converse; no contiene credenciales ni cabeceras."""
         text = json.dumps(request, ensure_ascii=False, allow_nan=False)
-        if len(text.encode("utf-8")) > 40_000:
+        if len(text.encode("utf-8")) > self.config.max_input_bytes:
             raise ValueError("El perfil excede el límite de entrada de Bedrock")
         inference = {"maxTokens": self.config.max_output_tokens}
-        if self.temperature is not None:
+        # El razonamiento adaptativo de Claude Fable no admite temperature=0.
+        # Al solicitar esfuerzo explícito se conserva el muestreo del proveedor.
+        if self.temperature is not None and self.config.reasoning_effort is None:
             inference["temperature"] = self.temperature
-        return {
+        payload = {
             "modelId": self.config.model_id,
             "system": [{"text": self.system_prompt}],
             "messages": [{"role": "user", "content": [{"text": text}]}],
             "inferenceConfig": inference,
         }
+        if self.config.reasoning_effort is not None:
+            payload["additionalModelRequestFields"] = {
+                "output_config": {"effort": self.config.reasoning_effort},
+            }
+        return payload
 
     def _trace(self, name: str, data: dict) -> None:
         if self.trace_directory:
@@ -94,8 +101,8 @@ class BedrockPolicyClient:
             self.client = session.client(
                 "bedrock-runtime", region_name=self.config.region,
                 config=Config(
-                    connect_timeout=min(3, self.config.timeout_seconds),
-                    read_timeout=self.config.timeout_seconds,
+                    connect_timeout=min(3, self.config.timeout_seconds * .2),
+                    read_timeout=max(.05, self.config.timeout_seconds * .8),
                     retries={"total_max_attempts": 1},
                 ),
             )
