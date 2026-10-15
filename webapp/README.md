@@ -22,8 +22,12 @@ solo se puede modificar el presupuesto del solver. Para cambiar la instancia,
 editar el JSON y volver a cargarlo. Los formatos antiguos de preparación y
 el API beta 2 no se admiten.
 
-La descarga de instancia entrega un JSON nativo reutilizable. La descarga de
-resultado conserva el envoltorio API 3.0 y los objetos originales del motor.
+La descarga de instancia entrega un JSON nativo reutilizable. **Descargar
+ejecución completa** conserva el envoltorio API 3.0 y los objetos originales del
+motor. **Descargar resultado nativo** entrega directamente el `RunResult` 1.0
+íntegro de Daniel, incluidos los campos que la UI no representa. Ese resultado
+no contiene los nodos y arcos: para recalcular se necesita la instancia o la
+descarga de ejecución completa.
 Los nodos nativos sin coordenadas permanecen en la lista: no se generan
 ubicaciones ni trazados ficticios. Un resultado sin solución mantiene métricas
 desconocidas y sus fases, sin convertirlo en cero entregas o infactibilidad
@@ -46,6 +50,14 @@ Usa HTTP: los módulos JavaScript y el mapa no funcionan abriendo el HTML como a
 **Inicio** resume el plan de ejemplo en tres paneles: medidores de batería al regreso por vehículo (con una marca para la batería de salida), entregas asignadas por vehículo y consumo por vehículo, junto con paradas de recarga y estaciones del escenario. Cada local cuenta una sola vez aunque se visite varias veces. Un vehículo sin recorrido aparece como «Sin recorrido». Los vehículos, «Ver vehículos», «Ver paradas» y el enlace de estaciones abren el Plan en esa vista.
 
 **Plan** muestra el mapa con los recorridos, la lista de vehículos y paradas, las estaciones de carga y el detalle de cada parada. Los números compactos identifican el mismo local en mapa y lista; no representan su posición en el recorrido. El ID completo se conserva en la lista y en el nombre accesible del marcador.
+
+En modo motor, **Datos y límites de la ejecución** presenta sus KPIs, motivos de
+datos no disponibles, operaciones, comprobaciones, fases, tiempos y trazabilidad.
+Las paradas muestran energía prevista/efectiva hacia el siguiente nodo y tiempos
+desde `t=0` cuando el motor los informa. El conteo global de recargas usa
+`kpis.charging_stops`; no se infiere un contador por vehículo. Los totales de Plan
+siguen visibles aunque no haya coordenadas. Los tiempos operacionales y de
+cómputo se presentan por separado, sin sumar intervalos contenidos.
 
 ## Controles compartidos
 

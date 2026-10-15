@@ -60,6 +60,19 @@ efectiva. La proyección web mantiene sus campos aunque cambie el algoritmo.
 Estados, cotas, gaps, mensajes y tiempos por fase proceden del motor.
 `metadata.provider_commit` identifica el código importado.
 
+La descarga **resultado nativo** es exactamente el objeto `raw.result`,
+serializado como JSON sin el envoltorio de la web y sin renombrar ni filtrar
+campos. La descarga **ejecución completa** conserva también la instancia y la
+petición, y puede recargarse en la web. Un `RunResult` suelto no incluye el grafo:
+se informa esta limitación al intentar cargarlo como entrada, sin inventar nodos.
+
+La proyección añade copias de `kpis`, `operations`, `tuning`, `validation.checks`,
+la duración por ruta y los nueve campos nativos de energía saliente y tiempos por
+paso. La UI presenta estas métricas directamente. En particular, el conteo global
+de recargas proviene de `kpis.charging_stops`; Daniel no ofrece un conteo por ruta
+en `VehicleRoute` y la web no calcula uno alternativo. Los datos no representados
+visualmente permanecen completos en la descarga nativa.
+
 Antes de actualizar el solver, comparar el commit con `docs/solver-source.json`,
 comprobar cambios en contratos y ejecutar las pruebas con los ejemplos compartidos.
 No copiar de nuevo los módulos excluidos. Los campos nuevos opcionales pueden
@@ -134,3 +147,14 @@ distinguen de ejecuciones reales.
 La evidencia de la antigua beta con HiGHS es histórica y no valida esta entrega.
 Los cambios se mantienen en commits locales para revisión y merge posterior.
 No se hace push ni despliegue automáticamente.
+
+La paridad del output no significa importar toda la aplicación upstream.
+Permanecen excluidos el preprocesador derivado y sus dependientes; la API local
+expone `scip-routes` con política `standard`, sin selección de otros backends,
+warm starts ni tuning AWS. El núcleo importado, comprobador, métricas y contratos
+nativos se contrastan por huellas con el commit registrado. Las pruebas
+`test_native_output_parity.py` capturan una ejecución real y comparan todo su
+resultado antes y después del puente, además de recarga con tiempos, regeneración,
+flota variable, entregas parciales, defaults y estados sin solución. La fixture
+`backend/fixtures/native-operations-response.json` conecta esa comprobación con
+las pruebas de presentación JavaScript.

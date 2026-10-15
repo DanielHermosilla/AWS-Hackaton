@@ -136,6 +136,8 @@ export function parseInstanceFile(text, filename = '') {
     }
     if (value?.api_version === API_VERSION && value.result) value = value.result.raw?.input;
     if (!record(value)) throw new Error('El archivo no contiene una entrada completa reutilizable.');
+    if (value.schema_version === '1.0' && record(value.solve) && record(value.kpis))
+      throw new Error('Este archivo es un resultado nativo: no contiene los nodos y arcos de su instancia. Carga la instancia correspondiente o la descarga de ejecución completa del API 3.0.');
     if (value.schema_version === '1.0') value = {instance: validateNativeInstance(value)};
     else if (value.api_version === API_VERSION && value.instance) {
       const request = value;

@@ -1,5 +1,6 @@
 import { API_VERSION, createSolverClient, readExecution, saveExecution } from './shared/solver-client.js';
 import { parseInstanceFile, inputNodes, makeSolveRequest, makePrepareRequest, solverSettings, validateNativeInstance, SYNTHETIC_PREPARATION } from './shared/solver-input.js';
+import { nativeRunResult, resultSections } from './shared/solver-output.js';
 
 export function initRunPanel() {
   const strip = document.createElement('section');
@@ -35,7 +36,7 @@ export function initRunPanel() {
       <div class="dialog-actions"><button id="stop-waiting" type="button" hidden>Dejar de esperar</button><button id="solve-run" type="submit" class="primary">Calcular rutas</button></div>
     </form>
     <details id="result-details" hidden><summary>Datos y límites de la ejecución</summary><div id="run-facts"></div></details>
-    <div class="run-exports"><button id="export-instance" type="button" disabled>Descargar instancia</button><button id="export-result" type="button" disabled>Descargar resultado</button><button id="export-attempt" type="button" hidden>Descargar intento fallido</button><button id="show-example" type="button">Ver ejemplo de diseño</button></div>`;
+    <div class="run-exports"><button id="export-instance" type="button" disabled>Descargar instancia</button><button id="export-result" type="button" disabled>Descargar ejecución completa</button><button id="export-native-result" type="button" disabled>Descargar resultado nativo</button><button id="export-attempt" type="button" hidden>Descargar intento fallido</button><button id="show-example" type="button">Ver ejemplo de diseño</button></div>`;
   document.body.append(dialog);
   const $ = id => document.getElementById(id);
   let input = null, rawResponse = null, lastRequest = null, lastPrepareRequest = null, canonicalInstance = null, busy = false;
@@ -65,7 +66,8 @@ export function initRunPanel() {
       $('run-source').textContent = !result.has_solution ? noSolutionLabels[result.status] || 'Sin solución disponible' : result.validation?.feasible === true ? 'Resultado del motor · comprobado'
         : result.validation?.feasible === false ? 'Resultado del motor · validación fallida'
           : 'Resultado del motor · verificación pendiente';
-      $('run-description').textContent = `${result.metadata?.time_limit_reached === true ? 'Límite de tiempo · ' : ''}${result.has_solution ? `${result.served_count}/${result.total_visits} entregas planificadas` : `${result.total_visits} destinos · entregas sin evaluar`} · ${result.network?.vial ? 'Red vial declarada' : 'Red no vial'} · ${result.run_id.slice(0, 8)}`;
+      const served = (result.kpis || nativeRunResult(rawResponse)?.kpis)?.served_deliveries;
+      $('run-description').textContent = `${result.metadata?.time_limit_reached === true ? 'Límite de tiempo · ' : ''}${result.validation?.feasible === true && Number.isFinite(served) ? `${served}/${result.total_visits} entregas planificadas` : `${result.total_visits} destinos · entregas sin validar`} · ${result.network?.vial ? 'Red vial declarada' : 'Red no vial'} · ${result.run_id.slice(0, 8)}`;
     } else if (saved) {
       $('run-source').textContent = 'Sin resultado del motor';
       $('run-description').textContent = 'Carga una instancia o vuelve al ejemplo de diseño.';
@@ -243,6 +245,10 @@ export function initRunPanel() {
   $('export-result').addEventListener('click', () => {
     if (rawResponse) download(rawResponse, `resultado-${rawResponse.result.run_id}.json`);
   });
+  $('export-native-result').addEventListener('click', () => {
+    const native = nativeRunResult(rawResponse);
+    if (native) download(native, `resultado-nativo-${native.run_id}.json`);
+  });
   $('export-attempt').addEventListener('click', () => {
     if (failedAttempt) download(failedAttempt, 'intento-fallido-beta.json');
   });
@@ -274,19 +280,35 @@ export function initRunPanel() {
           $('export-instance').disabled = false;
         }
         $('export-result').disabled = false;
+        $('export-native-result').disabled = !nativeRunResult(rawResponse);
         $('result-details').hidden = false;
-        const facts = [
-          `Ejecución: ${result.run_id}`,
-          `Alcance de la comprobación: ${result.validation?.scope || 'No disponible'}`,
-          `Preparación: ${result.runtime_seconds?.preparation ?? '—'} s · resolución (incluye modelo y validación): ${result.runtime_seconds?.solver ?? '—'} s · total del servicio: ${result.runtime_seconds?.total ?? '—'} s`,
-          result.metadata?.lexicographic_optimal ? 'Optimalidad lexicográfica declarada por el motor para esta instancia.' : 'Optimalidad lexicográfica no demostrada.',
-          `Estado nativo: ${result.metadata?.native_status || result.status}.`,
-          ...(result.metadata?.certificate_scope ? [`Alcance del certificado: ${result.metadata.certificate_scope}`] : []),
-          ...(result.phases || []).map(phase => `${phase.name === 'deliveries' ? 'Entregas' : 'Energía'} · ${phase.sense === 'maximize' ? 'maximizar' : 'minimizar'} · ${phase.proven_optimal ? 'óptimo probado de esta fase' : 'sin prueba de optimalidad'} · incumbente ${phase.incumbent ?? '—'} · cota ${phase.best_bound ?? '—'} · gap relativo ${phase.relative_gap ?? '—'} · ${phase.termination_condition} · ${phase.runtime_seconds} s.`),
-          ...(result.assumptions || []), ...(result.warnings || []), ...(result.validation?.violations || []),
-        ];
-        for (const fact of facts) {
-          const paragraph = document.createElement('p'); paragraph.textContent = fact; $('run-facts').append(paragraph);
+        $('run-facts').replaceChildren();
+        for (const group of resultSections(result)) {
+          if (!group.rows.length && !group.notes.length) continue;
+          const section = document.createElement('section');
+          section.className = 'run-result-section';
+          const heading = document.createElement('h3');
+          heading.textContent = group.title;
+          section.append(heading);
+          const list = document.createElement('dl');
+          for (const row of group.rows) {
+            const term = document.createElement('dt'), description = document.createElement('dd');
+            term.textContent = row.label;
+            description.textContent = row.value;
+            if (row.reason) {
+              const reason = document.createElement('small');
+              reason.textContent = row.reason;
+              description.append(reason);
+            }
+            list.append(term, description);
+          }
+          section.append(list);
+          for (const note of group.notes) {
+            const paragraph = document.createElement('p');
+            paragraph.textContent = note;
+            section.append(paragraph);
+          }
+          $('run-facts').append(section);
         }
       }
       renderStrip();

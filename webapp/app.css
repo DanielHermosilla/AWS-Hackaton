@@ -260,12 +260,16 @@ body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
 .loading-note { color:var(--shell-muted); font-size:12px; line-height:1.6; }
 .error-main { margin-left:var(--rail-width); height:calc(100dvh - var(--bar-height)); overflow:auto; }
 .map-region.map-unavailable { background:var(--shell-rail); }
-.map-unavailable .map-summary,.map-unavailable .map-tools,.map-unavailable .legend { display:none; }
+.map-unavailable .map-tools,.map-unavailable .legend { display:none; }
 .map-unavailable .map-status {
-  top:24px; bottom:auto; left:24px; right:24px; max-width:420px; padding:22px;
+  top:120px; bottom:auto; left:24px; right:24px; max-width:420px; padding:22px;
   border-color:var(--shell-line); border-radius:17px; background:var(--shell-raised); color:var(--shell-muted);
   font-size:13px; line-height:1.65;
 }
+.workspace .selection { max-height:calc(100% - 210px); overflow:auto; overscroll-behavior:contain; }
+.stop-facts { margin:12px 0 0; padding-top:12px; border-top:1px solid var(--shell-line); font-size:11px; line-height:1.5; }
+.stop-facts dt { color:var(--shell-muted); }
+.stop-facts dd { margin:0 0 8px; overflow-wrap:anywhere; }
 .page-home { height:100vh; height:100dvh; overflow:hidden; background:var(--shell-page-bg); }
 .page-home #home-main { margin-left:var(--rail-width); height:calc(100dvh - var(--bar-height)); overflow:auto; }
 

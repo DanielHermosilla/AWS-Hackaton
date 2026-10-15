@@ -28,14 +28,16 @@ const stopsOf = route => Array.isArray(route?.stops) ? route.stops : [];
 
 const visitTotal = new Set(NODES.filter(node => node.type === 'visit').map(node => node.id)).size;
 const stationTotal = NODES.filter(node => node.type === 'charger').length;
-const assignedTotal = noSolution ? null : new Set(ROUTES.flatMap(route => [...visitsOf(route)])).size;
-const unassigned = noSolution ? null : Math.max(0, visitTotal - assignedTotal);
+const assignedTotal = RUN_INFO ? RUN_INFO.kpis.served_deliveries ?? null
+  : new Set(ROUTES.flatMap(route => [...visitsOf(route)])).size;
+const unassigned = assignedTotal === null ? null : Math.max(0, visitTotal - assignedTotal);
 // Zero is a valid total; a missing value on any route makes the total unavailable.
 const energyTotal = RUN_INFO ? RUN_INFO.totalEnergyKwh
   : ROUTES.length && ROUTES.every(route => Number.isFinite(route?.energyKwh))
     ? ROUTES.reduce((sum, route) => sum + route.energyKwh, 0) : null;
 const chargeCounts = ROUTES.map(chargeCount);
-const chargeTotal = !noSolution && chargeCounts.every(Number.isFinite) ? chargeCounts.reduce((sum, value) => sum + value, 0) : null;
+const chargeTotal = RUN_INFO ? RUN_INFO.kpis.charging_stops ?? null
+  : !noSolution && chargeCounts.every(Number.isFinite) ? chargeCounts.reduce((sum, value) => sum + value, 0) : null;
 
 const owners = new Map();
 const fleet = VEHICLES.map((vehicle, index) => {
@@ -101,7 +103,7 @@ function resumeFrom(saved) {
 // ---- Text, links and the shell's single Continue action -----------------
 const values = {
   scenario: SCENARIO.name,
-  assignedFleet: noSolution ? '—' : count(active.filter(vehicle => vehicle.assigned > 0).length),
+  assignedFleet: assignedTotal === null ? '—' : count(active.filter(vehicle => vehicle.assigned > 0).length),
   vehicles: count(VEHICLES.length),
   assigned: count(assignedTotal),
   visits: count(visitTotal),
@@ -172,7 +174,7 @@ function gauges() {
       ? `<path class="gauge-fill viz-ink" d="M20 110 A90 90 0 0 1 200 110" pathLength="100" stroke-dasharray="${vehicle.finalSoc} 100"/>` : '';
     const value = vehicle.finalSoc === null ? '—' : `${number(vehicle.finalSoc)}<small>%</small>`;
     const facts = vehicle.active
-      ? `<span><strong>${count(vehicle.assigned)}</strong> locales</span><span><strong>${count(vehicle.chargeStops)}</strong> recarga${vehicle.chargeStops === 1 ? '' : 's'}</span>`
+      ? `<span><strong>${count(vehicle.assigned)}</strong> locales</span>${RUN_INFO ? '' : `<span><strong>${count(vehicle.chargeStops)}</strong> recarga${vehicle.chargeStops === 1 ? '' : 's'}</span>`}`
       : `<span>${noSolution ? 'Sin resultado para este vehículo' : 'Sin recorrido en este plan'}</span>`;
     return `<a class="gauge-card${vehicle.active ? '' : ' is-inactive'}" ${mark(vehicle)} href="${vehicleHref(vehicle)}">
       <span class="gauge-name"><i class="vehicle-dot viz-ink" aria-hidden="true"></i>${esc(vehicle.name)}<span aria-hidden="true">↗</span></span>
@@ -188,6 +190,7 @@ function gauges() {
 function assignment() {
   if (pending) return '<p class="chart-empty">Aún no hay entregas calculadas.</p>';
   if (noSolution) return '<p class="chart-empty">No hay una solución disponible para evaluar las entregas.</p>';
+  if (RUN_INFO && RUN_INFO.feasible !== true) return '<p class="chart-empty">Las entregas candidatas no están validadas. Revisa las comprobaciones en los datos de la ejecución.</p>';
   // The bar is decorative for assistive technology: the legend carries the same links and numbers.
   const segments = fleet.filter(vehicle => vehicle.assigned > 0).map(vehicle =>
     `<a class="allocation-segment" tabindex="-1" href="${vehicleHref(vehicle)}" ${mark(vehicle, `width:${vehicle.assignmentShare}%`)}><span class="viz-ink"></span></a>`).join('');

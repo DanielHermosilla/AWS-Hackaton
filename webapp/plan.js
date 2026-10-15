@@ -4,6 +4,7 @@ import { icon, carDrawing } from './shared/icons.js';
 import { detailSurface } from './shared/motion.js';
 import { readPlanContext, savePlanContext } from './state.js';
 import { escapeHtml as esc } from './shared/html.js';
+import { stopFacts } from './shared/solver-output.js';
 
 applyDataProvenance();
 
@@ -67,12 +68,13 @@ addEventListener('pageshow', () => { delete document.body.dataset.leavingDemo; }
 $('scenario-location').textContent = SCENARIO.name;
 $('fleet-tab').querySelector('span').textContent = VEHICLES.length;
 $('stops-tab').querySelector('span').textContent = NODES.filter(n => n.type === 'visit').length;
-$('plan-deliveries').textContent = pending ? '—' : RUN_INFO ? number(RUN_INFO.servedCount, 0) : served.size;
+$('plan-deliveries').textContent = pending ? '—' : RUN_INFO ? number(RUN_INFO.kpis.served_deliveries, 0) : served.size;
 $('plan-demand').textContent = pending ? '/ —' : `/ ${NODES.filter(n => n.type === 'visit').length}`;
 $('plan-energy').textContent = number(RUN_INFO ? RUN_INFO.totalEnergyKwh
   : ROUTES.length && ROUTES.every(r => Number.isFinite(r.energyKwh)) ? ROUTES.reduce((sum, r) => sum + r.energyKwh, 0) : null);
 const charges = ROUTES.map(chargeCount);
-$('plan-charges').textContent = pending || noSolution ? '—' : number(charges.every(Number.isFinite) ? charges.reduce((sum, value) => sum + value, 0) : null, 0);
+$('plan-charges').textContent = pending || noSolution ? '—' : number(RUN_INFO ? RUN_INFO.kpis.charging_stops
+  : charges.every(Number.isFinite) ? charges.reduce((sum, value) => sum + value, 0) : null, 0);
 if (RUN_INFO || pending) {
   $('plan-deliveries').closest('p').querySelector('small').textContent = 'entregas del modelo';
   $('plan-energy').closest('p').querySelector('small').textContent = RUN_INFO?.totalEnergyKwh == null ? 'consumo no disponible' : 'energía informada';
@@ -123,7 +125,8 @@ function render() {
         <div class="vehicle-stats">
           <span><strong>${r ? deliveryCount(r) : '—'}</strong> entregas</span>
           <span><strong>${number(r?.energyKwh)}</strong> kWh</span>
-          <span><strong>${r ? number(chargeCount(r), 0) : '—'}</strong> recargas</span>
+          ${RUN_INFO ? `<span><strong>${number(r?.durationSeconds, 0)}</strong> segundos</span>`
+            : `<span><strong>${r ? number(chargeCount(r), 0) : '—'}</strong> recargas</span>`}
         </div>
         ${inactive && hasSteps ? '<p class="vehicle-inactive">Sin desplazamiento · en base</p>' : ''}
         <button class="route-button" data-vehicle="${esc(v.id)}" ${hasSteps ? '' : 'disabled'} aria-label="${hasSteps ? inactive ? 'Ver estado en base de' : 'Explorar recorrido de' : 'Sin recorrido de'} ${esc(v.name)}">${hasSteps ? `${inactive ? 'Ver estado en base' : 'Explorar recorrido'} ${icon('arrow', 16)}` : 'Sin recorrido'}</button>
@@ -203,7 +206,8 @@ function stop(node, routeId, index, trigger, move = true) {
     <h3>${esc(title)}</h3>
     <p>${esc(serviceDescription)}</p>
     ${state ? `<div class="stop-battery"><span>Batería al llegar<strong>${number(state.arrivalSoc)} <small>%</small></strong></span><span>Al salir<strong>${number(state.departureSoc)} <small>%</small></strong></span></div>${state.chargeKwh ? `<p class="charge-note">${icon('plug', 14)} ${RUN_INFO ? 'Incorporada a batería' : 'Recarga de ejemplo'}: +${number(state.chargeKwh)} kWh</p>` : ''}${RUN_INFO ? `<p class="stop-occurrence">Paso ${state.position} · ${route.stops.length} posiciones</p>` : ''}`
-      : node.type === 'charger' ? `<p>${esc(node.connectors || 'Conectores sin información')}</p><p>Disponibilidad no verificada.</p>` : ''}`;
+      : node.type === 'charger' ? `<p>${esc(node.connectors || 'Conectores sin información')}</p><p>Disponibilidad no verificada.</p>` : ''}
+    ${RUN_INFO && state ? `<dl class="stop-facts">${stopFacts(state).map(fact => `<dt>${esc(fact.label)}</dt><dd>${esc(fact.value)}</dd>`).join('')}</dl>` : ''}`;
   $('selection-status').textContent = state
     ? `${vehicleById(route.vehicleId).name}. ${title}. ${serviceDescription}. Batería ${RUN_INFO ? 'informada' : 'de ejemplo'}: llegada ${number(state.arrivalSoc)} %, salida ${number(state.departureSoc)} %.`
     : `${title}. ${node.type === 'charger' ? 'Disponibilidad no verificada.' : node.type === 'visit' ? 'Sin asignar en este plan.' : ''}`;

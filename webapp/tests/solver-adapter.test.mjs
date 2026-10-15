@@ -40,7 +40,7 @@ function response() {
       runtime_seconds: { preparation: 0.5, solver: 2.5, total: 3.1 },
       assumptions: ['Capacidad útil configurada: 20 kWh.'],
       network: { type: 'osm', road: true },
-      metadata: { provider: 'ev_routing', provider_commit: 'f88d012', input_hash: 'input', config_hash: 'config', network_hash: 'network' },
+      metadata: { provider: 'ev_routing', provider_commit: '624203573bffdeec334a9e07a64b361a515f9725', input_hash: 'input', config_hash: 'config', network_hash: 'network' },
       raw: { input: {}, instance: {}, effective_config: {}, result: {} }
     }
   };

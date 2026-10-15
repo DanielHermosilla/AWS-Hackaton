@@ -32,5 +32,12 @@ main[data-run-pending="true"]>:not(.run-pending-placeholder){display:none}
 #result-details{margin-top:20px;font-size:13px}
 #result-details summary{cursor:pointer;font-weight:600}
 #run-facts{display:grid;gap:8px;margin-top:12px}
+.run-result-section{padding:14px 0;border-top:1px solid var(--shell-line);min-width:0}
+.run-result-section h3{font-size:14px;margin:0 0 12px}
+.run-result-section dl{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:9px 16px;font-size:12px;line-height:1.5}
+.run-result-section dt{color:var(--shell-muted)}
+.run-result-section dd{margin:0;overflow-wrap:anywhere}
+.run-result-section dd small{display:block;color:var(--shell-muted);margin-top:3px}
+.run-result-section p{margin-top:10px}
 @media(max-width:760px){.run-strip{padding:12px 16px;align-items:flex-start;flex-wrap:wrap;gap:10px}.run-actions{width:100%}.run-actions button{min-height:40px}.page-home #home-main,.page-plan .workspace,.error-main{height:auto;min-height:calc(100dvh - var(--bar-height) - var(--run-strip-height,110px))}.run-dialog{padding:20px}.run-fields{gap:12px}.run-exports button{min-height:40px}}
 @media(forced-colors:active){.run-strip,.run-dialog .input-summary,.run-fields input{border-color:CanvasText}.run-dialog .run-message.is-error{border-color:CanvasText}}

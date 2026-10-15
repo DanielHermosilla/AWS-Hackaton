@@ -67,7 +67,7 @@ export function adaptSolverResponse(envelope) {
     require(Number.isFinite(vehicle.initial_soc) && vehicle.initial_soc >= 0 &&
       vehicle.initial_soc <= 1, `${path}.initial_soc debe estar entre 0 y 1`);
     return {
-      id: vehicle.id, name: vehicle.label, model: vehicle.type,
+      id: vehicle.id, name: vehicle.label, model: vehicle.type === 'native' ? 'Vehículo eléctrico' : vehicle.type,
       color: palette[index % palette.length], initialSoc: vehicle.initial_soc * 100,
       capacityKwh: vehicle.battery_capacity_kwh, reserveKwh: vehicle.reserve_kwh
     };
@@ -81,6 +81,7 @@ export function adaptSolverResponse(envelope) {
     require(Array.isArray(route.steps), `${path}.steps`);
     require(nullableNumber(route.distance_km) && (route.distance_km === null || route.distance_km >= 0), `${path}.distance_km`);
     require(nullableNumber(route.energy_kwh), `${path}.energy_kwh`);
+    require(route.duration_seconds == null || (Number.isFinite(route.duration_seconds) && route.duration_seconds >= 0), `${path}.duration_seconds`);
     const geometry = route.geometry;
     require(geometry === null || (record(geometry) && geometry.type === 'LineString' &&
       Array.isArray(geometry.coordinates) && geometry.coordinates.length >= 2 &&
@@ -100,6 +101,13 @@ export function adaptSolverResponse(envelope) {
       }
       require(nullableNumber(step.charge_kwh) && (step.charge_kwh === null || step.charge_kwh >= 0), `${stepPath}.charge_kwh`);
       require(nullableNumber(step.energy_kwh), `${stepPath}.energy_kwh`);
+      require(step.next_node_id == null || nodes.has(step.next_node_id), `${stepPath}.next_node_id`);
+      for (const field of ['predicted_arc_energy_kwh', 'effective_arc_energy_kwh',
+        'arrival_seconds', 'service_start_seconds', 'departure_seconds',
+        'service_duration_seconds', 'charging_duration_seconds', 'travel_time_seconds']) {
+        require(step[field] == null || (Number.isFinite(step[field]) &&
+          (!field.endsWith('_seconds') || step[field] >= 0)), `${stepPath}.${field}`);
+      }
       const ids = stringArray(step.delivered_visit_ids, `${stepPath}.delivered_visit_ids`, true);
       require(ids.every(id => visits.has(id) && served.has(id) && id === step.node_id && !occurrences.has(id)),
         `${stepPath}.delivered_visit_ids inconsistentes o repetidos`);
@@ -110,6 +118,15 @@ export function adaptSolverResponse(envelope) {
         occurrenceId: JSON.stringify([route.vehicle_id, step.position]),
         arrivalSoc: soc(step.arrival_energy_kwh), departureSoc: soc(step.departure_energy_kwh),
         chargeKwh: step.charge_kwh, energyKwh: step.energy_kwh,
+        nextNodeId: step.next_node_id ?? null,
+        predictedArcEnergyKwh: step.predicted_arc_energy_kwh ?? null,
+        effectiveArcEnergyKwh: step.effective_arc_energy_kwh ?? null,
+        arrivalSeconds: step.arrival_seconds ?? null,
+        serviceStartSeconds: step.service_start_seconds ?? null,
+        departureSeconds: step.departure_seconds ?? null,
+        serviceDurationSeconds: step.service_duration_seconds ?? null,
+        chargingDurationSeconds: step.charging_duration_seconds ?? null,
+        travelTimeSeconds: step.travel_time_seconds ?? null,
         deliveredVisitIds: [...ids]
       };
     });
@@ -119,6 +136,7 @@ export function adaptSolverResponse(envelope) {
       vehicleId: route.vehicle_id, active: steps.some(step => step.nodeId !== base),
       servedVisitIds: [...served], stops: steps, stopIds: steps.map(step => step.nodeId),
       geometry, distanceKm: route.distance_km, energyKwh: route.energy_kwh,
+      durationSeconds: route.duration_seconds ?? null,
       finalSoc: steps.at(-1)?.departureSoc ?? null
     };
   });
@@ -174,6 +192,10 @@ export function adaptSolverResponse(envelope) {
       feasible: validation.feasible, validationScope: validation.scope, violations: [...violations],
       servedCount: result.served_count, totalVisits: result.total_visits, unservedVisitIds: [...unserved],
       totalEnergyKwh: result.total_energy_kwh, phases: result.phases,
+      kpis: result.kpis || result.raw?.result?.kpis || {},
+      operations: result.operations || result.raw?.result?.operations || {},
+      tuning: result.tuning || result.raw?.result?.tuning || {},
+      validationChecks: validation.checks || result.raw?.result?.validation?.checks || {},
       runtimeSeconds: { ...result.runtime_seconds }, warnings: [...result.warnings],
       assumptions: [...result.assumptions], network: result.network, metadata: { ...result.metadata }
     }

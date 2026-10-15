@@ -93,5 +93,7 @@ export const number = (n, digits = 1) => Number.isFinite(n) ? n.toLocaleString('
 export const visitIdsForRoute = route => source === 'solver' ? new Set(route?.servedVisitIds || [])
   : new Set((route?.stops || []).map(stop => stop.nodeId).filter(id => nodeById(id)?.type === 'visit'));
 export const deliveryCount = route => visitIdsForRoute(route).size;
-export const chargeCount = route => (route?.stops || []).some(stop => stop.chargeKwh === null)
+// Native per-route counts are not part of VehicleRoute. The global count is the
+// native KPI, whose numerical threshold belongs to the motor.
+export const chargeCount = route => source === 'solver' || (route?.stops || []).some(stop => stop.chargeKwh === null)
   ? null : (route?.stops || []).filter(stop => stop.chargeKwh > 0).length;
