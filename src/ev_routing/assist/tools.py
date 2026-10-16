@@ -46,7 +46,8 @@ PARAMETROS: dict[str, ParametroSpec] = {
     ),
     "vehiculos": ParametroSpec(
         # Flota: maximo 10 por ahora (decision de alcance de la demo).
-        "vehiculos", "instancia", "fleet_size", "int", 1, 10,
+        # Destino real confirmado contra el contrato: ProblemInstance.parameters.vehicle_count.
+        "vehiculos", "instancia", "vehicle_count", "int", 1, 10,
         "Numero de vehiculos de la flota (1..10).", importante=True,
     ),
     "reserva_final_soc": ParametroSpec(
