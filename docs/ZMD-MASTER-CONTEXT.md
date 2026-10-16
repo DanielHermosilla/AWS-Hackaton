@@ -10,6 +10,11 @@ para estimar energía por calle, con respaldo en el consumo supuesto; interpreta
 formatos y estadísticas mediante la misma conexión Bedrock del motor, con
 razonamiento alto, y ofrecer conexión efímera con credenciales AWS.
 [Diseño y aceptación](implementation/ZMD-HISTORICAL-ENERGY.md).
+Implementado y revisado: perfil histórico por calle con respaldo explícito,
+interpretación HIGH validada, ventana AWS efímera y persistencia del histórico
+seleccionado. Prueba local con eVED completo: 5.349 tramos calibrados y 20/20
+entregas validadas; 874 pruebas Python y 155 JavaScript aprobadas. La conexión
+AWS real queda pendiente de credenciales vigentes del usuario.
 
 El usuario pidió integrar el solver terminado publicado en `main` con las features
 F02 (cargadores), F03 (resumen imprimible) y F05 (editor), y resolver el feedback

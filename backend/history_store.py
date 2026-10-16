@@ -232,7 +232,10 @@ class HistoryStore:
         return entry.public()
 
     def apply(self, identifier, road, fallback_rate, *, synthetic=False):
-        from ev_routing.historical_energy import apply_historical_energy, fit_historical_energy
+        from ev_routing.historical_energy import (
+            MODEL_VERSION, apply_historical_energy, fit_historical_energy,
+            historical_network_fingerprint,
+        )
 
         entry = self.get(identifier)
         if entry.data is None or synthetic:
@@ -260,11 +263,11 @@ class HistoryStore:
                 **report, "kind": "manual_fallback", "fallback_kwh_per_km": fallback_rate,
             }
             return ProblemInstance.model_validate(updated), report
-        # Geometry/arc identity, not fleet values, determines the calibration match.
-        # Include the full road hash: a changed map must not reuse a previous match.
+        # Geometry, arc identity and fallback costs determine this calibration.
+        # Fleet capacity/SoC do not: changing them must not repeat GPS matching.
         key = fingerprint({
-            "road": road.model_dump(mode="json"), "history": entry.source_sha256,
-            "mapping": entry.mapping,
+            "road": historical_network_fingerprint(road), "history": entry.source_sha256,
+            "mapping": entry.mapping, "model_version": MODEL_VERSION,
         })
         profile = entry.fitted.get(key)
         if profile is None:

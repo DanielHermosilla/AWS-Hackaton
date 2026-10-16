@@ -256,3 +256,33 @@ def test_history_energy_is_applied_before_path_preparation_and_invalidates_cache
         assert first["instance"] != second["instance"]
     finally:
         runtime.close()
+
+
+def test_editing_fleet_reuses_calibration_but_changed_streets_do_not(monkeypatch):
+    from ev_routing import historical_energy
+    from test_historical_energy import eved, road
+
+    store = HistoryStore(OfflineBedrock())
+    content = eved().to_csv(index=False).encode()
+    profile = store.upload(io.BytesIO(content), len(content), "ev.csv")
+    calls = []
+    fit = historical_energy.fit_historical_energy
+
+    def recorded(*args, **kwargs):
+        calls.append(True)
+        return fit(*args, **kwargs)
+
+    monkeypatch.setattr(historical_energy, "fit_historical_energy", recorded)
+    try:
+        streets = road()
+        store.apply(profile["profile_id"], streets, .2)
+        different_capacity = streets.model_copy(deep=True)
+        different_capacity.parameters.battery_capacity_kwh = 30
+        store.apply(profile["profile_id"], different_capacity, .2)
+        assert len(calls) == 1
+        different_street = streets.model_copy(deep=True)
+        different_street.arcs[0].energy_kwh *= 2
+        store.apply(profile["profile_id"], different_street, .2)
+        assert len(calls) == 2
+    finally:
+        store.close()

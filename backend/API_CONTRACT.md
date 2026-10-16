@@ -13,7 +13,8 @@ energética **0.005** por defecto. `solver.random_seed` admite enteros de 0 a
 `adaptive`; omitirlo conserva `standard` por compatibilidad. La UI envía
 `adaptive` por defecto. El núcleo conserva física y certificados; el puente
 no importa proveedores de otro checkout ni acepta rutas locales, credenciales,
-modelos o parámetros libres del solver desde el navegador.
+modelos o parámetros libres dentro de una petición de resolución. La conexión
+AWS tiene un endpoint local independiente y no forma parte de la instancia.
 
 El número de hilos efectivos se registra en `raw.effective_config.solver.threads`.
 Configurar `parallel/maxnthreads` y `lp/threads` permite recursos al motor; no
@@ -27,6 +28,44 @@ El controlador limita la inferencia al 25 % del presupuesto. Respuestas tardías
 inválidas o fallos se informan sin atribuirles decisiones aplicadas. El mismo
 pipeline mantiene pricing exacto o cotas válidas y nunca cambia de backend por
 esos fallos. El resultado nativo completo permanece en `raw.result`.
+
+## Históricos y conexión AWS
+
+Los históricos son una entrada separada de los destinos. Un eVED válido se
+procesa sin IA. Los CSV/JSON de otro formato necesitan columnas y unidades
+documentadas o una interpretación validada mediante Bedrock. Para esa
+interpretación se exige **HIGH** en un modelo compatible; no se sustituye
+silenciosamente por un nivel inferior. El historial y el solver comparten la
+misma sesión AWS. La configuración de búsqueda conserva su presupuesto acotado.
+
+| Endpoint | Entrada / salida |
+|---|---|
+| `POST /history/upload` | Bytes, `application/octet-stream`, `X-History-Filename` codificado con URL. Máximo 256 MiB y dos millones de filas. CSV o JSON con `records` y metadatos opcionales. |
+| `GET /history?profile_id=…` | `{api_version, profile}`: estado `ready`, `needs_mapping` o `error`, resumen, supuestos, advertencias y análisis IA. |
+| `POST /history/analyze` | `{profile_id}`. Una interpretación y, al normalizar un formato nuevo, una explicación adicional de estadísticas; máximo dos llamadas por acción. |
+| `POST /history/remove` | `{profile_id}`. Elimina el archivo temporal y su perfil. |
+| `GET /bedrock/session` | Estado saneado: `state`, `connected`, región, modelo, perfil local opcional y segundos restantes. No comprueba la red. |
+| `POST /bedrock/session` | `mode: configured` con perfil local opcional, o `mode: temporary` con `access_key_id`, `secret_access_key` y `session_token`; región/modelo opcionales. Comprueba acceso mediante Converse. |
+| `POST /bedrock/disconnect` | `{}`. Invalida la sesión para nuevas consultas; no deshace una petición ya enviada a AWS. |
+
+Las peticiones de conexión tienen un límite de 16 KiB. Sus secretos permanecen
+solo en la sesión SDK en memoria. La conexión deja de admitir consultas al
+cumplir una hora o vencer las credenciales. No se escriben en configuración, logs, resultados ni
+almacenamiento del navegador. La API sigue limitada a loopback y al mismo origen.
+
+`POST /prepare` admite `energy_profile_id`. Devuelve el resumen de calibración
+en `preparation.energy_profile`: cobertura, evaluación por viajes reservados,
+supuestos y motivos de respaldo. Se aplican costes al grafo elemental antes
+de preparar caminos y perfiles de batería; las huellas cambian con el histórico.
+Una red sintética conserva su consumo supuesto porque no identifica calles.
+Los JSON nativos ya contienen sus energías y no se sobrescriben implícitamente.
+
+Hasta dos históricos permanecen temporalmente en el servidor; reiniciarlo,
+retirarlos o cargar otros puede hacerlos caducar. Una preparación que referencia
+un histórico inexistente devuelve `history_expired`: adjuntarlo de nuevo o
+retirarlo es una decisión visible. Los originales no se modifican. Bedrock
+recibe solo una muestra y estadísticas limitadas; las integrales se calculan
+localmente sobre el archivo admitido. Una unidad o signo ambiguos no se inventan.
 
 ## Preparación explícita de CSV
 
