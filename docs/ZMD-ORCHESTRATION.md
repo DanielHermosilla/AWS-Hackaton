@@ -7,18 +7,18 @@ Sesión madre `01a1415b-d61e-7a51-b306-2ef1441f7bf0`, 16-10-2026.
 
 Base común `f5b4ea8`: merge de `origin/main@9f03027` con F02/F03/F05.
 Rollback conservado en `codex/pre-main-refinement@d3e045a`. Checkout principal
-sin modificar. Goal activo sin presupuesto de tokens; integración local, sin push.
+sin modificar. Goal sin presupuesto de tokens; integración local verificada, sin push.
 
 | Área | Agente / rama / worktree | Propiedad | Estado |
 |---|---|---|---|
-| Integración, evidencia y documentación | Madre / codex/features-implementation / features-review | Contexto, guías y unión final | Merge completo; QA en curso |
-| Entrada y motor | refine_engine / codex/refine-engine / zmd-refine-engine | backend, solver-input/client, tests del puente | Implementando |
-| Panel y configuración | refine_panel / codex/refine-panel / zmd-refine-panel | run-panel, location-draft, tests de formulario | Implementando |
-| Tema, navegación y resultados | refine_experience / codex/refine-experience / zmd-refine-experience | theme/state/shell/home/plan/map, output/adapter/data, resumen | Implementando |
-| Revisión independiente | A asignar al liberar una plaza | Solo lectura de la unión | Pendiente |
+| Integración, evidencia y documentación | Madre / codex/features-implementation / features-review | Contexto, guías y unión final | Merge y QA completo |
+| Entrada y motor | refine_engine / codex/refine-engine / zmd-refine-engine | backend, solver-input/client, tests del puente | Integrado; pruebas específicas aprobadas |
+| Panel y configuración | refine_panel / codex/refine-panel / zmd-refine-panel | run-panel, location-draft, tests de formulario | Integrado; pruebas específicas aprobadas |
+| Tema, navegación y resultados | refine_experience / codex/refine-experience / zmd-refine-experience | theme/state/shell/home/plan/map, output/adapter/data, resumen | Integrado; pruebas específicas aprobadas |
+| Revisión independiente | full_integration_review | Solo lectura de la unión | Cerrado sobre 5424359; hallazgo de exportación corregido |
 
-Puertos exclusivos: 4330 madre; 4332 motor; 4333 panel; 4335 experiencia.
-Servidor anterior propio 4310 detenido para no mezclar Python antiguo con frontend nuevo.
+Puertos exclusivos: 4310 madre; 4332 motor; 4333 panel; 4335 experiencia.
+Servidor anterior propio 4310 reiniciado sobre la versión integrada. El puerto 4330 pertenece a otra aplicación y se conserva sin cambios.
 No modificar archivos de otro agente; coordinar contratos y luego integrar commits.
 Evidencia local nueva: `.local/full-integration-2026-10-16/`.
 
@@ -28,9 +28,24 @@ Evidencia local nueva: `.local/full-integration-2026-10-16/`.
 - Puente/Python: 13 aprobadas, 10 subtests aprobados.
 - Suite Python completa: 704 aprobadas, 10 omisiones, 37 subtests; una prueba
   temporal de orquestación falló al exigir óptimo exacto. Aislada pasó en 3,04 s.
-  Se conserva el log y se verificará al cierre antes de concluir.
+  Se conservó la evidencia y se corrigió la inestabilidad del doble al cerrar; ver abajo.
 - Los 10 skips corresponden al ejecutable SCIP alternativo de Pyomo o a escenarios
   cuyo backend no estuvo disponible; PySCIPOpt sí funciona en los cálculos web.
+
+### Cierre de integración completa
+
+- Motor/entradas: `3303824` → `830819c`, `7746b67` → `e07ba09`.
+- Experiencia: `24107ac` → `3681102`; panel: `59ec9f2` → `84baf36`.
+- Revisión independiente: un cruce de exportación al fallar el segundo cálculo,
+  corregido en `5424359` y revalidado por el revisor.
+- Prueba de decisiones estabilizada en `ba94398`; sin cambios al motor.
+- Cierre: 716 Python, 37 subtests y 146 JS aprobadas; 10 omisiones documentadas.
+  Panel, editor, navegación, tema, resumen y exportación verificados en navegador.
+- CSV completo: 20/20 entregas con 60 cargadores y validación vial; supuesto 0,16 kWh/km.
+  Todos los números, pasos de reproducción y límites están en la
+  [entrega completa](implementation/ZMD-FULL-INTEGRATION.md).
+- Servidores auxiliares detenidos. Vista integrada local en 4310. Los artefactos
+  de red/capturas/datos permanecen locales e ignorados. No hubo push ni despliegue.
 
 ## Registro histórico de la ola F02/F03/F05
 

@@ -91,11 +91,14 @@ validarse contra una red que cubra sus ubicaciones.
 La carga antigua permitía importar 64 MiB, pero enviar al motor solo 8 MiB.
 Los CSV de nodos locales tienen 81 ubicaciones y pesan aproximadamente 6 KiB;
 los históricos eVED pesan entre 100 MiB y varios GiB y no son archivos de instancia.
-La alineación de límites y mensajes se prueba con entradas válidas completas.
+Límites vigentes: importación 256 MiB, petición 64 MiB y almacén temporal 256 MiB.
+Se probaron ambos CSV completos y exportación/reimportación HTTP de un JSON grande.
 
-La suite inicial del merge pasó 137 pruebas JS y 13 pruebas de puente + 10 subtests.
-La suite Python completa tuvo una aserción de óptimo exacto que pasó al repetirse
-sola; se revisará de nuevo al cerrar y no se atribuye aún a un defecto del motor.
+La verificación final pasó **716 pruebas Python, 37 subtests y 146 pruebas JS**,
+con diez omisiones documentadas de backends alternativos. Los recorridos de
+navegador y el CSV completo pasaron. Un doble de prueba con plazos de 10 ms/100 ms
+se estabilizó sin cambiar el motor; un cruce de exportación detectado por la
+revisión independiente quedó corregido y probado. [Evidencia y límites](implementation/ZMD-FULL-INTEGRATION.md).
 
 ## Fuentes y límites
 
