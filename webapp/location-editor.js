@@ -226,18 +226,20 @@ export function createLocationEditor({onConfirm, onOpenChange = () => {}}) {
     get isOpen() { return dialog.open; },
     whenClosed() { return closed; },
     close,
-    open(input, trigger) {
+    open(input, trigger, nodeId) {
       if (dialog.open) return;
       draft = createLocationDraft(input);
       opener = trigger;
-      selectedId = draft.nodes[0].node_id;
+      selectedId = draft.nodes.some(node => node.node_id === nodeId) ? nodeId : draft.nodes[0].node_id;
       picking = false; mapFailed = false; mapReady = false;
       closed = new Promise(resolve => { resolveClosed = resolve; });
       $('location-search').value = '';
       $('location-heading').textContent = draft.readOnly ? 'Ubicaciones de la instancia' : 'Editar ubicaciones';
       $('location-scope').textContent = draft.readOnly
         ? 'Esta instancia conserva una red nativa ya calculada. Para mover sus puntos, carga un CSV o una entrada de ubicaciones y vuelve a preparar la red.'
-        : 'Revisa depósito, destinos y cargadores. El ID y el tipo se conservan. Al confirmar, el servidor deberá preparar de nuevo la aproximación por distancia; no es una red vial.';
+        : input.prepareRequest?.network_mode === 'road'
+          ? 'Revisa depósito, destinos y cargadores. Al confirmar, el servidor conectará de nuevo las ubicaciones a la red vial y habrá que recalcular las rutas.'
+          : 'Revisa depósito, destinos y cargadores. Al confirmar, el servidor deberá preparar de nuevo la aproximación por distancia; no es una red vial.';
       $('location-address-help').hidden = draft.readOnly;
       $('confirm-locations').hidden = draft.readOnly;
       $('cancel-locations').textContent = draft.readOnly ? 'Volver al cálculo' : 'Cancelar';

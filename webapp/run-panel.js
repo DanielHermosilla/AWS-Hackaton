@@ -12,7 +12,7 @@ export function initRunPanel() {
   const strip = document.createElement('section');
   strip.className = 'run-strip';
   strip.setAttribute('aria-label', 'Ejecución del plan');
-  strip.innerHTML = `<div class="run-summary"><strong id="run-source">Ejemplo de diseño</strong><span id="run-description">Calcula una instancia con el motor para obtener un plan.</span></div>
+  strip.innerHTML = `<div class="run-summary"><strong id="run-source">Planifica el caso de la hackatón</strong><span id="run-description">Revisa las ubicaciones, ajusta el escenario y calcula sus rutas.</span></div>
     <div class="run-actions"><button id="open-run" type="button">Cargar y calcular</button><button id="run-download" type="button" hidden>Ver resultados</button></div>`;
   document.getElementById('app-shell').after(strip);
   const dialog = document.createElement('dialog');
@@ -69,6 +69,24 @@ export function initRunPanel() {
   let draftWarning = '';
   let scenarioLoading = null;
   let readingInstance = false;
+  let startingRun = false;
+  const listeners = new Set();
+  function snapshot() {
+    return {
+      input, inputName, nodes: input?.instance?.nodes || input?.nodes || [],
+      scenario: input?.prepareRequest?.scenario,
+      fields: Object.fromEntries([...dialog.querySelectorAll('.run-fields input, .run-fields select')]
+        .map(field => [field.name, field.value])),
+      busy: busy || !!scenarioLoading || startingRun || !!readingInstance,
+      historyId: history.profileId,
+      historyName: saved?.energyProfile?.filename,
+      historyChosen: Object.hasOwn(saved || {}, 'energyProfile'),
+      message: $('run-message').textContent,
+      error: $('run-message').classList.contains('is-error'),
+      stale: !!saved?.stale,
+    };
+  }
+  function notify() { for (const listener of listeners) listener(snapshot()); }
   const history = createHistoryPanel({host: $('run-history'), onChange(profile, {invalidate}) {
     synchronizeHistoryReference(profile?.profile_id);
     if (invalidate && !input?.instance) dirty();
@@ -77,6 +95,7 @@ export function initRunPanel() {
     if (profile?.status === 'ready' && !input && !readingInstance) {
       useHackathon().catch(error => message(error.message, true));
     }
+    notify();
   }});
   function synchronizeHistoryReference(profileId) {
     if (!input?.prepareRequest) return;
@@ -109,28 +128,27 @@ export function initRunPanel() {
           : 'Resultado del motor · verificación pendiente';
       const served = (result.kpis || nativeRunResult(rawResponse)?.kpis)?.served_deliveries;
       $('run-description').textContent = `${result.metadata?.time_limit_reached === true ? 'Límite de tiempo · ' : ''}${result.validation?.feasible === true && Number.isFinite(served) ? `${served}/${result.total_visits} entregas planificadas` : `${result.total_visits} destinos · entregas sin validar`} · ${result.network?.vial ? 'Red vial' : 'Red sintética o sin verificar'}`;
+    } else if (saved?.mode === 'example') {
+      $('run-source').textContent = 'Ejemplo de diseño';
+      $('run-description').textContent = 'Este ejemplo es ilustrativo. Carga el caso de la hackatón para calcular.';
     } else if (saved) {
       $('run-source').textContent = 'Sin resultado del motor';
-      $('run-description').textContent = 'Carga una instancia o vuelve al ejemplo de diseño.';
+      $('run-description').textContent = 'Revisa el mapa y calcula las rutas del escenario.';
     }
     strip.dataset.stale = String(!!saved?.stale);
     $('run-download').hidden = !rawResponse;
     $('run-view-switch').hidden = !rawResponse;
-    if (saved && !saved.runId) {
+    if (saved && !saved.runId && saved.mode !== 'example') {
       const main = document.querySelector('main');
       main.dataset.runPending = 'true';
-      if (!main.querySelector('.run-pending-placeholder')) {
-        const empty = document.createElement('section');
-        empty.className = 'load-error run-pending-placeholder';
-        empty.innerHTML = '<h1>Sin resultado del motor</h1><p>Revisa tu instancia en «Cargar y calcular». Aquí aparecerán las rutas cuando termine la ejecución.</p>';
-        main.append(empty);
-      }
     }
+    notify();
   }
   function message(text, isError = false) {
     $('run-message').textContent = [text, draftWarning].filter(Boolean).join(' ');
     $('run-message').classList.toggle('is-error', isError);
-    if (isError) $('run-message').focus();
+    if (isError && dialog.open) $('run-message').focus();
+    notify();
   }
   function setBusy(value) {
     busy = value;
@@ -142,6 +160,7 @@ export function initRunPanel() {
     $('stop-waiting').hidden = !value;
     $('run-form').setAttribute('aria-busy', String(value || !!scenarioLoading));
     history.setRunBusy(value || !!scenarioLoading);
+    notify();
   }
   const client = createSolverClient({
     onChange(state) {
@@ -195,7 +214,7 @@ export function initRunPanel() {
     setBusy(false);
     $('export-instance').disabled = true;
     message('Cambios guardados para el próximo cálculo.');
-    try { save({stale: true, status: 'editing', message: '', draftId: null, energyCoverage: null}); }
+    try { save({mode: 'model', stale: true, status: 'editing', message: '', draftId: null, energyCoverage: null}); }
     catch (error) { message(error.message, true); }
     renderStrip();
   }
@@ -230,6 +249,7 @@ export function initRunPanel() {
     $('input-summary').textContent = `${inputName} · 1 depósito · ${clients} ${clients === 1 ? 'cliente' : 'clientes'} · ${chargers} ${chargers === 1 ? 'cargador' : 'cargadores'}${input.instance ? ` · ${input.instance.arcs.length} arcos` : ''}`;
     $('input-summary').hidden = false;
     $('location-review').hidden = false;
+    notify();
   }
   function fieldsFrom(value) {
     const values = inputFormValues(value);
@@ -259,8 +279,8 @@ export function initRunPanel() {
     if (preferSavedHistory && Object.hasOwn(saved || {}, 'energyProfile')) {
       const selectedId = saved.energyProfile?.profile_id || null;
       synchronizeHistoryReference(selectedId);
-      history.restore(selectedId);
-    } else if (value.prepareRequest?.energy_profile_id) history.restore(value.prepareRequest.energy_profile_id);
+      history.restore(selectedId).then(notify);
+    } else if (value.prepareRequest?.energy_profile_id) history.restore(value.prepareRequest.energy_profile_id).then(notify);
     renderInputSummary();
     $('edit-locations').disabled = false;
     $('edit-locations').textContent = native ? 'Revisar ubicaciones' : 'Editar ubicaciones';
@@ -439,13 +459,26 @@ export function initRunPanel() {
   for (const field of dialog.querySelectorAll('.run-fields select')) field.addEventListener('change', () => { dirty(); persistDraft(); });
   $('run-form').addEventListener('submit', async event => {
     event.preventDefault();
-    if (busy) return;
+    if (busy || startingRun) return;
+    startingRun = true;
+    notify();
     try {
       if (readingInstance) throw new Error('Espera a que termine la lectura de la instancia antes de calcular.');
       if (history.isPending) throw new Error('Espera a que termine la carga del histórico antes de calcular.');
       if (scenarioLoading) await scenarioLoading;
       if (!input && history.profileId) await useHackathon();
       if (busy) return;
+      // The default preview is cheap. Load telemetry only when the user asks to
+      // calculate, preserving this draft's nodes and any explicit history choice.
+      if (input?.prepareRequest?.scenario && !Object.hasOwn(saved || {}, 'energyProfile')) {
+        const revision = fileRevision, source = input;
+        message('Preparando el histórico eléctrico eVED del servidor…');
+        const loaded = await loadHistoricalCase({dataset: input.prepareRequest.scenario.dataset});
+        if (revision !== fileRevision || input !== source) throw new Error('La entrada cambió. Revisa el escenario y vuelve a calcular.');
+        history.useProfile(loaded.profile);
+        synchronizeHistoryReference(history.profileId);
+        persistDraft();
+      }
       const job = buildJob();
       lastRequest = job.request;
       lastPrepareRequest = job.prepareRequest;
@@ -455,13 +488,14 @@ export function initRunPanel() {
       await client.solve(lastRequest, {prepareRequest: lastPrepareRequest});
       $('export-instance').disabled = !canonicalInstance;
     } catch (error) { message(error.message, true); }
+    finally { startingRun = false; notify(); }
   });
   $('stop-waiting').addEventListener('click', () => client.stopWaiting());
   $('show-example').addEventListener('click', () => {
     client.invalidate();
     saveEditableSource(null, null);
     clearEditableDraft();
-    saveExecution(null);
+    saveExecution({mode: 'example'});
     location.reload();
   });
   function download(value, filename) {
@@ -504,6 +538,7 @@ export function initRunPanel() {
   const restoredDraft = readEditableDraft(saved?.draftId);
   if (saved?.energyProfile?.profile_id) history.restore(saved.energyProfile.profile_id).then(() => {
     if (saved?.energyCoverage?.profile_id === history.profileId) history.showCoverage(saved.energyCoverage);
+    notify();
   });
   if (restoredDraft) {
     setInput(restoredDraft.input, 'Borrador sin calcular', {preferSavedHistory: true});
@@ -523,6 +558,29 @@ export function initRunPanel() {
   setBusy(false);
   renderStrip();
   return {
+    subscribe(listener) { listeners.add(listener); listener(snapshot()); return () => listeners.delete(listener); },
+    async initializeScenario() {
+      if (input || saved || readingInstance) return;
+      try { await useHackathon(); }
+      catch (error) { message(error.message, true); }
+    },
+    async loadScenario({dataset, simulation = null} = {}) {
+      if (busy || startingRun || scenarioLoading) return;
+      if (dataset) $('hackathon-dataset').value = dataset;
+      try { await useHackathon({withHistory: true, simulation}); }
+      catch (error) { message(error.message, true); }
+    },
+    open,
+    editLocations(trigger, nodeId) {
+      if (!input || busy || scenarioLoading || startingRun) return;
+      editorSource = input;
+      locationEditor.open(input, trigger, nodeId);
+    },
+    calculate(trigger) {
+      open(trigger);
+      $('run-form').requestSubmit();
+      $('run-message').focus();
+    },
     setData(data) {
       rawResponse = data.RAW_RESPONSE;
       if (rawResponse) {

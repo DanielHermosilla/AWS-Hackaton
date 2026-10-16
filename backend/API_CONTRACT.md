@@ -112,6 +112,15 @@ en la procedencia y en la entrada exportada; declara origen, no certifica
 factibilidad ni autenticidad de ubicaciones editadas. El margen del formulario
 se convierte a `operations.energy_margin_fraction` y utiliza la física vigente.
 
+La interfaz obtiene las ubicaciones de `competition` automáticamente al abrir una
+pestaña sin borrador ni ejecución; solo hace el GET, sin procesar históricos,
+preparar la red o resolver. Al calcular ese caso carga eVED mediante el POST si
+todavía no existe una elección explícita de histórico. Conserva las ubicaciones
+editadas: cargar el histórico no reemplaza el borrador. El mapa inicial y el
+formulario de cálculo comparten esa misma entrada. Las variantes se previsualizan
+en el mapa antes de enviarse a `/prepare`; los errores no sustituyen sus puntos
+por ejemplos.
+
 La interfaz permite cargar cualquiera de los casos explícitamente. Si se adjunta
 un histórico válido sin ubicaciones, carga el caso seleccionado automáticamente
 y conserva la flota y los supuestos editados. Después utiliza los endpoints

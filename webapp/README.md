@@ -10,7 +10,11 @@ uv sync --locked --extra dw
 AWS_PROFILE=hackathon uv run --locked --extra dw python -m backend.local_server --port 4294
 ```
 
-Abrir `http://127.0.0.1:4294/` y elegir **Cargar y calcular**. El CSV se envía a
+Abrir `http://127.0.0.1:4294/`: el mapa carga automáticamente las ubicaciones de
+**competition en Ann Arbor, Michigan**. **Calcular rutas**, visible sobre el mapa,
+carga el histórico eléctrico eVED del servidor y ejecuta el caso con los supuestos
+que se muestran. **Ajustar flota y cálculo** abre el formulario completo.
+El CSV se envía a
 `/prepare` para que el backend construya la instancia; después se envía la
 ProblemInstance 1.0/1.1 canónica a `/solve`. La selección **Calles del servidor** usa el GraphML indicado con `--graphml` y
 preprocesamiento con expansión vial; la selección geodésica es sintética.
@@ -39,6 +43,26 @@ probada. El servidor temporal conserva hasta cuatro resultados y estos expiran
 al reiniciarlo. Ver [el contrato y sus límites](../docs/integration-beta.md).
 
 ## Panel de cálculo y recuperación
+
+**Inicio** muestra el mapa del escenario antes de resolver: depósito, clientes
+y cargadores, sin recorridos ni indicadores inventados. La apertura obtiene solo
+las ubicaciones; no procesa eVED ni ejecuta el solver o Bedrock. Si existe un
+borrador o resultado en la pestaña, se recupera sin sustituirlo por el caso inicial.
+El Plan sin una ejecución también abre este mapa editable.
+
+Junto al mapa, **Clientes**, **Cargadores** y **Semilla de ubicaciones** permiten
+preparar una variante con **Actualizar mapa**. Esta acción usa la red y el
+muestreador del servidor, conserva el depósito y reutiliza el histórico elegido.
+Los puntos nuevos se distinguen por su borde discontinuo. Las cantidades editadas
+se deben aplicar antes de calcular. Un error conserva el mapa anterior y explica
+qué falta. **Cargar caso original + histórico** permite restaurar competition o
+cargar evaluation; no modifica los archivos originales.
+
+Seleccionar un marcador permite **Editar este punto**, con confirmación o
+cancelación. **Ver ubicaciones en lista** ofrece el mismo acceso sin cartografía.
+El mapa, las variantes y el formulario comparten un único borrador: una edición
+confirmada cambia la próxima preparación y exige volver a calcular. La capacidad
+24 kWh, reserva 2,4 kWh y consumo 0,2 kWh/km siguen siendo supuestos editables.
 
 **Instancia** permite seleccionar un archivo o crear un caso sintético con la cantidad
 escogida de clientes y cargadores (hasta 200 ubicaciones en total). El signo `?`
@@ -118,7 +142,10 @@ Usa HTTP: los módulos JavaScript y el mapa no funcionan abriendo el HTML como a
 
 ## Pantallas
 
-**Inicio** resume el plan seleccionado en tres paneles: medidores de batería al regreso por vehículo (con una marca para la batería de salida), entregas asignadas por vehículo y consumo por vehículo, junto con paradas de recarga y estaciones del escenario. Cada local cuenta una sola vez aunque se visite varias veces. Un vehículo sin recorrido aparece como «Sin recorrido». Los vehículos, «Ver vehículos», «Ver paradas» y el enlace de estaciones abren el Plan en esa vista.
+**Inicio** abre el mapa de preparación. Cuando existe un resultado, añade el resumen
+del plan en tres paneles: batería al regreso, entregas asignadas y consumo por
+vehículo. Cada local cuenta una sola vez aunque se visite varias veces. Los enlaces
+de vehículos, paradas y estaciones abren el Plan en esa vista.
 
 **Plan** muestra el mapa con los recorridos, la lista de vehículos y paradas, las estaciones de carga y el detalle de cada parada. Los números compactos identifican el mismo local en mapa y lista; no representan su posición en el recorrido. Las paradas usan referencias o nombres legibles (cliente, estación, salida y regreso); los identificadores originales se conservan en los datos y las exportaciones.
 
@@ -158,7 +185,12 @@ cómputo se presentan por separado, sin sumar intervalos contenidos.
 
 ## Datos
 
-- Un clon limpio usa `data/demo.synthetic.json`: puntos generados, líneas entre ellos y valores inventados. No son ubicaciones CASE ni rutas viales.
+- El caso inicial se obtiene mediante `GET /scenarios/hackathon?dataset=competition`,
+  desde los datos locales del servidor. Si faltan, la app muestra un error y
+  mantiene los controles de carga; no inventa puntos ni abre otro ejemplo.
+- **Ver ejemplo de diseño**, en el panel de cálculo, selecciona explícitamente
+  `data/demo.synthetic.json` cuando no existe el ejemplo local: puntos generados,
+  líneas entre ellos y valores inventados. No son ubicaciones CASE ni rutas viales.
 - Si existe `data/fixture.local.json`, se usa el ejemplo local preparado con las ubicaciones públicas de CASE y trazados OSRM sobre Ann Arbor. Este archivo es local e ignorado por Git. Su orden de visitas, consumo, recargas y baterías siguen siendo ilustrativos.
 - Solo un **404** del archivo local activa el ejemplo sintético. Un JSON corrupto o cualquier otro error muestra un fallo de carga con opción de reintentar, sin sustituir los datos en silencio.
 - La cartografía de fondo necesita internet para acceder a OpenFreeMap. La lista de paradas sigue disponible si falla el mapa. Abrir la webapp no consulta OSRM.
@@ -173,6 +205,8 @@ El formato del ejemplo continúa separado del contrato HTTP beta.
 ## Código
 
 - `index.html`, `home.js`, `home.css`: Inicio.
+- `scenario-workspace.js`, `scenario-workspace.css`: mapa inicial y controles de
+  variantes; consume el estado compartido de `run-panel.js`.
 - `plan.html`, `plan.js`, `plan.css`, `map.js`: Plan.
 - `boot.js`: crea la cabecera compartida una vez y carga el módulo de la página; muestra el error de carga si algo falla.
 - `app-shell.js`, `app.css`, `material.css`: cabecera, navegación, perfil y diálogos.
@@ -205,6 +239,18 @@ node --test webapp/tests/*.test.mjs
 Estas pruebas comprueban referencias, unidades, estados y tipos usados por la
 interfaz; no certifican factibilidad energética. La guía beta incluye las pruebas
 Python con HTTP y el solver nativo; cada evidencia declara su alcance.
+
+Con Playwright disponible, `webapp/tests/scenario-workspace.browser.mjs` comprueba
+mapa inicial, carga diferida de eVED, variantes, edición desde marcadores,
+recuperación entre Inicio y Plan, errores sin reemplazos y el flujo
+preparación → cálculo → resultado. Usa dobles HTTP, sin AWS ni resolución real:
+
+```sh
+ZMD_QA_ORIGIN=http://127.0.0.1:4294 node webapp/tests/scenario-workspace.browser.mjs
+```
+
+Admite `PLAYWRIGHT_MODULE` y `CHROME_EXECUTABLE` si el navegador y Playwright no
+están en las rutas predeterminadas.
 
 El [contexto maestro](../docs/ZMD-MASTER-CONTEXT.md) y el
 [registro de orquestación](../docs/ZMD-ORCHESTRATION.md) identifican las bases,

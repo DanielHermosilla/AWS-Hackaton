@@ -11,7 +11,7 @@
 .run-strip button{font-size:12px;white-space:nowrap}
 .page-home #home-main,.page-plan .workspace,.error-main{height:calc(100dvh - var(--bar-height) - var(--run-strip-height,68px))}
 main[data-run-pending="true"]{display:block;overflow:auto}
-main[data-run-pending="true"]>:not(.run-pending-placeholder){display:none}
+main[data-run-pending="true"]>.vision-content{display:none}
 .run-dialog{width:min(700px,calc(100% - 32px));max-width:700px;max-height:calc(100dvh - 32px);overflow:auto;padding:28px;scroll-padding:24px;overscroll-behavior:contain}
 .run-dialog [hidden]{display:none!important}
 .run-dialog p{color:var(--shell-muted);font-size:13px;line-height:1.5;overflow-wrap:anywhere}

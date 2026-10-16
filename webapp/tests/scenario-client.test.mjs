@@ -21,6 +21,9 @@ test('missing local dataset is actionable and never replaced with invented nodes
     ok: false, json: async () => ({error: {message: 'Falta competition_routing_nodes.csv en data/ del servidor.'}}),
   })), /Falta competition/);
   await assert.rejects(() => loadHackathonScenario('../secret'), /Elige/);
+  await assert.rejects(() => loadHackathonScenario('competition', async () => ({
+    json: async () => { throw new SyntaxError('HTML from a static-only server'); },
+  })), /servidor local/);
 });
 
 test('complete case loads local history and variants explicitly reuse the selected profile', async () => {
