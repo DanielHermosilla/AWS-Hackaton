@@ -33,6 +33,19 @@ class Explicacion:
 
 def _plantilla(hechos: Hechos) -> str:
     """Explicacion deterministica a partir de los hechos (sin LLM)."""
+    if not hechos.hay_solucion or hechos.factible is not True:
+        if not hechos.hay_solucion:
+            diagnostico = "No se encontro una solucion para presentar."
+        elif hechos.factible is False:
+            diagnostico = "El candidato no supero la validacion; no hay un plan factible."
+        else:
+            diagnostico = "El candidato aun no tiene validacion de factibilidad."
+        return "\n".join([
+            diagnostico,
+            f"Estado del calculo: {hechos.estado}.",
+            "Entregas y recargas no disponibles.",
+            *_lineas_certificado(hechos),
+        ])
     lineas = []
     estado = "optima (lexicografica)" if hechos.optimo_lexicografico else hechos.estado
     lineas.append(f"Estado de la solucion: {estado}.")
@@ -104,7 +117,7 @@ def explicar(resultado: dict, cliente: ClienteBedrock | None = None) -> Explicac
     hechos = extraer_hechos(resultado)
     plantilla = _plantilla(hechos)
 
-    if cliente is None:
+    if cliente is None or not hechos.hay_solucion or hechos.factible is not True:
         rep = verificar(plantilla, hechos)
         return Explicacion(plantilla, "plantilla", rep)
 
