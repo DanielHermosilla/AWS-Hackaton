@@ -55,7 +55,9 @@ export function adaptSolverResponse(envelope) {
       id: node.node_id, type: node.node_type, lat: node.latitude, lng: node.longitude,
       label: node.address?.trim() || (node.node_type === 'base' ? 'Base' : node.node_id),
       address: node.address || '', connectors: (node.connector_types || []).join('; '),
-      network: node.network || '', powerKw: node.max_power_kw ?? null
+      network: node.network || '', powerKw: node.max_power_kw ?? null,
+      totalPorts: node.total_ports ?? null, dcFastPorts: node.dc_fast_ports ?? null,
+      level2Ports: node.level2_ports ?? null
     };
   });
   const VEHICLES = result.fleet.map((vehicle, index) => {

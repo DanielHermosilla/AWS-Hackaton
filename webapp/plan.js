@@ -5,14 +5,27 @@ import { detailSurface } from './shared/motion.js';
 import { readPlanContext, savePlanContext } from './state.js';
 import { escapeHtml as esc } from './shared/html.js';
 import { stopFacts } from './shared/solver-output.js';
+import { chargerDetails, chargerList, chargerOccurrences, chargerChargeText } from './shared/charger-details.js';
 
 applyDataProvenance();
 
 const $ = id => document.getElementById(id);
+const chargerStyles = document.createElement('link');
+chargerStyles.rel = 'stylesheet';
+chargerStyles.href = new URL('./charger-details.css', import.meta.url);
+document.head.append(chargerStyles);
+const chargerTab = document.createElement('button');
+chargerTab.id = 'chargers-tab';
+chargerTab.type = 'button';
+chargerTab.setAttribute('role', 'tab');
+chargerTab.setAttribute('aria-controls', 'sidebar-content');
+chargerTab.innerHTML = `Cargadores <span>${NODES.filter(node => node.type === 'charger').length}</span>`;
+$('stops-tab').after(chargerTab);
+const tabs = ['fleet', 'stops', 'chargers'];
 const pending = DATA_SOURCE === 'pending';
 const noSolution = RUN_INFO?.hasSolution === false;
 const detail = detailSurface($('selection'));
-let selected = null, tab = 'fleet', selectedStop = null, map, returnFocus;
+let selected = null, tab = 'fleet', selectedStop = null, selectedCharger = null, map, returnFocus;
 let detailOpen = false;
 const mobile = matchMedia('(max-width:760px)');
 const vehicleById = id => VEHICLES.find(v => v.id === id);
@@ -27,20 +40,22 @@ const saved = readPlanContext();
 const previous = saved?.scenario === SCENARIO.id ? saved : {};
 const params = new URLSearchParams(location.search);
 const explicit = (!RUN_INFO || params.get('run') === RUN_INFO.runId)
-  && ['vehicle', 'tab', 'stop', 'chargers'].some(key => params.has(key));
+  && ['vehicle', 'tab', 'stop', 'chargers', 'charger'].some(key => params.has(key));
 const initial = explicit ? {
   vehicle: params.get('vehicle'),
-  tab: params.get('tab') || (params.has('vehicle') ? 'stops' : 'fleet'),
+  tab: params.get('tab') || (params.has('vehicle') ? 'stops' : params.get('chargers') === '1' ? 'chargers' : 'fleet'),
   stop: params.has('stop') ? { vehicleId: params.get('vehicle'), index: Number(params.get('stop')) } : null,
+  charger: params.get('charger'),
   chargers: params.get('chargers') === '1'
 } : previous;
 selected = routeById(initial.vehicle) ? initial.vehicle : null;
-tab = initial.tab === 'stops' ? 'stops' : 'fleet';
+tab = tabs.includes(initial.tab) ? initial.tab : 'fleet';
 const initialStop = initial.stop && initial.stop.vehicleId === selected &&
   Number.isInteger(initial.stop.index) && routeById(selected)?.stops[initial.stop.index] ? initial.stop : null;
 const initialView = (!explicit || params.has('tab')) && previous.vehicle === selected &&
   previous.tab === tab && previous.stop?.vehicleId === initialStop?.vehicleId &&
   previous.stop?.index === initialStop?.index &&
+  (previous.charger ?? null) === (initial.charger ?? null) &&
   previous.viewportWidth === innerWidth ? previous.view : null;
 
 function remember() {
@@ -48,6 +63,7 @@ function remember() {
   const context = {
     scenario: SCENARIO.id, vehicle: selected, tab,
     stop: detailOpen ? selectedStop : null,
+    charger: detailOpen && !selectedStop ? selectedCharger : null,
     chargers: $('chargers').getAttribute('aria-pressed') === 'true',
     view: map?.getView(), viewportWidth: innerWidth
   };
@@ -56,6 +72,7 @@ function remember() {
   if (RUN_INFO) query.set('run', RUN_INFO.runId);
   if (selected) query.set('vehicle', selected);
   if (context.stop) query.set('stop', context.stop.index);
+  if (context.charger) query.set('charger', context.charger);
   if (context.chargers) query.set('chargers', '1');
   try {
     history.replaceState(null, '', `${location.pathname}?${query}`);
@@ -100,12 +117,18 @@ for (const vehicle of VEHICLES) {
 }
 
 function render() {
-  for (const key of ['fleet', 'stops']) {
+  for (const key of tabs) {
     $(key + '-tab').setAttribute('aria-selected', String(tab === key));
     $(key + '-tab').tabIndex = key === tab ? 0 : -1;
   }
-  $('sidebar-content').classList.toggle('stops', tab === 'stops');
+  $('sidebar-content').classList.toggle('stops', tab !== 'fleet');
   $('sidebar-content').setAttribute('aria-labelledby', tab + '-tab');
+  if (tab === 'chargers') {
+    $('sidebar-content').innerHTML = pending
+      ? '<p class="plan-empty">Carga y calcula una instancia para consultar sus estaciones.</p>'
+      : chargerList(NODES, ROUTES, { noSolution, selectedId: detailOpen ? selectedCharger : null });
+    return;
+  }
   if (tab === 'fleet') {
     if (!VEHICLES.length) {
       $('sidebar-content').innerHTML = `<p class="plan-empty">${pending ? 'Aún no hay un resultado de flota.' : 'Esta ejecución no contiene vehículos.'}</p>`;
@@ -159,11 +182,12 @@ function render() {
     (!routes.length && !unserved.length ? `<p class="plan-empty">${pending ? 'Aún no hay un resultado de paradas.' : noSolution ? 'El motor no dispone de una solución con recorridos.' : NODES.some(node => node.type === 'visit') ? 'Esta ejecución no contiene recorridos.' : 'Esta ejecución no contiene destinos de entrega.'}</p>` : '');
 }
 
-function vehicle(id, focus = false, refit = true) {
+function vehicle(id, focus = false, refit = true, nextTab = 'stops') {
   if (!routeById(id)) return;
   selected = id;
   selectedStop = null;
-  tab = 'stops';
+  selectedCharger = null;
+  tab = nextTab;
   detailOpen = false;
   detail.hide();
   render();
@@ -172,9 +196,9 @@ function vehicle(id, focus = false, refit = true) {
   remember();
 }
 
-function stop(node, routeId, index, trigger, move = true) {
-  let route = routeById(routeId || selected);
-  if (!route?.stopIds.includes(node.id)) {
+function stop(node, routeId, index, trigger, { move = true, overview = false } = {}) {
+  let route = overview ? null : routeById(routeId || selected);
+  if (!overview && !route?.stopIds.includes(node.id)) {
     route = routesForNode(node.id)[0];
   }
   const sameOccurrence = route && selectedStop?.vehicleId === route.vehicleId &&
@@ -182,18 +206,28 @@ function stop(node, routeId, index, trigger, move = true) {
   const stopIndex = index ?? (sameOccurrence ? selectedStop.index : route?.stops.findIndex(s => s.nodeId === node.id));
   const state = route?.stops[stopIndex];
   const previousFocus = document.activeElement;
-  if (route && selected !== route.vehicleId) vehicle(route.vehicleId, false, move);
+  if (route && selected !== route.vehicleId) vehicle(route.vehicleId, false, move, tab === 'chargers' ? 'chargers' : 'stops');
   selectedStop = state ? { vehicleId: route.vehicleId, index: stopIndex } : null;
+  selectedCharger = node.type === 'charger' ? node.id : null;
+  if (selectedCharger) showChargers();
   // Avoid replacing the list (and its focused button) on each stop selection.
   for (const el of document.querySelectorAll('[data-stop]')) {
     const active = el.dataset.route === selectedStop?.vehicleId && Number(el.dataset.index) === selectedStop?.index;
     el.classList.toggle('active', active);
     el.setAttribute('aria-pressed', String(active));
   }
+  for (const el of document.querySelectorAll('[data-charger]')) {
+    const active = el.dataset.charger === selectedCharger;
+    el.classList.toggle('active', active);
+    el.setAttribute('aria-pressed', String(active));
+  }
   const currentRow = [...document.querySelectorAll('[data-stop]')].find(el =>
     el.dataset.route === selectedStop?.vehicleId && Number(el.dataset.index) === selectedStop?.index);
   const previousControl = previousFocus?.isConnected && previousFocus !== document.body ? previousFocus : null;
-  returnFocus = trigger?.isConnected ? trigger : (trigger ? currentRow : previousControl) || currentRow || $('stops-tab');
+  const stationRow = [...document.querySelectorAll('[data-charger]')].find(el => el.dataset.charger === node.id);
+  const fromDetail = $('selection').contains(previousFocus);
+  returnFocus = trigger?.isConnected && !$('selection').contains(trigger) ? trigger
+    : (!fromDetail && previousControl) || currentRow || stationRow || $(tab + '-tab');
   const title = state ? stopTitle(node, stopIndex, route) : node.label;
   const serviceDescription = node.type === 'charger' ? SOURCE_DETAILS.charger
     : node.type === 'base' ? 'Centro de distribución'
@@ -201,22 +235,32 @@ function stop(node, routeId, index, trigger, move = true) {
     : state ? servedAt(state, node) ? RUN_INFO ? 'Entrega prevista por el modelo' : 'Entrega prevista' : 'Paso por el local sin entrega'
     : noSolution ? 'Sin resultado de servicio para este destino'
     : RUN_INFO ? 'Pendiente de servicio en este plan' : 'Sin asignar en este plan';
+  const occurrences = node.type === 'charger' ? chargerOccurrences(node.id, ROUTES) : [];
+  $('selection').classList.toggle('charger-selection', node.type === 'charger');
+  $('selection').setAttribute('role', 'region');
+  $('selection').setAttribute('aria-labelledby', 'selection-title');
   $('selection').innerHTML = `<button class="close" id="close-selection" aria-label="Cerrar detalle">${icon('close', 16)}</button>
     <p class="detail-eyebrow">${route ? esc(vehicleById(route.vehicleId).name) + ' · ' : ''}${esc(node.id)}</p>
-    <h3>${esc(title)}</h3>
+    <h3 id="selection-title">${esc(title)}</h3>
     <p>${esc(serviceDescription)}</p>
-    ${state ? `<div class="stop-battery"><span>Batería al llegar<strong>${number(state.arrivalSoc)} <small>%</small></strong></span><span>Al salir<strong>${number(state.departureSoc)} <small>%</small></strong></span></div>${state.chargeKwh ? `<p class="charge-note">${icon('plug', 14)} ${RUN_INFO ? 'Incorporada a batería' : 'Recarga de ejemplo'}: +${number(state.chargeKwh)} kWh</p>` : ''}${RUN_INFO ? `<p class="stop-occurrence">Paso ${state.position} · ${route.stops.length} posiciones</p>` : ''}`
-      : node.type === 'charger' ? `<p>${esc(node.connectors || 'Conectores sin información')}</p><p>Disponibilidad no verificada.</p>` : ''}
-    ${RUN_INFO && state ? `<dl class="stop-facts">${stopFacts(state).map(fact => `<dt>${esc(fact.label)}</dt><dd>${esc(fact.value)}</dd>`).join('')}</dl>` : ''}`;
+    ${state ? `<div class="stop-battery"><span>Batería al llegar<strong>${number(state.arrivalSoc)} <small>%</small></strong></span><span>Al salir<strong>${number(state.departureSoc)} <small>%</small></strong></span></div>${node.type === 'charger' || state.chargeKwh ? `<p class="charge-note${state.chargeKwh > 0 ? '' : ' charge-note-neutral'}">${icon('plug', 14)} ${esc(chargerChargeText(state.chargeKwh, !RUN_INFO))}</p>` : ''}${RUN_INFO ? `<p class="stop-occurrence">Paso ${state.position} · ${route.stops.length} posiciones</p>` : ''}` : ''}
+    ${node.type === 'charger' ? chargerDetails(node) : ''}
+    ${occurrences.length ? `<section class="charger-occurrences" aria-label="Pasos por esta estación"><h4>Pasos por esta estación</h4>${occurrences.map(occurrence =>
+      `<button type="button" data-charger-route="${esc(occurrence.vehicleId)}" data-charger-index="${occurrence.index}" aria-pressed="${selectedStop?.vehicleId === occurrence.vehicleId && selectedStop?.index === occurrence.index}">
+        <span>${esc(vehicleById(occurrence.vehicleId).name)} · Paso ${occurrence.state.position ?? occurrence.index}</span><small>${esc(chargerChargeText(occurrence.state.chargeKwh, !RUN_INFO))}</small>
+      </button>`).join('')}</section>` : node.type === 'charger' ? `<p class="charger-usage">${noSolution ? 'Sin recorrido calculado para esta ejecución.' : 'Esta estación no forma parte de los recorridos del plan.'}</p>` : ''}
+    ${RUN_INFO && state ? `${node.type === 'charger' ? '<details class="charger-step-facts"><summary>Datos de este paso</summary>' : ''}<dl class="stop-facts">${stopFacts(state).map(fact => `<dt>${esc(fact.label)}</dt><dd>${esc(fact.value)}</dd>`).join('')}</dl>${node.type === 'charger' ? '</details>' : ''}` : ''}`;
   $('selection-status').textContent = state
     ? `${vehicleById(route.vehicleId).name}. ${title}. ${serviceDescription}. Batería ${RUN_INFO ? 'informada' : 'de ejemplo'}: llegada ${number(state.arrivalSoc)} %, salida ${number(state.departureSoc)} %.`
     : `${title}. ${node.type === 'charger' ? 'Disponibilidad no verificada.' : node.type === 'visit' ? 'Sin asignar en este plan.' : ''}`;
   detail.show();
   detailOpen = true;
+  $('selection').scrollTop = 0;
+  if (!Number.isFinite(node.lat) || !Number.isFinite(node.lng)) map?.selectVehicle(selected, false);
   map?.selectNode(node.id, move);
-  if (trigger && mobile.matches) {
+  if (fromDetail || (trigger && (mobile.matches || node.type === 'charger'))) {
     $('close-selection').focus({preventScroll:true});
-    document.querySelector('.map-region').scrollIntoView({block:'start',behavior:'auto'});
+    if (mobile.matches) document.querySelector('.map-region').scrollIntoView({block:'start',behavior:'auto'});
   }
   remember();
 }
@@ -228,9 +272,12 @@ $('sidebar-content').addEventListener('click', e => {
   if (s) stop(nodeById(s.dataset.stop), s.dataset.route, Number(s.dataset.index), s);
   const u = e.target.closest('[data-unserved]');
   if (u) stop(nodeById(u.dataset.unserved), undefined, undefined, u);
+  const c = e.target.closest('[data-charger]');
+  if (c) stop(nodeById(c.dataset.charger), undefined, undefined, c, { overview: true });
   if (e.target.closest('#all-routes')) {
     selected = null;
     selectedStop = null;
+    selectedCharger = null;
     detailOpen = false;
     detail.hide();
     render();
@@ -245,18 +292,36 @@ function closeDetail() {
   }
   detail.hide();
   detailOpen = false;
+  for (const row of document.querySelectorAll('[data-charger]')) {
+    row.classList.remove('active');
+    row.setAttribute('aria-pressed', 'false');
+  }
   remember();
 }
-$('selection').addEventListener('click', e => { if (e.target.closest('#close-selection')) closeDetail(); });
+$('selection').addEventListener('click', e => {
+  if (e.target.closest('#close-selection')) closeDetail();
+  const occurrence = e.target.closest('[data-charger-route]');
+  if (occurrence) {
+    const routeId = occurrence.dataset.chargerRoute;
+    const index = Number(occurrence.dataset.chargerIndex);
+    stop(nodeById(routeById(routeId).stops[index].nodeId), routeId, index, occurrence);
+  }
+});
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape' && !$('selection').hidden && !document.querySelector('dialog[open]')) closeDetail();
 });
-for (const key of ['fleet', 'stops']) {
-  $(key + '-tab').onclick = () => { tab = key; render(); remember(); };
+function showChargers() {
+  $('chargers').setAttribute('aria-pressed', 'true');
+  map?.toggleChargers(true);
+}
+for (const key of tabs) {
+  $(key + '-tab').onclick = () => { tab = key; if (tab === 'chargers') showChargers(); render(); remember(); };
   $(key + '-tab').onkeydown = e => {
     if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) return;
     e.preventDefault();
-    tab = e.key === 'Home' ? 'fleet' : e.key === 'End' ? 'stops' : tab === 'fleet' ? 'stops' : 'fleet';
+    tab = e.key === 'Home' ? tabs[0] : e.key === 'End' ? tabs.at(-1)
+      : tabs[(tabs.indexOf(tab) + (e.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length];
+    if (tab === 'chargers') showChargers();
     render();
     $(tab + '-tab').focus();
     remember();
@@ -267,6 +332,7 @@ $('chargers').onclick = () => {
   const on = $('chargers').getAttribute('aria-pressed') !== 'true';
   $('chargers').setAttribute('aria-pressed', String(on));
   map?.toggleChargers(on);
+  if (on) { tab = 'chargers'; render(); }
   remember();
 };
 render();
@@ -294,23 +360,24 @@ function focusPoint(desired) {
 }
 
 map = await createMap('map', {
-  onSelect: n => stop(n, undefined, undefined, undefined, false),
+  onSelect: n => stop(n, undefined, undefined, undefined, { move: false }),
   onVehicleSelect: id => vehicle(id),
   onReady: () => {
     const restored = initialView && map.restoreView(initialView);
     if (!restored && detailOpen && selectedStop) {
       map.selectNode(routeById(selectedStop.vehicleId).stops[selectedStop.index].nodeId);
+    } else if (!restored && detailOpen && selectedCharger) {
+      map.selectNode(selectedCharger);
     }
   },
   focusPoint,
   padding: () => mobile.matches ? { top: 155, right: 35, bottom: 135, left: 35 } : { top: 160, right: 70, bottom: 105, left: 70 }
 });
 if (selected) map.selectVehicle(selected, false);
-if (initial.chargers) {
-  $('chargers').setAttribute('aria-pressed', 'true');
-  map.toggleChargers(true);
-}
+if (initial.chargers || tab === 'chargers') showChargers();
 if (initialStop) {
   const state = routeById(selected).stops[initialStop.index];
-  stop(nodeById(state.nodeId), selected, initialStop.index, undefined, false);
+  stop(nodeById(state.nodeId), selected, initialStop.index, undefined, { move: false });
+} else if (nodeById(initial.charger)?.type === 'charger') {
+  stop(nodeById(initial.charger), undefined, undefined, undefined, { move: false, overview: true });
 }
