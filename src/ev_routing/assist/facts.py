@@ -8,7 +8,45 @@ verificador anti-alucinacion. No llama a ningun LLM.
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass, field
+
+
+def _num(valor) -> float | None:
+    """Numero finito o None (nunca bool, NaN ni infinito)."""
+    if isinstance(valor, bool) or not isinstance(valor, (int, float)):
+        return None
+    return float(valor) if math.isfinite(valor) else None
+
+
+@dataclass
+class HechosFase:
+    """Certificado de UNA fase lexicografica; los gaps no se combinan entre fases."""
+
+    nombre: str
+    sentido: str | None = None
+    estado: str | None = None
+    terminacion: str | None = None
+    optima_probada: bool | None = None
+    incumbente: float | None = None
+    cota: float | None = None
+    gap_absoluto: float | None = None
+    gap_relativo: float | None = None
+    tiempo_s: float | None = None
+
+    def a_dict(self) -> dict:
+        return {
+            "nombre": self.nombre,
+            "sentido": self.sentido,
+            "estado": self.estado,
+            "terminacion": self.terminacion,
+            "optima_probada": self.optima_probada,
+            "incumbente": self.incumbente,
+            "cota": self.cota,
+            "gap_absoluto": self.gap_absoluto,
+            "gap_relativo": self.gap_relativo,
+            "tiempo_s": self.tiempo_s,
+        }
 
 
 @dataclass
@@ -32,6 +70,11 @@ class Hechos:
     energia_neta_kwh: float | None = None
     rutas: list[HechosRuta] = field(default_factory=list)
     gaps: dict[str, float | None] = field(default_factory=dict)
+    # Datos adicionales (todos opcionales: ausentes -> None/vacio, nunca inventados).
+    fases: list[HechosFase] = field(default_factory=list)
+    tiempos: dict[str, float | None] = field(default_factory=dict)
+    solver: dict[str, object] = field(default_factory=dict)
+    kpis: dict[str, float | None] = field(default_factory=dict)
 
     def a_dict(self) -> dict:
         return {
@@ -52,7 +95,78 @@ class Hechos:
                 for r in self.rutas
             ],
             "gaps": self.gaps,
+            "fases": [f.a_dict() for f in self.fases],
+            "tiempos": self.tiempos,
+            "solver": self.solver,
+            "kpis": self.kpis,
         }
+
+
+def _extraer_fases(solve: dict) -> list[HechosFase]:
+    fases: list[HechosFase] = []
+    for fase in solve.get("phases", []) or []:
+        proven = fase.get("proven_optimal")
+        fases.append(
+            HechosFase(
+                nombre=fase.get("name", "?"),
+                sentido=fase.get("sense"),
+                estado=fase.get("status"),
+                terminacion=fase.get("termination_condition"),
+                optima_probada=proven if isinstance(proven, bool) else None,
+                incumbente=_num(fase.get("incumbent")),
+                cota=_num(fase.get("best_bound")),
+                gap_absoluto=_num(fase.get("absolute_gap")),
+                gap_relativo=_num(fase.get("relative_gap")),
+                tiempo_s=_num(fase.get("runtime_seconds")),
+            )
+        )
+    return fases
+
+
+def _extraer_tiempos(resultado: dict, solve: dict) -> dict[str, float | None]:
+    """Tiempos de computo del pipeline; la preparacion de la instancia no se incluye."""
+    runtime = resultado.get("runtime_seconds")
+    runtime = runtime if isinstance(runtime, dict) else {}
+    tiempos = {
+        "resolucion_s": _num(runtime.get("resolution_including_model")),
+        "validacion_s": _num(runtime.get("validation")),
+        "total_s": _num(runtime.get("total")),
+        "llm_s": _num(runtime.get("llm")),
+    }
+    if tiempos["resolucion_s"] is None:
+        tiempos["resolucion_s"] = _num(solve.get("runtime_seconds"))
+    return {k: v for k, v in tiempos.items() if v is not None}
+
+
+def _extraer_solver(resultado: dict, solve: dict) -> dict[str, object]:
+    config = resultado.get("solver_config")
+    config = config if isinstance(config, dict) else {}
+    datos = {
+        "usado": solve.get("used_solver"),
+        "solicitado": solve.get("requested_solver"),
+        "respaldo": solve.get("fallback_reason"),
+        "origen_solucion": solve.get("solution_source"),
+        "limite_tiempo_s": _num(config.get("time_limit_seconds")),
+        "gap_energia_objetivo": _num(config.get("energy_relative_gap")),
+    }
+    return {k: v for k, v in datos.items() if v is not None}
+
+
+_KPIS = {
+    "distancia_km": "distance_km",
+    "energia_cargada_kwh": "charged_to_battery_kwh",
+    "paradas_carga": "charging_stops",
+    "bateria_minima_kwh": "minimum_battery_kwh",
+    "duracion_operacional_s": "operational_duration_seconds",
+    "energia_red_kwh": "grid_energy_kwh",
+}
+
+
+def _extraer_kpis(resultado: dict) -> dict[str, float | None]:
+    kpis = resultado.get("kpis")
+    kpis = kpis if isinstance(kpis, dict) else {}
+    datos = {clave: _num(kpis.get(origen)) for clave, origen in _KPIS.items()}
+    return {k: v for k, v in datos.items() if v is not None}
 
 
 def extraer_hechos(resultado: dict) -> Hechos:
@@ -96,4 +210,8 @@ def extraer_hechos(resultado: dict) -> Hechos:
         energia_neta_kwh=solucion.get("net_energy_kwh"),
         rutas=rutas,
         gaps=gaps,
+        fases=_extraer_fases(solve),
+        tiempos=_extraer_tiempos(resultado, solve),
+        solver=_extraer_solver(resultado, solve),
+        kpis=_extraer_kpis(resultado),
     )

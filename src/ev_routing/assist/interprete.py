@@ -29,7 +29,10 @@ _REINICIAR = re.compile(
     r"\b(reinici\w*|reset\w*|valores? (?:iniciales|estandar|por defecto)|"
     r"configuracion(?:es)? (?:estandar|inicial(?:es)?|por defecto)|como estaba)\b"
 )
-_EXPLICAR = re.compile(r"\b(explica\w*|por ?que|resum\w*|que hizo|detall\w*|cuentame)\b")
+_EXPLICAR = re.compile(
+    r"\b(explica\w*|por ?que|resum\w*|que hizo|detall\w*|cuentame"
+    r"|gap|optimalidad|cuanto (?:se )?(?:demor\w*|tard\w*))\b"
+)
 _SALUDO = re.compile(r"^\s*(hola|buenas|buen dia|buenos dias|buenas tardes|hey|que tal)\b")
 _CONFIG = re.compile(r"\b(configuracion|parametros|con que|que (?:valores|supuestos))\b")
 

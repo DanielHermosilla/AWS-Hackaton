@@ -18,7 +18,9 @@ SISTEMA = (
     "Eres el asistente de una jefa de flota de vehiculos electricos. Explica en "
     "espaniol, breve y claro, que hace cada vehiculo, donde recarga y por que, y "
     "que entregas quedan pendientes. Usa SOLO los datos que te doy; no inventes "
-    "numeros, IDs ni rutas. Si un dato no esta, no lo menciones."
+    "numeros, IDs ni rutas. Si un dato no esta, no lo menciones. Si hay tiempos, gaps "
+    "o indicadores, menciona los relevantes tal cual; cada fase tiene su propio gap y no "
+    "llames optima a una fase cuyo 'optima_probada' no sea verdadero."
 )
 
 
@@ -51,7 +53,50 @@ def _plantilla(hechos: Hechos) -> str:
         lineas.append(
             f"Vehiculo {r.vehiculo}: {len(r.entregas)} entregas.{carga}"
         )
+    lineas.extend(_lineas_certificado(hechos))
     return "\n".join(lineas)
+
+
+_NOMBRE_FASE = {"deliveries": "entregas", "energy": "energia"}
+
+
+def _lineas_certificado(hechos: Hechos) -> list[str]:
+    """Tiempo, certificado por fase y KPIs, solo con los datos que existan.
+
+    Cada fase se reporta por separado (no se combinan gaps de objetivos distintos)
+    y un gap pequeno no se presenta como optimalidad exacta.
+    """
+    lineas: list[str] = []
+    t = hechos.tiempos
+    if t.get("resolucion_s") is not None:
+        texto = f"Tiempo de resolucion: {t['resolucion_s']:.1f} s"
+        if t.get("total_s") is not None:
+            texto += f" (pipeline completo: {t['total_s']:.1f} s)"
+        lineas.append(texto + ".")
+    for fase in hechos.fases:
+        partes = [f"estado {fase.estado}"] if fase.estado else []
+        if fase.gap_relativo is not None:
+            partes.append(f"gap relativo reportado {fase.gap_relativo * 100:.2f} %")
+        if fase.optima_probada is not None:
+            partes.append("optimalidad " + ("probada" if fase.optima_probada else "no probada"))
+        if fase.tiempo_s is not None:
+            partes.append(f"{fase.tiempo_s:.1f} s")
+        if partes:
+            nombre = _NOMBRE_FASE.get(fase.nombre, fase.nombre)
+            lineas.append(f"Fase de {nombre}: " + ", ".join(partes) + ".")
+    k = hechos.kpis
+    kpis = []
+    if k.get("distancia_km") is not None:
+        kpis.append(f"distancia total {k['distancia_km']:.1f} km")
+    if k.get("energia_cargada_kwh") is not None:
+        kpis.append(f"energia recargada {k['energia_cargada_kwh']:.1f} kWh")
+    if k.get("bateria_minima_kwh") is not None:
+        kpis.append(f"bateria minima {k['bateria_minima_kwh']:.1f} kWh")
+    if k.get("duracion_operacional_s") is not None:
+        kpis.append(f"duracion operacional {k['duracion_operacional_s'] / 60:.0f} min")
+    if kpis:
+        lineas.append("Indicadores: " + ", ".join(kpis) + ".")
+    return lineas
 
 
 def explicar(resultado: dict, cliente: ClienteBedrock | None = None) -> Explicacion:

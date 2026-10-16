@@ -299,3 +299,109 @@ def test_herramienta_caso_solo_si_esta_disponible():
     nombres = lambda specs: {t["toolSpec"]["name"] for t in specs["tools"]}  # noqa: E731
     assert "usar_caso_hackaton" not in nombres(tool_specs())
     assert "usar_caso_hackaton" in nombres(tool_specs(casos=True))
+
+
+# --- tiempos, certificado por fase e indicadores ------------------------------
+RESULTADO_COMPLETO = {
+    **RESULTADO,
+    "solve": {
+        **RESULTADO["solve"],
+        "requested_solver": "scip-routes",
+        "used_solver": "scip-routes",
+        "solution_source": "solver",
+        "runtime_seconds": 41.2,
+        "phases": [
+            {"name": "deliveries", "sense": "maximize", "status": "optimal",
+             "termination_condition": "optimal", "proven_optimal": True,
+             "incumbent": 2.0, "best_bound": 2.0, "absolute_gap": 0.0,
+             "relative_gap": 0.0, "runtime_seconds": 3.5},
+            {"name": "energy", "sense": "minimize", "status": "feasible",
+             "termination_condition": "gap_limit", "proven_optimal": False,
+             "incumbent": 12.5, "best_bound": 12.46, "absolute_gap": 0.04,
+             "relative_gap": 0.0032, "runtime_seconds": 37.7},
+        ],
+    },
+    "solver_config": {"time_limit_seconds": 120.0, "energy_relative_gap": 0.005},
+    "runtime_seconds": {"resolution_including_model": 41.2, "validation": 0.4,
+                        "total": 42.0, "llm": 5.1},
+    "kpis": {"distance_km": 18.43, "charged_to_battery_kwh": 8.0,
+             "charging_stops": 1, "minimum_battery_kwh": 3.2,
+             "operational_duration_seconds": 3600.0, "grid_energy_kwh": None},
+}
+
+
+def test_hechos_incluyen_fases_tiempos_solver_e_indicadores():
+    h = extraer_hechos(RESULTADO_COMPLETO)
+    assert [f.nombre for f in h.fases] == ["deliveries", "energy"]
+    energia = h.fases[1]
+    assert energia.optima_probada is False
+    assert energia.gap_relativo == 0.0032 and energia.cota == 12.46
+    assert energia.terminacion == "gap_limit" and energia.tiempo_s == 37.7
+    assert h.tiempos == {"resolucion_s": 41.2, "validacion_s": 0.4,
+                         "total_s": 42.0, "llm_s": 5.1}
+    assert h.solver["usado"] == "scip-routes" and h.solver["limite_tiempo_s"] == 120.0
+    assert h.solver["gap_energia_objetivo"] == 0.005
+    # None no se inventa: grid_energy_kwh ausente del dict.
+    assert h.kpis == {"distancia_km": 18.43, "energia_cargada_kwh": 8.0,
+                      "paradas_carga": 1.0, "bateria_minima_kwh": 3.2,
+                      "duracion_operacional_s": 3600.0}
+    # Lo existente no cambia.
+    assert h.gaps == {"deliveries": 0.0, "energy": 0.0032}
+    assert h.entregados == ["C1", "C2"] and h.rutas[0].paradas_carga == ["CH1"]
+
+
+def test_hechos_sin_datos_adicionales_quedan_vacios():
+    h = extraer_hechos(RESULTADO)  # fixture antiguo: fase solo con name y gap
+    assert h.tiempos == {} and h.solver == {} and h.kpis == {}
+    assert h.fases[0].nombre == "deliveries" and h.fases[0].optima_probada is None
+    d = h.a_dict()
+    assert {"estado", "entregados", "rutas", "gaps"} <= set(d)  # claves previas
+
+
+def test_hechos_ignoran_valores_no_finitos_ni_booleanos():
+    malo = {"solve": {"phases": [{"name": "energy", "relative_gap": float("nan"),
+                                  "incumbent": True, "runtime_seconds": float("inf")}]},
+            "runtime_seconds": {"total": float("nan")},
+            "kpis": {"distance_km": True}}
+    h = extraer_hechos(malo)
+    f = h.fases[0]
+    assert f.gap_relativo is None and f.incumbente is None and f.tiempo_s is None
+    assert h.tiempos == {} and h.kpis == {}
+
+
+def test_plantilla_reporta_tiempo_y_gap_por_fase_sin_decir_optimo():
+    texto = explicar(RESULTADO_COMPLETO, cliente=None).texto
+    assert "Tiempo de resolucion: 41.2 s" in texto and "42.0 s" in texto
+    assert "Fase de entregas" in texto and "optimalidad probada" in texto
+    assert "Fase de energia" in texto and "0.32 %" in texto
+    assert "optimalidad no probada" in texto
+    assert "distancia total 18.4 km" in texto
+    assert explicar(RESULTADO_COMPLETO, cliente=None).verificacion.confiable
+
+
+def test_plantilla_sin_datos_adicionales_no_agrega_lineas():
+    texto = explicar(RESULTADO, cliente=None).texto
+    assert "Tiempo de resolucion" not in texto and "Indicadores" not in texto
+
+
+def test_resumen_plan_conserva_claves_y_agrega_las_nuevas():
+    from ev_routing.assist.assistant import _resumen_plan
+
+    p = _resumen_plan(RESULTADO_COMPLETO)
+    assert {"entregas", "sin_atender", "energia_kwh", "paradas_recarga",
+            "vehiculos_usados", "factible", "resumen"} <= set(p)
+    assert p["entregas"] == 2 and p["energia_kwh"] == 12.5 and p["paradas_recarga"] == 1
+    assert p["tiempos"]["resolucion_s"] == 41.2
+    assert p["fases"][1]["optima_probada"] is False
+    assert p["indicadores"]["distancia_km"] == 18.43
+    vacio = _resumen_plan({"status": "infeasible", "solve": {}})
+    assert vacio["tiempos"] == {} and vacio["fases"] == []
+
+
+def test_interprete_reconoce_preguntas_de_gap_y_tiempo_sin_pisar_calculo():
+    from ev_routing.assist import interpretar
+
+    assert interpretar("cual fue el gap?").explicar
+    assert interpretar("cuanto se demoro?").explicar
+    r = interpretar("optimiza las rutas con 3 autos")
+    assert not r.explicar and r.ajustes == {"vehiculos": 3}
