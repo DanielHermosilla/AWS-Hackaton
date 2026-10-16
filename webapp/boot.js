@@ -26,7 +26,7 @@ function showLoadError(error) {
   main.replaceChildren(section);
 }
 
-let runPanel;
+let runPanel, planSummary;
 try {
   const { initShell } = await import('./app-shell.js');
   initShell(page);
@@ -34,11 +34,17 @@ try {
   runPanel = initRunPanel();
   const data = await import('./shared/data.js');
   runPanel.setData(data);
+  const { initPlanSummary } = await import('./plan-summary.js');
+  planSummary = initPlanSummary(data);
   await import(page === 'plan' ? './plan.js' : './home.js');
 } catch (error) {
   console.error('No se pudo cargar la página:', error);
   runPanel?.fail(error);
   showLoadError(error);
+  if (runPanel && !planSummary) {
+    const { initPlanSummary } = await import('./plan-summary.js');
+    initPlanSummary(null, {error});
+  }
 } finally {
   main?.setAttribute('aria-busy', 'false');
 }
