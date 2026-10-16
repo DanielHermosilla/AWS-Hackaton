@@ -119,3 +119,30 @@ El CSV aporta ubicaciones: fuera de la cobertura del GraphML se devuelve un
 error, no se inventan calles. Las instancias grandes o con recursos difíciles
 pueden agotar el presupuesto y deben mantener su estado/cota real. No se promete
 optimalidad exacta, latencia constante ni mejora de calidad gracias a GPT.
+
+## Consolidación de `master` y del solver en `main` — 16-10-2026
+
+Se esperó a que terminara el chat que editaba `master` y se comprobó que no
+quedaban otros agentes activos en el repositorio. Su trabajo local terminado
+se guardó en `6da80e9`, conservando históricos, carga directa del caso y variantes
+de simulación. Se integró con `7076e6b` (reparación del solver) y `297cdf1`
+(campaña de evidencias que ya estaba en `main`), manteniendo los tres historiales.
+
+El único conflicto manual estuvo en `tests/test_route_orchestration.py`:
+se conservó la ejecución determinista de `master` y el presupuesto de tres
+consultas del test, que permite dos decisiones de preparación y reserva la
+última para estancamiento. Los módulos del solver reparado se conservaron
+idénticos a `7076e6b`.
+
+Validación sobre el árbol combinado:
+
+- `uv run --locked --extra dw pytest -q`: **948 pruebas y 37 subtests aprobados**.
+- `node --test webapp/tests/*.test.mjs`: **160 pruebas aprobadas**, ninguna fallida.
+- `git diff --check`: sin errores de espacios.
+
+Estas pruebas no hicieron nuevas consultas AWS. Los ensayos reales y límites
+del solver están en [solver-repair.md](solver-repair.md); los de históricos y
+simulación, en [historical-web-validation.md](historical-web-validation.md).
+Se publica código y documentación, sin los datos locales ni las carpetas ajenas
+`luna/`, `output/` y `tmp/`. La rama de integración y publicación es `main`;
+el remoto configurado en este repositorio se llama `origin`.
