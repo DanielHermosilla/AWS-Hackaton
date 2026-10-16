@@ -16,7 +16,13 @@ function setError(input, msgEl, message) {
   return !hay;
 }
 
-function checkEmail() { return setError(emailEl, $('email-error'), validarEmail(emailEl.value)); }
+function checkEmail() {
+  // Excepción de demostración: el usuario "test" se permite aunque no sea email.
+  if (emailEl.value.trim().toLowerCase() === 'test') {
+    return setError(emailEl, $('email-error'), '');
+  }
+  return setError(emailEl, $('email-error'), validarEmail(emailEl.value));
+}
 function checkPass() {
   return setError(passEl, $('password-error'), passEl.value ? '' : 'Escribe tu contraseña.');
 }

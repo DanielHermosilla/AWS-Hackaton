@@ -43,6 +43,34 @@ def _es_publica(path: str) -> bool:
     return any(path == p or path.startswith(p) for p in PUBLIC_PREFIXES)
 
 
+# ── Usuario de demostración (ÚNICA excepción) ─────────────────────────────────
+# Credencial fija para pruebas/jurado: usuario "test" + contraseña "test".
+# NO pasa por la política de contraseña fuerte ni por el formato de email: es un
+# único par permitido explícitamente. Cualquier OTRA cuenta sigue exigiendo
+# email válido y contraseña fuerte. Se puede desactivar con DEMO_USER_ENABLED=0.
+DEMO_ENABLED = os.getenv("DEMO_USER_ENABLED", "1") == "1"
+DEMO_USUARIO = "test"          # lo que el usuario escribe en el campo de acceso
+DEMO_PASSWORD = "test"
+DEMO_EMAIL = "test@test"       # identidad interna con la que se guarda/consulta
+DEMO_NOMBRE = "Usuario de prueba"
+
+
+def _es_credencial_demo(usuario: str, password: str) -> bool:
+    return DEMO_ENABLED and usuario == DEMO_USUARIO and password == DEMO_PASSWORD
+
+
+def _asegurar_usuario_demo() -> None:
+    """Crea la cuenta demo en DynamoDB si aún no existe (idempotente)."""
+    import db
+    if db.get_user(DEMO_EMAIL):
+        return
+    try:
+        db.put_user(DEMO_EMAIL, DEMO_NOMBRE, auth.hash_password(DEMO_PASSWORD))
+    except Exception as e:  # noqa: BLE001  (carrera: otro proceso lo creó primero)
+        if type(e).__name__ != "ConditionalCheckFailedException":
+            raise
+
+
 # ── Autenticación ──────────────────────────────────────────────────────────────
 @app.post("/auth/register")
 async def register(request: Request, response: Response):
@@ -91,6 +119,17 @@ async def login(request: Request, response: Response):
         body = await request.json()
     except Exception:
         return JSONResponse({"ok": False, "error": "Solicitud inválida."}, 400)
+
+    # Excepción única: usuario "test" / contraseña "test". Se acepta aunque no sea
+    # un email válido; se garantiza que la cuenta exista y se abre la sesión.
+    raw_user = str((body or {}).get("email", "")).strip().lower()
+    raw_pass = str((body or {}).get("password", ""))
+    if _es_credencial_demo(raw_user, raw_pass):
+        _asegurar_usuario_demo()
+        token = auth.crear_sesion(DEMO_EMAIL)
+        auth.set_cookie(response, token)
+        return {"ok": True, "usuario": DEMO_EMAIL}
+
     data, err = auth.validar_login(body if isinstance(body, dict) else {})
     if err:
         return JSONResponse({"ok": False, "error": err}, 401)
