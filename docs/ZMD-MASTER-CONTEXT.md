@@ -125,6 +125,30 @@ Son resultados históricos atribuidos a esa sesión. La sesión madre ejecuta un
 baseline nuevo y registra su evidencia en ORCHESTRATION; no reutiliza esos
 conteos como comprobación de modificaciones posteriores. [H1]
 
+### Incremento F02/F03/F05 integrado localmente
+
+Sobre la base anterior, la madre incorporó tres commits revisados:
+`450fc0f` (cargadores), `78be661` (resumen) y `d9684b3` (editor).
+El estado entregado y sus límites están en
+[ENTREGA-FEATURES.md](implementation/ENTREGA-FEATURES.md).
+
+- F02 conserva los puertos, lista todas las estaciones y separa los metadatos
+  de cada ocurrencia de recarga; Inicio permite continuar en esa pestaña.
+- F03 presenta una ficha operativa con impresión, nombre/ID de ejecución,
+  comprobación y fases; marca la corrida anterior al editar o imprimir.
+- F05 permite editar CSV/caso sintético con formulario y mapa. Los cambios
+  confirmados se conservan en la pestaña, incluidos parámetros y presupuesto;
+  confirmar exige preparar de nuevo. JSON nativo con grafo permanece protegido.
+- Autocomplete externo: [análisis terminado](implementation/F05-address-autocomplete.md);
+  Amazon Location es candidato sujeto a acceso/cobertura/presupuesto. La función
+  actual busca entre puntos cargados y no geocodifica direcciones.
+- Validación final propia: **133 JS**, **347 Python + 37 subtests**, una omisión
+  del plugin alternativo Pyomo/SCIP; once comprobaciones combinadas en navegador
+  con cálculo real. Revisión independiente sin hallazgos pendientes. [I1]
+
+Esta integración está en `codex/features-implementation`, local y revisable.
+No modifica el motor de Daniel ni acredita un despliegue.
+
 ## 6. Decisiones de producto, diseño y descartes
 
 - Usuario objetivo: una persona que planifica reparto eléctrico. ZMD es
@@ -170,12 +194,13 @@ integración y ensayo. No es una regla oficial del concurso. [H0, H3]
 | Evolución del solver | Confirmado que puede cambiar; fijar SHA/contrato y adaptar explícitamente una futura actualización. No editar su matemática. |
 | Edición de una red nativa | Cambiar coordenadas puede invalidar arcos, energía y geometría. No resolver el grafo anterior como si estuviera actualizado. F05 debe conservar esa frontera. |
 | Preparación vial real | No está expuesta en la API local actual. El editor debe declarar el alcance sintético o pedir una instancia nuevamente preparada; no inventar cobertura. |
-| Metadatos de estaciones | Confirmado que el contrato los contiene. La falta concreta de puertos en la proyección JS es trabajo de F02, no cambio del solver. |
-| Autocomplete | Investigación requerida; proveedor, permisos y presupuesto no confirmados. No confundir un resultado de geocodificación con una conexión vial. |
+| Metadatos de estaciones | F02 conserva los puertos en la proyección JS; no se modificó el contrato del solver. |
+| Autocomplete | Análisis terminado; cuenta, cobertura y presupuesto no confirmados. No confundir geocodificación con conexión vial. |
 | Estado viejo del research | Confirmado desfasado por el cambio de motor. Conservar como historia y no usarlo como prueba de defectos actuales. |
 | Revisión de energía | El defecto reproducido en `evrp` no se atribuye a Daniel. Respetar el validador y los KPIs nativos actuales. |
 | Capacidad de producción | Sin autenticación/despliegue/aislamiento: esta ola mejora el producto local, no lo certifica para empresas reales. |
 | Pruebas externas | Documentación pública o un mock no prueba cuenta AWS, cobertura ni servicio operativo. |
+| Texto nativo pendiente de Daniel | En una ejecución sin operaciones, el motivo de duración desconocida aún dice «H cuenta movimientos; no modela tiempo», aunque el backend actual resuelve sin H. Se conserva como mensaje recibido; se requiere corregir esa explicación upstream, no inferir una duración. Observado en I1, sin cambios a cifras ni solver. |
 
 ## 9. Fuentes
 
@@ -199,6 +224,9 @@ integración y ensayo. No es una regla oficial del concurso. [H0, H3]
 - **S5:** [contratos](contracts.md) y `src/ev_routing/contracts.py`.
 - **R1:** investigación y auditoría UI 2, conservadas en
   `/Users/caballero/.codex/worktrees/68f3/AWS-Hackaton/.local/research-mejoras-2026-10-15/`.
+- **I1:** [registro de integración](ZMD-ORCHESTRATION.md), commits del incremento
+  y pruebas de la madre en `.local/features-implementation-2026-10-15/`:
+  `final-node.log`, `final-python.log` y `qa/combined-report.json`.
 
 Los documentos versionados anteriores contienen lo necesario para implementar.
 Las rutas locales son evidencia adicional: no exigir que existan en otro clon.

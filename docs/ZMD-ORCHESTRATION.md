@@ -7,8 +7,9 @@ Base de producto: `a372d03efc270b0ac23769e5d4334c2d3f4144ff`.
 
 ## Objetivo y mecanismo
 
-Goal persistente activo para consolidar contexto, implementar F02/F03/F05,
+Goal persistente para consolidar contexto, implementar F02/F03/F05,
 revisar, probar y preparar integración local. No se asignó presupuesto de tokens.
+Objetivo técnico cumplido en la rama local; entrega verificada y documentada.
 Se mantiene el modo de ejecución actual; no se afirma haber activado `/plan`.
 
 La sesión madre es el único integrador y editor de estos registros. Tres agentes
@@ -26,17 +27,19 @@ mutable ni escribir desde un agente en el checkout de otro.
 
 | Trabajo | Responsable | Rama / worktree | Estado | Dependencia |
 |---|---|---|---|---|
-| Contexto, contratos de integración y coordinación | Madre | `codex/features-implementation`; worktree `features-review` | Contexto consolidado; baseline verificado | Base fijada tras fetch |
-| F02 · información de cargadores | `/root/implement_chargers` | `codex/feature-chargers`; `zmd-feature-chargers` | Implementación en curso; tercera pestaña de Plan | Metadatos nativos existentes |
-| F03 · resumen imprimible | `/root/implement_summary` | `codex/feature-summary`; `zmd-feature-summary` | Implementación en curso; diálogo con control de vigencia | Resultado API 3.0 y vigencia |
-| F05 · editor de ubicaciones | `/root/implement_editor` | `codex/feature-editor`; `zmd-feature-editor` | Implementación en curso; borrador local confirmado | `/prepare`, grafo nativo protegido |
+| Contexto, contratos de integración y coordinación | Madre | `codex/features-implementation`; worktree `features-review` | Contexto, integración y entrega verificados | Base fijada tras fetch |
+| F02 · información de cargadores | `/root/implement_chargers` | `codex/feature-chargers`; `zmd-feature-chargers` | `e604f45` → `450fc0f`, incorporado y revisado | QA combinado aprobado |
+| F03 · resumen imprimible | `/root/implement_summary` | `codex/feature-summary`; `zmd-feature-summary` | `260e01a` → `78be661`, incorporado y revisado | PDF de fixture pequeño: 2 páginas A4 |
+| F05 · editor de ubicaciones | `/root/implement_editor` | `codex/feature-editor`; `zmd-feature-editor` | `d7dca48` → `d9684b3`, incorporado y revisado | CSV/sintético editable; grafo nativo protegido |
 | Autocomplete de direcciones | Madre; conclusión transferida a F05 | Rama madre, [decisión documentada](implementation/F05-address-autocomplete.md) | Análisis terminado; servicio externo no implementado | Acceso, cobertura y presupuesto AWS pendientes |
-| Revisión e integración | Madre + agente revisor tras terminar implementación | Rama madre | Pendiente de entregas | Diff, tests y QA de cada feature |
+| Revisión e integración | Madre + `/root/review_features` (solo lectura) | Rama madre | Cerrada sin hallazgos pendientes; regresión y once comprobaciones combinadas aprobadas | Sin push ni despliegue |
 
 Los tres worktrees parten de `04e7f313e49279ac671f17f5bceaa7f7c197918c`,
 que incorpora el contexto y los prompts a la base de producto. Sus rutas son
 `/Users/caballero/.codex/worktrees/<worktree>/AWS-Hackaton`. Los puertos de QA
 son 4312 (F02), 4313 (F03), 4315 (F05) y 4310 (integración de la madre).
+Al cerrar la entrega se detuvieron los servidores auxiliares. La vista integrada
+queda disponible en 4310. Se conservan las ramas/worktrees y su evidencia para revisión.
 
 ## Propiedad de archivos
 
@@ -80,7 +83,14 @@ la Beta no se usa como publicación automática de esta nueva ola.
 | Entorno | `uv` no estaba en PATH; se localizó la herramienta existente y se usa su ruta explícita, sin otro gestor |
 | Invocación de pytest | `uv run --locked pytest -q` falló al importar `backend` durante colección; `uv run --locked python -m pytest -q` resuelve la ruta del proyecto. Se corrige el comando documentado. |
 | Omisión de baseline | `tests/test_solve.py:421`: ejecutable SCIP del plugin alternativo Pyomo no disponible. PySCIPOpt, usado por el servidor actual, sí está instalado. |
-| QA de nuevas funciones | No ejecutada todavía |
+| F02, pruebas del agente | **111/111 Node**, cinco escenarios Chromium: escritorio/móvil, sin WebGL, sin coordenadas, sin solución. API y mapa base sintéticos; sin errores de página. Madre inspeccionó diff y capturas. |
+| Motor real en rama madre | POST del fixture operacional: HTTP 200, validación factible, 2 entregas, 14 kWh netos, 9 kWh recargados, 10 kWh de red y 3580 s de duración. Instancia sintética; no evidencia sobre rutas reales. |
+| F03, pruebas del agente | **112/112 Node**, 12 comprobaciones de navegador. Caso operacional con SCIP real; sin incumbente/validación fallida simulados. PDF vigente y anterior de 2 páginas, inspeccionados por implementador, madre y revisor. |
+| F05, pruebas del agente | **112/112 Node**, **29 Python + 37 subtests**, dos runners de navegador con cálculo real, mapa fallido, respuestas tardías, sustitución de archivo, Cancelar durante solve y persistencia entre páginas. |
+| Revisión independiente | 10 pruebas F02 + 11 F03 + 11 F05; inspección de PDF; runner de navegación F05 repetido con cálculo real sobre SHA final. Sin hallazgos accionables pendientes. |
+| Regresión final en rama madre | **133/133 Node**, **347 Python + 37 subtests**, misma única omisión del plugin alternativo SCIP. `python -m pytest -q`: 18,37 s. |
+| QA combinado final | **11 comprobaciones aprobadas**, sin errores JS: ejemplo, cancelar/confirmar, coordenadas inválidas, borrador antes/después del primer run, CSV→prepare→SCIP, cargadores/Inicio→Continuar, resumen/impresión/vigencia, nuevo cálculo, exportación exacta y móvil/JSON nativo protegido. |
+| Preservación del motor | `git diff a372d03 -- src/ev_routing backend pyproject.toml uv.lock docs/solver-source.json modelamiento.pdf modelamiento.tex`: sin cambios. |
 
 Evidencia local: `.local/features-implementation-2026-10-15/`.
 Los logs, capturas, entornos, históricos y datos no se incorporan masivamente a Git.
@@ -100,3 +110,44 @@ Los logs, capturas, entornos, históricos y datos no se incorporan masivamente a
 - El editor no depende de geocodificación externa: confirma texto y coordenadas.
   Nominatim público no permite autocomplete; la selección de un proveedor de
   direcciones se documentará con fuentes y condiciones de almacenamiento.
+- En los entornos nuevos, la primera llamada tardó durante importación nativa
+  Python/SciPy (`dyld` observado por F03); después la petición pequeña respondió
+  en 0,4 s. Se documenta como calentamiento observado, sin cambiar el solver.
+- La madre solicitó compactar F03: la primera impresión de un fixture con dos
+  entregas ocupaba cinco páginas. Se retiran volcados técnicos duplicados del
+  resumen operativo; los detalles completos continúan en la ejecución/JSON.
+  La versión final ocupa dos páginas y conserva comprobación, fases y supuestos.
+- La madre detectó pérdida de ubicaciones confirmadas al navegar antes de
+  recalcular. F05 la reprodujo y corrigió con un borrador separado asociado por
+  `draftId`; cuota fallida informa el límite y no repone datos viejos como cambios.
+- El arnés combinado inicial usó potencia 0, rechazada correctamente por el
+  contrato nativo (`max_power_kw > 0`). Se corrigió la fixture a 50 kW; los
+  puertos DC 0 siguen probando cero versus ausencia. Otra aserción se adelantaba
+  a la carga asíncrona de Inicio; ahora espera `aria-busy=false`. No requirieron
+  modificar producto, solver ni criterios de aceptación. Evidencia inicial
+  conservada como `qa/fixture-correction-report.json` y `qa/early-dom-report.json`.
+
+## Reproducción y transferencia
+
+La [entrega](implementation/ENTREGA-FEATURES.md) enlaza las explicaciones breves
+para el usuario y el resumen técnico para Daniel. Los prompts originales quedan
+en `docs/implementation/F02-chargers.md`, `F03-plan-summary.md` y
+`F05-location-editor.md`; no sustituyen este registro de aceptación.
+
+```sh
+uv sync --locked --group dev
+node --test webapp/tests/*.test.mjs
+uv run --locked python -m pytest -q
+uv run --locked python -m backend.local_server --port 4310
+```
+
+QA de editor reproducible con una instalación existente de Playwright:
+`PLAYWRIGHT_MODULE` puede indicar su módulo absoluto y `ZMD_QA_ORIGIN` el servidor.
+Ejecutar `node webapp/tests/location-editor.browser.mjs` y
+`node webapp/tests/location-navigation.browser.mjs`. No agregar otra dependencia
+de producto solo para ejecutar este control opcional.
+
+El arnés de unión y sus capturas están en
+`.local/features-implementation-2026-10-15/qa/combined.mjs` y `combined-report.json`.
+Esta carpeta conserva su nombre iniciado en la investigación del 15 de octubre;
+la entrega consolidada se registra el **16-10-2026**.

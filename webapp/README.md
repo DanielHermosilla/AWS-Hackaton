@@ -47,9 +47,25 @@ Usa HTTP: los módulos JavaScript y el mapa no funcionan abriendo el HTML como a
 
 ## Pantallas
 
-**Inicio** resume el plan de ejemplo en tres paneles: medidores de batería al regreso por vehículo (con una marca para la batería de salida), entregas asignadas por vehículo y consumo por vehículo, junto con paradas de recarga y estaciones del escenario. Cada local cuenta una sola vez aunque se visite varias veces. Un vehículo sin recorrido aparece como «Sin recorrido». Los vehículos, «Ver vehículos», «Ver paradas» y el enlace de estaciones abren el Plan en esa vista.
+**Inicio** resume el plan seleccionado en tres paneles: medidores de batería al regreso por vehículo (con una marca para la batería de salida), entregas asignadas por vehículo y consumo por vehículo, junto con paradas de recarga y estaciones del escenario. Cada local cuenta una sola vez aunque se visite varias veces. Un vehículo sin recorrido aparece como «Sin recorrido». Los vehículos, «Ver vehículos», «Ver paradas» y el enlace de estaciones abren el Plan en esa vista.
 
 **Plan** muestra el mapa con los recorridos, la lista de vehículos y paradas, las estaciones de carga y el detalle de cada parada. Los números compactos identifican el mismo local en mapa y lista; no representan su posición en el recorrido. El ID completo se conserva en la lista y en el nombre accesible del marcador.
+
+La pestaña **Cargadores** lista todas las estaciones de la instancia, usadas o
+no, con sus metadatos y pasos por vehículo. Conserva estaciones sin coordenadas
+y distingue cero de información ausente. No consulta disponibilidad en vivo.
+
+**Ver resumen**, disponible en ambas pantallas, reúne la ejecución y permite
+imprimirla o guardarla como PDF. Usa el mismo resultado del motor; al editar,
+advierte que el resumen anterior ya no corresponde al borrador. El ejemplo de
+diseño se identifica como ejemplo y no genera un resultado ficticio imprimible.
+
+En **Cargar y calcular → Editar ubicaciones**, los CSV y el caso sintético
+permiten modificar referencias y coordenadas, arrastrar el marcador o elegir
+un punto. Confirmar exige nueva preparación y cálculo; cancelar conserva el
+original. El formulario funciona sin cartografía. La búsqueda es entre puntos
+cargados, sin geocodificación externa. Un JSON nativo con grafo conserva sus
+ubicaciones protegidas hasta disponer de una red preparada para esos cambios.
 
 En modo motor, **Datos y límites de la ejecución** presenta sus KPIs, motivos de
 datos no disponibles, operaciones, comprobaciones, fases, tiempos y trazabilidad.
@@ -93,6 +109,9 @@ El formato del ejemplo continúa separado del contrato HTTP beta.
 - `theme.js` (en `<head>`, antes de pintar) y `theme.css` (última hoja): tema global.
 - `shared/`: estilos, iconos, movimiento, lectura y comprobación de la estructura de los ejemplos. Inicio y Plan comparten el recuento de locales únicos; los textos interpolados se escapan antes de renderizar.
 - `run-panel.js`, `run-panel.css`: carga, revisión, estado y descarga de ejecuciones.
+- `location-editor.js`, `location-editor.css`, `shared/location-draft.js`: edición confirmada de ubicaciones, independiente del resultado.
+- `plan-summary.js`, `plan-summary.css`, `shared/plan-summary-model.js`: resumen e impresión de la ejecución.
+- `shared/charger-details.js`, `charger-details.css`: ficha y lista de cargadores con sus metadatos.
 - `shared/solver-input.js`, `solver-client.js`, `solver-adapter.js`: entrada, transporte y presentación versionada del motor; pruebas en `tests/`.
 - `salida.html`: confirmación después de cerrar el plan.
 
@@ -115,3 +134,7 @@ node --test webapp/tests/*.test.mjs
 Estas pruebas comprueban referencias, unidades, estados y tipos usados por la
 interfaz; no certifican factibilidad energética. La guía beta incluye las pruebas
 Python con HTTP y el solver nativo; cada evidencia declara su alcance.
+
+El [contexto maestro](../docs/ZMD-MASTER-CONTEXT.md) y el
+[registro de orquestación](../docs/ZMD-ORCHESTRATION.md) identifican las bases,
+responsabilidades, cambios revisados y evidencia de esta implementación.
