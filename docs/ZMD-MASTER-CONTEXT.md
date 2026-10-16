@@ -5,6 +5,12 @@ Este registro describe el estado vigente; contratos y formulación siguen en sus
 
 ## Encargo vigente
 
+Extensión del 16-10-2026: añadir históricos eVED/CSV/JSON como entrada separada
+para estimar energía por calle, con respaldo en el consumo supuesto; interpretar
+formatos y estadísticas mediante la misma conexión Bedrock del motor, con
+razonamiento alto, y ofrecer conexión efímera con credenciales AWS.
+[Diseño y aceptación](implementation/ZMD-HISTORICAL-ENERGY.md).
+
 El usuario pidió integrar el solver terminado publicado en `main` con las features
 F02 (cargadores), F03 (resumen imprimible) y F05 (editor), y resolver el feedback
 completo de carga, parámetros, persistencia, resultados, mapa y diseño del panel.

@@ -149,7 +149,7 @@ def _safe_profile(profile: dict) -> dict:
     allowed = {
         "schema_version", "source_sha256", "size_bytes", "file_format", "filename",
         "columns", "sample_rows", "sample_statistics", "sample_row_count",
-        "declared_metadata", "recognized_format", "computed_summary",
+        "declared_metadata", "recognized_format", "computed_summary", "format", "sampling",
     }
     if not isinstance(profile, dict) or set(profile) - allowed:
         raise HistoryInterpretationError("El resumen histórico tiene campos no admitidos.")

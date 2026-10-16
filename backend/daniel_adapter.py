@@ -326,7 +326,8 @@ def project_result(instance, config, native, *, road_instance=None, search_confi
     }
 
 
-def run(instance, config, *, search_config=None, road_instance=None, path_archive=None):
+def run(instance, config, *, search_config=None, road_instance=None, path_archive=None,
+        policy_provider=None):
     run_instance, SearchConfig = load_provider()
     try:
         native = run_instance(
@@ -336,6 +337,7 @@ def run(instance, config, *, search_config=None, road_instance=None, path_archiv
                 policy="standard", bedrock={"profile": None}, log_directory=None
             ),
             road_instance=road_instance, path_archive=path_archive,
+            **({"policy_provider": policy_provider} if policy_provider is not None else {}),
             output_path=Path(search_config.log_directory).parent / "result.json"
             if search_config and search_config.log_directory else None,
         )

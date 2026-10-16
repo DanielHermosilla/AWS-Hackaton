@@ -262,7 +262,7 @@ def validate_request(payload, *, runtime=None):
 def prepare(payload, *, runtime=None):
     object_fields(
         payload,
-        {"api_version", "nodes", "fleet", "network_mode", "operations"},
+        {"api_version", "nodes", "fleet", "network_mode", "operations", "energy_profile_id"},
         "preparación",
         ("api_version", "nodes", "fleet", "network_mode"),
     )
@@ -276,6 +276,13 @@ def prepare(payload, *, runtime=None):
     from ev_routing.contracts import Operations
 
     operations = _validate_model(Operations, payload.get("operations", {}), "Operaciones")
+    history_id = payload.get("energy_profile_id")
+    if "energy_profile_id" in payload:
+        if not isinstance(history_id, str) or not history_id.strip():
+            raise SolveRequestError("Indica un histórico disponible o retíralo de la preparación.")
+        if runtime is None:
+            raise SolveRequestError("Adjunta el histórico en el servidor antes de preparar la instancia.")
+        runtime.histories.get(history_id)
     rows = payload["nodes"]
     if not isinstance(rows, list) or not 1 <= len(rows) <= MAX_PREPARE_NODES:
         raise SolveRequestError(
@@ -354,7 +361,10 @@ def prepare(payload, *, runtime=None):
             "api_version": API_VERSION,
             "instance": context.instance.model_dump(mode="json"),
             "prepared_instance_id": identifier,
-            "preparation": {"runtime_seconds": context.seconds, "reused": reused},
+            "preparation": {
+                "runtime_seconds": context.seconds, "reused": reused,
+                **({"energy_profile": context.energy_report} if context.energy_report else {}),
+            },
         }
     arcs = []
     for origin in nodes:
@@ -414,7 +424,15 @@ def prepare(payload, *, runtime=None):
             },
         }
     )
-    return {"api_version": API_VERSION, "instance": instance.model_dump(mode="json")}
+    energy_report = None
+    if history_id:
+        instance, energy_report = runtime.histories.apply(
+            history_id, instance, consumption, synthetic=True,
+        )
+    return {
+        "api_version": API_VERSION, "instance": instance.model_dump(mode="json"),
+        **({"preparation": {"energy_profile": energy_report}} if energy_report else {}),
+    }
 
 
 def solve(payload, *, runtime=None):
@@ -434,6 +452,7 @@ def solve(payload, *, runtime=None):
         instance, config, search_config=search,
         road_instance=context.road if context else None,
         path_archive=context.archive if context else None,
+        policy_provider=runtime.policy_provider(search),
     )
     result["run_id"] = run_id
     canonical = instance.model_dump(mode="json")
@@ -478,5 +497,8 @@ def health(*, runtime=None):
             "road_preparation": runtime is not None and runtime.graphml is not None,
             "search_policies": ["standard", "deterministic", "adaptive"],
             "energy_relative_gap": 0.005,
+            "historical_energy": runtime is not None,
+            "historical_upload_max_bytes": 256 * 1024 * 1024,
+            "bedrock_session": runtime is not None,
         },
     }

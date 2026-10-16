@@ -32,6 +32,7 @@ class PreparedContext:
     seconds: float
     instance_hash: str
     size: int
+    energy_report: dict | None = None
 
 
 class Runtime:
@@ -48,6 +49,20 @@ class Runtime:
         self.max_context_bytes = max_context_bytes
         self.contexts = OrderedDict()
         self.tee = tee
+        from .bedrock_session import BedrockSession
+        from .history_store import HistoryStore
+
+        self.bedrock = BedrockSession(BedrockConfig(
+            model_id=os.getenv("BEDROCK_MODEL_ID", DEFAULT_BEDROCK_MODEL),
+            region=os.getenv("AWS_DEFAULT_REGION", "us-east-1"),
+            profile=os.getenv("AWS_PROFILE") or None,
+        ))
+        self.histories = HistoryStore(self.bedrock)
+
+    def close(self):
+        self.histories.close()
+        self.bedrock.disconnect()
+        self.contexts.clear()
 
     def prepare_road(self, nodes, parameters, rate, request):
         from ev_routing.contracts import ProblemInstance
@@ -61,9 +76,12 @@ class Runtime:
                 "o seleccione explícitamente la aproximación sintética."
             )
         started = time.perf_counter()
+        history_id = request.get("energy_profile_id")
+        history_key = self.histories.cache_key(history_id) if history_id else None
         key = fingerprint({
             "request": request, "graph": file_sha256(self.graphml),
             "profile": self.network_profile, "snap_m": self.max_snap_distance_m,
+            "historical_energy": history_key,
         })
         for identifier, (stored_key, context) in self.contexts.items():
             if stored_key == key:
@@ -81,6 +99,9 @@ class Runtime:
             road = ProblemInstance.model_validate({
                 **dict(road), "operations": request.get("operations", {}),
             })
+            energy_report = None
+            if history_id:
+                road, energy_report = self.histories.apply(history_id, road, rate)
             pricing, archive = prepare_service_graph(road)
         except ValueError as exc:
             if "max_snap_distance_m" in str(exc):
@@ -104,7 +125,7 @@ class Runtime:
         identifier = str(uuid.uuid4())
         context = PreparedContext(
             pricing, road, archive, request, time.perf_counter() - started,
-            fingerprint(pricing.model_dump(mode="json")), size,
+            fingerprint(pricing.model_dump(mode="json")), size, energy_report,
         )
         self.contexts[identifier] = (key, context)
         return identifier, context, False
@@ -120,13 +141,16 @@ class Runtime:
     def search_config(self, policy, run_id):
         return SearchConfig(
             policy=policy,
-            bedrock=BedrockConfig(
+            bedrock=self.bedrock.settings(BedrockConfig(
                 model_id=os.getenv("BEDROCK_MODEL_ID", DEFAULT_BEDROCK_MODEL),
                 region=os.getenv("AWS_DEFAULT_REGION", "us-east-1"),
                 profile=os.getenv("AWS_PROFILE") or None,
                 reasoning_effort="low", max_output_tokens=2048, timeout_seconds=8,
-            ),
+            )),
             max_llm_calls=2, instance_context_bytes=8000,
             log_directory=str(self.log_directory / run_id / "logs"),
             show_llm_trace=self.tee,
         )
+
+    def policy_provider(self, search):
+        return self.bedrock.policy_provider(search.bedrock) if search.policy == "adaptive" else None

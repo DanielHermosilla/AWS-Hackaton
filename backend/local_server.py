@@ -18,6 +18,7 @@ from urllib.parse import parse_qs, unquote, urlsplit
 from . import service
 
 MAX_BODY_BYTES = 64 * 1024 * 1024
+MAX_CONNECTION_BYTES = 16 * 1024
 STATIC_TYPES = {
     ".html": "text/html; charset=utf-8",
     ".css": "text/css; charset=utf-8",
@@ -74,9 +75,17 @@ class LocalServer(ThreadingHTTPServer):
         self.static_root = Path(static_root).resolve(strict=True)
         self.solve_lock = threading.Lock()
         self.runs = RunStore()
+        if runtime is None:
+            from .runtime import Runtime
+
+            runtime = Runtime()
         self.runtime = runtime
         super().__init__((host, port), Handler)
         self.allowed_hosts = {f"127.0.0.1:{self.server_port}", f"localhost:{self.server_port}"}
+
+    def server_close(self):
+        super().server_close()
+        self.runtime.close()
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -136,6 +145,23 @@ class Handler(BaseHTTPRequestHandler):
         if parts.path == "/health" and not parts.query:
             self._send(200, service.health(runtime=self.server.runtime))
             return
+        if parts.path == "/bedrock/session" and not parts.query:
+            self._send(200, {
+                "api_version": service.API_VERSION, "status": self.server.runtime.bedrock.status(),
+            })
+            return
+        if parts.path == "/history":
+            try:
+                params = parse_qs(parts.query, strict_parsing=True)
+                if set(params) != {"profile_id"} or len(params["profile_id"]) != 1:
+                    raise ValueError
+                profile = self.server.runtime.histories.get(params["profile_id"][0]).public()
+                self._send(200, {"api_version": service.API_VERSION, "profile": profile})
+            except service.ProviderError as error:
+                self._error(error.status, error.code, str(error))
+            except ValueError:
+                self._error(400, "invalid_profile", "Indica el histórico que deseas recuperar.")
+            return
         if parts.path == "/solve":
             try:
                 params = parse_qs(parts.query, strict_parsing=True)
@@ -190,10 +216,18 @@ class Handler(BaseHTTPRequestHandler):
     def do_POST(self):  # noqa: N802
         if not self._same_origin():
             return
-        if self.path not in {"/solve", "/prepare"}:
+        endpoints = {
+            "/solve", "/prepare", "/history/upload", "/history/analyze", "/history/remove",
+            "/bedrock/session", "/bedrock/disconnect",
+        }
+        if self.path not in endpoints:
             self._error(404, "not_found", "Recurso no encontrado.")
             return
-        if self.headers.get_content_type() != "application/json":
+        upload = self.path == "/history/upload"
+        if upload and self.headers.get_content_type() != "application/octet-stream":
+            self._error(415, "unsupported_media_type", "Adjunta el archivo histórico CSV o JSON.")
+            return
+        if not upload and self.headers.get_content_type() != "application/json":
             self._error(415, "unsupported_media_type", "Use Content-Type: application/json.")
             return
         lengths = self.headers.get_all("Content-Length", [])
@@ -211,36 +245,74 @@ class Handler(BaseHTTPRequestHandler):
         except ValueError:
             self._error(400, "invalid_content_length", "Content-Length inválido.")
             return
-        if length > MAX_BODY_BYTES:
-            self._error(413, "payload_too_large", "La instancia supera los 64 MiB admitidos. Reduce el archivo o utiliza la ejecución por consola para esta red.")
-            return
-        try:
-            data = self.rfile.read(length)
-            if len(data) != length:
-                raise service.SolveRequestError("Cuerpo JSON incompleto.")
-            payload = service.strict_loads(data)
-            if not isinstance(payload, dict):
-                raise service.SolveRequestError("La petición debe ser un objeto JSON.")
-        except (service.SolveRequestError, TimeoutError) as exc:
-            self._error(
-                400,
-                "invalid_request",
-                str(exc)
-                if isinstance(exc, service.SolveRequestError)
-                else "Se agotó la espera del cuerpo JSON.",
+        from .history_store import MAX_HISTORY_BYTES
+
+        limit = MAX_HISTORY_BYTES if upload else (
+            MAX_BODY_BYTES if self.path in {"/prepare", "/solve"} else MAX_CONNECTION_BYTES
+        )
+        if length > limit:
+            message = (
+                "El histórico supera los 256 MiB admitidos."
+                if upload else
+                "La petición supera el tamaño admitido para esta operación."
             )
+            self._error(413, "payload_too_large", message)
             return
-        if not self.server.solve_lock.acquire(blocking=False):
+        payload = None
+        if not upload:
+            try:
+                data = self.rfile.read(length)
+                if len(data) != length:
+                    raise service.SolveRequestError("Cuerpo JSON incompleto.")
+                payload = service.strict_loads(data)
+                del data  # do not retain a second copy of credential request bytes
+                if not isinstance(payload, dict):
+                    raise service.SolveRequestError("La petición debe ser un objeto JSON.")
+            except (service.SolveRequestError, TimeoutError) as exc:
+                self._error(
+                    400, "invalid_request",
+                    str(exc) if isinstance(exc, service.SolveRequestError)
+                    else "Se agotó la espera del cuerpo JSON.",
+                )
+                return
+        # Connection changes have their own session lock. Disconnect remains
+        # available during a solve and invalidates future remote calls.
+        connection_action = self.path in {"/bedrock/session", "/bedrock/disconnect"}
+        locked = False if connection_action else self.server.solve_lock.acquire(blocking=False)
+        if not connection_action and not locked:
             self._error(
                 409,
                 "solver_busy",
-                "Hay un cálculo en curso. Espere a que termine antes de volver a calcular.",
+                "Hay un cálculo o análisis en curso. Espera a que termine.",
             )
             return
         try:
-            options = {"runtime": self.server.runtime} if self.server.runtime is not None else {}
-            response = service.prepare(payload, **options) if self.path == "/prepare" \
-                else service.solve(payload, **options)
+            runtime = self.server.runtime
+            if self.path == "/history/upload":
+                profile = runtime.histories.upload(
+                    self.rfile, length, unquote(self.headers.get("X-History-Filename", "")),
+                )
+                response = {"api_version": service.API_VERSION, "profile": profile}
+            elif self.path in {"/history/analyze", "/history/remove"}:
+                service.object_fields(payload, {"profile_id"}, "histórico", ("profile_id",))
+                if self.path == "/history/analyze":
+                    response = {
+                        "api_version": service.API_VERSION,
+                        "profile": runtime.histories.analyze(payload["profile_id"]),
+                    }
+                else:
+                    response = {
+                        "api_version": service.API_VERSION,
+                        **runtime.histories.remove(payload["profile_id"]),
+                    }
+            elif self.path == "/bedrock/session":
+                response = {"api_version": service.API_VERSION, "status": runtime.bedrock.connect(payload)}
+            elif self.path == "/bedrock/disconnect":
+                service.object_fields(payload, set(), "desconexión")
+                response = {"api_version": service.API_VERSION, "status": runtime.bedrock.disconnect()}
+            else:
+                response = service.prepare(payload, runtime=runtime) if self.path == "/prepare" \
+                    else service.solve(payload, runtime=runtime)
             encoded = service.json_bytes(response)
             if self.path == "/solve":
                 self.server.runs.put(response["result"]["run_id"], encoded)
@@ -249,6 +321,16 @@ class Handler(BaseHTTPRequestHandler):
             self._error(400, "invalid_request", str(exc))
         except service.ProviderError as exc:
             self._error(exc.status, exc.code, str(exc))
+        except (ValueError, TimeoutError) as exc:
+            from .bedrock_session import BedrockSessionError
+
+            if isinstance(exc, BedrockSessionError):
+                self._error(400, exc.code, str(exc))
+            else:
+                self._error(400, "invalid_history", (
+                    "No se pudo leer el histórico. Revisa el formato, las unidades y "
+                    "que la carga se haya completado."
+                ))
         except Exception:
             self._error(
                 502,
@@ -256,7 +338,10 @@ class Handler(BaseHTTPRequestHandler):
                 "No se pudo completar el cálculo. Revise los datos y el entorno del proveedor.",
             )
         finally:
-            self.server.solve_lock.release()
+            if connection_action and isinstance(payload, dict):
+                payload.clear()
+            if locked:
+                self.server.solve_lock.release()
 
     def do_OPTIONS(self):  # noqa: N802
         self._error(
