@@ -231,7 +231,9 @@ def report_campaign(campaign: Path, factor_path: Path, output: Path):
         "factors_sha256": _sha(factor_path), "source_summary_sha256": _sha(campaign / "summary.json"),
         "report_includes_all_completed_runs": True,
     })
-    show = lambda value: "ND" if value is None else f"{value:.4f}"
+    def show(value):
+        return "ND" if value is None else f"{value:.4f}"
+
     lines = [
         "# Resultados para la presentación", "",
         f"Escenario: {factors.geography}. Moneda: {factors.currency}.",

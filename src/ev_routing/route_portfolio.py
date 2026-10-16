@@ -44,7 +44,9 @@ def candidate_orders(search, strategy, clusters, deadline, seed):
     customers, depot, fleet = instance.customer_ids, instance.depot_id, len(instance.vehicle_ids)
     windows = (instance.operations.customer_time_windows
                if instance.operations.use_customer_time_windows else {})
-    close = lambda c: windows[c].close_seconds if c in windows else inf
+    def close(c):
+        return windows[c].close_seconds if c in windows else inf
+
     if strategy == "deadline":
         # Global deadlines, then cyclic fleet assignment to avoid one vehicle
         # consuming all early slots. Alternative contiguous partitions follow.

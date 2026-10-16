@@ -146,6 +146,7 @@ def test_targeted_dispatch_witness_is_independently_feasible(size, seed):
 
 def test_electric_local_moves_preserve_deliveries_and_improve_crossed_routes():
     from test_model import _instance
+
     from ev_routing.route_electric_local import improve_electric
 
     locations = {"0": (0, 0), "A": (2, 1), "B": (-2, 1),

@@ -54,10 +54,11 @@ Michigan: electricidad comercial USD 0,1646/kWh; diésel Midwest USD 6,259/galó
 
 AWS por millón de tokens: USD 0,22 entrada, 1,32 salida, 0,275 escritura de caché y 0,022 lectura. Se usan campos reales del proveedor; consultas sin uso conocido quedan ND. El ahorro neto descuenta el coste incremental de tokens.
 
-- PDF local: `output/pdf/benchmark-hackathon-2026-10-16.pdf`.
+- [PDF publicado](benchmarks/2026-10-16/benchmark-hackathon-2026-10-16.pdf).
+- [Tablas, gráficos, decisiones y procedencia publicados](benchmarks/2026-10-16/README.md).
 - Paquete local: `output/benchmark-hackathon-2026-10-16.zip`.
-- Datos, rutas, figuras, decisiones y auditoría: `artifacts/overnight-20261016/report/`.
-- Repetición de C con su código congelado: `artifacts/overnight-20261016/report/reproducir.sh`.
+- Originales completos locales: `artifacts/overnight-20261016/report/`.
+- Repetición portable de C con su código histórico: `bash scripts/reproduce_benchmark_20261016.sh plan` y después `run`.
 - Runner general para nuevos ensayos: `scripts/benchmark_presentation.sh`.
 - Diseño y diagnóstico: [método](overnight-benchmark-method.md).
 - Parámetros y ejecución: [benchmark](benchmark-presentation.md).

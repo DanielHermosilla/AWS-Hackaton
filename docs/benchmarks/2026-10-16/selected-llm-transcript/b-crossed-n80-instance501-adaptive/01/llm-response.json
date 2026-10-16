@@ -1,0 +1,23 @@
+{
+  "usage": {
+    "inputTokens": 2,
+    "outputTokens": 340,
+    "totalTokens": 32370,
+    "cacheReadInputTokens": 0,
+    "cacheWriteInputTokens": 32028
+  },
+  "stopReason": "end_turn",
+  "metrics": {
+    "latencyMs": 3427
+  },
+  "output": {
+    "message": {
+      "role": "assistant",
+      "content": [
+        {
+          "text": "{\"rebuild_strategy\":\"window_blocks\",\"rebuild_clusters\":4,\"rebuild_seconds\":12,\"seed_strategy\":\"regret_insertion\",\"seed_starts\":16,\"charging_seed_starts\":12,\"seed_time_fraction\":0.2,\"improvement_time_fraction\":0.25,\"deliveries_time_fraction\":0.9,\"alns_iterations\":180,\"population_size\":16,\"pricing_heuristic_starts\":8,\"pricing_heuristic_seconds\":0.25,\"resource_repair_seconds\":0.08,\"integrality_pricing_columns\":8,\"rationale\":\"No incumbent exists and the dominant structure is a sequence of tight delivery waves with flexible customers between them. Rebuild using four energy clusters while ordering tight-window customers globally, then spend additional time on validated charging-aware repairs and diversified regret seeds. Keep reduced-cost exact pricing unchanged; increase only bounded primal diversity and repair effort because initial feasibility and fleet completion are the immediate risks.\"}"
+        }
+      ]
+    }
+  }
+}

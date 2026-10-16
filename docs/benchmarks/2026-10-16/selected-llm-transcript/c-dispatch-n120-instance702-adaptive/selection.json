@@ -1,0 +1,293 @@
+{
+  "cohort": "c",
+  "case_id": "dispatch-n120-instance702",
+  "policy": "adaptive",
+  "reference": "best_local_hindsight",
+  "postselected_example": true,
+  "source_result": "artifacts/overnight-20261016/phase-c/campaign/comparison/runs/dispatch-n120-instance702-adaptive-seed0/result.json",
+  "executed_search": {
+    "heuristics": {
+      "fixed_path_successes": 3918,
+      "route_evaluations": 4046,
+      "route_evaluation_seconds": 23.648967259869096,
+      "cache_hits": 1758,
+      "sequence_time_rejections": 34414,
+      "repair_labels": 4650,
+      "repair_time_prunes": 131279,
+      "repair_energy_prunes": 560,
+      "repair_timeouts": 121,
+      "repair_infeasible_sequences": 7,
+      "portfolio_calls": 2,
+      "portfolio_seconds": 0.6600561240047682,
+      "electric_local_ranked_moves": 1647,
+      "electric_local_time_rejections": 555,
+      "electric_local_repairs": 60,
+      "electric_local_improvements": 20
+    },
+    "subset_row_cuts": 0,
+    "max_branch_nodes_in_epoch": 1,
+    "pricing_calls": 23,
+    "exact_dual_queries": 2,
+    "completed_dual_queries": 0,
+    "interrupted_pricing_epochs": 2,
+    "energy_relaxation": {
+      "applicable": true,
+      "bound_kwh": 35.523864529285895,
+      "source": "scip_tour_relaxation",
+      "runtime_seconds": 3.6265677909977967,
+      "tour": null,
+      "rounding_guard_per_arc_kwh": 2.1362717643647567e-10,
+      "termination": "timelimit",
+      "rounds": 7,
+      "cuts": 137,
+      "native_parameter_changes": {
+        "branching/relpscost/priority": {
+          "before": 10000,
+          "after": 1000000
+        }
+      }
+    }
+  },
+  "accepted_decisions": [
+    {
+      "event": "before_search",
+      "phase": "planning",
+      "model_id": "us.openai.gpt-5.6-luna",
+      "runtime_seconds": 4.072287333008717,
+      "call_index": 1,
+      "usage": {
+        "inputTokens": 2,
+        "outputTokens": 290,
+        "totalTokens": 36059,
+        "cacheReadInputTokens": 0,
+        "cacheWriteInputTokens": 35767
+      },
+      "status": "applied",
+      "elapsed_seconds": 4.391120625004987,
+      "inference_completed": true,
+      "revision": 1,
+      "effective_changes": {
+        "charging_seed_starts": {
+          "before": 6,
+          "after": 10
+        },
+        "improvement_time_fraction": {
+          "before": 0.2,
+          "after": 0.25
+        },
+        "deliveries_time_fraction": {
+          "before": 0.85,
+          "after": 0.9
+        },
+        "alns_iterations": {
+          "before": 80,
+          "after": 150
+        },
+        "resource_repair_seconds": {
+          "before": 0.04,
+          "after": 0.08
+        },
+        "rebuild_strategy": {
+          "before": "none",
+          "after": "window_waves"
+        },
+        "rebuild_seconds": {
+          "before": 4,
+          "after": 20.0
+        },
+        "rationale": {
+          "before": "",
+          "after": "The 120-customer instance has four geographically separated energy groups but tightly staggered, overlapping windows and two vehicles, so whole-zone completion is risky. Use window_waves to assign areas while allowing revisits and globally anchor tight deadlines; spend the limited budget on diversified charging-aware seeds and validated repair. Retain reduced-cost exact pricing after primal construction."
+        }
+      },
+      "proposal": {
+        "route_cuts": "none",
+        "columns_per_round": 50,
+        "max_subset_rows": 100,
+        "subtour_batch_size": 100,
+        "branching": "relpscost",
+        "heuristics": "default",
+        "presolve": "default",
+        "separation": "default",
+        "scip_parameters": {},
+        "seed_strategy": "regret_insertion",
+        "seed_starts": 8,
+        "seed_charging": true,
+        "charging_seed_starts": 10,
+        "seed_time_fraction": 0.15,
+        "improvement_time_fraction": 0.25,
+        "local_search": [
+          "two_opt",
+          "relocate",
+          "swap"
+        ],
+        "local_search_passes": 20,
+        "ruin_fraction": 0.2,
+        "ruin_rounds": 40,
+        "deliveries_time_fraction": 0.9,
+        "epoch_seconds": 12,
+        "bound_strategy": "tour_relaxation",
+        "bound_time_fraction": 0.08,
+        "share_vehicle_oracles": true,
+        "pricing_strategy": "heuristic_then_exact",
+        "pricing_search": "reduced_cost",
+        "pricing_heuristic_starts": 4,
+        "pricing_heuristic_seconds": 0.15,
+        "pricing_pool_limit": 2000,
+        "restricted_master_seconds": 0.5,
+        "dominance": "convex",
+        "alns_iterations": 150,
+        "destroy_operators": [
+          "random",
+          "related",
+          "worst",
+          "route"
+        ],
+        "repair_strategy": "regret",
+        "repair_candidates": 8,
+        "resource_repair_seconds": 0.08,
+        "resource_path_order": "energy",
+        "diversification_probability": 0.08,
+        "memetic_enabled": true,
+        "population_size": 12,
+        "focus_customers": [],
+        "route_orders": {},
+        "rebuild_strategy": "window_waves",
+        "rebuild_clusters": 4,
+        "rebuild_seconds": 20.0,
+        "tree_branching": "resource",
+        "node_selection": "hybrid",
+        "cut_candidates": 100,
+        "cut_batch": 8,
+        "callback_repair_seconds": 0.05,
+        "callback_frequency": 5,
+        "integrality_pricing_columns": 4,
+        "rationale": "The 120-customer instance has four geographically separated energy groups but tightly staggered, overlapping windows and two vehicles, so whole-zone completion is risky. Use window_waves to assign areas while allowing revisits and globally anchor tight deadlines; spend the limited budget on diversified charging-aware seeds and validated repair. Retain reduced-cost exact pricing after primal construction."
+      },
+      "algorithm_changes": [
+        "charging_seed_starts",
+        "improvement_time_fraction",
+        "deliveries_time_fraction",
+        "alns_iterations",
+        "resource_repair_seconds",
+        "rebuild_strategy",
+        "rebuild_seconds"
+      ],
+      "inactive_settings": {
+        "seed_starts": 16,
+        "seed_time_fraction": 0.2
+      }
+    },
+    {
+      "event": "first_full_service",
+      "phase": "energy",
+      "model_id": "us.openai.gpt-5.6-luna",
+      "runtime_seconds": 6.255216166988248,
+      "call_index": 2,
+      "usage": {
+        "inputTokens": 2,
+        "outputTokens": 501,
+        "totalTokens": 38056,
+        "cacheReadInputTokens": 0,
+        "cacheWriteInputTokens": 37553
+      },
+      "status": "applied",
+      "elapsed_seconds": 24.55372479200014,
+      "inference_completed": true,
+      "revision": 2,
+      "effective_changes": {
+        "alns_iterations": {
+          "before": 150,
+          "after": 220
+        },
+        "resource_repair_seconds": {
+          "before": 0.08,
+          "after": 0.12
+        },
+        "diversification_probability": {
+          "before": 0.08,
+          "after": 0.12
+        },
+        "rebuild_strategy": {
+          "before": "window_waves",
+          "after": "electric_local"
+        },
+        "rationale": {
+          "before": "The 120-customer instance has four geographically separated energy groups but tightly staggered, overlapping windows and two vehicles, so whole-zone completion is risky. Use window_waves to assign areas while allowing revisits and globally anchor tight deadlines; spend the limited budget on diversified charging-aware seeds and validated repair. Retain reduced-cost exact pricing after primal construction.",
+          "after": "All 120 customers are already served and delivery optimality is proven. The prior window_waves portfolio produced no improving reward, while repair has many time rejections but few infeasible sequences; use the remaining budget for incumbent-preserving energy local search with slightly deeper continuous-resource repair and diversification. Keep reduced-cost exact pricing afterward for certification."
+        }
+      },
+      "proposal": {
+        "route_cuts": "none",
+        "columns_per_round": 50,
+        "max_subset_rows": 100,
+        "subtour_batch_size": 100,
+        "branching": "relpscost",
+        "heuristics": "default",
+        "presolve": "default",
+        "separation": "default",
+        "scip_parameters": {},
+        "seed_strategy": "regret_insertion",
+        "seed_starts": 8,
+        "seed_charging": true,
+        "charging_seed_starts": 10,
+        "seed_time_fraction": 0.15,
+        "improvement_time_fraction": 0.25,
+        "local_search": [
+          "two_opt",
+          "relocate",
+          "swap"
+        ],
+        "local_search_passes": 20,
+        "ruin_fraction": 0.2,
+        "ruin_rounds": 40,
+        "deliveries_time_fraction": 0.9,
+        "epoch_seconds": 12,
+        "bound_strategy": "tour_relaxation",
+        "bound_time_fraction": 0.08,
+        "share_vehicle_oracles": true,
+        "pricing_strategy": "heuristic_then_exact",
+        "pricing_search": "reduced_cost",
+        "pricing_heuristic_starts": 4,
+        "pricing_heuristic_seconds": 0.15,
+        "pricing_pool_limit": 2000,
+        "restricted_master_seconds": 0.5,
+        "dominance": "convex",
+        "alns_iterations": 220,
+        "destroy_operators": [
+          "random",
+          "related",
+          "worst",
+          "route"
+        ],
+        "repair_strategy": "regret",
+        "repair_candidates": 8,
+        "resource_repair_seconds": 0.12,
+        "resource_path_order": "energy",
+        "diversification_probability": 0.12,
+        "memetic_enabled": true,
+        "population_size": 12,
+        "focus_customers": [],
+        "route_orders": {},
+        "rebuild_strategy": "electric_local",
+        "rebuild_clusters": 4,
+        "rebuild_seconds": 20.0,
+        "tree_branching": "resource",
+        "node_selection": "hybrid",
+        "cut_candidates": 100,
+        "cut_batch": 8,
+        "callback_repair_seconds": 0.05,
+        "callback_frequency": 5,
+        "integrality_pricing_columns": 4,
+        "rationale": "All 120 customers are already served and delivery optimality is proven. The prior window_waves portfolio produced no improving reward, while repair has many time rejections but few infeasible sequences; use the remaining budget for incumbent-preserving energy local search with slightly deeper continuous-resource repair and diversification. Keep reduced-cost exact pricing afterward for certification."
+      },
+      "algorithm_changes": [
+        "alns_iterations",
+        "resource_repair_seconds",
+        "diversification_probability",
+        "rebuild_strategy"
+      ],
+      "inactive_settings": {}
+    }
+  ]
+}

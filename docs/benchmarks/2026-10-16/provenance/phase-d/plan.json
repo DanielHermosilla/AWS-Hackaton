@@ -1,0 +1,211 @@
+{
+  "jobs": [
+    {
+      "family": "dispatch",
+      "customers": 200,
+      "instance_seed": 1301,
+      "policy": "standard"
+    },
+    {
+      "family": "dispatch",
+      "customers": 80,
+      "instance_seed": 1301,
+      "policy": "waves"
+    },
+    {
+      "family": "crossed",
+      "customers": 80,
+      "instance_seed": 1301,
+      "policy": "adaptive_v4"
+    },
+    {
+      "family": "dispatch",
+      "customers": 80,
+      "instance_seed": 1301,
+      "policy": "adaptive_waves_v4"
+    },
+    {
+      "family": "crossed",
+      "customers": 80,
+      "instance_seed": 1301,
+      "policy": "waves"
+    },
+    {
+      "family": "crossed",
+      "customers": 200,
+      "instance_seed": 1301,
+      "policy": "adaptive_v4"
+    },
+    {
+      "family": "crossed",
+      "customers": 200,
+      "instance_seed": 1301,
+      "policy": "waves"
+    },
+    {
+      "family": "dispatch",
+      "customers": 80,
+      "instance_seed": 1301,
+      "policy": "standard"
+    },
+    {
+      "family": "crossed",
+      "customers": 200,
+      "instance_seed": 1301,
+      "policy": "rules"
+    },
+    {
+      "family": "dispatch",
+      "customers": 200,
+      "instance_seed": 1301,
+      "policy": "rules_v4"
+    },
+    {
+      "family": "dispatch",
+      "customers": 80,
+      "instance_seed": 1301,
+      "policy": "rules_v4"
+    },
+    {
+      "family": "crossed",
+      "customers": 200,
+      "instance_seed": 1301,
+      "policy": "adaptive_waves"
+    },
+    {
+      "family": "crossed",
+      "customers": 200,
+      "instance_seed": 1301,
+      "policy": "rules_v4"
+    },
+    {
+      "family": "dispatch",
+      "customers": 80,
+      "instance_seed": 1301,
+      "policy": "adaptive_waves"
+    },
+    {
+      "family": "crossed",
+      "customers": 200,
+      "instance_seed": 1301,
+      "policy": "adaptive_waves_v4"
+    },
+    {
+      "family": "crossed",
+      "customers": 200,
+      "instance_seed": 1301,
+      "policy": "adaptive"
+    },
+    {
+      "family": "dispatch",
+      "customers": 200,
+      "instance_seed": 1301,
+      "policy": "adaptive_waves"
+    },
+    {
+      "family": "crossed",
+      "customers": 80,
+      "instance_seed": 1301,
+      "policy": "adaptive_waves"
+    },
+    {
+      "family": "dispatch",
+      "customers": 200,
+      "instance_seed": 1301,
+      "policy": "adaptive"
+    },
+    {
+      "family": "crossed",
+      "customers": 80,
+      "instance_seed": 1301,
+      "policy": "standard"
+    },
+    {
+      "family": "dispatch",
+      "customers": 200,
+      "instance_seed": 1301,
+      "policy": "rules"
+    },
+    {
+      "family": "dispatch",
+      "customers": 200,
+      "instance_seed": 1301,
+      "policy": "adaptive_v4"
+    },
+    {
+      "family": "crossed",
+      "customers": 200,
+      "instance_seed": 1301,
+      "policy": "standard"
+    },
+    {
+      "family": "dispatch",
+      "customers": 80,
+      "instance_seed": 1301,
+      "policy": "adaptive"
+    },
+    {
+      "family": "crossed",
+      "customers": 80,
+      "instance_seed": 1301,
+      "policy": "rules_v4"
+    },
+    {
+      "family": "crossed",
+      "customers": 80,
+      "instance_seed": 1301,
+      "policy": "adaptive"
+    },
+    {
+      "family": "dispatch",
+      "customers": 80,
+      "instance_seed": 1301,
+      "policy": "rules"
+    },
+    {
+      "family": "dispatch",
+      "customers": 80,
+      "instance_seed": 1301,
+      "policy": "adaptive_v4"
+    },
+    {
+      "family": "crossed",
+      "customers": 80,
+      "instance_seed": 1301,
+      "policy": "adaptive_waves_v4"
+    },
+    {
+      "family": "dispatch",
+      "customers": 200,
+      "instance_seed": 1301,
+      "policy": "waves"
+    },
+    {
+      "family": "dispatch",
+      "customers": 200,
+      "instance_seed": 1301,
+      "policy": "adaptive_waves_v4"
+    },
+    {
+      "family": "crossed",
+      "customers": 80,
+      "instance_seed": 1301,
+      "policy": "rules"
+    }
+  ],
+  "budget_seconds": 30,
+  "source": {
+    "parent_commit": "a04a884f3efcb4896d6a3db5f23b64b5569a7b22",
+    "commit": null,
+    "working_tree_patch_sha256": "a05bb7bb15dcf556e478af5fa05145f5169d1eedc0decc9b2308179be9938083",
+    "frozen_utc": "2026-10-16T07:18:09.400723+00:00",
+    "scope": "Early and deferred full-service callback; resumable electric local search without arbitrary improvement count; prompt states actual epoch budgets. Separate software version, paired controls.",
+    "source_sha256": "c060f8153ac64409e51f10f7deda47f2db37c3b222c7060fd70cf50be301d340",
+    "patch_sha256": "a05bb7bb15dcf556e478af5fa05145f5169d1eedc0decc9b2308179be9938083"
+  },
+  "scope": "Separate paired software-version study, same physics and new seed. Not pooled with C.",
+  "extension_registered_utc": "2026-10-16T09:12:11.507347+00:00",
+  "warm_start_policy_source": "artifacts/overnight-20261016/phase-c/campaign/pilot/selected-policy.json",
+  "warm_start_policy_sha256": "a2623d348186f7df6ac6d4dcc5cab402cbc66a96a9c67c67a6f217ea744546e5",
+  "warm_start_scope": "Additional paired tests start from the fixed policy selected using development seed 0. No seed 1301 results existed at registration."
+}

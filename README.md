@@ -259,6 +259,15 @@ pareadas, CO₂ con supuestos explícitos y auditoría de resultados de terceros
 El plan no ejecuta corridas hasta añadir `--execute`; AWS requiere
 `--with-bedrock`.
 
+La [campaña nocturna de 436 corridas](docs/benchmark-results-2026-10-16.md)
+incluye resultados, PDF, gráficos, decisiones del LLM y límites de la evidencia.
+El [paquete publicado](docs/benchmarks/2026-10-16/README.md) conserva CSV y
+versiones de cada fase. `bash scripts/reproduce_benchmark_20261016.sh plan`
+prepara la repetición de la comparación C con su código histórico.
+Para nuevas pruebas del motor actual, usar
+`bash scripts/benchmark_presentation.sh plan`; `run` ejecuta el piloto y la
+comparación con AWS. Ver [opciones y salidas](docs/benchmark-presentation.md).
+
 Ejecuta las tres políticas en procesos separados y genera `summary.csv`,
 `summary.json`, manifiesto, resultados y logs. `us-east-1` y `hackathon` son
 valores iniciales configurables; no se guardan credenciales.

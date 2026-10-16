@@ -271,8 +271,9 @@ def test_full_service_event_survives_an_inflight_first_request():
 
 def test_interrupted_electric_neighborhood_can_resume(monkeypatch):
     from test_model import _instance
-    from ev_routing.route_portfolio import rebuild
+
     import ev_routing.route_electric_local as local
+    from ev_routing.route_portfolio import rebuild
 
     nodes = ["0", "A", "B", "C"]
     cheap = {("0", "A"), ("A", "C"), ("C", "B"), ("B", "0"), ("C", "0")}

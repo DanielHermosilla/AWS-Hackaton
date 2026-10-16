@@ -1,0 +1,117 @@
+{
+  "schema_version": "1.0",
+  "source": "synthetic_pilot",
+  "code_sha256": "cf62f45d8f05dfc20b3782e6237f181fc29dbf85af6acd8874b95ffffb070402",
+  "generator_version": 2,
+  "selected_preset": "windows",
+  "route_policy_overrides": {
+    "rebuild_strategy": "window_blocks",
+    "rebuild_seconds": 8,
+    "improvement_time_fraction": 0.3
+  },
+  "selection": "Full-service rate, unserved fraction, mean energy, PAR2 time.",
+  "selection_scores": {
+    "electric": [
+      -0.25,
+      0.15666666666666668,
+      76.17918068599239,
+      22.952726135375087
+    ],
+    "primal": [
+      -0.25,
+      0.25583333333333336,
+      86.53456103682488,
+      23.148459869874387
+    ],
+    "pricing": [
+      -0.25,
+      0.27645833333333336,
+      85.0998598401611,
+      24.003036177125068
+    ],
+    "blocks": [
+      -0.375,
+      0.15375,
+      80.5223832629185,
+      19.97179056762525
+    ],
+    "windows": [
+      -0.5,
+      0.13406249999999997,
+      85.9414796732219,
+      15.977601640500325
+    ],
+    "deadlines": [
+      -0.375,
+      0.1528125,
+      81.7054513707886,
+      19.972036515625405
+    ],
+    "standard": [
+      -0.25,
+      0.1859375,
+      81.2895406427863,
+      22.87360658862417
+    ]
+  },
+  "excluded_presets_with_execution_failures": {},
+  "pilot_runs_including_failures": 56,
+  "development_physical_hashes": [
+    "2290086a2775b26ff21476725ffa71456a8c4c9da1aa28a7bd0c43518ae1f1db",
+    "582834820fb1efe667d88a2c9004bf49219003a0e50c2f7d614388237aaff0be",
+    "74d1ba833ef0df4164cc0e3c2db36336b07d232f3e11d7bd7a4337f680683aab",
+    "7bbda3c514dd513b3bd0e25d45d2f8d42f38873f756d4ba7c1973ebde79eacac",
+    "95a002a40b322de9d1f005e098d681de1e8166b4540e09574486fd0d105890de",
+    "cdee44d79a8ed88966e93fdf515d207d524b069dfdadb64798abb1557db24e74",
+    "cf03eb3b8dcc045b800bb56d66bdc7c9706f4916d11d19f48eb9e7b3116afef4",
+    "d15373a6337fde1f913de837242d8de17bc8c1c19aaf5356b5543dcb38c623b1"
+  ],
+  "development_instance_seeds": [
+    0
+  ],
+  "development_cases": [
+    {
+      "family": "dispatch",
+      "customers": 40,
+      "instance_seed": 0
+    },
+    {
+      "family": "crossed",
+      "customers": 40,
+      "instance_seed": 0
+    },
+    {
+      "family": "dispatch",
+      "customers": 80,
+      "instance_seed": 0
+    },
+    {
+      "family": "crossed",
+      "customers": 80,
+      "instance_seed": 0
+    },
+    {
+      "family": "dispatch",
+      "customers": 120,
+      "instance_seed": 0
+    },
+    {
+      "family": "crossed",
+      "customers": 120,
+      "instance_seed": 0
+    },
+    {
+      "family": "dispatch",
+      "customers": 200,
+      "instance_seed": 0
+    },
+    {
+      "family": "crossed",
+      "customers": 200,
+      "instance_seed": 0
+    }
+  ],
+  "all_development_runs_reached_full_service": false,
+  "any_development_run_reached_full_service": true,
+  "no_test_results_used": true
+}

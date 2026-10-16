@@ -1,0 +1,36 @@
+{
+  "checked_utc": "2026-10-16T07:20:16.224299+00:00",
+  "electricity": {
+    "url": "https://www.eia.gov/electricity/monthly/epm_table_grapher.php?t=table_5_06_a",
+    "period": "2026-07",
+    "geography": "Michigan",
+    "sector": "commercial",
+    "usd_per_kwh": 0.1646,
+    "source_row_cents_per_kwh": 16.46
+  },
+  "diesel": {
+    "url": "https://www.eia.gov/petroleum/gasdiesel/",
+    "period": "2026-10-12",
+    "geography": "Midwest PADD2",
+    "usd_per_us_gallon": 6.259,
+    "litres_per_us_gallon": 3.785411784
+  },
+  "bedrock": {
+    "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/model-card-openai-gpt-56-luna.html",
+    "profile": "us.openai.gpt-5.6-luna",
+    "tier": "Standard Geo CRIS",
+    "maximum_input_tokens": 272000,
+    "usd_per_million": {
+      "input": 0.22,
+      "output": 1.32,
+      "cache_write": 0.275,
+      "cache_read": 0.022
+    },
+    "extra_fee_applied": false,
+    "billing_scope": "Approximation from actual provider usage, not an AWS invoice"
+  },
+  "notes": [
+    "Optimistic physical/economic assumptions are explicit in factors.json.",
+    "Mean commercial electricity price does not represent a DC fast charging retail tariff."
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "command": [
+    "caffeinate",
+    "-dimsu",
+    ".venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "-o",
+    "pythonpath=src",
+    "--basetemp",
+    "artifacts/overnight-20261016/phase-d/pytest-temp"
+  ],
+  "returncode": 0,
+  "tested_source_sha256": "c060f8153ac64409e51f10f7deda47f2db37c3b222c7060fd70cf50be301d340",
+  "equivalent_to_frozen_source": true
+}

@@ -1,0 +1,37 @@
+{
+  "families": [
+    "dispatch",
+    "crossed"
+  ],
+  "customers": [
+    40,
+    80,
+    120,
+    200
+  ],
+  "policies": [
+    "standard",
+    "fixed",
+    "rules",
+    "adaptive"
+  ],
+  "pilot_runs_without_aws": 48,
+  "comparison_runs": 64,
+  "max_real_aws_calls": 32,
+  "solver_budget_minutes": 76.0,
+  "extra_costs": "Añadir preparación, arranque y validación; inferencia incluida en el presupuesto del solver.",
+  "development_seeds": [
+    0
+  ],
+  "test_seeds": [
+    301,
+    302
+  ],
+  "solver_seeds": [
+    0
+  ],
+  "energy_relative_gap": 0.005,
+  "bedrock_model": "us.openai.gpt-5.6-luna",
+  "factor_sha256": "28f6f7f7d4bd0f9efd743bf54b621590802a68b9e48ce5fdd9a99584a14c8436",
+  "dataset_scope": "targeted_synthetic_demonstration"
+}

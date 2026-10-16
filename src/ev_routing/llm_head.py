@@ -12,8 +12,8 @@ from time import monotonic
 
 from pyscipopt import Model
 
-from ev_routing.route_policy import ROUTE_PROMPT, RoutePolicy, _save_decision
 from ev_routing.route_hints import routing_digest, validate_orders
+from ev_routing.route_policy import ROUTE_PROMPT, RoutePolicy, _save_decision
 from ev_routing.scip_tuning import parameter_catalog, validate_parameters
 
 API_GROUPS = {

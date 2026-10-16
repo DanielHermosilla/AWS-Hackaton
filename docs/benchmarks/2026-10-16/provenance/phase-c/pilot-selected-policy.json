@@ -1,0 +1,125 @@
+{
+  "schema_version": "1.0",
+  "source": "synthetic_pilot",
+  "code_sha256": "7fdf3e76f8e294d8787f36aeb9111373a6140546ab760129cf552a08f66fda74",
+  "generator_version": 2,
+  "selected_preset": "waves",
+  "route_policy_overrides": {
+    "rebuild_strategy": "window_waves",
+    "rebuild_seconds": 8,
+    "seed_strategy": "none",
+    "seed_charging": false,
+    "improvement_time_fraction": 0.3
+  },
+  "selection": "Full-service rate, unserved fraction, mean energy, PAR2 time.",
+  "selection_scores": {
+    "standard": [
+      -0.25,
+      0.23781249999999998,
+      82.62420110056311,
+      15.387879198000519
+    ],
+    "waves": [
+      -1.0,
+      0.0,
+      79.33083073675806,
+      0.42476620312663727
+    ],
+    "electric": [
+      -0.25,
+      0.2067708333333333,
+      76.76831528821737,
+      15.419790859374189
+    ],
+    "pricing": [
+      -0.125,
+      0.3844791666666667,
+      72.58162559493265,
+      17.63136129162558
+    ],
+    "blocks": [
+      -0.25,
+      0.21239583333333334,
+      85.65294891098596,
+      15.382276052125235
+    ],
+    "windows": [
+      -0.5,
+      0.17447916666666666,
+      88.85632337602154,
+      10.702667307374213
+    ],
+    "deadlines": [
+      -0.25,
+      0.21239583333333334,
+      85.65926905969516,
+      15.380701598998712
+    ],
+    "primal": [
+      -0.25,
+      0.2792708333333333,
+      82.71254856736672,
+      15.637904937499115
+    ]
+  },
+  "excluded_presets_with_execution_failures": {},
+  "pilot_runs_including_failures": 64,
+  "development_physical_hashes": [
+    "2290086a2775b26ff21476725ffa71456a8c4c9da1aa28a7bd0c43518ae1f1db",
+    "582834820fb1efe667d88a2c9004bf49219003a0e50c2f7d614388237aaff0be",
+    "74d1ba833ef0df4164cc0e3c2db36336b07d232f3e11d7bd7a4337f680683aab",
+    "7bbda3c514dd513b3bd0e25d45d2f8d42f38873f756d4ba7c1973ebde79eacac",
+    "95a002a40b322de9d1f005e098d681de1e8166b4540e09574486fd0d105890de",
+    "cdee44d79a8ed88966e93fdf515d207d524b069dfdadb64798abb1557db24e74",
+    "cf03eb3b8dcc045b800bb56d66bdc7c9706f4916d11d19f48eb9e7b3116afef4",
+    "d15373a6337fde1f913de837242d8de17bc8c1c19aaf5356b5543dcb38c623b1"
+  ],
+  "development_instance_seeds": [
+    0
+  ],
+  "development_cases": [
+    {
+      "family": "dispatch",
+      "customers": 40,
+      "instance_seed": 0
+    },
+    {
+      "family": "crossed",
+      "customers": 40,
+      "instance_seed": 0
+    },
+    {
+      "family": "dispatch",
+      "customers": 80,
+      "instance_seed": 0
+    },
+    {
+      "family": "crossed",
+      "customers": 80,
+      "instance_seed": 0
+    },
+    {
+      "family": "dispatch",
+      "customers": 120,
+      "instance_seed": 0
+    },
+    {
+      "family": "crossed",
+      "customers": 120,
+      "instance_seed": 0
+    },
+    {
+      "family": "dispatch",
+      "customers": 200,
+      "instance_seed": 0
+    },
+    {
+      "family": "crossed",
+      "customers": 200,
+      "instance_seed": 0
+    }
+  ],
+  "all_development_runs_reached_full_service": false,
+  "any_development_run_reached_full_service": true,
+  "no_test_results_used": true
+}

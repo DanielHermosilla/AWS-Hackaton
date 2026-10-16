@@ -1,0 +1,13 @@
+{
+  "registered_utc": "2026-10-16T08:21:05.885308+00:00",
+  "old_planned_runs": 20,
+  "planned_runs": 32,
+  "additional_controls": [
+    "waves",
+    "adaptive_waves_v4",
+    "adaptive_waves"
+  ],
+  "rationale": "Measure incremental AWS impact above the development-selected fixed policy, and isolate early/deferred callbacks with the same starting policy.",
+  "development_policy_sha256": "a2623d348186f7df6ac6d4dcc5cab402cbc66a96a9c67c67a6f217ea744546e5",
+  "no_test_seed_1301_results_at_registration": true
+}

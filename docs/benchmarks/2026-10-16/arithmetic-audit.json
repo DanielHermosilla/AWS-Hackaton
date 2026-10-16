@@ -1,0 +1,11 @@
+{
+  "passed": true,
+  "preview": false,
+  "checks": {
+    "native_solutions": 252,
+    "provider_costs": 247,
+    "paired_kpis": 366,
+    "officials": 2
+  },
+  "scope": "Arithmetic and customer equality from native solutions; physical street validation is recorded separately."
+}

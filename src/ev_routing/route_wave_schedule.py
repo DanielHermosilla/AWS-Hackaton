@@ -17,7 +17,9 @@ def rebuild_waves(search, best, policy, deadline):
         return best
     windows = ops.customer_time_windows
     groups = energy_groups(network, policy.rebuild_clusters)
-    close = lambda c: windows[c].close_seconds if c in windows else inf
+    def close(c):
+        return windows[c].close_seconds if c in windows else inf
+
     tight = {c for c in instance.customer_ids if c in windows
              and windows[c].close_seconds - windows[c].open_seconds < .6 * ops.max_route_seconds}
     if not tight:

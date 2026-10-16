@@ -1,0 +1,13 @@
+case_id,family,solver_seed,budget_seconds,reference,candidate,delivery_delta,battery_energy_saved_kwh,energy_saved_percent,electricity_saved_kwh,vehicle_electricity_co2_saved_kg,energy_bill_saved,money_saved_after_llm,full_service_speedup,certified_gap_speedup,reason,annual_projection_battery_energy_saved_kwh,annual_projection_vehicle_electricity_co2_saved_kg,annual_projection_energy_bill_saved,annual_projection_money_saved_after_llm
+crossed-n200-v4-instance902,crossed,0,30,standard,adaptive,77,,,,,,,,,Clientes atendidos distintos o no auditables: ahorro energético no comparable.,,,,
+crossed-n200-v4-instance902,crossed,0,30,rules,adaptive,-1,,,,,,,,,Clientes atendidos distintos o no auditables: ahorro energético no comparable.,,,,
+crossed-n200-v8-instance901,crossed,0,30,standard,adaptive,81,,,,,,,,,Clientes atendidos distintos o no auditables: ahorro energético no comparable.,,,,
+crossed-n200-v8-instance901,crossed,0,30,rules,adaptive,0,0.0,0.0,0.0,0.0,0.0,-0.024831620000000002,0.1919945221378779,,Mismos clientes; ahorro firmado. Negativo significa empeoramiento.,0.0,0.0,0.0,-7.449486
+crossed-n200-v2-instance902,crossed,0,30,standard,adaptive,75,,,,,,,,,Clientes atendidos distintos o no auditables: ahorro energético no comparable.,,,,
+crossed-n200-v2-instance902,crossed,0,30,rules,adaptive,0,0.0,0.0,0.0,0.0,0.0,-0.025067955000000003,0.21373714484244405,,Mismos clientes; ahorro firmado. Negativo significa empeoramiento.,0.0,0.0,0.0,-7.520386500000001
+crossed-n200-v2-instance901,crossed,0,30,standard,adaptive,74,,,,,,,,,Clientes atendidos distintos o no auditables: ahorro energético no comparable.,,,,
+crossed-n200-v2-instance901,crossed,0,30,rules,adaptive,0,0.0,0.0,0.0,0.0,0.0,-0.025178065000000003,0.2205555212004023,,Mismos clientes; ahorro firmado. Negativo significa empeoramiento.,0.0,0.0,0.0,-7.553419500000001
+crossed-n200-v8-instance902,crossed,0,30,standard,adaptive,-1,,,,,,,,,Clientes atendidos distintos o no auditables: ahorro energético no comparable.,,,,
+crossed-n200-v8-instance902,crossed,0,30,rules,adaptive,-83,,,,,,,,,Clientes atendidos distintos o no auditables: ahorro energético no comparable.,,,,
+crossed-n200-v4-instance901,crossed,0,30,standard,adaptive,81,,,,,,,,,Clientes atendidos distintos o no auditables: ahorro energético no comparable.,,,,
+crossed-n200-v4-instance901,crossed,0,30,rules,adaptive,0,-4.136023176161714,-5.1077537716751875,-4.353708606486015,-1.9167831921083773,-0.7166204366275981,,0.04805834511916396,,Mismos clientes; ahorro firmado. Negativo significa empeoramiento.,-1240.8069528485144,-575.0349576325132,-214.98613098827943,

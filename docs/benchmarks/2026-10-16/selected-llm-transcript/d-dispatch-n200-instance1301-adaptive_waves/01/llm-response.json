@@ -1,0 +1,23 @@
+{
+  "usage": {
+    "inputTokens": 2,
+    "outputTokens": 373,
+    "totalTokens": 43049,
+    "cacheReadInputTokens": 0,
+    "cacheWriteInputTokens": 42674
+  },
+  "stopReason": "end_turn",
+  "metrics": {
+    "latencyMs": 3501
+  },
+  "output": {
+    "message": {
+      "role": "assistant",
+      "content": [
+        {
+          "text": "{\"seed_strategy\":\"regret_insertion\",\"seed_starts\":16,\"seed_charging\":true,\"charging_seed_starts\":10,\"seed_time_fraction\":0.22,\"rebuild_strategy\":\"window_waves\",\"rebuild_clusters\":4,\"rebuild_seconds\":10.0,\"improvement_time_fraction\":0.4,\"epoch_seconds\":8.0,\"deliveries_time_fraction\":0.9,\"pricing_strategy\":\"heuristic_then_exact\",\"pricing_search\":\"reduced_cost\",\"pricing_heuristic_starts\":8,\"pricing_heuristic_seconds\":0.25,\"pricing_pool_limit\":4000,\"resource_repair_seconds\":0.08,\"repair_candidates\":16,\"alns_iterations\":160,\"diversification_probability\":0.12,\"route_cuts\":\"subset_row_triples\",\"max_subset_rows\":150,\"cut_candidates\":150,\"cut_batch\":8,\"rationale\":\"Two vehicles must cover 200 customers across repeated, tightly staggered temporal waves; retain window_waves but strengthen whole-fleet construction with charging-aware regret multistart and more repair diversity. Shorter pricing epochs create more validated primal slices, while reduced-cost pricing is already appropriate and avoids breadth-first starvation. Add a moderate subset-row separator after construction to tighten repeated customer-assignment patterns without overburdening the resource pricer.\"}"
+        }
+      ]
+    }
+  }
+}

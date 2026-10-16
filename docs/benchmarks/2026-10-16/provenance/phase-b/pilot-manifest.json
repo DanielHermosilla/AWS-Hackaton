@@ -1,0 +1,281 @@
+{
+  "schema_version": "1.0",
+  "stage": "pilot",
+  "code_sha256": "cf62f45d8f05dfc20b3782e6237f181fc29dbf85af6acd8874b95ffffb070402",
+  "generator_version": 2,
+  "customers": [
+    40,
+    80,
+    120,
+    200
+  ],
+  "families": [
+    "dispatch",
+    "crossed"
+  ],
+  "instance_seeds": [
+    0
+  ],
+  "solver_seeds": [
+    0
+  ],
+  "policies": [
+    "standard",
+    "primal",
+    "pricing",
+    "blocks",
+    "windows",
+    "deadlines",
+    "electric"
+  ],
+  "solver_config": {
+    "solver": "scip-routes",
+    "time_limit_seconds": 15.0,
+    "relative_gap": 0.0,
+    "energy_relative_gap": 0.005,
+    "threads": 1,
+    "seed": 0,
+    "tee": true
+  },
+  "search_configs": {
+    "standard": {
+      "policy": "standard",
+      "bedrock": {
+        "model_id": "us.openai.gpt-5.6-luna",
+        "region": "us-east-1",
+        "profile": "hackathon",
+        "timeout_seconds": 8.0,
+        "max_output_tokens": 2048,
+        "reasoning_effort": "low",
+        "fast_model_id": null,
+        "fast_timeout_seconds": 8.0,
+        "max_input_bytes": 180000
+      },
+      "max_llm_calls": 2,
+      "decision_interval_seconds": 15.0,
+      "min_pricing_calls_between_decisions": 10,
+      "llm_time_fraction": 0.25,
+      "log_directory": null,
+      "show_llm_trace": true,
+      "instance_context_bytes": 24000,
+      "export_mps": true,
+      "tree_control": true,
+      "route_policy_overrides": {},
+      "local_rule_control": false,
+      "llm_route_hints": true
+    },
+    "primal": {
+      "policy": "standard",
+      "bedrock": {
+        "model_id": "us.openai.gpt-5.6-luna",
+        "region": "us-east-1",
+        "profile": "hackathon",
+        "timeout_seconds": 8.0,
+        "max_output_tokens": 2048,
+        "reasoning_effort": "low",
+        "fast_model_id": null,
+        "fast_timeout_seconds": 8.0,
+        "max_input_bytes": 180000
+      },
+      "max_llm_calls": 2,
+      "decision_interval_seconds": 15.0,
+      "min_pricing_calls_between_decisions": 10,
+      "llm_time_fraction": 0.25,
+      "log_directory": null,
+      "show_llm_trace": true,
+      "instance_context_bytes": 24000,
+      "export_mps": true,
+      "tree_control": true,
+      "route_policy_overrides": {
+        "seed_time_fraction": 0.15,
+        "improvement_time_fraction": 0.3,
+        "repair_strategy": "regret",
+        "repair_candidates": 16,
+        "resource_repair_seconds": 0.12,
+        "resource_path_order": "time",
+        "destroy_operators": [
+          "related",
+          "route",
+          "random"
+        ],
+        "ruin_fraction": 0.3,
+        "population_size": 20,
+        "alns_iterations": 200,
+        "restricted_master_seconds": 1.0
+      },
+      "local_rule_control": false,
+      "llm_route_hints": true
+    },
+    "pricing": {
+      "policy": "standard",
+      "bedrock": {
+        "model_id": "us.openai.gpt-5.6-luna",
+        "region": "us-east-1",
+        "profile": "hackathon",
+        "timeout_seconds": 8.0,
+        "max_output_tokens": 2048,
+        "reasoning_effort": "low",
+        "fast_model_id": null,
+        "fast_timeout_seconds": 8.0,
+        "max_input_bytes": 180000
+      },
+      "max_llm_calls": 2,
+      "decision_interval_seconds": 15.0,
+      "min_pricing_calls_between_decisions": 10,
+      "llm_time_fraction": 0.25,
+      "log_directory": null,
+      "show_llm_trace": true,
+      "instance_context_bytes": 24000,
+      "export_mps": true,
+      "tree_control": true,
+      "route_policy_overrides": {
+        "seed_time_fraction": 0.1,
+        "improvement_time_fraction": 0.08,
+        "resource_repair_seconds": 0.08,
+        "columns_per_round": 100,
+        "pricing_heuristic_seconds": 0.3,
+        "pricing_heuristic_starts": 8,
+        "epoch_seconds": 8,
+        "node_selection": "best_bound",
+        "restricted_master_seconds": 0.5
+      },
+      "local_rule_control": false,
+      "llm_route_hints": true
+    },
+    "blocks": {
+      "policy": "standard",
+      "bedrock": {
+        "model_id": "us.openai.gpt-5.6-luna",
+        "region": "us-east-1",
+        "profile": "hackathon",
+        "timeout_seconds": 8.0,
+        "max_output_tokens": 2048,
+        "reasoning_effort": "low",
+        "fast_model_id": null,
+        "fast_timeout_seconds": 8.0,
+        "max_input_bytes": 180000
+      },
+      "max_llm_calls": 2,
+      "decision_interval_seconds": 15.0,
+      "min_pricing_calls_between_decisions": 10,
+      "llm_time_fraction": 0.25,
+      "log_directory": null,
+      "show_llm_trace": true,
+      "instance_context_bytes": 24000,
+      "export_mps": true,
+      "tree_control": true,
+      "route_policy_overrides": {
+        "rebuild_strategy": "energy_blocks",
+        "rebuild_seconds": 8,
+        "improvement_time_fraction": 0.3
+      },
+      "local_rule_control": false,
+      "llm_route_hints": true
+    },
+    "windows": {
+      "policy": "standard",
+      "bedrock": {
+        "model_id": "us.openai.gpt-5.6-luna",
+        "region": "us-east-1",
+        "profile": "hackathon",
+        "timeout_seconds": 8.0,
+        "max_output_tokens": 2048,
+        "reasoning_effort": "low",
+        "fast_model_id": null,
+        "fast_timeout_seconds": 8.0,
+        "max_input_bytes": 180000
+      },
+      "max_llm_calls": 2,
+      "decision_interval_seconds": 15.0,
+      "min_pricing_calls_between_decisions": 10,
+      "llm_time_fraction": 0.25,
+      "log_directory": null,
+      "show_llm_trace": true,
+      "instance_context_bytes": 24000,
+      "export_mps": true,
+      "tree_control": true,
+      "route_policy_overrides": {
+        "rebuild_strategy": "window_blocks",
+        "rebuild_seconds": 8,
+        "improvement_time_fraction": 0.3
+      },
+      "local_rule_control": false,
+      "llm_route_hints": true
+    },
+    "deadlines": {
+      "policy": "standard",
+      "bedrock": {
+        "model_id": "us.openai.gpt-5.6-luna",
+        "region": "us-east-1",
+        "profile": "hackathon",
+        "timeout_seconds": 8.0,
+        "max_output_tokens": 2048,
+        "reasoning_effort": "low",
+        "fast_model_id": null,
+        "fast_timeout_seconds": 8.0,
+        "max_input_bytes": 180000
+      },
+      "max_llm_calls": 2,
+      "decision_interval_seconds": 15.0,
+      "min_pricing_calls_between_decisions": 10,
+      "llm_time_fraction": 0.25,
+      "log_directory": null,
+      "show_llm_trace": true,
+      "instance_context_bytes": 24000,
+      "export_mps": true,
+      "tree_control": true,
+      "route_policy_overrides": {
+        "rebuild_strategy": "deadline",
+        "rebuild_seconds": 8,
+        "improvement_time_fraction": 0.3
+      },
+      "local_rule_control": false,
+      "llm_route_hints": true
+    },
+    "electric": {
+      "policy": "standard",
+      "bedrock": {
+        "model_id": "us.openai.gpt-5.6-luna",
+        "region": "us-east-1",
+        "profile": "hackathon",
+        "timeout_seconds": 8.0,
+        "max_output_tokens": 2048,
+        "reasoning_effort": "low",
+        "fast_model_id": null,
+        "fast_timeout_seconds": 8.0,
+        "max_input_bytes": 180000
+      },
+      "max_llm_calls": 2,
+      "decision_interval_seconds": 15.0,
+      "min_pricing_calls_between_decisions": 10,
+      "llm_time_fraction": 0.25,
+      "log_directory": null,
+      "show_llm_trace": true,
+      "instance_context_bytes": 24000,
+      "export_mps": true,
+      "tree_control": true,
+      "route_policy_overrides": {
+        "rebuild_strategy": "electric_local",
+        "rebuild_seconds": 8,
+        "improvement_time_fraction": 0.3
+      },
+      "local_rule_control": false,
+      "llm_route_hints": true
+    }
+  },
+  "preprocessing_seconds": 5,
+  "pilot_objective": "lexicographic",
+  "process_grace_seconds": 20,
+  "fixed_policy_sha256": null,
+  "versions": {
+    "pyscipopt": "6.0.0",
+    "numpy": "2.5.4",
+    "scipy": "1.18.1",
+    "boto3": "1.43.114"
+  },
+  "environment": {
+    "python": "3.12.11",
+    "platform": "macOS-15.6.1-arm64-arm-64bit"
+  },
+  "witness_given_to_solver_or_llm": false
+}

@@ -8,10 +8,10 @@ from random import Random
 from time import monotonic
 
 from ev_routing.route_heuristics import InsertionRoutes
+from ev_routing.route_hints import validate_orders
 from ev_routing.route_pricing import PricingNetwork, SequenceOracle
 from ev_routing.route_resources import assemble_solution
 from ev_routing.route_schedule import FixedPathRepair
-from ev_routing.route_hints import validate_orders
 from ev_routing.validation import validate_solution
 
 

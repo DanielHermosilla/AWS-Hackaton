@@ -1,0 +1,23 @@
+{
+  "usage": {
+    "inputTokens": 2,
+    "outputTokens": 974,
+    "totalTokens": 34232,
+    "cacheReadInputTokens": 0,
+    "cacheWriteInputTokens": 33256
+  },
+  "stopReason": "end_turn",
+  "metrics": {
+    "latencyMs": 7845
+  },
+  "output": {
+    "message": {
+      "role": "assistant",
+      "content": [
+        {
+          "text": "{\"rebuild_strategy\":\"electric_local\",\"rebuild_clusters\":4,\"rebuild_seconds\":10.0,\"resource_repair_seconds\":0.12,\"alns_iterations\":300,\"repair_candidates\":12,\"pricing_heuristic_starts\":2,\"pricing_heuristic_seconds\":0.1,\"integrality_pricing_columns\":12,\"callback_repair_seconds\":0.1,\"route_orders\":{\"vehicle_1\":[\"customer_068\",\"customer_042\",\"customer_002\",\"customer_041\",\"customer_055\",\"customer_044\",\"customer_040\",\"customer_019\",\"customer_054\",\"customer_000\",\"customer_046\",\"customer_074\",\"customer_056\",\"customer_059\",\"customer_017\",\"customer_034\",\"customer_023\",\"customer_027\",\"customer_067\",\"customer_020\",\"customer_024\",\"customer_012\",\"customer_077\",\"customer_045\",\"customer_076\",\"customer_036\",\"customer_026\",\"customer_061\",\"customer_037\",\"customer_066\",\"customer_078\"],\"vehicle_2\":[\"customer_031\",\"customer_053\",\"customer_028\",\"customer_016\",\"customer_071\",\"customer_064\",\"customer_038\",\"customer_047\",\"customer_006\",\"customer_062\",\"customer_035\",\"customer_013\",\"customer_009\",\"customer_049\",\"customer_052\",\"customer_072\",\"customer_051\",\"customer_032\",\"customer_022\",\"customer_043\",\"customer_050\",\"customer_070\",\"customer_001\",\"customer_014\",\"customer_075\",\"customer_021\",\"customer_029\",\"customer_065\",\"customer_003\",\"customer_048\",\"customer_058\",\"customer_063\",\"customer_010\",\"customer_004\",\"customer_015\",\"customer_073\",\"customer_060\",\"customer_030\",\"customer_079\",\"customer_011\",\"customer_039\",\"customer_018\",\"customer_025\",\"customer_005\",\"customer_057\",\"customer_008\",\"customer_069\"]},\"rationale\":\"Window-block reconstruction has stagnated with 78 deliveries and interrupted exact pricing. Preserve the incumbent allocation while applying electric-local inter-vehicle exchanges, relocations and directed 2-opt with longer validated repair time; reduce heuristic pricing overhead so the remaining epoch can complete exact dual pricing and repair the two uncovered customers.\"}"
+        }
+      ]
+    }
+  }
+}

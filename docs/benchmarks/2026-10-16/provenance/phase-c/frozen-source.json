@@ -1,0 +1,19 @@
+{
+  "base_commit": "94a4e1d9fbaab94756b731661a30afb588a03061",
+  "commit": "a04a884f3efcb4896d6a3db5f23b64b5569a7b22",
+  "source_sha256": "7fdf3e76f8e294d8787f36aeb9111373a6140546ab760129cf552a08f66fda74",
+  "source_path": "artifacts/overnight-20261016/phase-c/source",
+  "tests": "967 passed, 37 subtests passed in 28.68s",
+  "factor_sha256": "8fc1d636e3a9258673019293a640fde638838c11fce367e8ac30e9c338f47782",
+  "development_seeds": [
+    0
+  ],
+  "test_seeds": [
+    701,
+    702
+  ],
+  "pilot_budget_seconds": 10,
+  "comparison_budget_seconds": 45,
+  "hard_deadline_utc": "2026-10-16T10:11:11Z",
+  "scope": "targeted synthetic confirmation of window-waves portfolio; strong fixed and local-rule controls"
+}

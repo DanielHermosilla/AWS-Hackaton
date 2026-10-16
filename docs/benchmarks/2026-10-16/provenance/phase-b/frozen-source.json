@@ -1,0 +1,18 @@
+{
+  "base_commit": "94a4e1d9fbaab94756b731661a30afb588a03061",
+  "commit": "70f9daf29c21fc197e31abd19d0444a54b2c7c7b",
+  "source_sha256": "cf62f45d8f05dfc20b3782e6237f181fc29dbf85af6acd8874b95ffffb070402",
+  "source_path": "artifacts/overnight-20261016/phase-b/source",
+  "tests": "964 passed, 37 subtests passed in 28.81s",
+  "factor_sha256": "28f6f7f7d4bd0f9efd743bf54b621590802a68b9e48ce5fdd9a99584a14c8436",
+  "hard_deadline_utc": "2026-10-16T10:11:11Z",
+  "development_seeds": [
+    0
+  ],
+  "test_seeds": [
+    501,
+    502,
+    503
+  ],
+  "scope": "targeted synthetic demonstration, frozen before comparison"
+}

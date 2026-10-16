@@ -1,0 +1,24 @@
+{
+  "passed": true,
+  "reviewed_utc": "2026-10-16T09:51:14.712346+00:00",
+  "pdf_pages": 4,
+  "pdf_sha256": "acb9d811d263b0008cb01d7550fdd1b5bbebb7b63d675ef4ab77ed219f895b4a",
+  "figures_png": 11,
+  "svg_xml_valid": true,
+  "method": "All four final PDF pages visually inspected. All eleven figures reviewed, with three also reviewed as embedded PDF plots. Fixed label/legend collisions before packaging.",
+  "figure_sha256": {
+    "callback-notification-delay-waves.png": "024242ac817e13cc713a96ed525fe01dfc31e6e9dfb6edb6ceb37abbcb6c0761",
+    "callback-notification-delay.png": "d9bdeb6e488cdc2dce324fe9ec57ab9175aba1547f7c3c8ff32bbf1b44d2cd85",
+    "competition-route-battery.png": "616f47b71752106ba4fe520dbaf71c010cfc194f30c37d181c4feded176e6aea",
+    "evaluation_access250-route-battery.png": "72ece0c7c06e8ad6cf5bf427373a7c057174d10f07154d11224ede2811517abb",
+    "llm-comparator-effect.png": "eb479e39c3b0ca9f025e712fc277d87a8f44155c48458594546388da4d6e3557",
+    "llm-demo-200-customers.png": "4d3d06d30d82dd8d668ca214b81365443d82306e177fec2c9b4b1d1d36716b3e",
+    "llm-net-savings.png": "408fe871d556a0abc4607fedce14126ef4c9ff5d6d049f864e997b37411349dc",
+    "official-energy.png": "d8f4f449ba5f43c2380c1d9494a1d1e5be1b22384e9d72681adccaa03ea9a981",
+    "official-time-breakdown.png": "bddb3360e96c821a4017cc3aa26b6152ab84be475df8645aa6388081ac54e981",
+    "scalability-coverage.png": "bfb819c23f9067725bbc7f78e5b5504cb7b361e193b103036519bbc56b5b343f",
+    "scalability-fleet.png": "a5f8245f57e139107817ac13b40c81af439cd2e62dad448900008b1b37a7953c"
+  },
+  "git_head": "4f6e5a83c1e7f1d78064b4813467a4545ab374b3",
+  "remote_branch_sha": "4f6e5a83c1e7f1d78064b4813467a4545ab374b3"
+}

@@ -1,0 +1,8 @@
+cohort,runs,failures,aws_calls,scope
+a-pilot,48,4,0,development
+b-pilot,56,0,0,development
+b-comparison,120,0,96,paired_synthetic
+c-pilot,64,0,0,development
+c-comparison,80,0,64,paired_synthetic
+fleet,18,0,11,supplemental_separate
+callbacks,32,0,29,supplemental_separate

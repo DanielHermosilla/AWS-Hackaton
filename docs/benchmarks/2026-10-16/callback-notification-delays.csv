@@ -1,0 +1,11 @@
+case_id,policy,first_full_seconds,request_seconds,notification_delay_seconds,request_path
+dispatch-n80-instance1301,adaptive_waves_v4,0.24580779099778738,9.159483165989514,8.913675374991726,artifacts/overnight-20261016/phase-d/runs/dispatch-n80-instance1301-adaptive_waves_v4-seed0/logs/decisions/02/llm-request.json
+crossed-n200-instance1301,adaptive_waves,1.9055466659920057,5.397755082987715,3.492208416995709,artifacts/overnight-20261016/phase-d/runs/crossed-n200-instance1301-adaptive_waves-seed0/logs/decisions/02/llm-request.json
+dispatch-n80-instance1301,adaptive_waves,0.3463328750076471,4.676692374996492,4.330359499988845,artifacts/overnight-20261016/phase-d/runs/dispatch-n80-instance1301-adaptive_waves-seed0/logs/decisions/02/llm-request.json
+crossed-n200-instance1301,adaptive_waves_v4,1.8718507920129923,9.661160667004879,7.789309874991886,artifacts/overnight-20261016/phase-d/runs/crossed-n200-instance1301-adaptive_waves_v4-seed0/logs/decisions/02/llm-request.json
+dispatch-n200-instance1301,adaptive_waves,1.4789653339976212,5.44992599998659,3.9709606659889687,artifacts/overnight-20261016/phase-d/runs/dispatch-n200-instance1301-adaptive_waves-seed0/logs/decisions/02/llm-request.json
+dispatch-n200-instance1301,adaptive,5.649090374994557,5.649102583003696,1.2208009138703346e-05,artifacts/overnight-20261016/phase-d/runs/dispatch-n200-instance1301-adaptive-seed0/logs/decisions/02/llm-request.json
+dispatch-n200-instance1301,adaptive_v4,5.663647541994578,12.743671207994339,7.080023665999761,artifacts/overnight-20261016/phase-d/runs/dispatch-n200-instance1301-adaptive_v4-seed0/logs/decisions/02/llm-request.json
+dispatch-n80-instance1301,adaptive,1.7319315839995397,4.50386445899494,2.7719328749954,artifacts/overnight-20261016/phase-d/runs/dispatch-n80-instance1301-adaptive-seed0/logs/decisions/02/llm-request.json
+dispatch-n80-instance1301,adaptive_v4,1.7558546669897623,8.357854457994108,6.601999791004346,artifacts/overnight-20261016/phase-d/runs/dispatch-n80-instance1301-adaptive_v4-seed0/logs/decisions/02/llm-request.json
+dispatch-n200-instance1301,adaptive_waves_v4,1.5072434159956174,9.629335833000368,8.122092417004751,artifacts/overnight-20261016/phase-d/runs/dispatch-n200-instance1301-adaptive_waves_v4-seed0/logs/decisions/02/llm-request.json

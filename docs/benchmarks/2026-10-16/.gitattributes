@@ -1,0 +1,7 @@
+# Preserve the published evidence bytes, including CSV line endings.
+* -text
+*.pdf binary
+*.png binary
+*.csv whitespace=cr-at-eol
+# Matplotlib's SVG output contains significant export formatting.
+*.svg -whitespace

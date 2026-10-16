@@ -29,6 +29,8 @@ Pyomo/Gurobi/SCIP y GCG posicional se conservan como referencias explícitas.
 | `src/ev_routing/route_callbacks.py` | Eventos, branching, selección de nodos, separación compatible y sub-SCIP primal. |
 | `src/ev_routing/route_pricing.py` | Potenciales del multigrafo, reparación física y cotas de completación por dual. |
 | `src/ev_routing/route_hybrid.py` | ALNS, población memética, recombinación y reparación sobre nodos de pricing. |
+| `src/ev_routing/route_portfolio.py`, `route_wave_schedule.py`, `route_electric_local.py` | Construcción por grupos y ventanas, asignación por oleadas y mejora eléctrica reanudable. |
+| `src/ev_routing/route_hints.py` | Contexto estructural y validación de propuestas de recorridos del LLM. |
 | `src/ev_routing/route_schedule.py` | Reparación primal mediante LP de recargas y horarios sobre caminos candidatos; validación física y fallback al oráculo general. |
 | `src/ev_routing/route_orchestrator.py` | Referencia anterior de decisiones Bedrock entre etapas. |
 | `src/ev_routing/route_heuristics.py` | Inserción, búsqueda local, ruin/repair, recarga parcial, partición y pricing heurístico. |
@@ -42,6 +44,7 @@ Pyomo/Gurobi/SCIP y GCG posicional se conservan como referencias explícitas.
 | `src/ev_routing/benchmark.py` | Procesos pareados, hashes, reanudación y resúmenes CSV/JSON. |
 | `src/ev_routing/synthetic_instances.py` | Redes por zonas con energía/tiempo, ventanas y testigo factible separado del solver. |
 | `src/ev_routing/synthetic_benchmark.py` | Piloto sin LLM, política congelada y comparación de cuatro modos en instancias nuevas. |
+| `src/ev_routing/presentation_benchmark.py`, `presentation_impact.py` | Campañas con controles locales, ablación del LLM y deltas auditables de energía, CO₂ y USD. |
 | `src/ev_routing/validation.py` | `validate_solution`: reproduce recorridos y batería sin usar Pyomo. |
 | `src/ev_routing/metrics.py` | `compute_metrics`: entregas, energía, recargas y distancia verificadas. |
 | `src/ev_routing/pipeline.py` | `run_instance`: une resolución, validación y salida JSON. |
@@ -51,6 +54,8 @@ Pyomo/Gurobi/SCIP y GCG posicional se conservan como referencias explícitas.
 | `scripts/run_pptx.sh` | Ejecuta todos los servicios con caminos precalculados; dos fases y auditoría vial. |
 | `scripts/benchmark_dw.sh` | Benchmark sin H: estándar, determinista y adaptativo mediante Bedrock. |
 | `scripts/benchmark_llm.sh` | Entrada reproducible al generador, piloto y comparación sintética. |
+| `scripts/benchmark_presentation.sh` | Plan, ejecución y reporte de campañas nuevas; usa caffeinate en macOS. |
+| `scripts/reproduce_benchmark_20261016.sh` | Repetición portable de la cohorte C con el commit histórico, sin cambiar de rama. |
 | `scripts/test_clients.sh`, `scripts/test_routing_verbose.py` | Corrida con SCIP en vivo y decisiones LLM registradas; `--simulate-customers` permite aumentar la demanda. `test_20_clients.sh` conserva el alias original. |
 | `examples/` | Dos instancias sintéticas pequeñas con óptimo conocido. |
 | `tests/` | Pruebas de datos, modelo, solvers, auditoría y flujo completo. |
@@ -67,6 +72,7 @@ Pyomo/Gurobi/SCIP y GCG posicional se conservan como referencias explícitas.
 | `docs/webapp-integration.md` | Gap energético 0,5 %, GPT-5.6 Luna probado en AWS, API Python y cambios para el futuro merge con webapp. |
 | `docs/performance-orchestrator.md` | Comparación medida, acceso real a modelos Bedrock, hashes y límites de la evidencia. |
 | `docs/benchmark-llm.md` | Comandos, familias sintéticas, métricas y controles de la evaluación del LLM. |
+| `docs/benchmarks/2026-10-16/` | PDF, gráficos, CSV y procedencia de las 436 corridas; originales masivos fuera de Git. |
 | `docs/solver-repair.md` | Diagnóstico del incumplimiento, correcciones lexicográficas y mediciones entre versiones del solver. |
 | `docs/llm4mip-adaptation.md` | Material reutilizado, cambios, licencia y alcance. |
 | `docs/contracts.md` | Campos de entrada/salida y sus límites. |

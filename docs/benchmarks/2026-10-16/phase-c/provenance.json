@@ -1,0 +1,7 @@
+{
+  "campaign": "artifacts/overnight-20261016/phase-c/campaign/comparison",
+  "campaign_manifest_sha256": "282a399ba686fc1741c2df579a9ccec29de2f0add57f0def17954ce4c6d36665",
+  "factors_sha256": "8fc1d636e3a9258673019293a640fde638838c11fce367e8ac30e9c338f47782",
+  "source_summary_sha256": "e337158281134379167a78635e40bf33d76d4648c66e66a3e3a8ffbcf484a662",
+  "report_includes_all_completed_runs": true
+}

@@ -1,0 +1,23 @@
+{
+  "usage": {
+    "inputTokens": 2,
+    "outputTokens": 501,
+    "totalTokens": 38056,
+    "cacheReadInputTokens": 0,
+    "cacheWriteInputTokens": 37553
+  },
+  "stopReason": "end_turn",
+  "metrics": {
+    "latencyMs": 5899
+  },
+  "output": {
+    "message": {
+      "role": "assistant",
+      "content": [
+        {
+          "text": "{\"rebuild_strategy\":\"electric_local\",\"rebuild_seconds\":20.0,\"rebuild_clusters\":4,\"resource_repair_seconds\":0.12,\"alns_iterations\":220,\"diversification_probability\":0.12,\"rationale\":\"All 120 customers are already served and delivery optimality is proven. The prior window_waves portfolio produced no improving reward, while repair has many time rejections but few infeasible sequences; use the remaining budget for incumbent-preserving energy local search with slightly deeper continuous-resource repair and diversification. Keep reduced-cost exact pricing afterward for certification.\"}"
+        }
+      ]
+    }
+  }
+}

@@ -13,8 +13,8 @@ from pathlib import Path
 from ev_routing.benchmark import _save, _sha
 from ev_routing.presentation_impact import ImpactFactors, report_campaign
 from ev_routing.search_policy import DEFAULT_BEDROCK_MODEL
-from ev_routing.synthetic_instances import FAMILIES
 from ev_routing.synthetic_benchmark import PRESETS
+from ev_routing.synthetic_instances import FAMILIES
 
 ROOT = Path(__file__).resolve().parents[2]
 

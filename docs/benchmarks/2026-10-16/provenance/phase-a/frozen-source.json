@@ -1,0 +1,8 @@
+{
+  "base_main": "94a4e1d9fbaab94756b731661a30afb588a03061",
+  "commit": "d9e721951308887d3737e9cbb887d8fe786a6bc8",
+  "source_sha256": "d4c202700b0f8870ab1bbd45a89658c60c44094e98aa35a23faae561cfa4d2cc",
+  "source": "artifacts/overnight-20261016/phase-a/source",
+  "validation": "961 passed + 37 subtests; official public 9 runs on preceding source revision",
+  "deadline_utc": "2026-10-16T10:11:11Z"
+}

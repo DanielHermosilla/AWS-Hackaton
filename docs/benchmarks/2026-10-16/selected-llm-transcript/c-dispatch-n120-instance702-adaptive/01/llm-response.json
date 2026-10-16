@@ -1,0 +1,23 @@
+{
+  "usage": {
+    "inputTokens": 2,
+    "outputTokens": 290,
+    "totalTokens": 36059,
+    "cacheReadInputTokens": 0,
+    "cacheWriteInputTokens": 35767
+  },
+  "stopReason": "end_turn",
+  "metrics": {
+    "latencyMs": 3039
+  },
+  "output": {
+    "message": {
+      "role": "assistant",
+      "content": [
+        {
+          "text": "{\"rebuild_strategy\":\"window_waves\",\"rebuild_clusters\":4,\"rebuild_seconds\":20,\"seed_starts\":16,\"charging_seed_starts\":10,\"seed_time_fraction\":0.2,\"improvement_time_fraction\":0.25,\"deliveries_time_fraction\":0.9,\"alns_iterations\":150,\"resource_repair_seconds\":0.08,\"pricing_strategy\":\"heuristic_then_exact\",\"pricing_search\":\"reduced_cost\",\"rationale\":\"The 120-customer instance has four geographically separated energy groups but tightly staggered, overlapping windows and two vehicles, so whole-zone completion is risky. Use window_waves to assign areas while allowing revisits and globally anchor tight deadlines; spend the limited budget on diversified charging-aware seeds and validated repair. Retain reduced-cost exact pricing after primal construction.\"}"
+        }
+      ]
+    }
+  }
+}

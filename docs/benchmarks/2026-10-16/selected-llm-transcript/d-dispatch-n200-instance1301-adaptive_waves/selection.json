@@ -1,0 +1,333 @@
+{
+  "cohort": "d",
+  "case_id": "dispatch-n200-instance1301",
+  "policy": "adaptive_waves",
+  "reference": "waves",
+  "postselected_example": true,
+  "source_result": "artifacts/overnight-20261016/phase-d/runs/dispatch-n200-instance1301-adaptive_waves-seed0/result.json",
+  "executed_search": {
+    "heuristics": {
+      "portfolio_calls": 4,
+      "wave_backbone_attempts": 1,
+      "fixed_path_successes": 1415,
+      "route_evaluations": 1471,
+      "route_evaluation_seconds": 13.655888923982275,
+      "wave_backbone_feasible": 1,
+      "cache_hits": 466,
+      "wave_candidates": 1,
+      "wave_improvements": 1,
+      "portfolio_seconds": 3.9261151240061736,
+      "sequence_time_rejections": 20065,
+      "repair_labels": 1182,
+      "repair_time_prunes": 10562,
+      "repair_energy_prunes": 0,
+      "repair_timeouts": 56,
+      "repair_infeasible_sequences": 0,
+      "electric_local_ranked_moves": 29280,
+      "electric_local_repairs": 74,
+      "electric_local_improvements": 74,
+      "electric_local_time_rejections": 5143,
+      "electric_local_interrupted": 1,
+      "electric_local_completed_passes": 1
+    },
+    "subset_row_cuts": 0,
+    "max_branch_nodes_in_epoch": 1,
+    "pricing_calls": 10,
+    "exact_dual_queries": 2,
+    "completed_dual_queries": 0,
+    "interrupted_pricing_epochs": 2,
+    "energy_relaxation": {
+      "applicable": true,
+      "bound_kwh": 35.59816537826143,
+      "source": "scip_tour_relaxation",
+      "runtime_seconds": 2.5587480410031276,
+      "tour": null,
+      "rounding_guard_per_arc_kwh": 5.677772897538168e-10,
+      "termination": "timelimit",
+      "rounds": 2,
+      "cuts": 121,
+      "native_parameter_changes": {
+        "branching/relpscost/priority": {
+          "before": 10000,
+          "after": 1000000
+        }
+      }
+    }
+  },
+  "accepted_decisions": [
+    {
+      "event": "before_search",
+      "phase": "planning",
+      "model_id": "us.openai.gpt-5.6-luna",
+      "runtime_seconds": 4.5985523339913925,
+      "call_index": 1,
+      "usage": {
+        "inputTokens": 2,
+        "outputTokens": 373,
+        "totalTokens": 43049,
+        "cacheReadInputTokens": 0,
+        "cacheWriteInputTokens": 42674
+      },
+      "status": "applied",
+      "elapsed_seconds": 5.392502250004327,
+      "inference_completed": true,
+      "revision": 1,
+      "effective_changes": {
+        "route_cuts": {
+          "before": "none",
+          "after": "subset_row_triples"
+        },
+        "max_subset_rows": {
+          "before": 100,
+          "after": 150
+        },
+        "improvement_time_fraction": {
+          "before": 0.3,
+          "after": 0.4
+        },
+        "epoch_seconds": {
+          "before": 12.0,
+          "after": 8.0
+        },
+        "pricing_heuristic_starts": {
+          "before": 4,
+          "after": 8
+        },
+        "pricing_heuristic_seconds": {
+          "before": 0.15,
+          "after": 0.25
+        },
+        "pricing_pool_limit": {
+          "before": 2000,
+          "after": 4000
+        },
+        "alns_iterations": {
+          "before": 80,
+          "after": 160
+        },
+        "repair_candidates": {
+          "before": 8,
+          "after": 16
+        },
+        "resource_repair_seconds": {
+          "before": 0.04,
+          "after": 0.08
+        },
+        "diversification_probability": {
+          "before": 0.08,
+          "after": 0.12
+        },
+        "rebuild_seconds": {
+          "before": 8.0,
+          "after": 10.0
+        },
+        "cut_candidates": {
+          "before": 100,
+          "after": 150
+        },
+        "rationale": {
+          "before": "",
+          "after": "Two vehicles must cover 200 customers across repeated, tightly staggered temporal waves; retain window_waves but strengthen whole-fleet construction with charging-aware regret multistart and more repair diversity. Shorter pricing epochs create more validated primal slices, while reduced-cost pricing is already appropriate and avoids breadth-first starvation. Add a moderate subset-row separator after construction to tighten repeated customer-assignment patterns without overburdening the resource pricer."
+        }
+      },
+      "proposal": {
+        "route_cuts": "subset_row_triples",
+        "columns_per_round": 50,
+        "max_subset_rows": 150,
+        "subtour_batch_size": 100,
+        "branching": "relpscost",
+        "heuristics": "default",
+        "presolve": "default",
+        "separation": "default",
+        "scip_parameters": {},
+        "seed_strategy": "none",
+        "seed_starts": 8,
+        "seed_charging": false,
+        "charging_seed_starts": 6,
+        "seed_time_fraction": 0.15,
+        "improvement_time_fraction": 0.4,
+        "local_search": [
+          "two_opt",
+          "relocate",
+          "swap"
+        ],
+        "local_search_passes": 20,
+        "ruin_fraction": 0.2,
+        "ruin_rounds": 40,
+        "deliveries_time_fraction": 0.85,
+        "epoch_seconds": 8.0,
+        "bound_strategy": "tour_relaxation",
+        "bound_time_fraction": 0.08,
+        "share_vehicle_oracles": true,
+        "pricing_strategy": "heuristic_then_exact",
+        "pricing_search": "reduced_cost",
+        "pricing_heuristic_starts": 8,
+        "pricing_heuristic_seconds": 0.25,
+        "pricing_pool_limit": 4000,
+        "restricted_master_seconds": 0.5,
+        "dominance": "convex",
+        "alns_iterations": 160,
+        "destroy_operators": [
+          "random",
+          "related",
+          "worst",
+          "route"
+        ],
+        "repair_strategy": "regret",
+        "repair_candidates": 16,
+        "resource_repair_seconds": 0.08,
+        "resource_path_order": "energy",
+        "diversification_probability": 0.12,
+        "memetic_enabled": true,
+        "population_size": 12,
+        "focus_customers": [],
+        "route_orders": {},
+        "rebuild_strategy": "window_waves",
+        "rebuild_clusters": 4,
+        "rebuild_seconds": 10.0,
+        "tree_branching": "resource",
+        "node_selection": "hybrid",
+        "cut_candidates": 150,
+        "cut_batch": 8,
+        "callback_repair_seconds": 0.05,
+        "callback_frequency": 5,
+        "integrality_pricing_columns": 4,
+        "rationale": "Two vehicles must cover 200 customers across repeated, tightly staggered temporal waves; retain window_waves but strengthen whole-fleet construction with charging-aware regret multistart and more repair diversity. Shorter pricing epochs create more validated primal slices, while reduced-cost pricing is already appropriate and avoids breadth-first starvation. Add a moderate subset-row separator after construction to tighten repeated customer-assignment patterns without overburdening the resource pricer."
+      },
+      "algorithm_changes": [
+        "route_cuts",
+        "max_subset_rows",
+        "improvement_time_fraction",
+        "epoch_seconds",
+        "pricing_heuristic_starts",
+        "pricing_heuristic_seconds",
+        "pricing_pool_limit",
+        "alns_iterations",
+        "repair_candidates",
+        "resource_repair_seconds",
+        "diversification_probability",
+        "rebuild_seconds",
+        "cut_candidates"
+      ],
+      "inactive_settings": {
+        "seed_charging": true,
+        "seed_starts": 16,
+        "deliveries_time_fraction": 0.9,
+        "seed_strategy": "regret_insertion",
+        "seed_time_fraction": 0.22,
+        "charging_seed_starts": 10
+      }
+    },
+    {
+      "event": "first_full_service",
+      "phase": "energy",
+      "model_id": "us.openai.gpt-5.6-luna",
+      "runtime_seconds": 3.963785125000868,
+      "call_index": 2,
+      "usage": {
+        "inputTokens": 2,
+        "outputTokens": 306,
+        "totalTokens": 45664,
+        "cacheReadInputTokens": 0,
+        "cacheWriteInputTokens": 45356
+      },
+      "status": "applied",
+      "elapsed_seconds": 9.473425542004406,
+      "inference_completed": true,
+      "revision": 2,
+      "effective_changes": {
+        "epoch_seconds": {
+          "before": 8.0,
+          "after": 6.0
+        },
+        "rebuild_strategy": {
+          "before": "window_waves",
+          "after": "electric_local"
+        },
+        "rebuild_seconds": {
+          "before": 10.0,
+          "after": 20.0
+        },
+        "integrality_pricing_columns": {
+          "before": 4,
+          "after": 8
+        },
+        "rationale": {
+          "before": "Two vehicles must cover 200 customers across repeated, tightly staggered temporal waves; retain window_waves but strengthen whole-fleet construction with charging-aware regret multistart and more repair diversity. Shorter pricing epochs create more validated primal slices, while reduced-cost pricing is already appropriate and avoids breadth-first starvation. Add a moderate subset-row separator after construction to tighten repeated customer-assignment patterns without overburdening the resource pricer.",
+          "after": "All 200 deliveries are already covered and delivery optimality is proven; the remaining objective is energy. The current incumbent is feasible at 70.19 kWh, but no local operator attempts have been recorded. Switch from temporal reconstruction to electric_local to preserve coverage while testing validated directed 2-opt, relocations, swaps, and inter-vehicle exchanges. Use repeated shorter pricing epochs so interrupted local passes can resume, and admit a few complementary feasible columns to support primal energy improvements. Keep reduced-cost pricing because it is already the appropriate exact-label traversal."
+        }
+      },
+      "proposal": {
+        "route_cuts": "subset_row_triples",
+        "columns_per_round": 50,
+        "max_subset_rows": 150,
+        "subtour_batch_size": 100,
+        "branching": "relpscost",
+        "heuristics": "default",
+        "presolve": "default",
+        "separation": "default",
+        "scip_parameters": {},
+        "seed_strategy": "none",
+        "seed_starts": 8,
+        "seed_charging": false,
+        "charging_seed_starts": 6,
+        "seed_time_fraction": 0.15,
+        "improvement_time_fraction": 0.4,
+        "local_search": [
+          "two_opt",
+          "relocate",
+          "swap"
+        ],
+        "local_search_passes": 20,
+        "ruin_fraction": 0.2,
+        "ruin_rounds": 40,
+        "deliveries_time_fraction": 0.85,
+        "epoch_seconds": 6.0,
+        "bound_strategy": "tour_relaxation",
+        "bound_time_fraction": 0.08,
+        "share_vehicle_oracles": true,
+        "pricing_strategy": "heuristic_then_exact",
+        "pricing_search": "reduced_cost",
+        "pricing_heuristic_starts": 8,
+        "pricing_heuristic_seconds": 0.25,
+        "pricing_pool_limit": 4000,
+        "restricted_master_seconds": 0.5,
+        "dominance": "convex",
+        "alns_iterations": 160,
+        "destroy_operators": [
+          "random",
+          "related",
+          "worst",
+          "route"
+        ],
+        "repair_strategy": "regret",
+        "repair_candidates": 16,
+        "resource_repair_seconds": 0.08,
+        "resource_path_order": "energy",
+        "diversification_probability": 0.12,
+        "memetic_enabled": true,
+        "population_size": 12,
+        "focus_customers": [],
+        "route_orders": {},
+        "rebuild_strategy": "electric_local",
+        "rebuild_clusters": 4,
+        "rebuild_seconds": 20.0,
+        "tree_branching": "resource",
+        "node_selection": "hybrid",
+        "cut_candidates": 150,
+        "cut_batch": 8,
+        "callback_repair_seconds": 0.05,
+        "callback_frequency": 5,
+        "integrality_pricing_columns": 8,
+        "rationale": "All 200 deliveries are already covered and delivery optimality is proven; the remaining objective is energy. The current incumbent is feasible at 70.19 kWh, but no local operator attempts have been recorded. Switch from temporal reconstruction to electric_local to preserve coverage while testing validated directed 2-opt, relocations, swaps, and inter-vehicle exchanges. Use repeated shorter pricing epochs so interrupted local passes can resume, and admit a few complementary feasible columns to support primal energy improvements. Keep reduced-cost pricing because it is already the appropriate exact-label traversal."
+      },
+      "algorithm_changes": [
+        "epoch_seconds",
+        "rebuild_strategy",
+        "rebuild_seconds",
+        "integrality_pricing_columns"
+      ],
+      "inactive_settings": {}
+    }
+  ]
+}

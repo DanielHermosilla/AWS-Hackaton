@@ -1,0 +1,11 @@
+{
+  "parent_commit": "a04a884f3efcb4896d6a3db5f23b64b5569a7b22",
+  "commit": null,
+  "working_tree_patch_sha256": "a05bb7bb15dcf556e478af5fa05145f5169d1eedc0decc9b2308179be9938083",
+  "frozen_utc": "2026-10-16T07:18:09.400723+00:00",
+  "scope": "Early and deferred full-service callback; resumable electric local search without arbitrary improvement count; prompt states actual epoch budgets. Separate software version, paired controls.",
+  "source_sha256": "c060f8153ac64409e51f10f7deda47f2db37c3b222c7060fd70cf50be301d340",
+  "patch_sha256": "a05bb7bb15dcf556e478af5fa05145f5169d1eedc0decc9b2308179be9938083",
+  "validated_commit": "b38e5f2938e253d5f4a3384c28cb70d55a349b14",
+  "commit_assignment_scope": "Committed after tests passed; Python source bytes equal the prospectively frozen source hash."
+}

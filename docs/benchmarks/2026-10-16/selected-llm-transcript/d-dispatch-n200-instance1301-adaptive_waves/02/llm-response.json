@@ -1,0 +1,23 @@
+{
+  "usage": {
+    "inputTokens": 2,
+    "outputTokens": 306,
+    "totalTokens": 45664,
+    "cacheReadInputTokens": 0,
+    "cacheWriteInputTokens": 45356
+  },
+  "stopReason": "end_turn",
+  "metrics": {
+    "latencyMs": 3555
+  },
+  "output": {
+    "message": {
+      "role": "assistant",
+      "content": [
+        {
+          "text": "{\"rebuild_strategy\":\"electric_local\",\"rebuild_seconds\":20.0,\"epoch_seconds\":6.0,\"integrality_pricing_columns\":8,\"rationale\":\"All 200 deliveries are already covered and delivery optimality is proven; the remaining objective is energy. The current incumbent is feasible at 70.19 kWh, but no local operator attempts have been recorded. Switch from temporal reconstruction to electric_local to preserve coverage while testing validated directed 2-opt, relocations, swaps, and inter-vehicle exchanges. Use repeated shorter pricing epochs so interrupted local passes can resume, and admit a few complementary feasible columns to support primal energy improvements. Keep reduced-cost pricing because it is already the appropriate exact-label traversal.\"}"
+        }
+      ]
+    }
+  }
+}

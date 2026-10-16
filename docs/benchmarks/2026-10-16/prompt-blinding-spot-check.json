@@ -1,0 +1,57 @@
+{
+  "scope": "Spot check of captured requests; not all requests. Synthetic structure is intentionally visible.",
+  "checks": [
+    {
+      "cohort": "c",
+      "path": "artifacts/overnight-20261016/phase-c/campaign/comparison/runs/crossed-n120-instance701-adaptive-seed0/logs/decisions/01/llm-request.json",
+      "sha256": "b3f961c713fc3f642c050f80b58155b260b4e47a30a6eec57987a64131cb69a1",
+      "request_keys": [
+        "event",
+        "phase",
+        "structure",
+        "instance_context",
+        "restricted_master",
+        "routing_digest",
+        "incumbent_orders",
+        "state",
+        "current_policy",
+        "allowed_policy_schema",
+        "scip_api",
+        "native_scip_catalog",
+        "remaining_wall_seconds",
+        "remaining_calls",
+        "finished_stages",
+        "locked_policy_fields",
+        "unsupported_policy_fields",
+        "recent_decisions"
+      ],
+      "generator_metadata_tokens_found": []
+    },
+    {
+      "cohort": "d",
+      "path": "artifacts/overnight-20261016/phase-d/runs/crossed-n200-instance1301-adaptive_waves-seed0/logs/decisions/01/llm-request.json",
+      "sha256": "2090d49492fe83b94c01668ca1e7de923d52e7b323b4c05eb68fc6daca19941a",
+      "request_keys": [
+        "event",
+        "phase",
+        "structure",
+        "instance_context",
+        "restricted_master",
+        "routing_digest",
+        "incumbent_orders",
+        "state",
+        "current_policy",
+        "allowed_policy_schema",
+        "scip_api",
+        "native_scip_catalog",
+        "remaining_wall_seconds",
+        "remaining_calls",
+        "finished_stages",
+        "locked_policy_fields",
+        "unsupported_policy_fields",
+        "recent_decisions"
+      ],
+      "generator_metadata_tokens_found": []
+    }
+  ]
+}

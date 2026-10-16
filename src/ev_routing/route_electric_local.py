@@ -12,7 +12,9 @@ def improve_electric(search, best, deadline):
     if best is None:
         return None
     network, depot = search.network, search.instance.depot_id
-    distance = lambda a, b: network.distances(b).get(a, inf) if a != b else 0
+    def distance(a, b):
+        return network.distances(b).get(a, inf) if a != b else 0
+
     sweep = 0
     exhausted = False
     while monotonic() < deadline:
