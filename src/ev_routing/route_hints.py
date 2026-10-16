@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from statistics import median
 import networkx as nx
 
 from ev_routing.operations import arc_energy, travel_seconds
@@ -79,6 +80,9 @@ def routing_digest(instance, max_bytes):
         scope="energy_clusters_and_nearest_neighbors_not_complete_matrix",
         dense_metric_bytes=size,
         energy_groups=[[services[i] for i in g] for g in groups],
+        group_window_summary=[
+            _window_summary([services[i] for i in group], instance) for group in groups
+        ],
         group_min_energy_kwh=[
             [min((matrices[0][i][j] for i in a for j in b if matrices[0][i][j] is not None),
                  default=None) for b in groups] for a in groups
@@ -95,3 +99,21 @@ def routing_digest(instance, max_bytes):
     if len(json.dumps(summary, separators=(",", ":")).encode()) <= max_bytes:
         return summary
     return {"scope": "omitted", "reason": "metric_exceeds_context_budget", "bytes": size}
+
+
+def _window_summary(customers, instance):
+    ops = instance.operations
+    windows = [ops.customer_time_windows[c] for c in customers
+               if ops.use_customer_time_windows and c in ops.customer_time_windows]
+    tight = [w for w in windows if ops.max_route_seconds is not None
+             and w.close_seconds - w.open_seconds < .6 * ops.max_route_seconds]
+    mids = sorted((w.open_seconds + w.close_seconds) / 2 for w in tight)
+    widths = [w.close_seconds - w.open_seconds for w in tight]
+    gaps = [b - a for a, b in zip(mids, mids[1:])]
+    threshold = max(300, median(widths)) if widths else None
+    return {
+        "customers": len(customers), "tight_windows": len(tight),
+        "window_midpoint_bands": 1 + sum(g > threshold for g in gaps) if tight else 0,
+        "largest_midpoint_gap_seconds": max(gaps, default=0),
+        "scope": "Descriptive time bands, not route constraints or a proof of necessary revisits.",
+    }

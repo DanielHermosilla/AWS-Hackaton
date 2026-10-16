@@ -14,6 +14,8 @@
     "us.openai.gpt-5.6-luna": {
       "input": 0.22,
       "output": 1.32,
+      "cache_read": 0.022,
+      "cache_write": 0.275,
       "max_input_tokens": 272000
     }
   },
@@ -22,7 +24,7 @@
     "diesel_price": "EIA, Midwest PADD2, 12 octubre 2026: 6.259 USD/galón estadounidense, dividido por 3.785411784 L/galón. https://www.eia.gov/petroleum/gasdiesel/",
     "diesel_co2": "EPA, 10180 gramos CO2/galón estadounidense, dividido por 3.785411784 L/galón. https://www.epa.gov/greenvehicles/greenhouse-gas-emissions-typical-passenger-vehicle",
     "grid_co2": "EPA eGRID2023 Rev2, RFCM: 970.617 lb CO2/MWh × 0.45359237 / 1000. Factor medio de generación, no marginal ni CO2e. https://www.epa.gov/egrid/summary-data",
-    "bedrock": "AWS GPT-5.6 Luna, Standard Geo CRIS, contexto <=272K, sin caché: USD 0.22 entrada / 1.32 salida por millón. https://docs.aws.amazon.com/bedrock/latest/userguide/model-card-openai-gpt-56-luna.html",
+    "bedrock": "AWS GPT-5.6 Luna, Standard Geo CRIS, contexto <=272K: USD 0.22 entrada, 1.32 salida, 0.022 lectura cache y 0.275 escritura cache de 30 minutos, por millón de tokens. https://docs.aws.amazon.com/bedrock/latest/userguide/model-card-openai-gpt-56-luna.html",
     "checked_date": "2026-10-16"
   },
   "assumptions": [

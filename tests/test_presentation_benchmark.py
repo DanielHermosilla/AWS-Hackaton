@@ -65,11 +65,25 @@ def test_cost_uses_real_usage_and_unknown_failed_calls_are_not_free():
     assert llm_cost({}, f) == 0
 
 
+def test_native_cached_usage_is_priced_without_dropping_cached_input():
+    f = factors()
+    f.bedrock_prices_per_million_tokens_usd["us.openai.gpt-5.6-luna"].cache_write = .275
+    f.bedrock_prices_per_million_tokens_usd["us.openai.gpt-5.6-luna"].cache_read = .022
+    result = {"tuning": {"calls": 1, "decisions": [{
+        "model_id": "us.openai.gpt-5.6-luna",
+        "usage": {"inputTokens": 2, "outputTokens": 419, "cacheWriteInputTokens": 35462,
+                  "cacheReadInputTokens": 0, "totalTokens": 35883},
+    }]}}
+    assert llm_cost(result, f) == pytest.approx(.01030557)
+    result["tuning"]["decisions"][0]["usage"]["totalTokens"] = 421
+    assert llm_cost(result, f) is None
+
+
 def test_plan_counts_calls_without_contacting_aws_and_rejects_seed_leakage():
     args = parser().parse_args(["plan", "--customers", "16", "--families", "dispatch",
                                "--test-seeds", "100", "--ablation"])
     p = plan(args)
-    assert p["pilot_runs_without_aws"] == 7
+    assert p["pilot_runs_without_aws"] == 8
     assert p["comparison_runs"] == 5
     assert p["max_real_aws_calls"] == 4
     args.test_seeds = args.development_seeds
@@ -181,3 +195,19 @@ def test_unattended_pilot_retains_failures_and_excludes_failed_presets():
     rows[1]["returncode"] = 124
     with pytest.raises(ValueError, match="Todos los presets"):
         select_fixed(rows, [], "code", allow_failures=True)
+
+
+@pytest.mark.parametrize("family,seed", [("crossed", 1), ("dispatch", 2)])
+def test_window_waves_builds_independently_validated_complete_routes(family, seed):
+    from ev_routing.resource_graph import prepare_service_graph
+    from ev_routing.service_graph import expand_and_validate
+
+    generated = make_case(24, seed, family)
+    instance, archive = prepare_service_graph(generated.road)
+    search = HybridRoutes(instance)
+    policy = RoutePolicy(rebuild_strategy="window_waves", rebuild_seconds=3,
+                         seed_strategy="none", alns_iterations=0)
+    solution = search.improve(None, policy, monotonic() + 3, 0)
+    assert solution is not None and len(solution.served_visit_ids) == 24
+    _, validation, _ = expand_and_validate(instance, generated.road, archive, solution, without_h=True)
+    assert validation.feasible

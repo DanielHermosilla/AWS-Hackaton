@@ -64,7 +64,7 @@ class RoutePolicy(Contract):
     focus_customers: list[str] = Field(default_factory=list, max_length=200)
     route_orders: dict[str, list[StrictStr]] = Field(default_factory=dict, max_length=100)
     rebuild_strategy: Literal["none", "nearest", "deadline", "energy_blocks", "window_blocks",
-                              "electric_local"] = "none"
+                              "window_waves", "electric_local"] = "none"
     rebuild_clusters: int = Field(default=4, ge=2, le=8, strict=True)
     rebuild_seconds: float = Field(default=4, gt=0, le=30)
     tree_branching: Literal["native", "fractional", "resource", "llm_priority"] = "resource"
@@ -98,6 +98,12 @@ nearest-neighbor within clusters and block permutations/fleet splits;
 window_blocks: energy clusters with deadline ordering and flexible-window
 insertion before block permutations/fleet splits. All candidates undergo full
 continuous-resource repair and independent validation. None means no rebuild.
+window_waves handles repeated temporal waves within geographic areas: it tries
+area-to-vehicle assignments, orders tight-window anchors globally by deadline,
+then inserts flexible customers into physically validated positions. It can
+revisit an area and prioritizes fast physical paths for deadline feasibility.
+Select it when full-zone reconstruction fails or area windows span separated
+waves. Unlike window_blocks, it does not require finishing an area in one visit.
 Use energy_blocks for well-separated zones with broad windows. Use window_blocks
 when zones have tight and flexible deadlines; deadline can help overlapping
 waves where serving an entire geographic zone first is inappropriate.

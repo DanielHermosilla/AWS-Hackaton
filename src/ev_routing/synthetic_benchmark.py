@@ -54,6 +54,9 @@ PRESETS = {
                   "improvement_time_fraction": .3},
     "electric": {"rebuild_strategy": "electric_local", "rebuild_seconds": 8,
                  "improvement_time_fraction": .3},
+    "waves": {"rebuild_strategy": "window_waves", "rebuild_seconds": 8,
+              "seed_strategy": "none", "seed_charging": False,
+              "improvement_time_fraction": .3},
 }
 MODES = (*PRESETS, "fixed", "rules", "adaptive", "adaptive_knobs")
 

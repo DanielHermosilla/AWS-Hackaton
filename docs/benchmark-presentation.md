@@ -58,6 +58,12 @@ se repara y valida; nunca reduce las entregas para aparentar ahorro. El callback
 `first_full_service` permite dedicar una consulta reservada a la fase energética.
 El contexto conserva el mejor incumbente observado aunque otro arranque sea peor.
 
+`window_waves` asigna zonas a vehículos, ordena primero los clientes con ventana
+estrecha y luego inserta los flexibles mediante reparación física. Permite
+volver a la misma zona. El preset local `waves` ofrece esta construcción sin
+LLM y evita gastar tiempo en el arranque genérico. Las reglas locales también
+pueden activarla y cambiar a `electric_local` cuando completan las entregas.
+
 Los presets locales `blocks` y `windows` ofrecen las mismas reconstrucciones
 sin LLM, y participan en el piloto. Esto permite medir cuánto de la mejora viene
 de disponer de la heurística y cuánto de seleccionarla mediante AWS.
@@ -91,6 +97,9 @@ se calcula contra diésel hipotético sobre la misma ruta; no se atribuye al LLM
 El dinero neto resta inferencia estimada con tokens reales y tarifas documentadas
 de AWS. Un coste desconocido queda ND, nunca cero. No se cuantifican emisiones
 del centro de datos ni ciclo de vida.
+El desglose conserva entrada sin caché, escritura, lectura y salida. Las
+tarifas de caché del modelo se aplican por separado; no se ignoran prefijos
+grandes porque `inputTokens` reporte únicamente la parte no almacenada.
 
 La presentación oficial fija entregas factibles, consumo y tiempo como KPIs
 (diapositivas 5–7). El CO₂ y los USD son escenarios adicionales, no reglas del

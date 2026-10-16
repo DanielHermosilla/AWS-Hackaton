@@ -370,12 +370,12 @@ class HybridRoutes:
         self.evaluation_seconds = policy.resource_repair_seconds
         if best is None:
             best = self.seed(policy.seed_strategy, policy.seed_starts, deadline, seed)
-        if best is None:
-            return None
         self._observe()
         best = self.apply_order_hint(best, policy, deadline)
         from ev_routing.route_portfolio import rebuild
         best = rebuild(self, best, policy, deadline, seed)
+        if best is None:
+            return None
         if self.fast.supported:
             legacy_deadline = min(deadline, monotonic() + max(0, deadline-monotonic())*.25)
             best = self.fast.improve(best, policy, legacy_deadline, seed)

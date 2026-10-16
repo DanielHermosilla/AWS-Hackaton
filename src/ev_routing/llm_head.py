@@ -108,6 +108,7 @@ class LLMHead:
             if set(self.policy.focus_customers) - set(instance.customer_ids if instance else []):
                 raise ValueError("La política inicial menciona clientes inexistentes.")
         self.local_decisions = []
+        self.windowed_instance = bool(instance and instance.operations.use_customer_time_windows)
         self.urgent_customers = (
             sorted(instance.operations.customer_time_windows, key=lambda i: (
                 instance.operations.customer_time_windows[i].close_seconds, i,
@@ -395,7 +396,11 @@ class LLMHead:
         changes = {}
         if event == "before_search":
             changes = {"focus_customers": self.urgent_customers}
-        elif event in {"after_seed", "search_stagnation"}:
+            if self.windowed_instance:
+                changes.update(rebuild_strategy="window_waves", rebuild_seconds=8,
+                               seed_strategy="none", seed_charging=False,
+                               improvement_time_fraction=.3)
+        elif event in {"after_seed", "first_full_service", "search_stagnation"}:
             delivered = state.get("deliveries", 0) or 0
             if delivered < self.profile.get("customers", 0):
                 changes = {
@@ -405,6 +410,8 @@ class LLMHead:
                     "resource_repair_seconds": .12,
                     "focus_customers": self.urgent_customers,
                 }
+                if self.windowed_instance:
+                    changes.update(rebuild_strategy="window_waves", rebuild_seconds=8)
             else:
                 changes = {
                     "focus_customers": [], "resource_path_order": "energy",
@@ -412,6 +419,7 @@ class LLMHead:
                     "ruin_fraction": .2, "diversification_probability": .08,
                     "memetic_enabled": True, "population_size": 16,
                     "restricted_master_seconds": 1.0,
+                    "rebuild_strategy": "electric_local", "rebuild_seconds": 8,
                 }
         if not changes:
             return

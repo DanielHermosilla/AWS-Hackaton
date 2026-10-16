@@ -19,6 +19,8 @@ class TokenPrice(BaseModel):
     input: float = Field(ge=0)
     output: float = Field(ge=0)
     max_input_tokens: int = Field(gt=0)
+    cache_read: float | None = Field(default=None, ge=0)
+    cache_write: float | None = Field(default=None, ge=0)
 
 
 class ImpactFactors(BaseModel):
@@ -66,11 +68,17 @@ def llm_cost(result, factors):
         price = factors.bedrock_prices_per_million_tokens_usd.get(decision.get("model_id"))
         usage = decision.get("usage") or {}
         i, o = usage.get("inputTokens"), usage.get("outputTokens")
-        if (price is None or not all(type(n) is int and n >= 0 for n in (i, o))
-                or i > price.max_input_tokens
-                or usage.get("cacheReadInputTokens", 0) or usage.get("cacheWriteInputTokens", 0)):
+        read, write = usage.get("cacheReadInputTokens", 0), usage.get("cacheWriteInputTokens", 0)
+        if (price is None or not all(type(n) is int and n >= 0 for n in (i, o, read, write))
+                or i + read + write > price.max_input_tokens
+                or (read and price.cache_read is None) or (write and price.cache_write is None)):
             return None
-        cost += (i * price.input + o * price.output) / 1e6
+        # Converse reports uncached input separately in these native records.
+        # Reject inconsistent accounting rather than double-charge a prefix.
+        if (read or write) and usage.get("totalTokens", i + o + read + write) != i + o + read + write:
+            return None
+        cost += (i * price.input + o * price.output
+                 + read * (price.cache_read or 0) + write * (price.cache_write or 0)) / 1e6
     return cost * factors.usd_to_currency
 
 

@@ -34,6 +34,15 @@ por sí solos una mejora del LLM: el piloto también puede elegirla sin AWS.
 Se corrigió además el contexto para que un arranque parcial posterior no
 reemplace las rutas del mejor incumbente conocido.
 
+Un segundo ensayo de desarrollo encontró que la inserción física de todos los
+clientes flexibles en todas las posiciones consumía su presupuesto sin cerrar
+rutas completas. `window_waves` prioriza hasta 16 posiciones prometedoras por
+cliente y conserva el pricing exacto sin ese límite. En la semilla de desarrollo
+0 de la familia `crossed`, produjo rutas completas para 40, 80, 120 y 200 clientes
+en 0,046; 0,393; 0,403 y 1,296 s de trabajo heurístico respectivamente. No son
+tiempos del pipeline completo ni pruebas de optimalidad. Los ensayos fallidos
+anteriores están en `diagnostics/waves`; los nuevos, en `diagnostics/waves-v2`.
+
 ## Comparación posterior
 
 Cada fase nueva congela código y semillas antes de ejecutar. Las semillas de

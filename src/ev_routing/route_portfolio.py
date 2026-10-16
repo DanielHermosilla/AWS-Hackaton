@@ -135,6 +135,11 @@ def rebuild(search, best, policy, deadline, seed):
     started = monotonic()
     stop = min(deadline, started + policy.rebuild_seconds)
     search.stats["portfolio_calls"] += 1
+    if policy.rebuild_strategy == "window_waves":
+        from ev_routing.route_wave_schedule import rebuild_waves
+        result = rebuild_waves(search, best, policy, stop)
+        search.stats["portfolio_seconds"] += monotonic() - started
+        return result
     if policy.rebuild_strategy == "electric_local":
         from ev_routing.route_electric_local import improve_electric
         result = improve_electric(search, best, stop)
