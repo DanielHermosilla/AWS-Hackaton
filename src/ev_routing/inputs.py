@@ -95,7 +95,23 @@ def load_routing_nodes(path: str | Path) -> list[Node]:
 
 def load_instance(path: str | Path) -> ProblemInstance:
     """Cargar una instancia completa con sus arcos y parámetros, sin inferencias."""
-    return ProblemInstance.model_validate_json(Path(path).read_text(encoding="utf-8-sig"))
+    text = Path(path).read_text(encoding="utf-8-sig")
+
+    def pairs(items):
+        result = {}
+        for key, value in items:
+            if key in result:
+                raise ValueError(f"Clave JSON duplicada: {key}")
+            result[key] = value
+        return result
+
+    def invalid_number(value):
+        raise ValueError(f"Número JSON no finito: {value}")
+
+    # Preserve the webapp's strict input boundary in the full CLI: do not let
+    # JSON parsing overwrite repeated keys or coerce booleans into kWh.
+    json.loads(text, object_pairs_hook=pairs, parse_constant=invalid_number)
+    return ProblemInstance.model_validate_json(text, strict=True)
 
 
 def save_instance(instance: ProblemInstance, path: str | Path) -> None:

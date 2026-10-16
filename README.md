@@ -1,5 +1,22 @@
 # Planificación de rutas y recargas para vehículos eléctricos
 
+La rama `main` integra la webapp y el motor eléctrico con GPT por AWS Bedrock.
+**Arranque local con interfaz:**
+
+```bash
+uv sync --locked --extra dw
+AWS_PROFILE=hackathon uv run --locked --extra dw python -m backend.local_server \
+  --port 4294 --graphml artifacts/network/competition_delivery.graphml \
+  --network-profile delivery --tee
+```
+
+Abrir `http://127.0.0.1:4294/`, cargar el CSV y elegir **Calles del servidor**.
+El GraphML debe existir; sin él se admiten JSON elementales o preparación
+sintética explícita. La UI permite GPT-5.6 Luna `low` o el mismo motor sin LLM.
+Se mantiene gap energético de 0,5 %, con prueba y cota por fase.
+[Guía completa de integración, preparación y credenciales](docs/webapp-integration.md).
+
+
 Proyecto para la hackatón AWS Breaking Barriers Chile 2026 y el desafío de CASE, Centro de Aceleración Sostenible de Electromovilidad de la FCFM de la Universidad de Chile.
 
 Queremos ayudar a un operador a planificar entregas sin quedarse sin batería: cargar un archivo de nodos o configurar destinos, cargadores y flota desde una interfaz, obtener rutas factibles y consultar sus resultados en un mapa y un JSON.
@@ -184,7 +201,7 @@ aplicada durante la búsqueda a los 5,06 s.
 GPT-6 Luna queda fuera de la lista de modelos permitidos de ese perfil.
 Ante errores de AWS se registra fallback y continúa la política local.
 La [guía de conexión con webapp](docs/webapp-integration.md) explica arquitectura,
-autenticación, resultados y cambios necesarios para el merge posterior.
+autenticación, resultados y conexión HTTP ya integrada en `main`.
 La mejora histórica de 2/40 a 40/40 corresponde al motor anterior; no acredita
 una mejora adicional de esta rama ni del LLM.
 

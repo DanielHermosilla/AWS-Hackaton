@@ -1,0 +1,236 @@
+{
+  "source_branch": "codex/evrp-llm-search",
+  "source_commit": "ab67dc6b88a720f274789bb0dace8e47a68a7460",
+  "webapp_source_commit": "a372d03efc270b0ac23769e5d4334c2d3f4144ff",
+  "preprocessing_source_commit": "b14b97655ab30ce9232422fe426fb8e0dfdc9d17",
+  "import_method": "History-preserving branch merges into main; complete solver and preprocessing. Local integration changes are identified below.",
+  "excluded_upstream_modules": [],
+  "local_adaptations": {
+    "src/ev_routing/inputs.py": "Retain webapp strict JSON input validation in the complete CLI.",
+    "src/ev_routing/pipeline.py": "Reject malformed representation metadata before solving.",
+    "backend": "Bounded same-origin road preparation, context validation, GPT policies and expanded route projection.",
+    "webapp": "Road preparation, supported search policy selection, GPT decision trace and distinct energy gap reporting."
+  },
+  "files": {
+    "config/default.json": {
+      "upstream_blob": "e1a3d0f69a375c485501e4e3b5e7c9ed57f9b97b",
+      "import_sha256": "5bc1ebaf2e3d52cdeab30cfb7d0e2139d38e9a7b4422f586e96b824c7ff5a4cd",
+      "modified": false
+    },
+    "config/operations.example.json": {
+      "upstream_blob": "c706adc8f5289a4dc76b52d9377a48a25bb9074f",
+      "import_sha256": "5a564e1f0a25767b9043aa6e9a78e50c6f4a79b41850320a6f7950df4a999ec6",
+      "modified": false
+    },
+    "modelamiento.pdf": {
+      "upstream_blob": "1f06b9a4a1d01ca201da6c307b3525e32d8f4008",
+      "import_sha256": "2c4f0981cf3a3c55d6baa72f8b7ba621bfd4f79e6fe972f2027ab63a7417e692",
+      "modified": false
+    },
+    "modelamiento.tex": {
+      "upstream_blob": "048c8a3439f22d197a3f2b55e9ee2aa1b6b5a1a8",
+      "import_sha256": "94f51aa226f1399e9cee95b3a24b2588c262bf20072dc82964f3f38b22ca1068",
+      "modified": false
+    },
+    "pyproject.toml": {
+      "upstream_blob": "c961244715ae9405b0ee9a7824658083f02fa074",
+      "import_sha256": "b20befe8fd2aa81376ad518958a868f5fccb3077f94e24756444c85e1f071ef2",
+      "modified": true
+    },
+    "src/ev_routing/AGENTS.md": {
+      "upstream_blob": "89851a1ac0109e62813cdaacaa18c290661f67d4",
+      "import_sha256": "1d3cb276057229b977a672adc0a132dc18bc7cd168497f68fae9dbe068d80cbd",
+      "modified": false
+    },
+    "src/ev_routing/__init__.py": {
+      "upstream_blob": "a4a118b3ebd45fef290e62d913f7f4eefa7c9c6e",
+      "import_sha256": "325c8e6b93f739aae5a4d086d2acfcc6029840a22c1ac675deac9284f78b5440",
+      "modified": false
+    },
+    "src/ev_routing/benchmark.py": {
+      "upstream_blob": "1b013046c5ed9d09d82ca989e9d5f5afd6b437a8",
+      "import_sha256": "266152b54cf1deda6dbc13131b399aa36fb90109ba1ccee8ceb23388627d293c",
+      "modified": false
+    },
+    "src/ev_routing/cli.py": {
+      "upstream_blob": "1bad480cacedac318cb41eda2bc53f9ade0456f6",
+      "import_sha256": "5d6e237186e7783e9841fcd15ec0b2400b172b79a387a08ce600a4bb79cc5521",
+      "modified": false
+    },
+    "src/ev_routing/config.py": {
+      "upstream_blob": "b1e7c3d878953a19a20a9db396bf366847d46548",
+      "import_sha256": "ffc8f4f087d93e61565835b08a61aa99d2403101eba1046889ff714f68ce9c85",
+      "modified": false
+    },
+    "src/ev_routing/contracts.py": {
+      "upstream_blob": "661b1bb624207226737715b8697bf9799abaf171",
+      "import_sha256": "be79885a10653aececa15a1f6b0ff0f55efc0299e55346eef5c786b247e6ec99",
+      "modified": false
+    },
+    "src/ev_routing/dw.py": {
+      "upstream_blob": "d7971d5f71ed4b54118fe20901117629531e27cb",
+      "import_sha256": "26a068d5ed13f349f1b615f559bd26e3423a38ff0857e21f8af6a734075693e1",
+      "modified": false
+    },
+    "src/ev_routing/dw_bridge.py": {
+      "upstream_blob": "eba88412efdd42a81408205d4179bce199aa6c61",
+      "import_sha256": "6526769a86dba2c1f4c39198a8714f3075919ede240c03826e463beb60afbc3c",
+      "modified": false
+    },
+    "src/ev_routing/dw_callbacks.py": {
+      "upstream_blob": "37c9651c2fe535886185a0ee8b98ef47dcf59f9e",
+      "import_sha256": "a782adf2451fbeb80f9b05c8337b077142940934aba60c42440316730b6c5e3b",
+      "modified": false
+    },
+    "src/ev_routing/energy.py": {
+      "upstream_blob": "20332c320f36d3739b701cc91254e12466171108",
+      "import_sha256": "f1ea2364897d0b172180ebac20f20abfe99d4a9f85b2b848454b3328ed90b84a",
+      "modified": false
+    },
+    "src/ev_routing/heuristics.py": {
+      "upstream_blob": "713be3c731f94aac95faccafd15bda05a1e4d3ea",
+      "import_sha256": "2dc4a7e7d743cd72478970393dad3c2a8e48ba66a2d4a939e0f0cd279ffe75c9",
+      "modified": false
+    },
+    "src/ev_routing/inputs.py": {
+      "upstream_blob": "fdcd7aa0d7cd3363cff203db8d8dd89ac2acd69c",
+      "import_sha256": "0c87056038aa7b2d8fa2426dc617848a6949a4f67e87fddd174593f089e35f90",
+      "modified": true
+    },
+    "src/ev_routing/llm/AGENTS.md": {
+      "upstream_blob": "80c2d65e1205ce27dc923633ad29852e6cbdd86c",
+      "import_sha256": "17a500977f46511c97be81a4c08bfca4cb164fe211630d263e2ff82643691c7e",
+      "modified": false
+    },
+    "src/ev_routing/llm/__init__.py": {
+      "upstream_blob": "631ece7c80820ace1295a17b2f1b1c1985a356ca",
+      "import_sha256": "d84fb953b490725d4e05feb9ec8e738a8df25de79a996dfaf86d88eff1d629fe",
+      "modified": false
+    },
+    "src/ev_routing/llm/bedrock.py": {
+      "upstream_blob": "7d92743010423931343da166610c0cb96056ae82",
+      "import_sha256": "e38fe8b57cac5b454953ae80d50c1550c179dc5643cf5d3b7f8c3bb81dbf5cf3",
+      "modified": false
+    },
+    "src/ev_routing/llm/tuning.py": {
+      "upstream_blob": "0480017eed124155bc7e990a7d1aff613469bcfa",
+      "import_sha256": "228f87fc5256a3e2f2d109609db98860499070c82c0cba0b5b6e980f0c3fda29",
+      "modified": false
+    },
+    "src/ev_routing/llm_head.py": {
+      "upstream_blob": "6aab752e5d98bf9f28e6fae1f249feddb1a294ce",
+      "import_sha256": "8fef7daacc3409c6cc9c2c3ec5d0fdb6c178a9472de2020e55a4d8a550a26952",
+      "modified": false
+    },
+    "src/ev_routing/metrics.py": {
+      "upstream_blob": "39be1e424792421857199f808aec873f903f3b42",
+      "import_sha256": "dbe75a3fef4822384270adf018487cb29ee9b5b83433180de8abea3dea0e8a7c",
+      "modified": false
+    },
+    "src/ev_routing/model.py": {
+      "upstream_blob": "85bdb99afa8e26ffabe8f30249fd676d7499c747",
+      "import_sha256": "a6388ff621a2a112de751a8e28a83bf369f9461a58ffaef1438676a2fd2ba811",
+      "modified": false
+    },
+    "src/ev_routing/network.py": {
+      "upstream_blob": "b93f85765e74d4bf4348926ce575d491f6791df5",
+      "import_sha256": "a4d55f517a6e2cea022390f54c91d7f9d458e24ecfa8560b26d7fd5b14b2fa89",
+      "modified": false
+    },
+    "src/ev_routing/operations.py": {
+      "upstream_blob": "1f5c5acddd90187e8bc16f8c599a1fc8c3503a1a",
+      "import_sha256": "f471abb4b799833c996bb2452ddf68e322b08373dd15000fe603d07ffaa92425",
+      "modified": false
+    },
+    "src/ev_routing/pipeline.py": {
+      "upstream_blob": "deb9b8fc71c90acefceff4e44a9403808ca92c8e",
+      "import_sha256": "581d14f36adae13d651bdb467700c1cf191df120457bed8df0a47fefc2639714",
+      "modified": true
+    },
+    "src/ev_routing/resource_graph.py": {
+      "upstream_blob": "87e4fca07feb7c50003ce9d4169372fb1ab4939d",
+      "import_sha256": "f0b5406a5c74c1d3cf187e1ab346cb8c22404026237f69e8f7000794b5a95319",
+      "modified": false
+    },
+    "src/ev_routing/route_callbacks.py": {
+      "upstream_blob": "677b3baa3c4b2e6930fe01d1e2ea87a5178209fe",
+      "import_sha256": "701df46d1fc375766503ab8c7ede2a83d1276d6b914efc9a1c660a7f6f36e759",
+      "modified": false
+    },
+    "src/ev_routing/route_heuristics.py": {
+      "upstream_blob": "42ae04e7dcd0290dbaf242880e867c17af1d3681",
+      "import_sha256": "472e2be912a022fd0a6b28dd653cec0efc91dde14a245a23977ff3466e5caeb2",
+      "modified": false
+    },
+    "src/ev_routing/route_hybrid.py": {
+      "upstream_blob": "e967acfb42bb3b9f6f88a4f225078ab28261d08b",
+      "import_sha256": "e3ea445b36a3691349615bbb5982742f7408efc3649dd4b2301f887b992035bf",
+      "modified": false
+    },
+    "src/ev_routing/route_orchestrator.py": {
+      "upstream_blob": "31564f39af57cb8f47bd03876914784a1155eb13",
+      "import_sha256": "3608499e4b7f92859c9cde0cb358a79c63a751a2eb512f1cd1bdbe702843c3b8",
+      "modified": false
+    },
+    "src/ev_routing/route_policy.py": {
+      "upstream_blob": "335f70b13519fe17091e42421111dc4b13bb36ff",
+      "import_sha256": "1f309390cae9e7526dc4eba016cdc58b03971d1a5778dff8b47e6ee06e0a1667",
+      "modified": false
+    },
+    "src/ev_routing/route_pricing.py": {
+      "upstream_blob": "d0d8d0b305c36b324916bade98f88475451388db",
+      "import_sha256": "34c2fbb854c0caeb93ec0b4bd854b148b3d27facf6a3fa1dcb2546ae4493fa43",
+      "modified": false
+    },
+    "src/ev_routing/route_relaxation.py": {
+      "upstream_blob": "34e042920ddfba4fd6e7dc24d282d6f9712e7761",
+      "import_sha256": "d7e4d45e6bb14218d72ae98571e5ebdfe488f406a0c5a3ee246b75bdd125f3d9",
+      "modified": false
+    },
+    "src/ev_routing/route_resources.py": {
+      "upstream_blob": "5ef5c04e9286b65110cd944f8585de31bcaba09f",
+      "import_sha256": "c0f10b170efd0d003fc5e1f6a55b282245fee30cb72b86b0f6090ac76997ec1b",
+      "modified": false
+    },
+    "src/ev_routing/route_solver.py": {
+      "upstream_blob": "b63817a1584094c26ccc0044ac699f8c796cb9af",
+      "import_sha256": "afa163f4c074a300bb155d60ad4594b559b9b1ac2e567524e735e1f2b2a4db41",
+      "modified": false
+    },
+    "src/ev_routing/scip_tuning.py": {
+      "upstream_blob": "4f0e2eabe2e407b911ea02dfa69a67e4359e05ae",
+      "import_sha256": "5aad02f158c1c21a980efd9da1f2bd5b24479d221919761182ea912108d501be",
+      "modified": false
+    },
+    "src/ev_routing/search_policy.py": {
+      "upstream_blob": "2e35a17a13b756f76cd3e30c7f4bbc6f59a95182",
+      "import_sha256": "0e393fac9a50510c4f63faaba5c77f0718e8b2fb591a73cdce76702d7f8aa5b1",
+      "modified": false
+    },
+    "src/ev_routing/service_graph.py": {
+      "upstream_blob": "2cb45509b1b39dcb72282ffc9e0043149ad82755",
+      "import_sha256": "8d4231b7155e1a5a3b96737e3452a9995742273a1807642eac116ee8ab73090d",
+      "modified": false
+    },
+    "src/ev_routing/simulation.py": {
+      "upstream_blob": "0a158688f11d961a70031336429530f558d46bd9",
+      "import_sha256": "4cabb78047033005a2c0fe174f95c61f1c6edee8242af3c6ae71814c2dc8faf6",
+      "modified": false
+    },
+    "src/ev_routing/solve.py": {
+      "upstream_blob": "fed34d04cc49919780407c0eef0237b4dc64fd6d",
+      "import_sha256": "dce63eed9ada434f1b95c5456abf9964516ab2ea285683137199c192c1d7f075",
+      "modified": false
+    },
+    "src/ev_routing/validation.py": {
+      "upstream_blob": "7687567ec41e25ebe095ea0b89742b2e928bf0c3",
+      "import_sha256": "b5b1a84cf899fcd3e8037803b2cac81c64c9e8a029f90b834654b6dce6e4178e",
+      "modified": false
+    },
+    "uv.lock": {
+      "upstream_blob": "65d84bdd1c619f10cd4ba9dc9cb1009c49b93796",
+      "import_sha256": "4c0ca91df9ec9d8c36ac524121f59df75172d2d8ffd4935aae2f0306a4f21ed2",
+      "modified": false
+    }
+  }
+}

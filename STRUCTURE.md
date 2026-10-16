@@ -21,7 +21,7 @@ Pyomo/Gurobi/SCIP y GCG posicional se conservan como referencias explícitas.
 | `src/ev_routing/heuristics.py` | `analyze_horizon`, `build_initial_solution`, `build_greedy_start`: certificado de H cuando aplica e incumbentes validados, sin MILP. |
 | `src/ev_routing/operations.py` | Margen de energía, tiempos y calendario más temprano de rutas fijas. |
 | `src/ev_routing/model.py` | `build_model`, `activate_energy_phase`, `extract_solution`: ecuaciones del PDF. |
-| `src/ev_routing/solve.py` | `solve_instance`: dos fases; Gurobi primero, SCIP si no está disponible/licenciado. |
+| `src/ev_routing/solve.py` | `solve_instance`: fases lexicográficas; `scip-routes` predeterminado, referencias heredadas explícitas. |
 | `src/ev_routing/route_solver.py` | Maestro sin H, pricing SCIP/Farkas, cortes de ternas y reducción certificada DFJ. |
 | `src/ev_routing/route_resources.py` | Etiquetas con poliedros de recursos continuos, dominancia y reconstrucción física. |
 | `src/ev_routing/route_policy.py` | Esquema de acciones implementadas y prompt del orquestador. |
@@ -69,3 +69,13 @@ Pyomo/Gurobi/SCIP y GCG posicional se conservan como referencias explícitas.
 
 Instalación y ejemplos ejecutables: [README.md](README.md).
 Reglas para colaborar: [AGENTS.md](AGENTS.md).
+
+## Webapp integrada en main
+
+- `backend/service.py`: contrato HTTP 3.0, validación estricta y mismo pipeline nativo.
+- `backend/runtime.py`: GraphML del operador, contextos viales acotados y política GPT de Bedrock.
+- `backend/daniel_adapter.py`: resultado nativo íntegro, rutas expandidas y geometría por `arc_id`.
+- `backend/local_server.py`: servidor loopback, mismo origen, límites y resultados temporales.
+- `webapp/`: Inicio/Plan, entrada, mapa vial, KPIs, certificados, decisiones GPT y descargas.
+- `tests/test_integrated_webapp.py` y `webapp/tests/merged-engine.test.mjs`: cobertura del merge.
+- `docs/webapp-integration.md`: arranque, arquitectura y límites; `docs/main-integration-validation.md`: evidencia.

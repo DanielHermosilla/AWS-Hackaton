@@ -38,7 +38,10 @@ def run_instance(
     started = time.perf_counter()
     config = config or SolverConfig()
     without_h = config.solver == "scip-routes"
-    is_service_graph = instance.provenance.get("representation", {}).get("kind") in SERVICE_REPRESENTATIONS
+    representation = instance.provenance.get("representation", {})
+    if not isinstance(representation, dict):
+        raise ValueError("provenance.representation debe ser un objeto con kind")
+    is_service_graph = representation.get("kind") in SERVICE_REPRESENTATIONS
     if is_service_graph:
         if road_instance is None or path_archive is None:
             raise ValueError("Esta variante requiere --road-instance y --path-archive para validarse")

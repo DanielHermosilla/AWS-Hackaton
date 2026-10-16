@@ -1,0 +1,171 @@
+/* Global appearance. Loaded LAST on every page; theme.js sets html[data-theme],
+   html[data-solid-surfaces] and html[data-reduced-motion] before paint.
+   Colors, borders, shadows and glass only: layout stays in app.css/plan.css/home.css.
+   - Shell (app.css) colors come from --shell-* / --map-control-* tokens: light values
+     are app.css defaults, dark values are set here.
+   - Plan, map chrome and native controls are themed with --zmd-* tokens below.
+   - Inicio's console tokens live in home.css; their base surfaces follow this palette.
+   Map tiles keep their own style; only the chrome over the map is themed. */
+
+/* ---- Plan / map tokens -------------------------------------------------- */
+:root {
+  --zmd-bg:#f7f9fc; --zmd-sidebar:#f7f9fc; --zmd-surface:#fff; --zmd-raised:#fff;
+  --zmd-chip:#edf1f7; --zmd-sunken:#e9edf3; --zmd-hover:#eef3f9;
+  --zmd-ink:#1d2938; --zmd-ink-2:#3d4f64; --zmd-muted:#617084; --zmd-icon:#5c7899;
+  --zmd-line:#dfe6ed; --zmd-divider:#e6ebf1; --zmd-line-strong:#c3cedb;
+  --zmd-accent:#1664ec; --zmd-accent-hover:#0d51c9;
+  --zmd-accent-soft:#e7eef9; --zmd-accent-line:#c9d9f0;
+  --zmd-link:#1b61c9; --zmd-mark:#728295; --zmd-track:#e7edf4; --zmd-map-bg:#e8ede8;
+  --zmd-success-bg:#e3f2e9; --zmd-success-ink:#1d6846; --zmd-success-line:#c1dcca;
+  --zmd-warn-bg:#fff8e6; --zmd-warn-ink:#73541b; --zmd-warn-line:#e5d6b0;
+  --zmd-shadow:0 3px 9px #253b5110; --zmd-shadow-lg:0 8px 32px #243a552b;
+  --zmd-glass:rgb(255 255 255 / 88%); --zmd-glass-edge:rgb(255 255 255 / 86%);
+  --zmd-glass-shadow:0 4px 18px #1c344517, inset 0 1px 0 #fff;
+  --zmd-blur:blur(18px) saturate(1.3); --zmd-icon-filter:none;
+  color-scheme:light;
+}
+/* Dark follows the selected console palette (home.css). */
+html[data-theme="dark"] {
+  --zmd-bg:#12161c; --zmd-sidebar:#161b23; --zmd-surface:#1a2029; --zmd-raised:#1e2530;
+  --zmd-chip:#232c38; --zmd-sunken:#10141a; --zmd-hover:#242f3f;
+  --zmd-ink:#e7ecf2; --zmd-ink-2:#c3ccd7; --zmd-muted:#a6b1c0; --zmd-icon:#9fb4cf;
+  --zmd-line:#354156; --zmd-divider:#2a3341; --zmd-line-strong:#4d5c74;
+  --zmd-accent:#1664ec; --zmd-accent-hover:#1258d2;
+  --zmd-accent-soft:#1c2c45; --zmd-accent-line:#2f4d7a;
+  --zmd-link:#a9c8f5; --zmd-mark:#a6b1c0; --zmd-track:#303b4a; --zmd-map-bg:#1b222b;
+  --zmd-success-bg:#163a2b; --zmd-success-ink:#93dcb4; --zmd-success-line:#2e6b4f;
+  --zmd-warn-bg:#3a3018; --zmd-warn-ink:#f1d48e; --zmd-warn-line:#6b5728;
+  --zmd-shadow:0 3px 12px #00000040; --zmd-shadow-lg:0 12px 40px #0000007a;
+  --zmd-glass:rgb(26 32 41 / 84%); --zmd-glass-edge:rgb(255 255 255 / 10%);
+  --zmd-glass-shadow:0 4px 18px #0000004d, inset 0 1px 0 rgb(255 255 255 / 6%);
+  --zmd-icon-filter:invert(.9);
+  color-scheme:dark;
+
+  /* Shell tokens consumed by app.css. */
+  --shell-page-bg:#12161c; --shell-bg:#161b23; --shell-ink:#e7ecf2; --shell-muted:#a6b1c0;
+  --shell-line:#354156; --shell-contrast-line:#8394ab;
+  --shell-raised:#1e2530; --shell-rail:#161b23;
+  --shell-rail-glass:rgb(22 27 35 / 86%); --shell-popover-glass:rgb(30 37 48 / 94%);
+  --shell-solid:#161b23; --shell-solid-line:#4d5c74;
+  --shell-hover:#242f3f;
+  --shell-current-bg:#1c2c45; --shell-current-ink:#b4d0ff; --shell-current-line:#2f4d7a;
+  --shell-accent:#1664ec; --shell-accent-hover:#1258d2; --shell-on-accent:#fff;
+  --shell-chip-bg:#232c38; --shell-chip-hover:#2b3644; --shell-chip-ink:#d3dbe5; --shell-chip-line:#3b4654;
+  --shell-field-bg:#141920; --shell-field-line:#4d5c74; --shell-option-selected:#1c2c45;
+  --shell-avatar-bg:#2a3546; --shell-avatar-ink:#d3dbe5;
+  --shell-org-bg:#1f3048; --shell-org-ink:#c9dcf7;
+  --shell-focus:#7fb0ff;
+  --shell-shadow:0 8px 32px #00000066, 0 1px 3px #00000040;
+  --shell-dialog-shadow:0 16px 64px #00000080;
+  --shell-backdrop:rgb(5 8 12 / 70%);
+  --map-control-solid:#1a2029; --map-control-solid-line:#4d5c74;
+  --map-control-pressed:#163a2b; --map-control-pressed-line:#93dcb4;
+}
+@media (prefers-contrast: more) {
+  html:not([data-theme="dark"]) { --zmd-ink-2:#22364c; --zmd-muted:#354a61; --zmd-line:#61758b; --zmd-divider:#8a9aad; --zmd-line-strong:#4f6378; --zmd-success-line:#1a6844; }
+  html[data-theme="dark"] { --zmd-ink-2:#e2e8ef; --zmd-muted:#cfd7e1; --zmd-line:#7d8ea6; --zmd-divider:#5d6c82; --zmd-line-strong:#9aaac0; --zmd-success-line:#93dcb4; --shell-muted:#cfd7e1; }
+}
+/* Solid surfaces (preference, reduced transparency or more contrast): no translucency or blur. */
+html[data-solid-surfaces="true"] {
+  --zmd-glass:var(--zmd-surface); --zmd-glass-edge:var(--zmd-line-strong); --zmd-success-line:var(--zmd-success-ink); --zmd-blur:none;
+}
+@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+  html[data-theme] { --zmd-glass:var(--zmd-surface); --zmd-glass-edge:var(--zmd-line-strong); --zmd-blur:none; }
+}
+/* Variables already consumed by material.css. */
+html[data-theme] {
+  --text:var(--zmd-ink); --secondary:var(--zmd-muted); --line:var(--zmd-line);
+  --paper:var(--zmd-bg); --sidebar:var(--zmd-sidebar);
+  --glass:var(--zmd-glass); --glass-edge:var(--zmd-glass-edge); --glass-shadow:var(--zmd-glass-shadow);
+}
+/* Console base surfaces match the page so Inicio has no seam; chart tokens stay in home.css. */
+html[data-theme] .console-adaptive .consola {
+  --bg:var(--zmd-bg); --surface:var(--zmd-surface); --ink:var(--zmd-ink); --muted:var(--zmd-muted);
+  --line:var(--zmd-line); --line-strong:var(--zmd-line-strong);
+}
+
+/* ---- Reduced motion (local preference; app.css and base.css cover the rest) */
+html[data-reduced-motion="true"] .selection { transform:none!important; }
+
+/* ---- Components. Skipped in forced colors so system colors stay in charge. */
+@media (forced-colors: none) {
+  html[data-theme] body { background:var(--zmd-bg); color:var(--zmd-ink); }
+  html[data-theme] .muted { color:var(--zmd-muted); }
+  /* Native buttons outside the shell (the shell sets its own fills in app.css). */
+  :where(html[data-theme]) button { background:var(--zmd-surface); border-color:var(--zmd-line); }
+  :where(html[data-theme]) button:hover:not(:disabled) { background:var(--zmd-hover); }
+  :where(html[data-theme]) button.primary { background:var(--zmd-accent); border-color:var(--zmd-accent); color:#fff; }
+  :where(html[data-theme]) button.primary:hover:not(:disabled) { background:var(--zmd-accent-hover); border-color:var(--zmd-accent-hover); }
+
+  /* Plan sidebar */
+  html[data-theme] .sidebar { background:var(--zmd-sidebar); border-color:var(--zmd-line); }
+  html[data-theme] :is(.scenario p, .location) { color:var(--zmd-muted); }
+  html[data-theme] .file-tag { background:var(--zmd-chip); color:var(--zmd-ink-2); box-shadow:inset 0 0 0 1px var(--zmd-line); }
+  html[data-theme="dark"] .pin-dot { background:#86a9c9; }
+  html[data-theme] .sidebar-tabs { background:var(--zmd-sunken); border-color:var(--zmd-line); }
+  html[data-theme] .sidebar-tabs button { background:transparent; color:var(--zmd-muted); }
+  html[data-theme] .sidebar-tabs button:not([aria-selected="true"]):hover { background:var(--zmd-hover); color:var(--zmd-ink); }
+  html[data-theme] .sidebar-tabs button[aria-selected="true"] { background:var(--zmd-surface); color:var(--zmd-ink); box-shadow:0 1px 4px #0000001a, inset 0 0 0 1px var(--zmd-line); }
+  html[data-theme] .sidebar-tabs button span { color:var(--zmd-muted); }
+  html[data-theme] .sidebar-content { scrollbar-color:var(--zmd-line-strong) transparent; }
+  html[data-theme] .sidebar-foot { background:var(--zmd-sidebar); color:var(--zmd-muted); }
+  html[data-theme] .sidebar-foot svg { color:var(--zmd-icon); }
+
+  /* Vehicle cards: route color stays on marks and borders */
+  html[data-theme] .vehicle-card { background:var(--zmd-surface); border-color:var(--zmd-line); box-shadow:var(--zmd-shadow); }
+  html[data-theme] .vehicle-card.active { border-color:var(--route); box-shadow:0 0 0 1px var(--route); }
+  html[data-theme] .vehicle-name { color:var(--zmd-ink); }
+  html[data-theme] :is(.vehicle-model, .soc-row, .vehicle-stats) { color:var(--zmd-muted); }
+  html[data-theme] :is(.soc-row, .vehicle-stats) strong { color:var(--zmd-ink); }
+  html[data-theme] .vehicle-stats span + span { border-color:var(--zmd-divider); }
+  html[data-theme] .battery-track { background:var(--zmd-track); }
+  html[data-theme] .battery-track i { background:var(--zmd-mark); }
+  html[data-theme] .route-button { background:transparent; border-color:var(--zmd-divider); }
+  /* Route hues are too dark for small text on dark surfaces. */
+  html[data-theme="dark"] .route-button { color:var(--zmd-ink); }
+  html[data-theme="dark"] .route-button:hover:not(:disabled) { color:var(--zmd-link); }
+
+  /* Stops */
+  html[data-theme] .stop-row { background:transparent; color:var(--zmd-ink); border-color:var(--zmd-divider); }
+  html[data-theme] .stop-row:hover:not(:disabled) { background:var(--zmd-hover); }
+  html[data-theme] .stop-row.active { background:var(--zmd-accent-soft); box-shadow:inset 0 0 0 1px var(--zmd-accent-line); }
+  html[data-theme] .stop-number { background:var(--zmd-chip); }
+  html[data-theme="dark"] .stop-number { color:var(--zmd-ink); box-shadow:inset 0 0 0 1.5px var(--route, var(--zmd-line-strong)); }
+  html[data-theme] :is(.stop-name, .route-head) { color:var(--zmd-ink); }
+  html[data-theme] :is(.stop-name small, .route-head small) { color:var(--zmd-muted); }
+  html[data-theme] .stop-row>strong { color:var(--zmd-ink-2); }
+  html[data-theme] .all-routes { background:transparent; color:var(--zmd-link); }
+
+  /* Map chrome. The unavailable-map fallback (.map-unavailable) keeps app.css shell tokens. */
+  html[data-theme] .map-region:not(.map-unavailable) { background:var(--zmd-map-bg); }
+  html[data-theme] .map-region:not(.map-unavailable) .map-status { background:var(--zmd-warn-bg); color:var(--zmd-warn-ink); border-color:var(--zmd-warn-line); }
+  html[data-theme] .map-summary { background:var(--zmd-surface); border-color:var(--zmd-line); box-shadow:var(--zmd-shadow); }
+  html[data-theme] .map-summary>div+div { border-color:var(--zmd-divider); }
+  html[data-theme] .map-summary strong { color:var(--zmd-ink); }
+  html[data-theme] :is(.map-summary small, .map-summary strong span) { color:var(--zmd-muted); }
+  html[data-theme] .summary-icon { color:var(--zmd-icon); }
+  html[data-theme] .map-tools button { background:var(--zmd-glass); color:var(--zmd-ink-2); border-color:var(--zmd-glass-edge); box-shadow:var(--zmd-glass-shadow); backdrop-filter:var(--zmd-blur); -webkit-backdrop-filter:var(--zmd-blur); }
+  html[data-theme] .map-tools button:not([aria-pressed="true"]):hover:not(:disabled) { background:var(--zmd-hover); color:var(--zmd-ink); }
+  html[data-theme] .map-tools button[aria-pressed="true"] { background:var(--zmd-success-bg); color:var(--zmd-success-ink); border-color:var(--zmd-success-line); }
+  html[data-theme] .legend { background:var(--zmd-surface); color:var(--zmd-muted); border-color:var(--zmd-line); box-shadow:var(--zmd-shadow); }
+  html[data-theme] .legend .route-note { color:var(--zmd-muted); border-color:var(--zmd-divider); }
+  html[data-theme] .selection { background:var(--zmd-raised); color:var(--zmd-ink); border-color:var(--zmd-line); box-shadow:var(--zmd-shadow-lg); }
+  html[data-theme] :is(.selection p, .selection .detail-eyebrow, .selection .stop-battery) { color:var(--zmd-muted); }
+  html[data-theme] .selection .stop-battery { border-color:var(--zmd-divider); }
+  html[data-theme] :is(.selection h3, .stop-battery strong) { color:var(--zmd-ink); }
+  html[data-theme] .selection .charge-note { color:var(--zmd-success-ink); }
+  html[data-theme] .selection .close { background:var(--zmd-chip); color:var(--zmd-ink-2); }
+  html[data-theme] .selection .close:hover:not(:disabled) { background:var(--zmd-hover); color:var(--zmd-ink); }
+  html[data-theme] .map-region .maplibregl-ctrl-group { background:var(--zmd-glass); backdrop-filter:var(--zmd-blur); -webkit-backdrop-filter:var(--zmd-blur); }
+  html[data-theme] .map-region .maplibregl-ctrl-group button + button { border-color:var(--zmd-divider); }
+  /* Only the control glyphs are adjusted; the map canvas is never filtered. */
+  html[data-theme] .map-region .maplibregl-ctrl-icon { filter:var(--zmd-icon-filter); }
+  /* Attribution sits on the map's own light background in both themes. */
+  html[data-theme] .map-region .maplibregl-ctrl-attrib { color:#2b3a4b; }
+  html[data-theme] .maplibregl-popup-content { background:var(--zmd-raised); color:var(--zmd-ink); box-shadow:var(--zmd-shadow-lg); }
+  html[data-theme] .maplibregl-popup-content p { color:var(--zmd-muted); }
+  html[data-theme] :is(.maplibregl-popup-anchor-top, .maplibregl-popup-anchor-top-left, .maplibregl-popup-anchor-top-right) .maplibregl-popup-tip { border-bottom-color:var(--zmd-raised); }
+  html[data-theme] :is(.maplibregl-popup-anchor-bottom, .maplibregl-popup-anchor-bottom-left, .maplibregl-popup-anchor-bottom-right) .maplibregl-popup-tip { border-top-color:var(--zmd-raised); }
+  html[data-theme] .maplibregl-popup-anchor-left .maplibregl-popup-tip { border-right-color:var(--zmd-raised); }
+  html[data-theme] .maplibregl-popup-anchor-right .maplibregl-popup-tip { border-left-color:var(--zmd-raised); }
+}

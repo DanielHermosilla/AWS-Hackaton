@@ -102,5 +102,5 @@ def test_json_rejects_nonfinite_energy(tmp_path):
         '{"nodes":[{"node_id":"B","node_type":"base"},{"node_id":"V","node_type":"visit"}],'
         '"arcs":[{"from_node_id":"B","to_node_id":"V","energy_kwh":NaN}]}'
     )
-    with pytest.raises(ValueError, match="finite"):
+    with pytest.raises(ValueError, match="finite|finito"):
         load_instance(path)

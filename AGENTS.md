@@ -1,5 +1,21 @@
 # Guía de trabajo del proyecto
 
+**Integración vigente autorizada por Daniel el 16-10-2026:** integrar en `main`
+la webapp y `codex/evrp-llm-search`, incluido el preprocesamiento auditado de
+`codex/investigacion-caminos-recursos`, SCIP sin H, heurísticas y GPT por Bedrock.
+Esta autorización reemplaza la exclusión histórica del preprocesamiento y la
+política web sin AWS. Conservar la interfaz HTML/CSS/JS y el pipeline compartido;
+las credenciales, redes grandes y archivos de caminos permanecen en el servidor.
+La API 3.0 admite extensiones aditivas documentadas en `backend/API_CONTRACT.md`.
+El gap energético es 0.005; alcanzar esa tolerancia no prueba óptimo exacto.
+
+El frontend vigente está en `webapp/`; leer su README. La integración se realiza
+en `main`, conservando la historia de ambas ramas y sus recursos de producto.
+La interfaz HTML/CSS/JS comparte el servidor local y el pipeline con la CLI;
+los ejemplos permanecen separados de los resultados del motor. Recursos locales,
+datos originales, credenciales y cachés no se publican. No desarrollar sobre
+las exploraciones de UI archivadas en `.local/archive/`.
+
 ## 1. Propósito y fuentes de verdad
 
 Construimos un planificador de entregas para vehículos eléctricos para la hackatón AWS Breaking Barriers Chile 2026. El beneficiario del desafío es CASE, Centro de Aceleración Sostenible de Electromovilidad de la FCFM de la Universidad de Chile.
@@ -602,13 +618,14 @@ UI pensada para un operador de CASE/FCFM:
 
 ## 9. Trabajo paralelo, branches y worktrees
 
-La rama de integración objetivo es **`master`**. Al redactar esta guía, el checkout estaba en `main`. Durante el bootstrap del repositorio, el integrador debe establecer `master` desde la base verificada y conservar la historia existente; no asumir que ya existe ni borrar/reescribir `main` automáticamente.
+La rama de integración objetivo es **`main`**, por instrucción explícita del usuario.
+Conservar la historia de las ramas integradas; no reescribir sus commits.
 
 - Una tarea/agente por rama `codex/<area>-<tarea>` y worktree o workspace designado.
 - Antes de editar: identificar rama, directorio, estado de Git, alcance y propietario de los archivos.
 - No trabajar varios agentes en el mismo checkout mutable ni cambiar la rama bajo otro agente.
 - No usar `reset --hard`, limpieza masiva, force push o descarte de cambios ajenos para resolver conflictos.
-- No integrar directamente trabajo incompleto en `master`. Usar commits/PRs pequeños y revisables.
+- No publicar trabajo incompleto en `main`. Usar commits/PRs pequeños y revisables.
 - El integrador coordina cambios transversales, revisa merges y resuelve conflictos preservando los contratos y objetivos.
 - No automatizar el stage de todo el repositorio. Incluir solo cambios correspondientes a la tarea.
 
