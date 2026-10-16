@@ -257,8 +257,27 @@ class Asistente:
                                                       "content": [{"json": res}]}})
                 s.mensajes.append({"role": "user", "content": resultados})
         except ErrorBedrock:
-            del s.mensajes[inicio:]  # no dejar el historial a medias
-            raise
+            if not acciones:
+                del s.mensajes[inicio:]
+                raise
+            # Tools have already changed this session or run the solver. Do not
+            # replay the user's request through the local interpreter.
+            texto_final = "La conversacion con AWS se interrumpio. "
+            if self._resolvio:
+                texto_final += "Se conservo el calculo ya realizado.\n"
+                texto_final += explicar(s.ultimo_resultado, cliente=None).texto
+            elif self._necesita:
+                texto_final += self._pedir_datos()
+            else:
+                texto_final += (
+                    "Se conservo el estado actual. Revisa la configuracion para continuar."
+                )
+            s.mensajes.append({"role": "assistant", "content": [{"text": texto_final}]})
+            self._recortar()
+            return RespuestaTurno(
+                texto_final, acciones, resolvio=self._resolvio,
+                necesita_datos=self._necesita, modo="local",
+            )
         self._recortar()
         return RespuestaTurno("No pude completar el pedido en pocos pasos; ¿lo reformulas?",
                               acciones, resolvio=self._resolvio, necesita_datos=self._necesita)
