@@ -304,4 +304,14 @@ export function createSyntheticPreparation({clients = 2, chargers = 1} = {}) {
     fleet: {num_vehicles: 2, battery_capacity_kwh: 10, reserve_kwh: 1, initial_soc: .6, consumption_kwh_km: 1}};
 }
 
-export const SYNTHETIC_PREPARATION = createSyntheticPreparation({clients: 2, chargers: 0});
+// Retain the historical example for existing consumers and opaque-ID tests.
+// New UI examples use the configurable generator above.
+export const SYNTHETIC_PREPARATION = {
+  api_version: API_VERSION, network_mode: 'haversine',
+  nodes: [
+    {node_id: 'BASE#fin', node_type: 'base', latitude: -33.45, longitude: -70.66, address: 'Depósito sintético'},
+    {node_id: 'Visita|ñ', node_type: 'visit', latitude: -33.451, longitude: -70.661, address: 'Destino sintético'},
+    {node_id: 'V2', node_type: 'visit', latitude: -33.452, longitude: -70.659, address: 'Segundo destino sintético'},
+  ],
+  fleet: {num_vehicles: 2, battery_capacity_kwh: 10, reserve_kwh: 1, initial_soc: .6, consumption_kwh_km: 1},
+};

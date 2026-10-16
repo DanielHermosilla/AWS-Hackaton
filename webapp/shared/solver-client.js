@@ -1,7 +1,10 @@
 // Same-origin transport. Aborting the browser wait does not cancel the solver.
 export const API_VERSION = '3.0';
 export const EXECUTION_KEY = 'zmd.webapp.execution.v1';
-export const MAX_FILE_BYTES = 64 * 1024 * 1024;
+// A complete export contains both original and canonical instances. Importing
+// that envelope can exceed the size of the instance subsequently sent to solve.
+export const MAX_FILE_BYTES = 256 * 1024 * 1024;
+export const MAX_REQUEST_BYTES = 64 * 1024 * 1024;
 
 async function readResponse(response) {
   let body;
@@ -58,7 +61,7 @@ export function createSolverClient({fetchImpl = fetch, onChange = () => {}, onPr
       let stage = prepareRequest ? 'preparing' : 'solving';
       const post = async (url, body) => {
         const serialized = JSON.stringify(body);
-        if (new TextEncoder().encode(serialized).byteLength > MAX_FILE_BYTES)
+        if (new TextEncoder().encode(serialized).byteLength > MAX_REQUEST_BYTES)
           throw new Error('La instancia supera los 64 MiB admitidos. Reduce el archivo o utiliza la ejecución por consola para esta red.');
         return readResponse(await fetchImpl(url, {
           method: 'POST', headers: {'Content-Type': 'application/json'},

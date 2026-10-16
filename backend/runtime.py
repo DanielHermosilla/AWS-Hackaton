@@ -83,6 +83,11 @@ class Runtime:
             })
             pricing, archive = prepare_service_graph(road)
         except ValueError as exc:
+            if "max_snap_distance_m" in str(exc):
+                raise SolveRequestError(
+                    "Una ubicación está fuera de la cobertura de calles disponible. "
+                    "Revisa sus coordenadas o usa la aproximación por distancia para un ejemplo sintético."
+                ) from exc
             raise SolveRequestError(f"No se pudo preparar la red vial: {exc}") from exc
         # Admission bound measured on serialized payloads, not an RSS guarantee.
         size = sum(len(item.model_dump_json().encode()) for item in (road, pricing, archive))

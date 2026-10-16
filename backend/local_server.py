@@ -17,7 +17,7 @@ from urllib.parse import parse_qs, unquote, urlsplit
 
 from . import service
 
-MAX_BODY_BYTES = 8 * 1024 * 1024
+MAX_BODY_BYTES = 64 * 1024 * 1024
 STATIC_TYPES = {
     ".html": "text/html; charset=utf-8",
     ".css": "text/css; charset=utf-8",
@@ -36,7 +36,7 @@ STATIC_TYPES = {
 
 
 class RunStore:
-    def __init__(self, max_runs=4, max_bytes=32 * 1024 * 1024):
+    def __init__(self, max_runs=4, max_bytes=256 * 1024 * 1024):
         self.max_runs, self.max_bytes = max_runs, max_bytes
         self.runs = OrderedDict()
         self.size = 0
@@ -45,7 +45,7 @@ class RunStore:
     def put(self, run_id, data):
         if len(data) > self.max_bytes:
             raise service.ProviderError(
-                "El resultado excede el almacenamiento temporal de esta beta.",
+                "El resultado excede el almacenamiento temporal del servidor.",
                 "result_too_large",
                 413,
             )
@@ -70,7 +70,7 @@ class LocalServer(ThreadingHTTPServer):
 
     def __init__(self, host, port, static_root, runtime=None):
         if host not in {"127.0.0.1", "localhost"}:
-            raise ValueError("El servidor beta solo admite 127.0.0.1 o localhost.")
+            raise ValueError("El servidor local solo admite 127.0.0.1 o localhost.")
         self.static_root = Path(static_root).resolve(strict=True)
         self.solve_lock = threading.Lock()
         self.runs = RunStore()
@@ -121,7 +121,7 @@ class Handler(BaseHTTPRequestHandler):
             or self.headers.get("Sec-Fetch-Site") == "cross-site"
         ):
             self._error(
-                403, "origin_not_allowed", "Esta beta solo admite el origen local del servidor."
+                403, "origin_not_allowed", "Esta aplicación solo admite el origen local del servidor."
             )
             return False
         return True
@@ -212,7 +212,7 @@ class Handler(BaseHTTPRequestHandler):
             self._error(400, "invalid_content_length", "Content-Length inválido.")
             return
         if length > MAX_BODY_BYTES:
-            self._error(413, "payload_too_large", "La petición supera el límite de 8 MiB.")
+            self._error(413, "payload_too_large", "La instancia supera los 64 MiB admitidos. Reduce el archivo o utiliza la ejecución por consola para esta red.")
             return
         try:
             data = self.rfile.read(length)
@@ -260,7 +260,7 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_OPTIONS(self):  # noqa: N802
         self._error(
-            405, "method_not_allowed", "La API beta admite GET y POST desde el mismo origen."
+            405, "method_not_allowed", "La API admite GET y POST desde el mismo origen."
         )
 
     def log_message(self, *args):

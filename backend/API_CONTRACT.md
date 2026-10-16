@@ -4,12 +4,21 @@ El proveedor es el núcleo local `ev_routing`, integrado desde
 `codex/evrp-llm-search@ab67dc6` con la webapp `a372d03`. Las revisiones base y
 adaptaciones están en `docs/solver-source.json`. HTTP 2.x no está soportado.
 
-La resolución usa `scip-routes`, un hilo, semilla 0, gap de entregas 0 y tolerancia
-energética **0.005**. `solver.search_policy` admite `standard`, `deterministic` y
+La resolución usa `scip-routes`, todos los CPU disponibles para el proceso hasta
+el máximo de 64 admitido por SCIP, semilla 0, gap de entregas 0 y tolerancia
+energética **0.005** por defecto. `solver.random_seed` admite enteros de 0 a
+2.000.000.000 y `solver.energy_relative_gap` admite fracciones de 0 a 1. Este
+último solo afecta al desempate energético: no permite sacrificar entregas.
+`solver.search_policy` admite `standard`, `deterministic` y
 `adaptive`; omitirlo conserva `standard` por compatibilidad. La UI envía
 `adaptive` por defecto. El núcleo conserva física y certificados; el puente
 no importa proveedores de otro checkout ni acepta rutas locales, credenciales,
 modelos o parámetros libres del solver desde el navegador.
+
+El número de hilos efectivos se registra en `raw.effective_config.solver.threads`.
+Configurar `parallel/maxnthreads` y `lp/threads` permite recursos al motor; no
+garantiza que cada etapa use todos los núcleos. Se conserva el algoritmo con
+callbacks del núcleo, sin sustituirlo por la modalidad concurrente de SCIP.
 
 La política adaptativa usa GPT-5.6 Luna `low` por Bedrock, configurable mediante
 `AWS_PROFILE` opcional, `AWS_DEFAULT_REGION` y `BEDROCK_MODEL_ID` del servidor.
@@ -54,10 +63,12 @@ extraños producen errores accionables.
 
 La respuesta es `{api_version: "3.0", instance: ProblemInstance}`. Es una instancia
 nativa 1.0 con red dirigida completa **sintética**: distancia haversine por el
-consumo indicado, sin pendiente y sin geometrías fabricadas. Su procedencia incluye
-`kind: "synthetic"`, `network.kind: "haversine"` y los supuestos. No representa
+consumo indicado y sin pendiente. Los arcos de esta preparación incluyen líneas
+entre sus extremos para mostrar el ejemplo. Su procedencia incluye
+`kind: "synthetic"`, `network.kind: "haversine"`,
+`network.geometry_source: "synthetic_haversine"` y los supuestos. No representa
 calles, accesos, permisos, sentidos viales ni consumos observados. La interfaz debe
-obtener la confirmación explícita del usuario antes de solicitar esta preparación.
+mostrar ese alcance junto al selector de red; no requiere una casilla adicional.
 
 El límite local de este modo es 200 nodos y 20 vehículos; no son reglas del concurso.
 No se añade una matriz distinta en JavaScript.
@@ -80,7 +91,7 @@ su huella y el pipeline verifica la correspondencia de los tres objetos.
 Un contexto alterado o vencido produce HTTP 400 y exige preparar nuevamente.
 La caché guarda como máximo dos contextos y 384 MiB de objetos serializados;
 no es una garantía de memoria RSS. Se pierde al reiniciar o reemplazar entradas.
-El límite HTTP sigue en 8 MiB; solo viaja la instancia de pricing. Si ella
+El límite HTTP es 64 MiB; solo viaja la instancia de pricing. Si ella
 excede ese tamaño, usar la CLI, sin reducir la red silenciosamente.
 
 
@@ -90,7 +101,7 @@ excede ese tamaño, usar la CLI, sin reducir la red silenciosamente.
 {
   "api_version": "3.0",
   "instance": {"schema_version":"1.0", "nodes":[], "arcs":[], "parameters":{}, "provenance":{}},
-  "solver": {"time_limit_seconds": 120, "search_policy": "adaptive"}
+  "solver": {"time_limit_seconds": 120, "search_policy": "adaptive", "energy_relative_gap": 0.005, "random_seed": 0}
 }
 ```
 
@@ -100,8 +111,8 @@ una base y un grafo válido. El ejemplo completo ejecutable está en
 
 `POST /solve` admite `api_version`, `instance`, `solver` y, para caminos preparados,
 `prepared_instance_id`. El presupuesto
-obligatorio está entre 1 y 120 segundos. El resto de la configuración de resolución
-queda fijado por el puente. La instancia se valida con Pydantic nativo en modo
+obligatorio está entre 1 y 120 segundos. Política, tolerancia energética y semilla
+son las únicas opciones adicionales aceptadas. La instancia se valida con Pydantic nativo en modo
 estricto, sin cambiar nodos, arcos, parámetros, compatibilidad, opciones operacionales
 ni IDs. Su serialización canónica añade únicamente los defaults del contrato nativo.
 
@@ -111,7 +122,7 @@ forma textual de `representation` es inválida. Se admiten instancias nativas
 1.0 y 1.1; los perfiles y arcos paralelos conservan sus `arc_id`. No hay campos HTTP antiguos `nodes`, `prepared`, `fleet`, `network` o
 `movement_limit` en `/solve`. El `movement_limit` **nativo** sí se conserva en los
 datos; el proveedor `scip-routes` informa que resuelve sin H en su formulación.
-El límite del JSON elemental subido es 20 000 nodos, 200 000 arcos y 8 MiB por
+El límite del JSON elemental subido es 20 000 nodos, 200 000 arcos y 64 MiB por
 petición. Las redes grandes preparadas permanecen en el servidor.
 
 ## Respuesta y conservación del resultado
@@ -185,8 +196,14 @@ advertencia, conservando el original; nunca se recorta para aparentar factibilid
 La preparación vial añade `raw.prepare_request`, suficiente para reconstruir
 la entrada usando el GraphML del operador. `raw.instance` es la instancia de
 pricing; no basta por sí sola sin red original y `PathArchive`. Los archivos
-completos se conservan mediante la CLI. La UI admite importar exportaciones locales de hasta 64 MB sin aumentar el
-límite de petición HTTP de 8 MiB. La UI reabre la entrada de preparación
+completos se conservan mediante la CLI. La UI admite importar archivos locales
+de hasta 256 MiB, incluidos resultados completos que repiten la instancia original
+y la canónica. La instancia extraída para resolver mantiene el límite HTTP de
+64 MiB: importar una envoltura no garantiza que todo su contenido sea resoluble.
+El almacén temporal conserva hasta cuatro resultados dentro de 256 MiB en total.
+Estos son límites de archivos serializados, no garantías de memoria RAM. Los
+históricos eVED son mediciones para entrenamiento, no instancias de ruteo, y se
+rechazan con una indicación del formato correcto. La UI reabre la entrada de preparación
 para no depender del ID temporal. El resultado nativo preserva `road_validation`
 con rutas expandidas y la comprobación de segmentos. Solo se muestra geometría
 vial si esa comprobación pasa.
@@ -199,8 +216,9 @@ no timeout ni óptimo exacto; se preservan cotas y pruebas por fase.
 ## Geometría
 
 `Arc.geometry` nativa usa `[latitud, longitud]`, confirmado en `network.py`; el
-puente convierte exclusivamente a GeoJSON `[longitud, latitud]`. No construye
-geometrías a partir de los nodos ni usa líneas rectas para rellenar arcos ausentes.
+puente convierte exclusivamente a GeoJSON `[longitud, latitud]`. No usa líneas
+rectas para rellenar arcos ausentes. La preparación explícita haversine es la
+única que crea líneas aproximadas entre nodos; se identifican como sintéticas.
 Las secuencias guardadas deben ser continuas y sus extremos deben corresponder a
 las coordenadas de sus nodos, con tolerancia conservadora de `1e-6` grados por
 componente. Si faltan coordenadas, geometrías o esa correspondencia, la geometría
