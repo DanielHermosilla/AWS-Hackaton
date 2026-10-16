@@ -81,12 +81,14 @@ class RespuestaTurno:
 
 def _resumen_plan(resultado: dict) -> dict:
     hechos = extraer_hechos(resultado)
+    validada = hechos.hay_solucion and hechos.factible is True
     return {
-        "entregas": len(hechos.entregados),
+        "hay_solucion": hechos.hay_solucion,
+        "entregas": len(hechos.entregados) if validada else None,
         "sin_atender": hechos.sin_atender,
-        "energia_kwh": hechos.energia_neta_kwh,
-        "paradas_recarga": sum(len(r.paradas_carga) for r in hechos.rutas),
-        "vehiculos_usados": sum(1 for r in hechos.rutas if r.entregas),
+        "energia_kwh": hechos.energia_neta_kwh if validada else None,
+        "paradas_recarga": sum(len(r.paradas_carga) for r in hechos.rutas) if validada else None,
+        "vehiculos_usados": sum(1 for r in hechos.rutas if r.entregas) if validada else None,
         "factible": hechos.factible,
         "resumen": explicar(resultado, cliente=None).texto,
         # Datos adicionales del certificado y los tiempos (vacios si no existen).
@@ -120,8 +122,11 @@ class Asistente:
         datos = s.descripcion_datos or ("instancia nativa cargada" if s.tiene_datos else None)
         if s.ultimo_resultado is not None:
             p = _resumen_plan(s.ultimo_resultado)
-            plan = (f"{p['entregas']} entregas, {len(p['sin_atender'])} sin atender, "
-                    f"{p['paradas_recarga']} recargas")
+            if p["hay_solucion"] and p["factible"] is True:
+                plan = (f"{p['entregas']} entregas, {len(p['sin_atender'])} sin atender, "
+                        f"{p['paradas_recarga']} recargas")
+            else:
+                plan = p["resumen"]
         else:
             plan = "ninguno"
         cambios = ", ".join(f"{k}={v}" for k, v in s.overrides.items()) or "ninguno"
@@ -308,9 +313,12 @@ class Asistente:
             res = self._resolver()
             acciones.append(Accion("resolver", {}, res))
             if res.get("ok"):
-                partes.append(f"Plan listo: {res['entregas']} entregas"
-                              f"{', ' + str(len(res['sin_atender'])) + ' sin atender' if res['sin_atender'] else ''}"
-                              f", {res['paradas_recarga']} recarga(s). ¿Te explico las rutas o ajusto algo?")
+                if res["hay_solucion"] and res["factible"] is True:
+                    partes.append(f"Plan listo: {res['entregas']} entregas"
+                                  f"{', ' + str(len(res['sin_atender'])) + ' sin atender' if res['sin_atender'] else ''}"
+                                  f", {res['paradas_recarga']} recarga(s). ¿Te explico las rutas o ajusto algo?")
+                else:
+                    partes.append(res["resumen"])
             elif res.get("necesita_archivo"):
                 partes.append(self._pedir_datos())
             else:

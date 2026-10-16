@@ -75,12 +75,14 @@ class Hechos:
     tiempos: dict[str, float | None] = field(default_factory=dict)
     solver: dict[str, object] = field(default_factory=dict)
     kpis: dict[str, float | None] = field(default_factory=dict)
+    hay_solucion: bool = False
 
     def a_dict(self) -> dict:
         return {
             "estado": self.estado,
             "optimo_lexicografico": self.optimo_lexicografico,
             "factible": self.factible,
+            "hay_solucion": self.hay_solucion,
             "entregados": self.entregados,
             "sin_atender": self.sin_atender,
             "energia_neta_kwh": self.energia_neta_kwh,
@@ -203,8 +205,12 @@ def extraer_hechos(resultado: dict) -> Hechos:
 
     return Hechos(
         estado=solve.get("status", resultado.get("status", "desconocido")),
-        optimo_lexicografico=bool(solve.get("lexicographic_optimal", False)),
+        optimo_lexicografico=(
+            bool(solucion) and validation.get("feasible") is True
+            and solve.get("lexicographic_optimal") is True
+        ),
         factible=validation.get("feasible"),
+        hay_solucion=bool(solucion),
         entregados=solucion.get("served_visit_ids", []) or [],
         sin_atender=solucion.get("unserved_visit_ids", []) or [],
         energia_neta_kwh=solucion.get("net_energy_kwh"),
