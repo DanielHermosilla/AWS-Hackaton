@@ -1,5 +1,6 @@
 // Presentation boundary for the versioned beta bridge. These checks validate
 // the response contract; feasibility remains the provider's reported result.
+import {locationLabels} from './presentation-labels.js';
 const palette = ['#1664ec', '#8152d9', '#0f8a6a', '#c2571a', '#b23a7a', '#5b6b7f'];
 const record = value => value !== null && typeof value === 'object' && !Array.isArray(value);
 const text = value => typeof value === 'string' && value.trim().length > 0;
@@ -37,6 +38,7 @@ export function adaptSolverResponse(envelope) {
   uniqueIds(result.routes, 'vehicle_id', 'routes');
   require(result.nodes.filter(node => node.node_type === 'base').length === 1, 'se requiere una base');
   const visits = new Set(result.nodes.filter(node => node.node_type === 'visit').map(node => node.node_id));
+  const displayLabels = locationLabels(result.nodes);
   const NODES = result.nodes.map((node, index) => {
     const path = `nodes[${index}]`;
     require(['base', 'visit', 'charger', 'junction'].includes(node.node_type), `${path}.node_type`);
@@ -53,7 +55,7 @@ export function adaptSolverResponse(envelope) {
     require(node.max_power_kw == null || (Number.isFinite(node.max_power_kw) && node.max_power_kw >= 0), `${path}.max_power_kw`);
     return {
       id: node.node_id, type: node.node_type, lat: node.latitude, lng: node.longitude,
-      label: node.address?.trim() || (node.node_type === 'base' ? 'Base' : node.node_id),
+      label: displayLabels.get(node.node_id),
       address: node.address || '', connectors: (node.connector_types || []).join('; '),
       network: node.network || '', powerKw: node.max_power_kw ?? null,
       totalPorts: node.total_ports ?? null, dcFastPorts: node.dc_fast_ports ?? null,
@@ -187,7 +189,8 @@ export function adaptSolverResponse(envelope) {
     require(text(result.metadata[field]), `metadata.${field}`);
   }
   return {
-    SCENARIO: { id: result.run_id, name: 'Resultado del motor', demonstration: false, synthetic: false },
+    SCENARIO: { id: result.run_id, name: 'Resultado del motor', demonstration: false,
+      synthetic: result.network?.geometry_source === 'synthetic_haversine' },
     VEHICLES, NODES, ROUTES,
     RUN_INFO: {
       runId: result.run_id, source: 'solver', status: result.status, hasSolution: result.has_solution,

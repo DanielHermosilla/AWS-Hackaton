@@ -44,7 +44,6 @@ async function inDocument({ stored, legacy, blocked = false } = {}, check) {
 
 for (const [name, options] of [
   ['system dark preference', {}],
-  ['saved dark preference', { stored: { theme: 'dark', solidSurfaces: true, reducedMotion: true, organizationName: 'Flota CASE' } }],
   ['legacy dark preference', { legacy: 'dark' }],
   ['invalid saved JSON', { stored: '{' }],
   ['blocked storage', { blocked: true }]
@@ -54,7 +53,7 @@ for (const [name, options] of [
       assert.equal(document.documentElement.dataset.theme, 'light', 'head bootstrap must be light before the module loads');
       assert.equal(state.DEFAULT_PREFERENCES.theme, 'light');
       const preferences = state.readPreferences();
-      assert.equal(preferences.theme, 'light', 'the app shell must not restore a stored dark theme');
+      assert.equal(preferences.theme, 'light', 'an absent or invalid theme uses the light default');
       assert.equal(state.applyPreferences(preferences).theme, 'light');
       if (options.stored?.organizationName) {
         assert.equal(preferences.organizationName, 'Flota CASE');
@@ -81,35 +80,44 @@ for (const blocked of [false, true]) {
         theme: 'dark', organizationName: 'Flota CASE', solidSurfaces: true, reducedMotion: true
       });
       if (!blocked) assert.deepEqual(JSON.parse(storage.get(key)), {
-        organizationName: 'Flota CASE', solidSurfaces: true, reducedMotion: true
-      }, 'only persistent preferences belong in localStorage');
+        theme: 'dark', organizationName: 'Flota CASE', solidSurfaces: true, reducedMotion: true
+      }, 'the selected theme belongs in localStorage with the other preferences');
       state.updatePreferences({ theme: 'light' });
       assert.equal(state.readPreferences().theme, 'light');
     });
   });
 }
 
-test('other tabs can update persistent preferences without replacing the current page theme', async () => {
+test('other tabs update the same persisted theme and preferences', async () => {
   await inDocument({}, ({ state, document, storage }) => {
     state.updatePreferences({ theme: 'dark' });
     storage.set(key, JSON.stringify({ theme: 'light', organizationName: 'Otra flota', solidSurfaces: true }));
     state.applyPreferences(state.readPreferences());
-    assert.equal(document.documentElement.dataset.theme, 'dark');
+    assert.equal(document.documentElement.dataset.theme, 'light');
     assert.equal(state.readPreferences().organizationName, 'Otra flota');
     assert.equal(state.readPreferences().solidSurfaces, true);
   });
 });
 
-test('a new document after a manual dark choice starts light and restores the other preferences', async () => {
+test('a new document restores manual dark before paint and keeps the other preferences', async () => {
   let saved;
   await inDocument({}, ({ state, storage }) => {
     state.updatePreferences({ theme: 'dark', organizationName: 'Flota CASE', reducedMotion: true });
     saved = storage.get(key);
   });
   await inDocument({ stored: saved }, ({ state, document }) => {
-    assert.equal(document.documentElement.dataset.theme, 'light');
+    assert.equal(document.documentElement.dataset.theme, 'dark');
     assert.deepEqual(state.readPreferences(), {
-      theme: 'light', organizationName: 'Flota CASE', solidSurfaces: false, reducedMotion: true
+      theme: 'dark', organizationName: 'Flota CASE', solidSurfaces: false, reducedMotion: true
     });
+  });
+});
+
+test('a saved dark theme is restored before paint and by the app shell', async () => {
+  await inDocument({stored: {theme: 'dark', solidSurfaces: true, organizationName: 'Flota CASE'}}, ({state, document}) => {
+    assert.equal(document.documentElement.dataset.theme, 'dark');
+    assert.equal(document.documentElement.dataset.solidSurfaces, 'true');
+    assert.equal(state.applyPreferences(state.readPreferences()).theme, 'dark');
+    assert.equal(state.readPreferences().organizationName, 'Flota CASE');
   });
 });

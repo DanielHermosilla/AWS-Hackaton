@@ -29,13 +29,13 @@ export const RUN_INFO = fixture.RUN_INFO || null;
 export const { SCENARIO, VEHICLES, NODES, ROUTES } = fixture;
 export const SOURCE_DETAILS = source === 'solver' ? {
   title: 'Resultado del motor', file: 'Motor', context: 'Resultado del motor',
-  description: 'Plan calculado por el motor ev_routing de Daniel para esta instancia nativa y configuración. Las entregas son planificadas, no completadas en terreno.',
+  description: 'Plan calculado con las ubicaciones y los parámetros de esta ejecución. Las entregas son planificadas, no completadas en terreno.',
   geometry: RUN_INFO.network?.vial
     ? 'La instancia nativa declara una red vial. Solo se dibujan las geometrías guardadas; los tramos sin geometría permanecen en la lista.'
     : 'La red de esta ejecución no es vial. Sus distancias y trazados son aproximaciones; no acreditan conectividad por calles.',
   stations: 'Estaciones incluidas en la instancia; disponibilidad en terreno sin verificar.',
   summary: RUN_INFO.validationScope,
-  route: RUN_INFO.network?.vial ? 'Geometría vial declarada' : 'Aproximación no vial',
+  route: RUN_INFO.network?.vial ? 'Geometría vial declarada' : 'Aproximación por distancia',
   charger: 'Estación de la instancia',
 } : source === 'pending' ? {
   title: 'Sin resultado', file: 'Pendiente', context: 'Instancia sin calcular',

@@ -79,14 +79,35 @@ test('step facts label outgoing energy and native seconds without losing signed 
     nextNodeId: 'C|ñ', predictedArcEnergyKwh: -2, effectiveArcEnergyKwh: -1,
     arrivalSeconds: 0, serviceStartSeconds: 0, departureSeconds: 30,
     serviceDurationSeconds: 30, chargingDurationSeconds: 0, travelTimeSeconds: 60
-  });
+  }, id => id === 'C|ñ' ? 'Cliente 1' : null);
   assert.deepEqual(facts.slice(0, 3), [
-    {label: 'Siguiente nodo', value: 'C|ñ'},
+    {label: 'Próxima parada', value: 'Cliente 1'},
     {label: 'Energía prevista al siguiente nodo', value: '-2 kWh'},
     {label: 'Energía efectiva al siguiente nodo', value: '-1 kWh'}
   ]);
   assert.ok(facts.some(item => item.label === 'Llegada desde t=0' && item.value === '0 s'));
   assert.deepEqual(stopFacts({nextNodeId: null}), []);
+});
+
+test('phase termination is readable while native messages and identifiers remain untouched', () => {
+  const result = envelope(native()).result;
+  result.phases = [
+    {name: 'deliveries', has_solution: true, proven_optimal: true,
+      termination_condition: 'witness_and_cardinality_bound', message: 'Pricing Daniel internals'},
+    {name: 'energy', has_solution: true, proven_optimal: false,
+      termination_condition: 'energy_gap_limit', message: 'internal_energy_gap'}
+  ];
+  result.assumptions = ['Motor de Daniel Hermosilla, capacidad configurada.'];
+  const before = structuredClone(result);
+  const sections = resultSections(result);
+  const phases = sections.filter(section => section.title.startsWith('Fase:'));
+  assert.equal(row([phases[0]], 'Terminación').value, 'Máximo de entregas comprobado');
+  assert.equal(row([phases[1]], 'Terminación').value, 'Tolerancia de energía alcanzada');
+  const visible = JSON.stringify(sections);
+  assert.doesNotMatch(visible, /witness_and_cardinality_bound|internal_energy_gap|Daniel/);
+  assert.match(visible, /podría existir una mejor/);
+  assert.doesNotMatch(visible, /0,5 %/);
+  assert.deepEqual(result, before);
 });
 
 test('native RunResult receives an actionable message rather than being mistaken for ProblemInstance', () => {

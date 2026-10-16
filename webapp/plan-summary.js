@@ -113,7 +113,7 @@ export function renderPlanSummary(model) {
       ${notes([operationalNotes(model.operations), ...model.assumptions, ...model.warnings].filter(Boolean))}
     </section>
     <footer class="summary-footer">Ejecución ${escape(model.runId)} · Motor ${escape(model.provider)} @ ${escape(model.providerCommit.slice(0, 12))}.
-      Valores conservados sin estimaciones adicionales. Configuración, trazabilidad y tiempos detallados en «Descargar» → «Datos y límites de la ejecución» y en el JSON nativo.</footer>`;
+      Valores conservados sin estimaciones adicionales. Configuración, trazabilidad y tiempos detallados en «Ver resultados» → «Datos y límites de la ejecución» y en el JSON nativo.</footer>`;
 }
 
 export function initPlanSummary(data, {error = null} = {}) {

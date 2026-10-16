@@ -32,7 +32,7 @@ const vehicleById = id => VEHICLES.find(v => v.id === id);
 const served = new Set(ROUTES.flatMap(route => [...visitIdsForRoute(route)]));
 const unserved = noSolution ? [] : NODES.filter(node => node.type === 'visit' && !served.has(node.id));
 const stopTitle = (node, index, route) => node.type !== 'base' ? node.label
-  : index === 0 ? 'Salida de base' : index === route.stops.length - 1 ? 'Regreso a base' : 'Paso por base';
+  : index === 0 ? 'Salida del depósito' : index === route.stops.length - 1 ? 'Regreso al depósito' : 'Paso por el depósito';
 const servedAt = (state, node) => RUN_INFO ? state?.deliveredVisitIds?.includes(node.id) : node.type === 'visit' && !!state;
 const batteryStyle = (value, property) => Number.isFinite(value) && value >= 0 && value <= 100
   ? `style="${property}:${value}%"` : 'hidden';
@@ -151,8 +151,8 @@ function render() {
           ${RUN_INFO ? `<span><strong>${number(r?.durationSeconds, 0)}</strong> segundos</span>`
             : `<span><strong>${r ? number(chargeCount(r), 0) : '—'}</strong> recargas</span>`}
         </div>
-        ${inactive && hasSteps ? '<p class="vehicle-inactive">Sin desplazamiento · en base</p>' : ''}
-        <button class="route-button" data-vehicle="${esc(v.id)}" ${hasSteps ? '' : 'disabled'} aria-label="${hasSteps ? inactive ? 'Ver estado en base de' : 'Explorar recorrido de' : 'Sin recorrido de'} ${esc(v.name)}">${hasSteps ? `${inactive ? 'Ver estado en base' : 'Explorar recorrido'} ${icon('arrow', 16)}` : 'Sin recorrido'}</button>
+        ${inactive && hasSteps ? '<p class="vehicle-inactive">Sin desplazamiento · en el depósito</p>' : ''}
+        <button class="route-button" data-vehicle="${esc(v.id)}" ${hasSteps ? '' : 'disabled'} aria-label="${hasSteps ? inactive ? 'Ver estado en el depósito de' : 'Explorar recorrido de' : 'Sin recorrido de'} ${esc(v.name)}">${hasSteps ? `${inactive ? 'Ver estado en el depósito' : 'Explorar recorrido'} ${icon('arrow', 16)}` : 'Sin recorrido'}</button>
       </article>`;
     }).join('');
     return;
@@ -173,7 +173,9 @@ function render() {
           const active = selectedStop?.vehicleId === v.id && selectedStop.index === i;
           const secondary = n.type === 'charger'
             ? s.chargeKwh > 0 ? `Recarga · +${number(s.chargeKwh)} kWh` : s.chargeKwh === null ? 'Recarga no informada' : 'Paso sin recarga'
-            : RUN_INFO && n.type === 'visit' ? `${n.id} · ${servedAt(s, n) ? 'Entrega del modelo' : 'Paso sin entrega'}` : n.id;
+            : n.type === 'base' ? 'Centro de distribución'
+              : RUN_INFO && n.type === 'visit' ? servedAt(s, n) ? 'Entrega planificada' : 'Paso sin entrega'
+                : 'Entrega de ejemplo';
           return `<button class="stop-row ${active ? 'active' : ''}" data-stop="${esc(n.id)}" data-route="${esc(v.id)}" data-index="${i}" aria-pressed="${active}">
             <span class="stop-number">${n.type === 'base' ? icon('base', 16) : n.type === 'charger' ? icon('plug', 16) : n.type === 'junction' ? '·' : visitLabel(n.id)}</span>
             <span class="stop-name">${esc(stopTitle(n, i, r))}<small>${esc(secondary)}</small></span>
@@ -182,7 +184,7 @@ function render() {
         }).join('') + '</section>';
     }).join('') +
     (!selected && unserved.length ? `<section class="route-group unserved-group"><div class="route-head">Pendientes <small>${unserved.length} locales sin servicio en el plan</small></div>${unserved.map(node =>
-      `<button class="stop-row" data-unserved="${esc(node.id)}"><span class="stop-number">${visitLabel(node.id)}</span><span class="stop-name">${esc(node.label)}<small>${esc(node.id)}</small></span></button>`).join('')}</section>` : '') +
+      `<button class="stop-row" data-unserved="${esc(node.id)}"><span class="stop-number">${visitLabel(node.id)}</span><span class="stop-name">${esc(node.label)}<small>Entrega pendiente</small></span></button>`).join('')}</section>` : '') +
     (!routes.length && !unserved.length ? `<p class="plan-empty">${pending ? 'Aún no hay un resultado de paradas.' : noSolution ? 'El motor no dispone de una solución con recorridos.' : NODES.some(node => node.type === 'visit') ? 'Esta ejecución no contiene recorridos.' : 'Esta ejecución no contiene destinos de entrega.'}</p>` : '');
 }
 
@@ -244,7 +246,7 @@ function stop(node, routeId, index, trigger, { move = true, overview = false } =
   $('selection').setAttribute('role', 'region');
   $('selection').setAttribute('aria-labelledby', 'selection-title');
   $('selection').innerHTML = `<button class="close" id="close-selection" aria-label="Cerrar detalle">${icon('close', 16)}</button>
-    <p class="detail-eyebrow">${route ? esc(vehicleById(route.vehicleId).name) + ' · ' : ''}${esc(node.id)}</p>
+    <p class="detail-eyebrow">${route ? esc(vehicleById(route.vehicleId).name) + ' · ' : ''}${esc({base: 'Depósito', visit: 'Cliente', charger: 'Estación de carga', junction: 'Intersección'}[node.type])}</p>
     <h3 id="selection-title">${esc(title)}</h3>
     <p>${esc(serviceDescription)}</p>
     ${state ? `<div class="stop-battery"><span>Batería al llegar<strong>${number(state.arrivalSoc)} <small>%</small></strong></span><span>Al salir<strong>${number(state.departureSoc)} <small>%</small></strong></span></div>${node.type === 'charger' || state.chargeKwh ? `<p class="charge-note${state.chargeKwh > 0 ? '' : ' charge-note-neutral'}">${icon('plug', 14)} ${esc(chargerChargeText(state.chargeKwh, !RUN_INFO))}</p>` : ''}${RUN_INFO ? `<p class="stop-occurrence">Paso ${state.position} · ${route.stops.length} posiciones</p>` : ''}` : ''}
@@ -253,7 +255,7 @@ function stop(node, routeId, index, trigger, { move = true, overview = false } =
       `<button type="button" data-charger-route="${esc(occurrence.vehicleId)}" data-charger-index="${occurrence.index}" aria-pressed="${selectedStop?.vehicleId === occurrence.vehicleId && selectedStop?.index === occurrence.index}">
         <span>${esc(vehicleById(occurrence.vehicleId).name)} · Paso ${occurrence.state.position ?? occurrence.index}</span><small>${esc(chargerChargeText(occurrence.state.chargeKwh, !RUN_INFO))}</small>
       </button>`).join('')}</section>` : node.type === 'charger' ? `<p class="charger-usage">${noSolution ? 'Sin recorrido calculado para esta ejecución.' : 'Esta estación no forma parte de los recorridos del plan.'}</p>` : ''}
-    ${RUN_INFO && state ? `${node.type === 'charger' ? '<details class="charger-step-facts"><summary>Datos de este paso</summary>' : ''}<dl class="stop-facts">${stopFacts(state).map(fact => `<dt>${esc(fact.label)}</dt><dd>${esc(fact.value)}</dd>`).join('')}</dl>${node.type === 'charger' ? '</details>' : ''}` : ''}`;
+    ${RUN_INFO && state ? `${node.type === 'charger' ? '<details class="charger-step-facts"><summary>Datos de este paso</summary>' : ''}<dl class="stop-facts">${stopFacts(state, id => nodeById(id)?.label).map(fact => `<dt>${esc(fact.label)}</dt><dd>${esc(fact.value)}</dd>`).join('')}</dl>${node.type === 'charger' ? '</details>' : ''}` : ''}`;
   $('selection-status').textContent = state
     ? `${vehicleById(route.vehicleId).name}. ${title}. ${serviceDescription}. Batería ${RUN_INFO ? 'informada' : 'de ejemplo'}: llegada ${number(state.arrivalSoc)} %, salida ${number(state.departureSoc)} %.`
     : `${title}. ${node.type === 'charger' ? 'Disponibilidad no verificada.' : node.type === 'visit' ? 'Sin asignar en este plan.' : ''}`;

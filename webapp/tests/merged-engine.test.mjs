@@ -56,6 +56,6 @@ test('energy tolerance and LLM applied/rejected decisions are visible separately
       ]},
   });
   assert(groups.find(g => g.title === 'Fase: minimizar energía').notes.some(n => n.includes('no acredita óptimo exacto')));
-  assert(groups.find(g => g.title.includes('Decisión LLM 1')).rows.some(r => r.value.includes('regret')));
-  assert(groups.find(g => g.title.includes('Decisión LLM 2')).notes.includes('decision_deadline'));
+  assert(groups.find(g => g.title.includes('Decisión de IA 1')).rows.some(r => r.value.includes('regret')));
+  assert(groups.find(g => g.title.includes('Decisión de IA 2')).notes.includes('decision_deadline'));
 });

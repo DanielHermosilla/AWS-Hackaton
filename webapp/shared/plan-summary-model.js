@@ -1,4 +1,5 @@
 import {nativeRunResult, resultSections} from './solver-output.js';
+import {locationLabels, phaseStatus, presentationText} from './presentation-labels.js';
 
 // A view of the already validated API 3.0 response. It never totals route
 // energies, infers service from a visit, or issues a feasibility certificate.
@@ -14,6 +15,7 @@ export function buildPlanSummary(data, {execution = null, stale = false, error =
   const native = nativeRunResult(data.RAW_RESPONSE);
   const sections = resultSections(result);
   const nodes = new Map(result.nodes.map(node => [node.node_id, node]));
+  const labels = locationLabels(result.nodes);
   const fleet = new Map(result.fleet.map(vehicle => [vehicle.id, vehicle]));
   const current = execution?.runId === result.run_id && execution?.stale === false &&
     execution?.status === 'complete' && !stale;
@@ -21,7 +23,7 @@ export function buildPlanSummary(data, {execution = null, stale = false, error =
   const noSolutionLabels = {no_solution: 'Sin solución encontrada', unavailable: 'Solver no disponible', error: 'Ejecución con error'};
   const validationFailed = result.validation.feasible === false;
   const phases = sections.filter(section => section.title.startsWith('Fase:'))
-    .map((section, index) => ({...section, status: result.phases[index].status}));
+    .map((section, index) => ({...section, status: phaseStatus(result.phases[index])}));
   const conditionalEnergy = result.phases.some(phase => phase.name === 'deliveries' && !phase.proven_optimal) &&
     result.phases.some(phase => phase.name === 'energy');
   return {
@@ -29,7 +31,7 @@ export function buildPlanSummary(data, {execution = null, stale = false, error =
     scenarioName: native?.instance_name || result.raw?.instance?.name || 'Instancia sin nombre',
     createdAt: native?.created_at_utc || null,
     operations: result.operations || native?.operations || {},
-    provider: result.metadata.provider,
+    provider: presentationText(result.metadata.provider),
     providerCommit: result.metadata.provider_commit,
     freshness: current
       ? {state: 'current', title: 'Ejecución vigente', message: 'Corresponde a la instancia calculada que está seleccionada en esta pestaña.'}
@@ -54,10 +56,10 @@ export function buildPlanSummary(data, {execution = null, stale = false, error =
     network: result.network.vial
       ? 'Red vial declarada por la instancia; procedencia y condiciones en terreno sin verificar.'
       : 'Red no vial. Las distancias y energías de esta instancia no acreditan un recorrido por calles.',
-    assumptions: [...result.assumptions], warnings: [...result.warnings],
+    assumptions: result.assumptions.map(presentationText), warnings: result.warnings.map(presentationText),
     pending: {
       available: result.has_solution,
-      items: result.has_solution ? result.unserved_visit_ids.map(id => ({id, label: nodes.get(id)?.address || id})) : [],
+      items: result.has_solution ? result.unserved_visit_ids.map(id => ({id, label: labels.get(id)})) : [],
       message: !result.has_solution
         ? 'No se dispone de entregas pendientes sin una solución. La lista vacía no significa que se haya atendido la demanda.'
         : validationFailed
@@ -76,7 +78,7 @@ export function buildPlanSummary(data, {execution = null, stale = false, error =
           const node = nodes.get(step.node_id);
           return {
             ...step, delivered_visit_ids: [...step.delivered_visit_ids],
-            label: node.address || node.node_id,
+            label: labels.get(node.node_id),
             service: step.delivered_visit_ids.length
               ? validated ? 'Entrega planificada' : 'Servicio indicado (sin validar)'
               : node.node_type === 'visit' ? 'Paso sin entrega'

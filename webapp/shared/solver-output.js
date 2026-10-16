@@ -1,5 +1,6 @@
-// Presentation only: values and unavailable reasons come from Daniel's RunResult.
+// Presentation only: values and unavailable reasons come from RunResult.
 // No route metrics, timing, energy or feasibility are recomputed here.
+import {phaseTermination, presentationText} from './presentation-labels.js';
 const record = value => value !== null && typeof value === 'object' && !Array.isArray(value);
 const format = (value, unit = '') => Number.isFinite(value)
   ? `${value.toLocaleString('es-CL', {maximumFractionDigits: 6})}${unit ? ` ${unit}` : ''}`
@@ -55,12 +56,16 @@ export function resultSections(result) {
       {label: 'Gap relativo (fracción)', value: format(phase.relative_gap)},
       {label: 'Gap relativo · %', value: format(Number.isFinite(phase.relative_gap) ? phase.relative_gap * 100 : null, '%')},
       {label: 'Óptimo de fase reportado por el solver', value: text(phase.proven_optimal)},
-      {label: 'Terminación', value: text(phase.termination_condition)},
+      {label: 'Terminación', value: phaseTermination(phase)},
       {label: 'Tiempo de la fase', value: format(phase.runtime_seconds, 's')}
     ], notes: [
       phase.termination_condition === 'energy_gap_limit'
-        ? 'Se alcanzó la tolerancia energética de 0,5 %. Esto no acredita óptimo exacto.' : null,
-      phase.message, result.validation?.feasible === false
+        ? 'Se alcanzó la tolerancia energética configurada; esto no acredita óptimo exacto.' : null,
+      phase.has_solution && !phase.proven_optimal
+        ? 'Se conserva la mejor solución encontrada, aunque podría existir una mejor.' : null,
+      phase.name === 'energy' && (result.phases || []).some(item => item.name === 'deliveries' && !item.proven_optimal)
+        ? 'La energía se mejoró para las entregas encontradas; no se demostró el máximo de entregas.' : null,
+      result.validation?.feasible === false
       ? 'La comprobación rechazó la solución; el estado reportado por el solver no acredita un plan factible.' : null].filter(Boolean)});
   }
   sections.push({title: 'Tiempos de cómputo', rows: [
@@ -92,17 +97,23 @@ export function resultSections(result) {
     label, value: operations[key] === null ? 'Sin configurar' : typeof operations[key] === 'number'
       ? format(operations[key], unit) : text(operations[key])
   })), notes: ['Son supuestos de esta instancia. El archivo nativo conserva toda la configuración.']});
-  sections.push({title: 'Tuning', rows: [
-    {label: 'Estado informado', value: text(tuning.status)},
+  const policies = {standard: 'Estándar', deterministic: 'Búsqueda guiada', adaptive: 'Asistencia de IA'};
+  const tuningStates = {disabled: 'Sin asistencia de IA', adaptive: 'Asistencia de IA activa',
+    fallback: 'Se continuó con la búsqueda estándar', completed: 'Ajuste completado',
+    applied: 'Propuesta aplicada', not_applied: 'Propuesta sin aplicar', unavailable: 'Asistencia no disponible'};
+  sections.push({title: 'Asistencia de búsqueda', rows: [
+    {label: 'Estado informado', value: tuningStates[tuning.status] || 'Sin detalle disponible'},
     {label: 'Modelo', value: text(tuning.model_id)},
-    {label: 'Política solicitada', value: text(tuning.requested_policy)},
-    {label: 'Política efectiva', value: text(tuning.active_policy)},
+    {label: 'Búsqueda solicitada', value: policies[tuning.requested_policy] || 'No disponible'},
+    {label: 'Búsqueda utilizada', value: policies[tuning.active_policy] || 'No disponible'},
     {label: 'Consultas', value: format(tuning.calls)},
     {label: 'Decisiones aplicadas', value: format(tuning.applied_decisions)},
   ],
     notes: [tuning.reason].filter(Boolean)});
   for (const decision of tuning.decisions || []) {
-    sections.push({title: `Decisión LLM ${decision.call_index ?? ''} · ${decision.status}`, rows: [
+    const decisionStatus = {applied: 'Aplicada', not_applied: 'Sin aplicar', rejected: 'Rechazada',
+      invalid: 'Respuesta no válida', error: 'Consulta fallida', fallback: 'Búsqueda estándar'}[decision.status] || 'Sin aplicar';
+    sections.push({title: `Decisión de IA ${decision.call_index ?? ''} · ${decisionStatus}`, rows: [
       {label: 'Evento / fase', value: `${text(decision.event)} / ${text(decision.phase)}`},
       {label: 'Modelo', value: text(decision.model_id)},
       {label: 'Tiempo de respuesta', value: format(decision.runtime_seconds, 's')},
@@ -118,7 +129,12 @@ export function resultSections(result) {
   sections.push({title: 'Trazabilidad', rows: [
     {label: 'Ejecución web', value: text(result.run_id)},
     {label: 'Ejecución nativa', value: text(native.run_id || result.metadata?.native_run_id)},
-    {label: 'Estado nativo', value: text(native.status || result.metadata?.native_status)},
+    {label: 'Estado del motor', value: {
+      optimal: 'Mejor solución demostrada', feasible: 'Solución encontrada',
+      infeasible: 'Sin plan factible', no_solution: 'Sin solución encontrada',
+      invalid_solution: 'Solución rechazada por la comprobación', error: 'Error de ejecución',
+      time_limit: 'Tiempo disponible agotado', solver_unavailable: 'Motor no disponible'
+    }[native.status || result.metadata?.native_status] || 'Sin detalle disponible'},
     {label: 'Solver solicitado', value: text(solver.requested_solver)},
     {label: 'Solver utilizado', value: text(solver.used_solver)},
     {label: 'Versión del solver', value: text(solver.solver_version)},
@@ -129,13 +145,17 @@ export function resultSections(result) {
     solver.fallback_reason, solver.message, result.metadata?.certificate_scope].filter(Boolean)});
   sections.push({title: 'Supuestos y advertencias', rows: [],
     notes: [...(result.assumptions || []), ...(result.warnings || [])]});
-  return sections;
+  return sections.map(section => ({
+    ...section,
+    rows: section.rows.map(row => ({...row, value: presentationText(row.value), reason: presentationText(row.reason)})),
+    notes: section.notes.map(presentationText)
+  }));
 }
 
-export function stopFacts(stop) {
+export function stopFacts(stop, labelForNode = () => 'Ubicación siguiente') {
   if (!stop) return [];
   const facts = [];
-  if (stop.nextNodeId != null) facts.push({label: 'Siguiente nodo', value: stop.nextNodeId});
+  if (stop.nextNodeId != null) facts.push({label: 'Próxima parada', value: labelForNode(stop.nextNodeId) || 'Ubicación siguiente'});
   for (const [key, label, unit] of [
     ['predictedArcEnergyKwh', 'Energía prevista al siguiente nodo', 'kWh'],
     ['effectiveArcEnergyKwh', 'Energía efectiva al siguiente nodo', 'kWh'],

@@ -15,7 +15,9 @@ html[data-theme="dark"] .console-adaptive .consola {
   color-scheme:dark;
 }
 
-.home-main { min-height:calc(100vh - var(--bar-height, 64px)); background:var(--bg); color:var(--ink); font-size:14px; line-height:1.5; font-variant-numeric:tabular-nums; }
+/* The available height includes the run toolbar. A viewport-based minimum
+   would push the footer below the scroll area when its disclosure opens. */
+.home-main { min-height:0; background:var(--bg); color:var(--ink); font-size:14px; line-height:1.5; font-variant-numeric:tabular-nums; }
 .home-main h1 { margin:0; font-size:30px; font-weight:650; line-height:1.2; letter-spacing:-1px; }
 .home-main h2 { font-size:15px; font-weight:620; line-height:1.3; letter-spacing:-.2px; }
 .home-main a { color:var(--link); }

@@ -63,11 +63,11 @@ export function initShell(page) {
           <a class="nav-link" href="${planHref}" ${page === 'plan' ? 'aria-current="page"' : ''}>${icon('map', 21)}<span>Plan</span></a>
         </nav>
         <div class="rail-foot">
-          <button id="profile-button" class="profile-button" type="button" aria-label="Diego Caballero, perfil local" aria-haspopup="menu" aria-expanded="false" aria-controls="profile-menu"><span aria-hidden="true">DC</span></button>
+          <button id="profile-button" class="profile-button" type="button" aria-label="Perfil local" aria-haspopup="menu" aria-expanded="false" aria-controls="profile-menu"><span aria-hidden="true">FL</span></button>
           <span class="rail-local" aria-hidden="true">Perfil local</span>
         </div>
         <div id="profile-popover" class="profile-popover" popover="auto">
-          <div class="profile-heading"><strong>Diego Caballero</strong><span>Perfil local en este navegador</span></div>
+          <div class="profile-heading"><strong>Perfil local</strong><span>Ajustes de este navegador</span></div>
           <div id="profile-menu" role="menu" aria-label="Perfil local">
             <button id="open-settings" type="button" role="menuitem" tabindex="-1">${settingsIcon}<span>Ajustes<small>Apariencia y organización</small></span></button>
             <button id="close-plan" type="button" role="menuitem" tabindex="-1">${closePlanIcon}<span>Cerrar plan<small>Restablece la selección del Plan en esta pestaña. Conserva tus ajustes.</small></span></button>
@@ -78,11 +78,11 @@ export function initShell(page) {
     <dialog id="nav-drawer" aria-label="Navegación de la aplicación"></dialog>
     <dialog id="settings-dialog" class="app-dialog settings-dialog" aria-labelledby="settings-heading">
       <div class="dialog-heading"><h2 id="settings-heading">Ajustes</h2><button id="close-settings" class="icon-button" type="button" aria-label="Cerrar ajustes">${icon('close', 18)}</button></div>
-      <p class="settings-intro">El tema se aplica solo a esta página, que siempre inicia en claro. Los demás ajustes se guardan en este navegador.</p>
+      <p class="settings-intro">Tus preferencias se guardan en este navegador y se mantienen al cambiar de página.</p>
       <section class="settings-section" aria-labelledby="appearance-heading">
         <h3 id="appearance-heading">Apariencia</h3>
         <fieldset class="theme-choice">
-          <legend>Tema de esta página</legend>
+          <legend>Tema</legend>
           <label class="theme-option"><input type="radio" name="theme-choice" value="light">${sunIcon}<span>Claro</span></label>
           <label class="theme-option"><input type="radio" name="theme-choice" value="dark">${moonIcon}<span>Oscuro</span></label>
         </fieldset>
@@ -158,7 +158,7 @@ export function initShell(page) {
 
   function setStatus(saved) {
     $('preference-status').textContent = saved
-      ? 'Ajustes aplicados. El tema vuelve a claro al cargar otra página.'
+      ? 'Ajustes guardados en este navegador.'
       : 'Aplicado en esta pestaña. El navegador no permite guardar los ajustes.';
   }
 
