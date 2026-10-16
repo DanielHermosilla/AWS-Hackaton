@@ -42,3 +42,17 @@ Default idéntico a v0.3.0 verificado (competition/eved = 11.1466 kWh, 20/20).
 | Mínima energía con N\* fijo (fase 2) vs oráculo | DEFINITIVA-EVIDENCIA | energía idéntica al oráculo en 5/5 pequeñas (`max_clientes.md`) |
 | Respaldo a formulación completa para cadenas F→F | DEFINITIVA-EVIDENCIA | `peq_cadena_F_F`: compacta N\*=3 → completa N\*=4=oráculo (`test_respaldo_completa_para_cadena_F_F`) |
 | Grandes (20 clientes, infactible): fase 1 agota presupuesto; respaldo "cortes" puede no entregar solución | EVALUACIÓN (hallazgo) | `max_clientes.md` §Discrepancias; `g20_dos_veh_anillo`, `g20_cadena_F_F` |
+
+## rama `exp/eval-energia-20` (evaluaciones de energía, 20 clientes)
+
+| Componente | Estado | Evidencia |
+|---|---|---|
+| E1 Sensibilidad al modelo (plano vs pendiente eVED vs temperatura; reoptimización) | DEFINITIVA-EVIDENCIA | `docs/experimentos/energia_20.md`; `experimentos/energia20/e1_sensibilidad.json`; fig. `energia20_e1_sensibilidad.png` |
+| E2 Robustez (distribución eVED por viaje; p50 planifica, p75/p90/p95 validan) | DEFINITIVA-EVIDENCIA | `experimentos/energia20/e2_robustez.json`; fig. `energia20_e2_robustez.png` |
+| E3 Variabilidad y flota (10 sintéticas × veh {1,2,3} × usar_todos on/off) | DEFINITIVA-EVIDENCIA | `experimentos/energia20/e3_flota.json`; fig. `energia20_e3_flota.png` |
+
+Conclusión: en estas instancias (Ann Arbor, terreno casi plano) el modelo de pendiente/temperatura
+cambia los **kWh** (−12 %…+8 % nominal; <0 °C vuelve infactibles 10/12 rutas) pero **reoptimizar no
+reduce energía** frente a la ruta óptima-plano evaluada bajo pendiente (Δ medio ≈ 0, sin ganancia).
+→ No se justifica más fidelidad de pendiente para el *ruteo*; sí conviene un **margen de batería**
+(planificar con percentil alto) por la variabilidad real de consumo.

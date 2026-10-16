@@ -1,0 +1,2 @@
+# Caches regenerables (preparación de instancias). Se reconstruyen con los scripts.
+inst/*.json.gz

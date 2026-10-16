@@ -1,0 +1,566 @@
+[
+  {
+    "vehiculos": 1,
+    "usar_todos": false,
+    "energia_media": 8.684,
+    "energia_min": 7.511,
+    "energia_max": 9.783,
+    "entregas_media": 20,
+    "entregas_min": 20,
+    "todas_entregadas": 10,
+    "t_medio_s": 17.08,
+    "t_max_s": 23.55,
+    "detalle": [
+      {
+        "inst": "syn_s1",
+        "entregas": 20,
+        "clientes": 20,
+        "energia": 9.7833,
+        "t_s": 23.552,
+        "vehic_usados": 1
+      },
+      {
+        "inst": "syn_s2",
+        "entregas": 20,
+        "clientes": 20,
+        "energia": 7.5114,
+        "t_s": 12.674,
+        "vehic_usados": 1
+      },
+      {
+        "inst": "syn_s3",
+        "entregas": 20,
+        "clientes": 20,
+        "energia": 7.9971,
+        "t_s": 11.407,
+        "vehic_usados": 1
+      },
+      {
+        "inst": "syn_s4",
+        "entregas": 20,
+        "clientes": 20,
+        "energia": 7.5485,
+        "t_s": 23.431,
+        "vehic_usados": 1
+      },
+      {
+        "inst": "syn_s5",
+        "entregas": 20,
+        "clientes": 20,
+        "energia": 9.7666,
+        "t_s": 23.456,
+        "vehic_usados": 1
+      },
+      {
+        "inst": "syn_s6",
+        "entregas": 20,
+        "clientes": 20,
+        "energia": 9.6555,
+        "t_s": 23.457,
+        "vehic_usados": 1
+      },
+      {
+        "inst": "syn_s7",
+        "entregas": 20,
+        "clientes": 20,
+        "energia": 8.0787,
+        "t_s": 18.036,
+        "vehic_usados": 1
+      },
+      {
+        "inst": "syn_s8",
+        "entregas": 20,
+        "clientes": 20,
+        "energia": 8.8775,
+        "t_s": 23.252,
+        "vehic_usados": 1
+      },
+      {
+        "inst": "syn_s9",
+        "entregas": 20,
+        "clientes": 20,
+        "energia": 8.1128,
+        "t_s": 10.134,
+        "vehic_usados": 1
+      },
+      {
+        "inst": "syn_s10",
+        "entregas": 20,
+        "clientes": 20,
+        "energia": 9.5133,
+        "t_s": 1.423,
+        "vehic_usados": 1
+      }
+    ]
+  },
+  {
+    "vehiculos": 1,
+    "usar_todos": true,
+    "energia_media": 8.675,
+    "energia_min": 7.511,
+    "energia_max": 9.767,
+    "entregas_media": 20,
+    "entregas_min": 20,
+    "todas_entregadas": 10,
+    "t_medio_s": 10.8,
+    "t_max_s": 23.48,
+    "detalle": [
+      {
+        "inst": "syn_s1",
+        "entregas": 20,
+        "clientes": 20,
+        "energia": 9.6925,
+        "t_s": 16.812,
+        "vehic_usados": 1
+      },
+      {
+        "inst": "syn_s2",
+        "entregas": 20,
+        "clientes": 20,
+        "energia": 7.5114,
+        "t_s": 2.636,
+        "vehic_usados": 1
+      },
+      {
+        "inst": "syn_s3",
+        "entregas": 20,
+        "clientes": 20,
+        "energia": 7.9971,
+        "t_s": 4.513,
+        "vehic_usados": 1
+      },
+      {
+        "inst": "syn_s4",
+        "entregas": 20,
+        "clientes": 20,
+        "energia": 7.5485,
+        "t_s": 8.886,
+        "vehic_usados": 1
+      },
+      {
+        "inst": "syn_s5",
+        "entregas": 20,
+        "clientes": 20,
+        "energia": 9.7666,
+        "t_s": 9.978,
+        "vehic_usados": 1
+      },
+      {
+        "inst": "syn_s6",
+        "entregas": 20,
+        "clientes": 20,
+        "energia": 9.6555,
+        "t_s": 23.476,
+        "vehic_usados": 1
+      },
+      {
+        "inst": "syn_s7",
+        "entregas": 20,
+        "clientes": 20,
+        "energia": 8.0787,
+        "t_s": 16.308,
+        "vehic_usados": 1
+      },
+      {
+        "inst": "syn_s8",
+        "entregas": 20,
+        "clientes": 20,
+        "energia": 8.8775,
+        "t_s": 11.748,
+        "vehic_usados": 1
+      },
+      {
+        "inst": "syn_s9",
+        "entregas": 20,
+        "clientes": 20,
+        "energia": 8.1128,
+        "t_s": 11.067,
+        "vehic_usados": 1
+      },
+      {
+        "inst": "syn_s10",
+        "entregas": 20,
+        "clientes": 20,
+        "energia": 9.5133,
+        "t_s": 2.539,
+        "vehic_usados": 1
+      }
+    ]
+  },
+  {
+    "vehiculos": 2,
+    "usar_todos": false,
+    "energia_media": 8.699,
+    "energia_min": 7.511,
+    "energia_max": 9.783,
+    "entregas_media": 20,
+    "entregas_min": 20,
+    "todas_entregadas": 10,
+    "t_medio_s": 17.76,
+    "t_max_s": 23.44,
+    "detalle": [
+      {
+        "inst": "syn_s1",
+        "entregas": 20,
+        "clientes": 20,
+        "energia": 9.7833,
+        "t_s": 23.39,
+        "vehic_usados": 1
+      },
+      {
+        "inst": "syn_s2",
+        "entregas": 20,
+        "clientes": 20,
+        "energia": 7.5114,
+        "t_s": 11.156,
+        "vehic_usados": 1
+      },
+      {
+        "inst": "syn_s3",
+        "entregas": 20,
+        "clientes": 20,
+        "energia": 7.9971,
+        "t_s": 12.076,
+        "vehic_usados": 1
+      },
+      {
+        "inst": "syn_s4",
+        "entregas": 20,
+        "clientes": 20,
+        "energia": 7.5485,
+        "t_s": 23.373,
+        "vehic_usados": 1
+      },
+      {
+        "inst": "syn_s5",
+        "entregas": 20,
+        "clientes": 20,
+        "energia": 9.7666,
+        "t_s": 23.381,
+        "vehic_usados": 1
+      },
+      {
+        "inst": "syn_s6",
+        "entregas": 20,
+        "clientes": 20,
+        "energia": 9.6555,
+        "t_s": 23.44,
+        "vehic_usados": 1
+      },
+      {
+        "inst": "syn_s7",
+        "entregas": 20,
+        "clientes": 20,
+        "energia": 8.0787,
+        "t_s": 22.421,
+        "vehic_usados": 1
+      },
+      {
+        "inst": "syn_s8",
+        "entregas": 20,
+        "clientes": 20,
+        "energia": 9.0245,
+        "t_s": 23.392,
+        "vehic_usados": 1
+      },
+      {
+        "inst": "syn_s9",
+        "entregas": 20,
+        "clientes": 20,
+        "energia": 8.1128,
+        "t_s": 12.136,
+        "vehic_usados": 1
+      },
+      {
+        "inst": "syn_s10",
+        "entregas": 20,
+        "clientes": 20,
+        "energia": 9.5133,
+        "t_s": 2.852,
+        "vehic_usados": 1
+      }
+    ]
+  },
+  {
+    "vehiculos": 2,
+    "usar_todos": true,
+    "energia_media": 8.918,
+    "energia_min": 7.643,
+    "energia_max": 10.082,
+    "entregas_media": 20,
+    "entregas_min": 20,
+    "todas_entregadas": 10,
+    "t_medio_s": 10.19,
+    "t_max_s": 23.4,
+    "detalle": [
+      {
+        "inst": "syn_s1",
+        "entregas": 20,
+        "clientes": 20,
+        "energia": 9.9401,
+        "t_s": 3.401,
+        "vehic_usados": 2
+      },
+      {
+        "inst": "syn_s2",
+        "entregas": 20,
+        "clientes": 20,
+        "energia": 7.6431,
+        "t_s": 1.745,
+        "vehic_usados": 2
+      },
+      {
+        "inst": "syn_s3",
+        "entregas": 20,
+        "clientes": 20,
+        "energia": 8.1117,
+        "t_s": 1.803,
+        "vehic_usados": 2
+      },
+      {
+        "inst": "syn_s4",
+        "entregas": 20,
+        "clientes": 20,
+        "energia": 8.113,
+        "t_s": 2.312,
+        "vehic_usados": 2
+      },
+      {
+        "inst": "syn_s5",
+        "entregas": 20,
+        "clientes": 20,
+        "energia": 10.0817,
+        "t_s": 12.534,
+        "vehic_usados": 2
+      },
+      {
+        "inst": "syn_s6",
+        "entregas": 20,
+        "clientes": 20,
+        "energia": 9.7821,
+        "t_s": 23.4,
+        "vehic_usados": 2
+      },
+      {
+        "inst": "syn_s7",
+        "entregas": 20,
+        "clientes": 20,
+        "energia": 8.1714,
+        "t_s": 22.68,
+        "vehic_usados": 2
+      },
+      {
+        "inst": "syn_s8",
+        "entregas": 20,
+        "clientes": 20,
+        "energia": 9.2717,
+        "t_s": 23.403,
+        "vehic_usados": 2
+      },
+      {
+        "inst": "syn_s9",
+        "entregas": 20,
+        "clientes": 20,
+        "energia": 8.3871,
+        "t_s": 8.206,
+        "vehic_usados": 2
+      },
+      {
+        "inst": "syn_s10",
+        "entregas": 20,
+        "clientes": 20,
+        "energia": 9.6759,
+        "t_s": 2.395,
+        "vehic_usados": 2
+      }
+    ]
+  },
+  {
+    "vehiculos": 3,
+    "usar_todos": false,
+    "energia_media": 8.685,
+    "energia_min": 7.511,
+    "energia_max": 9.783,
+    "entregas_media": 20,
+    "entregas_min": 20,
+    "todas_entregadas": 10,
+    "t_medio_s": 16.44,
+    "t_max_s": 23.38,
+    "detalle": [
+      {
+        "inst": "syn_s1",
+        "entregas": 20,
+        "clientes": 20,
+        "energia": 9.7833,
+        "t_s": 23.377,
+        "vehic_usados": 1
+      },
+      {
+        "inst": "syn_s2",
+        "entregas": 20,
+        "clientes": 20,
+        "energia": 7.5114,
+        "t_s": 8.462,
+        "vehic_usados": 1
+      },
+      {
+        "inst": "syn_s3",
+        "entregas": 20,
+        "clientes": 20,
+        "energia": 7.9971,
+        "t_s": 8.12,
+        "vehic_usados": 1
+      },
+      {
+        "inst": "syn_s4",
+        "entregas": 20,
+        "clientes": 20,
+        "energia": 7.5485,
+        "t_s": 23.266,
+        "vehic_usados": 1
+      },
+      {
+        "inst": "syn_s5",
+        "entregas": 20,
+        "clientes": 20,
+        "energia": 9.7666,
+        "t_s": 23.319,
+        "vehic_usados": 1
+      },
+      {
+        "inst": "syn_s6",
+        "entregas": 20,
+        "clientes": 20,
+        "energia": 9.6555,
+        "t_s": 23.373,
+        "vehic_usados": 1
+      },
+      {
+        "inst": "syn_s7",
+        "entregas": 20,
+        "clientes": 20,
+        "energia": 8.0787,
+        "t_s": 19.454,
+        "vehic_usados": 1
+      },
+      {
+        "inst": "syn_s8",
+        "entregas": 20,
+        "clientes": 20,
+        "energia": 8.8866,
+        "t_s": 23.313,
+        "vehic_usados": 1
+      },
+      {
+        "inst": "syn_s9",
+        "entregas": 20,
+        "clientes": 20,
+        "energia": 8.1128,
+        "t_s": 8.964,
+        "vehic_usados": 1
+      },
+      {
+        "inst": "syn_s10",
+        "entregas": 20,
+        "clientes": 20,
+        "energia": 9.5133,
+        "t_s": 2.786,
+        "vehic_usados": 1
+      }
+    ]
+  },
+  {
+    "vehiculos": 3,
+    "usar_todos": true,
+    "energia_media": 9.242,
+    "energia_min": 7.806,
+    "energia_max": 10.42,
+    "entregas_media": 20,
+    "entregas_min": 20,
+    "todas_entregadas": 10,
+    "t_medio_s": 8.23,
+    "t_max_s": 23.27,
+    "detalle": [
+      {
+        "inst": "syn_s1",
+        "entregas": 20,
+        "clientes": 20,
+        "energia": 10.3401,
+        "t_s": 1.426,
+        "vehic_usados": 3
+      },
+      {
+        "inst": "syn_s2",
+        "entregas": 20,
+        "clientes": 20,
+        "energia": 7.8058,
+        "t_s": 1.376,
+        "vehic_usados": 3
+      },
+      {
+        "inst": "syn_s3",
+        "entregas": 20,
+        "clientes": 20,
+        "energia": 8.4165,
+        "t_s": 1.747,
+        "vehic_usados": 3
+      },
+      {
+        "inst": "syn_s4",
+        "entregas": 20,
+        "clientes": 20,
+        "energia": 8.8459,
+        "t_s": 3.065,
+        "vehic_usados": 3
+      },
+      {
+        "inst": "syn_s5",
+        "entregas": 20,
+        "clientes": 20,
+        "energia": 10.4198,
+        "t_s": 8.541,
+        "vehic_usados": 3
+      },
+      {
+        "inst": "syn_s6",
+        "entregas": 20,
+        "clientes": 20,
+        "energia": 10.0523,
+        "t_s": 23.266,
+        "vehic_usados": 3
+      },
+      {
+        "inst": "syn_s7",
+        "entregas": 20,
+        "clientes": 20,
+        "energia": 8.3965,
+        "t_s": 12.457,
+        "vehic_usados": 3
+      },
+      {
+        "inst": "syn_s8",
+        "entregas": 20,
+        "clientes": 20,
+        "energia": 9.5064,
+        "t_s": 21.608,
+        "vehic_usados": 3
+      },
+      {
+        "inst": "syn_s9",
+        "entregas": 20,
+        "clientes": 20,
+        "energia": 8.6731,
+        "t_s": 7.077,
+        "vehic_usados": 3
+      },
+      {
+        "inst": "syn_s10",
+        "entregas": 20,
+        "clientes": 20,
+        "energia": 9.9682,
+        "t_s": 1.763,
+        "vehic_usados": 3
+      }
+    ]
+  }
+]

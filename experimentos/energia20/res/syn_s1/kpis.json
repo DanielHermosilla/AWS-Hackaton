@@ -1,0 +1,52 @@
+{
+  "factible": true,
+  "todas_entregadas": true,
+  "entregas": 20,
+  "clientes": 20,
+  "no_atendidos": [],
+  "energia_total_kwh": 9.6925,
+  "energia_efectiva_kwh": 9.6925,
+  "km_total": 62.131,
+  "por_vehiculo": {
+    "1": {
+      "tipo": "leaf2013",
+      "energia_kwh": 9.6925,
+      "km": 62.131,
+      "bateria_min_kwh": 1.6031,
+      "bateria_final_kwh": 14.3044,
+      "recargas": 1,
+      "vuelve_a_base": true
+    },
+    "2": {
+      "tipo": "leaf2013",
+      "energia_kwh": 0.0,
+      "km": 0.0,
+      "bateria_min_kwh": 9.6,
+      "bateria_final_kwh": 9.6,
+      "recargas": 0,
+      "vuelve_a_base": true
+    }
+  },
+  "origen_solucion": "milp",
+  "red": {
+    "tipo": "osm",
+    "vial": true,
+    "grafo": ".cache\\osm\\ann_arbor_drive.graphml"
+  },
+  "solver": {
+    "formulacion": "compacta",
+    "columnas": 1685,
+    "filas": 3898,
+    "limite_s": 27.78,
+    "fase1": "omitida (certificado constructivo N*=|C|)",
+    "fase2": {
+      "estado": "Time limit reached",
+      "energia": 9.692469228000013,
+      "cota": 9.52759575299999,
+      "gap": 0.017010471854141146
+    },
+    "N*": 20,
+    "tiempo_s": 27.785
+  },
+  "tiempo_computo_s": 28.408
+}
