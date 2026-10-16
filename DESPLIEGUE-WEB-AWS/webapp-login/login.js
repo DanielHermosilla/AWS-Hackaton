@@ -80,3 +80,24 @@ $('forgot').addEventListener('click', (e) => {
   e.preventDefault();
   showNote('ok', 'La recuperación de contraseña se habilita con el correo del servidor.');
 });
+
+// Botón "Entrar como invitado": abre sesión demo con un clic.
+const guestBtn = $('guest');
+if (guestBtn) {
+  guestBtn.addEventListener('click', async () => {
+    guestBtn.disabled = true;
+    const original = guestBtn.textContent;
+    guestBtn.textContent = 'Entrando…';
+    note.hidden = true;
+    const res = await API.entrarComoInvitado();
+    if (res.ok) {
+      guardarSesion(res.usuario, false);
+      showNote('ok', 'Acceso de invitado. Abriendo el panel…');
+      location.assign(new URL('./' + destinoTrasLogin(), import.meta.url).href);
+    } else {
+      guestBtn.disabled = false;
+      guestBtn.textContent = original;
+      showNote('err', res.error || 'No se pudo entrar como invitado.');
+    }
+  });
+}

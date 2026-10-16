@@ -142,6 +142,10 @@ export const API = {
     return this._post('/auth/register', { nombre, email, password });
   },
 
+  async entrarComoInvitado() {
+    return this._post('/auth/guest', {});
+  },
+
   async cerrarSesionServidor() {
     try { await fetch(`${this.base}/auth/logout`, { method: 'POST', credentials: 'same-origin' }); }
     catch { /* la cookie expira igual */ }

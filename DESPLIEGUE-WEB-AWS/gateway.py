@@ -143,6 +143,24 @@ async def login(request: Request, response: Response):
     return {"ok": True, "usuario": data["email"]}
 
 
+@app.post("/auth/guest")
+async def guest(request: Request, response: Response):
+    """Acceso de invitado: abre sesión en la cuenta demo con un clic.
+
+    Pensado para demostraciones/jurado. Usa la misma cuenta `test@test` que la
+    excepción test/test. Desactivable con DEMO_USER_ENABLED=0.
+    """
+    if not DEMO_ENABLED:
+        return JSONResponse({"ok": False, "error": "El acceso de invitado está desactivado."}, 403)
+    ip = request.client.host if request.client else "?"
+    if not auth.rate_limit(f"guest:{ip}", 30, 600):
+        return JSONResponse({"ok": False, "error": "Demasiados intentos. Espera unos minutos."}, 429)
+    _asegurar_usuario_demo()
+    token = auth.crear_sesion(DEMO_EMAIL)
+    auth.set_cookie(response, token)
+    return {"ok": True, "usuario": DEMO_EMAIL, "invitado": True}
+
+
 @app.post("/auth/logout")
 async def logout(request: Request):
     auth.borrar_sesion(request.cookies.get(auth.SESSION_COOKIE))
