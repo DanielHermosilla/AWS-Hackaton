@@ -41,7 +41,7 @@ uv run --locked ev-routing run \
   --time-limit-seconds 30 \
   --output artifacts/toy-result.json
 
-uv run --locked pytest -q
+uv run --locked python -m pytest -q
 node --test webapp/tests/*.test.mjs
 ```
 

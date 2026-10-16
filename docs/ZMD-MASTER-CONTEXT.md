@@ -1,8 +1,7 @@
 # ZMD · contexto maestro
 
 Documento mantenido por **ZMD Features Implementation**, sesión madre
-`01a1415b-d61e-7a51-b306-2ef1441f7bf0`. Registro iniciado el **16-10-2026 UTC**
-(noche del 15 de octubre en America/Santiago).
+`01a1415b-d61e-7a51-b306-2ef1441f7bf0`. Registro iniciado el **16-10-2026**.
 
 Este documento consolida decisiones y evidencia; no reemplaza los contratos ni
 la formulación de Daniel. El seguimiento de implementación está en

@@ -132,7 +132,7 @@ Los límites de la API se detallan en su contrato; no son reglas oficiales.
 ## Verificar la integración
 
 ```sh
-uv run --locked pytest -q
+uv run --locked python -m pytest -q
 node --test webapp/tests/*.test.mjs
 git diff --check
 ```
