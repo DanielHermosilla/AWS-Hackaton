@@ -13,11 +13,12 @@ def improve_electric(search, best, deadline):
         return None
     network, depot = search.network, search.instance.depot_id
     distance = lambda a, b: network.distances(b).get(a, inf) if a != b else 0
-    for sweep in range(20):
-        if monotonic() >= deadline:
-            break
+    sweep = 0
+    exhausted = False
+    while monotonic() < deadline:
         orders = sequences(best)
         moves = []
+        ranking_complete = True
         for k, order in enumerate(orders):
             # Directed reversal needs the internal arc difference, not just
             # the symmetric TSP four-edge formula.
@@ -51,11 +52,14 @@ def improve_electric(search, best, deadline):
                         if gain < -1e-8:
                             moves.append((gain, "tails", k, other, i, j))
             if monotonic() >= deadline:
+                ranking_complete = False
                 break
         search.stats["electric_local_ranked_moves"] += len(moves)
         changed = False
+        evaluated_all = True
         for move in sorted(moves):
             if monotonic() >= deadline:
+                evaluated_all = False
                 break
             trial = [list(order) for order in orders]
             kind, k = move[1:3]
@@ -87,5 +91,8 @@ def improve_electric(search, best, deadline):
                 changed = True
                 break
         if not changed:
+            exhausted = ranking_complete and evaluated_all and monotonic() < deadline
             break
+        sweep += 1
+    search.stats["electric_local_completed_passes" if exhausted else "electric_local_interrupted"] += 1
     return best

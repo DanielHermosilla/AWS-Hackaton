@@ -123,12 +123,16 @@ def candidate_orders(search, strategy, clusters, deadline, seed):
 
 
 def rebuild(search, best, policy, deadline, seed):
-    from ev_routing.route_hybrid import quality
+    from ev_routing.route_hybrid import quality, sequences
 
     if policy.rebuild_strategy == "none" or monotonic() >= deadline:
         return best
     state = (policy.rebuild_strategy, policy.rebuild_clusters,
              tuple(sorted(best.served_visit_ids)) if best else ())
+    if policy.rebuild_strategy == "electric_local":
+        state = (policy.rebuild_strategy,
+                 tuple(tuple(order) for order in sequences(best)) if best else (),
+                 policy.resource_path_order, policy.resource_repair_seconds)
     if state in search.consumed_rebuilds:
         return best
     search.consumed_rebuilds.add(state)
@@ -142,7 +146,17 @@ def rebuild(search, best, policy, deadline, seed):
         return result
     if policy.rebuild_strategy == "electric_local":
         from ev_routing.route_electric_local import improve_electric
+        interrupted = search.stats["electric_local_interrupted"]
         result = improve_electric(search, best, stop)
+        if search.stats["electric_local_interrupted"] > interrupted:
+            # A short heuristic slice must not consume the neighborhood forever.
+            search.consumed_rebuilds.discard(state)
+        elif result is not None:
+            search.consumed_rebuilds.add((
+                policy.rebuild_strategy,
+                tuple(tuple(order) for order in sequences(result)),
+                policy.resource_path_order, policy.resource_repair_seconds,
+            ))
         search.stats["portfolio_seconds"] += monotonic() - started
         return result
     network, depot = search.network, search.instance.depot_id

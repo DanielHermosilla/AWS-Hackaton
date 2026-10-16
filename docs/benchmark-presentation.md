@@ -57,6 +57,11 @@ dirigidos, recoloca clientes e intercambia colas entre vehículos. Cada cambio
 se repara y valida; nunca reduce las entregas para aparentar ahorro. El callback
 `first_full_service` permite dedicar una consulta reservada a la fase energética.
 El contexto conserva el mejor incumbente observado aunque otro arranque sea peor.
+El aviso se emite al descubrir cobertura completa. Si la primera consulta
+todavía no responde, se guarda el evento para el siguiente callback disponible.
+Una mejora eléctrica interrumpida puede continuar en otro tramo; el presupuesto
+temporal sigue vigente. `rebuild_seconds` limita trabajo dentro del tramo de
+heurística, no añade segundos al presupuesto de resolución.
 
 `window_waves` asigna zonas a vehículos, ordena primero los clientes con ventana
 estrecha y luego inserta los flexibles mediante reparación física. Permite

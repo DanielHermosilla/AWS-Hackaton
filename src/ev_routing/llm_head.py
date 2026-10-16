@@ -116,6 +116,7 @@ class LLMHead:
         )
         self.records, self.skipped = [], []
         self.pending, self.pending_request, self.calls = None, None, 0
+        self.deferred_full_service = None
         self.pending_deadline, self.pending_model = float("inf"), None
         self.abandoned = []
         self.last_request = -float("inf")
@@ -313,6 +314,20 @@ class LLMHead:
         self.collect()
         if self.config.local_rule_control:
             self._local_rules(event, state)
+        if event == "first_full_service" and self.config.policy == "adaptive":
+            self.deferred_full_service = dict(state)
+        # A full incumbent can arrive before the first remote answer. Keep
+        # that important feedback until a later safe callback can submit it,
+        # instead of losing the event or waiting for artificial stagnation.
+        if self.deferred_full_service is not None and self.pending is None:
+            was_deferred = event != "first_full_service"
+            event, state = "first_full_service", dict(self.deferred_full_service)
+            state["feedback_was_deferred"] = was_deferred
+            if self.incumbent_orders is not None:
+                state.update(deliveries=self.incumbent_quality[0],
+                             energy_kwh=-self.incumbent_quality[1],
+                             orders=self.incumbent_orders)
+            self.current_phase = state.get("phase", self.current_phase)
         now = monotonic()
         if (self.closed or self.config.policy != "adaptive" or self.pending is not None
             or self.calls >= self.config.max_llm_calls
@@ -365,6 +380,8 @@ class LLMHead:
         }
         # No objetos SCIP ni referencias mutables cruzan al trabajador.
         request = json.loads(json.dumps(request, allow_nan=False))
+        if event == "first_full_service":
+            self.deferred_full_service = None
         self.calls += 1
         self.last_request = now
         self.pending_request = request
@@ -474,6 +491,7 @@ class LLMHead:
                 self.pending is not None and not self.pending.done()
                 or any(not future.done() for future, _ in self.abandoned)
             ),
+            "queued_full_service_feedback": self.deferred_full_service is not None,
             "events": self.events, "revision": self.revision,
             "finished_stages": sorted(self.finished_stages),
             "locked_policy_fields": sorted(self.locked_settings),

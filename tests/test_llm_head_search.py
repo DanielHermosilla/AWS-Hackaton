@@ -231,6 +231,73 @@ def test_invalid_head_action_keeps_last_valid_policy():
     head.close()
 
 
+def test_full_service_event_survives_an_inflight_first_request():
+    entered, release = Event(), Event()
+    requests = []
+
+    def provider(request):
+        requests.append(request)
+        if len(requests) == 1:
+            entered.set()
+            release.wait(2)
+        return {"policy": {}, "usage": {"totalTokens": 10}}
+
+    head = LLMHead(SearchConfig(
+        policy="adaptive", max_llm_calls=2, decision_interval_seconds=99,
+        bedrock={"model_id": "double", "timeout_seconds": 1},
+    ), {"customers": 3}, monotonic() + 10, 10, provider, instance=pairs())
+    head.decide("before_search", {"phase": "planning"})
+    assert entered.wait(1)
+    head.decide("first_full_service", {
+        "phase": "energy", "deliveries": 3, "energy_kwh": 9,
+        "orders": {"vehicle_1": ["A", "B"], "vehicle_2": ["C"]},
+        "first_full_delivery_seconds": .1,
+    })
+    assert head.calls == 1
+    assert head.report()["queued_full_service_feedback"]
+    release.set()
+    head.pending.result(timeout=1)
+    head.decide("pricing_progress", {"phase": "energy"})
+    if head.pending:
+        head.pending.result(timeout=1)
+        head.collect()
+    assert [r["event"] for r in requests] == ["before_search", "first_full_service"]
+    assert requests[-1]["state"]["feedback_was_deferred"]
+    assert requests[-1]["state"]["first_full_delivery_seconds"] == .1
+    assert head.report()["events"]["first_full_service"] == 1
+    assert not head.report()["queued_full_service_feedback"]
+    head.close()
+
+
+def test_interrupted_electric_neighborhood_can_resume(monkeypatch):
+    from test_model import _instance
+    from ev_routing.route_portfolio import rebuild
+    import ev_routing.route_electric_local as local
+
+    nodes = ["0", "A", "B", "C"]
+    cheap = {("0", "A"), ("A", "C"), ("C", "B"), ("B", "0"), ("C", "0")}
+    instance = _instance(
+        nodes=[(n, "base" if n == "0" else "visit") for n in nodes],
+        arcs=[(a, b, .5 if (a, b) in cheap else 2.5)
+              for a in nodes for b in nodes if a != b],
+        movements=1, initial_soc=1,
+    )
+    search = HybridRoutes(instance)
+    policy = RoutePolicy(rebuild_strategy="electric_local", rebuild_seconds=1)
+    search.policy = policy
+    best = search.solution([["A", "B", "C"]], monotonic() + 1)
+    assert best.net_energy_kwh == pytest.approx(6)
+    # The caller admitted the work, but its slice expires inside the heuristic.
+    with monkeypatch.context() as patch:
+        patch.setattr(local, "monotonic", lambda: monotonic() + 100)
+        interrupted = rebuild(search, best, policy, monotonic() + 1, 0)
+    assert interrupted is best
+    resumed = rebuild(search, best, policy, monotonic() + 1, 0)
+    assert resumed.net_energy_kwh == pytest.approx(2)
+    assert resumed.served_visit_ids == best.served_visit_ids
+    assert validate_solution(instance, resumed, enforce_movement_limit=False).feasible
+
+
 def test_live_head_prints_actual_changes_and_inactive_settings(capsys):
     head = LLMHead(SearchConfig(
         policy="adaptive", show_llm_trace=True, bedrock={"model_id": "double"},

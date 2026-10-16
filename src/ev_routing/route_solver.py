@@ -631,10 +631,22 @@ def solve_routes(instance, config: SolverConfig, search_config=None, *, initial_
     relaxation = None
     heuristic_incumbent = witness
     first_full_seconds = monotonic() - started if best and len(best.served_visit_ids) == len(instance.customer_ids) else None
+    full_service_announced = False
     def record_full_service():
         nonlocal first_full_seconds
         if first_full_seconds is None and best and len(best.served_visit_ids) == len(instance.customer_ids):
             first_full_seconds = monotonic() - started
+
+    def announce_full_service(state):
+        nonlocal full_service_announced
+        if full_service_announced:
+            return controller.policy
+        full_service_announced = True
+        return controller.decide("first_full_service", {
+            **state, "phase": "energy", "delivery_optimum_proven": True,
+            "first_full_delivery_seconds": first_full_seconds,
+            "hybrid_search": construction.telemetry() if construction is not None else None,
+        })
 
     if witness is not None:
         phases.append(_phase(
@@ -651,10 +663,14 @@ def solve_routes(instance, config: SolverConfig, search_config=None, *, initial_
         construction.evaluation_seconds = policy.resource_repair_seconds
         def observe_construction(event, state):
             nonlocal first_full_seconds
-            if (event == "heuristic_incumbent" and first_full_seconds is None
-                    and state.get("deliveries") == len(instance.customer_ids)):
+            full = (event == "heuristic_incumbent"
+                    and state.get("deliveries") == len(instance.customer_ids))
+            if full and first_full_seconds is None:
                 first_full_seconds = monotonic() - started
-            return controller.decide(event, {"phase": controller.current_phase, **state})
+            observed = controller.decide(event, {"phase": controller.current_phase, **state})
+            # Notify while the incumbent is discovered, before a long ALNS
+            # repair consumes the remaining construction budget.
+            return announce_full_service(state) if full else observed
         construction.observer = observe_construction
         construction.pool_limit = policy.pricing_pool_limit
         seed_started = monotonic()
@@ -683,6 +699,14 @@ def solve_routes(instance, config: SolverConfig, search_config=None, *, initial_
             "seed_supported": construction.supported,
             "heuristic_pool_columns": len(construction.pool),
         })
+        if best is not None and len(best.served_visit_ids) == len(instance.customer_ids):
+            policy = announce_full_service({
+                "deliveries": len(best.served_visit_ids), "energy_kwh": best.net_energy_kwh,
+                "orders": {
+                    route.vehicle_id: [i for step in route.steps for i in step.delivered_visit_ids]
+                    for route in best.routes
+                },
+            })
         improvement_deadline = min(
             deadline, monotonic() + config.time_limit_seconds*policy.improvement_time_fraction,
         )
@@ -691,15 +715,12 @@ def solve_routes(instance, config: SolverConfig, search_config=None, *, initial_
             best = heuristic_incumbent = improved
         record_full_service()
         if best is not None and len(best.served_visit_ids) == len(instance.customer_ids):
-            policy = controller.decide("first_full_service", {
-                "phase": "energy", "deliveries": len(best.served_visit_ids),
-                "energy_kwh": best.net_energy_kwh, "delivery_optimum_proven": True,
+            policy = announce_full_service({
+                "deliveries": len(best.served_visit_ids), "energy_kwh": best.net_energy_kwh,
                 "orders": {
                     route.vehicle_id: [i for step in route.steps for i in step.delivered_visit_ids]
                     for route in best.routes
                 },
-                "hybrid_search": construction.telemetry(),
-                "first_full_delivery_seconds": first_full_seconds,
             })
         controller.locked_settings.add("share_vehicle_oracles")
         oracles, shared = {}, {}

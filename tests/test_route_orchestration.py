@@ -69,6 +69,50 @@ def test_two_real_decision_stages_change_executed_native_parameters(monkeypatch)
                for s in result.search["phases"])
 
 
+def test_full_service_feedback_is_sent_inside_construction(monkeypatch):
+    """A long repair must not defer the second decision until improve returns."""
+    from ev_routing.route_hybrid import HybridRoutes
+
+    instance = pairs()
+    candidate = HybridRoutes(instance).solution([["A", "B"], ["C"]], monotonic() + 1)
+    assert validate_solution(instance, candidate, enforce_movement_limit=False).feasible
+    calls = []
+
+    class ImmediateWorker:
+        def __init__(self, *, target, **_):
+            self.target = target
+
+        def start(self):
+            self.target()
+
+    monkeypatch.setattr("ev_routing.llm_head.Thread", ImmediateWorker)
+    monkeypatch.setattr(HybridRoutes, "seed", lambda *a, **k: None)
+    monkeypatch.setattr(HybridRoutes, "charging_seed", lambda *a, **k: None)
+
+    def improve(search, best, policy, deadline, seed):
+        search._record("test_feasible_incumbent", candidate)
+        assert [r["event"] for r in calls] == ["before_search", "first_full_service"]
+        assert calls[-1]["state"]["orders"] == {"vehicle_1": ["A", "B"], "vehicle_2": ["C"]}
+        assert calls[-1]["state"]["delivery_optimum_proven"]
+        return candidate
+
+    monkeypatch.setattr(HybridRoutes, "improve", improve)
+
+    def provider(request):
+        calls.append(request)
+        return {"policy": {}, "usage": {"totalTokens": 10}}
+
+    result = solve_routes(
+        instance, SolverConfig(time_limit_seconds=5, energy_relative_gap=0),
+        SearchConfig(policy="adaptive", max_llm_calls=2,
+                     bedrock={"model_id": "double", "timeout_seconds": 1}),
+        policy_provider=provider,
+    )
+    assert result.search["controller"]["events"]["first_full_service"] == 1
+    assert result.lexicographic_optimal
+    assert result.solution.net_energy_kwh == pytest.approx(9)
+
+
 def test_invalid_later_proposal_preserves_previous_policy_and_call_budget():
     config = SearchConfig(
         policy="adaptive", max_llm_calls=2, decision_interval_seconds=0,

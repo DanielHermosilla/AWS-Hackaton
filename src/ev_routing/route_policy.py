@@ -169,6 +169,13 @@ dual_pricing_labels and completed_dual_queries to identify remaining work.
 Prefer a few testable changes to increasing every budget or parameter. An epoch
 stuck at the root with incomplete pricing has no deep tree for node selection
 to improve. Calls may be reserved for measured search_stagnation feedback.
+Budget semantics: a priced master can run for epoch_seconds before the next
+heuristic slice. That slice is capped by epoch_seconds * improvement_time_fraction
+and the remaining phase time. rebuild_seconds is an additional upper bound;
+increasing it alone does not enlarge the slice. A large epoch may delay primal
+improvement until too late. The initial construction slice is fixed when it starts;
+policy changes affect future slices. Interrupted electric_local passes can resume
+on a later slice; a completed optional pass is not an optimality certificate.
 restricted_master_seconds allocates a small finite-pool primal solve before exact
 pricing. Its native bound NEVER certifies the full route master.
 bound_strategy selects an energy lower-bound relaxation after complete service.
