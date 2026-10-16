@@ -66,8 +66,9 @@ confirmada cambia la próxima preparación y exige volver a calcular. La capacid
 
 **Instancia** permite seleccionar un archivo o crear un caso sintético con la cantidad
 escogida de clientes y cargadores (hasta 200 ubicaciones en total). El signo `?`
-explica el formato por mouse, teclado y toque. El caso sintético selecciona una red
-por distancia; sus líneas discontinuas son aproximaciones, no calles.
+explica el formato por mouse, teclado y toque. El caso sintético se ubica alrededor
+del depósito de la hackatón en Ann Arbor, Michigan, y selecciona una red por
+distancia; sus líneas discontinuas son aproximaciones, no calles.
 
 **Cargar caso histórico** carga `competition_routing_nodes.csv` o
 `evaluation_routing_nodes.csv` junto con `eVED_EV.csv` desde `data/` del servidor,
@@ -189,8 +190,9 @@ cómputo se presentan por separado, sin sumar intervalos contenidos.
   desde los datos locales del servidor. Si faltan, la app muestra un error y
   mantiene los controles de carga; no inventa puntos ni abre otro ejemplo.
 - **Ver ejemplo de diseño**, en el panel de cálculo, selecciona explícitamente
-  `data/demo.synthetic.json` cuando no existe el ejemplo local: puntos generados,
-  líneas entre ellos y valores inventados. No son ubicaciones CASE ni rutas viales.
+  `data/demo.synthetic.json` cuando no existe el ejemplo local: una cuadrícula
+  generada en Ann Arbor, Michigan, junto al depósito de la hackatón, con líneas
+  entre puntos y valores inventados. No son ubicaciones CASE ni rutas viales.
 - Si existe `data/fixture.local.json`, se usa el ejemplo local preparado con las ubicaciones públicas de CASE y trazados OSRM sobre Ann Arbor. Este archivo es local e ignorado por Git. Su orden de visitas, consumo, recargas y baterías siguen siendo ilustrativos.
 - Solo un **404** del archivo local activa el ejemplo sintético. Un JSON corrupto o cualquier otro error muestra un fallo de carga con opción de reintentar, sin sustituir los datos en silencio.
 - La cartografía de fondo necesita internet para acceder a OpenFreeMap. La lista de paradas sigue disponible si falla el mapa. Abrir la webapp no consulta OSRM.

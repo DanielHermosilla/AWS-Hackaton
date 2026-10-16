@@ -16,7 +16,7 @@ try {
   await page.locator('#run-seconds').fill('3');
   await page.locator('#edit-locations').click();
   await page.locator('#location-node').selectOption('1');
-  await page.locator('#location-latitude').fill('-33.4507');
+  await page.locator('#location-latitude').fill('42.2764');
   await page.locator('#confirm-locations').click();
   await page.locator('#close-run').click();
   await page.goto(`${origin}/plan.html`);
@@ -27,7 +27,7 @@ try {
   assert.equal(await page.locator('#export-instance').isDisabled(), true);
   await page.locator('#edit-locations').click();
   await page.locator('#location-node').selectOption('1');
-  assert.equal(await page.locator('#location-latitude').inputValue(), '-33.4507');
+  assert.equal(await page.locator('#location-latitude').inputValue(), '42.2764');
   await page.locator('#cancel-locations').click();
   await Promise.all([page.waitForEvent('load', {timeout: 180000}), page.locator('#solve-run').click()]);
   await page.waitForFunction(() => document.querySelector('#run-source')?.textContent.includes('Resultado del motor'));
@@ -35,7 +35,7 @@ try {
   await page.locator('#show-config').click();
   await page.locator('#edit-locations').click();
   await page.locator('#location-node').selectOption('1');
-  await page.locator('#location-latitude').fill('-33.4509');
+  await page.locator('#location-latitude').fill('42.2762');
   await page.locator('#confirm-locations').click();
   await page.locator('#run-reserve').fill('1.5');
   await page.locator('#run-seconds').fill('4');
@@ -47,7 +47,7 @@ try {
   assert.equal(await page.locator('#export-instance').isDisabled(), true);
   await page.locator('#edit-locations').click();
   await page.locator('#location-node').selectOption('1');
-  assert.equal(await page.locator('#location-latitude').inputValue(), '-33.4509');
+  assert.equal(await page.locator('#location-latitude').inputValue(), '42.2762');
   console.log('PASS: navegación antes del primer cálculo y con resultado anterior conserva coordenadas, parámetros, presupuesto e invalidez de preparación.');
   await page.locator('#cancel-locations').click();
   await page.evaluate(() => {
@@ -59,7 +59,7 @@ try {
   });
   await page.locator('#edit-locations').click();
   await page.locator('#location-node').selectOption('1');
-  await page.locator('#location-latitude').fill('-33.4512');
+  await page.locator('#location-latitude').fill('42.2759');
   await page.locator('#confirm-locations').click();
   assert.match(await page.locator('#run-message').textContent(), /no pudo conservar el borrador/);
   await page.locator('#close-run').click();

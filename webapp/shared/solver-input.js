@@ -301,7 +301,9 @@ export function createSyntheticPreparation({clients = 2, chargers = 1} = {}) {
     throw new Error('Elige un número entero de clientes (al menos 1) y estaciones (puede ser 0).');
   if (1 + clients + chargers > 200)
     throw new Error('El ejemplo admite hasta 200 ubicaciones, incluido el depósito.');
-  const nodes = [{node_id: 'BASE', node_type: 'base', latitude: -33.45, longitude: -70.66, address: 'Depósito'}];
+  // Centered on the hackathon depot in Ann Arbor, Michigan, like the historical case.
+  const [baseLat, baseLng] = [42.27708, -83.76281];
+  const nodes = [{node_id: 'BASE', node_type: 'base', latitude: baseLat, longitude: baseLng, address: 'Depósito'}];
   // Deterministic nearby coordinates keep small examples feasible with the
   // user's 7 kWh / 2 kWh reserve scenario. No street coverage is implied.
   for (let index = 0; index < clients + chargers; index++) {
@@ -311,8 +313,8 @@ export function createSyntheticPreparation({clients = 2, chargers = 1} = {}) {
     const radius = .0012 + .00018 * Math.sqrt(index);
     nodes.push({
       node_id: `${isClient ? 'C' : 'F'}${number}`, node_type: isClient ? 'visit' : 'charger',
-      latitude: Number((-33.45 + Math.sin(angle) * radius).toFixed(7)),
-      longitude: Number((-70.66 + Math.cos(angle) * radius).toFixed(7)),
+      latitude: Number((baseLat + Math.sin(angle) * radius).toFixed(7)),
+      longitude: Number((baseLng + Math.cos(angle) * radius).toFixed(7)),
       address: `${isClient ? 'Cliente' : 'Estación'} ${number}`,
       ...(!isClient ? {connector_types: 'J1772;CHAdeMO', total_ports: 2, dc_fast_ports: 1, level2_ports: 1} : {}),
     });
