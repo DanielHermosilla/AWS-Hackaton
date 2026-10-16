@@ -23,7 +23,16 @@ def check(instance, count, energy, *, optimal=True, seconds=10, **kwargs):
     assert report.feasible, report.violations
     assert len(result.solution.served_visit_ids) == count, result.model_dump()
     assert result.solution.net_energy_kwh == pytest.approx(energy), result.model_dump()
-    assert result.lexicographic_optimal == optimal, result.model_dump()
+    assert result.lexicographic_optimal == optimal, {
+        "runtime_seconds": result.runtime_seconds,
+        "phases": [
+            phase.model_dump(include={
+                "name", "termination_condition", "incumbent", "best_bound",
+                "relative_gap", "proven_optimal", "runtime_seconds",
+            })
+            for phase in result.phases
+        ],
+    }
     assert result.search["movement_limit_used"] is None
     assert all(s["native_optimize_seconds"] >= 0 for s in result.search["phases"])
     return result

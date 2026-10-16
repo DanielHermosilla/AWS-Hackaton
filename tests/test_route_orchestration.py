@@ -24,26 +24,40 @@ def pairs():
     )
 
 
-def test_two_real_decision_stages_change_executed_native_parameters():
+def test_two_real_decision_stages_change_executed_native_parameters(monkeypatch):
     calls = []
+
+    class ImmediateWorker:
+        """This test checks executed decisions; async timing has separate tests."""
+
+        def __init__(self, *, target, **_):
+            self.target = target
+
+        def start(self):
+            self.target()
+
+    monkeypatch.setattr("ev_routing.llm_head.Thread", ImmediateWorker)
 
     def provider(request):
         calls.append(request)
         return {"policy": (
-            {"seed_starts": 3, "seed_charging": False, "epoch_seconds": .1}
+            # A 0.1 s epoch can restart pricing before it can complete, even
+            # with a 5 s total budget. This is not a timeout/pricing stress test.
+            {"seed_starts": 3, "seed_charging": False, "epoch_seconds": 1}
             if request["event"] == "before_search" else
             {"scip_parameters": {"lp/initalgorithm": "d"}, "pricing_heuristic_starts": 6}
         ), "usage": {"totalTokens": 10}}
 
     instance = pairs()
     original = instance.model_dump_json()
-    result = solve_routes(instance, SolverConfig(time_limit_seconds=5), SearchConfig(
+    result = solve_routes(instance, SolverConfig(time_limit_seconds=5, energy_relative_gap=0), SearchConfig(
         policy="adaptive", max_llm_calls=2,
-        bedrock={"model_id": "double", "timeout_seconds": .01},
+        bedrock={"model_id": "double", "timeout_seconds": 1},
     ), policy_provider=provider)
     assert [r["event"] for r in calls] == ["before_search", "after_seed"]
     assert calls[1]["state"]["deliveries"] == 3
     assert result.search["controller"]["calls"] == 2
+    assert result.search["controller"]["applied_decisions"] == 2
     assert result.search["controller"]["callback_calls"] > 0
     assert instance.model_dump_json() == original
     assert result.lexicographic_optimal
