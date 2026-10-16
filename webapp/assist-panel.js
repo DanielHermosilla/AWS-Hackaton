@@ -8,6 +8,7 @@
 
 import { readExecution, saveExecution } from './shared/solver-client.js';
 import { parseInstanceFile } from './shared/solver-input.js';
+import { clearEditableDraft } from './shared/location-draft.js';
 
 const API = '/assist/chat';
 const STORE = 'zmd.assist.chat.v1';
@@ -155,13 +156,18 @@ async function initAssistPanel() {
     const lento = setTimeout(() => { pensando.textContent = 'Trabajando… si estoy calculando puede tardar unos segundos.'; }, AVISO_LENTO_MS);
     try {
       const pedido = { session_id: estado.sessionId, ...cuerpo };
-      const runId = readExecution()?.runId;
+      const execution = readExecution();
+      const runId = execution?.runId;
       if (runId && !cuerpo.fuente) pedido.run_id = runId;
       const res = await fetch(API, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(pedido) });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data?.error?.message || `El servicio respondió ${res.status}.`);
       estado.sessionId = data.session_id;
       pensando.remove();
+      if (data.resolvio && data.run_id && readExecution()?.revision !== execution?.revision) {
+        decir('bot', 'El cálculo terminó para la entrada anterior. Conservamos tus cambios actuales sin abrir ese resultado.');
+        return;
+      }
       decir('bot', data.respuesta || 'Listo.', data.modo === 'local' ? 'respuesta sin IA' : null);
       if (data.necesita_archivo) chipAdjuntar();
       if (data.resolvio && data.run_id) abrirPlan(data.run_id);
@@ -177,11 +183,19 @@ async function initAssistPanel() {
   }
 
   function abrirPlan(runId) {
-    saveExecution({ ...(readExecution() || {}), runId, stale: false, status: 'complete', message: '', revision: crypto.randomUUID() });
+    const revision = crypto.randomUUID();
+    if (!saveExecution({mode: 'model', runId, stale: false, status: 'complete', message: '',
+      draftId: null, draftUnavailable: false, revision})) {
+      throw new Error('El navegador no permite guardar la ejecución. Conservamos tu entrada actual.');
+    }
+    clearEditableDraft();
     estado.abierto = true;
     guardar(estado);
-    if (document.body.dataset.page === 'plan') setTimeout(() => location.reload(), 600);
-    else setTimeout(() => { location.href = 'plan.html'; }, 600);
+    setTimeout(() => {
+      if (readExecution()?.revision !== revision) return;
+      if (document.body.dataset.page === 'plan') location.reload();
+      else location.href = 'plan.html';
+    }, 600);
   }
 
   form.addEventListener('submit', ev => {
