@@ -54,6 +54,10 @@ class Sesion:
     _overrides: dict[str, float | int] = field(default_factory=dict)
     historial: list[CambioAplicado] = field(default_factory=list)
     ultimo_resultado: dict | None = None
+    # Confirmacion pendiente (clave, valor) de un cambio importante. Vive en la
+    # sesion -no en el Asistente- para sobrevivir entre requests/instancias en
+    # un backend sin estado (cada request puede crear un Asistente nuevo).
+    confirmacion_pendiente: tuple[str, float | int] | None = None
 
     def __post_init__(self) -> None:
         if self.config_base is None and SolverConfig is not Any:
@@ -62,10 +66,13 @@ class Sesion:
     # --- consulta de configuracion ----------------------------------------
     def resumen_config(self) -> dict:
         """Config inicial, cambios aplicados y valores vigentes (para contexto)."""
+        from .tools import PARAMETROS  # evita import circular en carga del paquete
+
         return {
             "inicial": self._dump(self.config_base),
             "cambios_aplicados": {k: v for k, v in self._overrides.items()},
-            "flota_maxima": 10,
+            # Derivado de la lista blanca: no es un numero magico aqui.
+            "flota_maxima": int(PARAMETROS["vehiculos"].maximo),
         }
 
     @staticmethod

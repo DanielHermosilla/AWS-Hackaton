@@ -23,7 +23,7 @@ from .bedrock_chat import ClienteBedrock, ConfigBedrock, ErrorBedrock, ModeloNoD
 from .explainer import Explicacion, explicar
 from .facts import Hechos, extraer_hechos
 from .session import Sesion
-from .tools import PARAMETROS, ErrorParametro, ParametroSpec, validar_parametro
+from .tools import PARAMETROS, ErrorParametro, ParametroSpec, parametros_schema, validar_parametro
 from .verifier import verificar
 
 __all__ = [
@@ -42,6 +42,7 @@ __all__ = [
     "verificar",
     "PARAMETROS",
     "ParametroSpec",
+    "parametros_schema",
     "ErrorParametro",
     "validar_parametro",
 ]

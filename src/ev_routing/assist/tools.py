@@ -45,10 +45,11 @@ PARAMETROS: dict[str, ParametroSpec] = {
         "Estado de carga inicial de la bateria (fraccion 0..1).",
     ),
     "vehiculos": ParametroSpec(
-        # Flota: maximo 10 por ahora (decision de alcance de la demo).
+        # Flota: maximo 20 (alineado con el form del frontend y el limite local
+        # del backend, API_CONTRACT.md: "limite local 200 nodos y 20 vehiculos").
         # Destino real confirmado contra el contrato: ProblemInstance.parameters.vehicle_count.
-        "vehiculos", "instancia", "vehicle_count", "int", 1, 10,
-        "Numero de vehiculos de la flota (1..10).", importante=True,
+        "vehiculos", "instancia", "vehicle_count", "int", 1, 20,
+        "Numero de vehiculos de la flota (1..20).", importante=True,
     ),
     "reserva_final_soc": ParametroSpec(
         "reserva_final_soc", "operations", "final_reserve_soc", "float", 0.0, 1.0,
@@ -175,4 +176,38 @@ def tool_specs() -> dict:
                 }
             },
         ]
+    }
+
+
+
+# --- esquema para el frontend ---------------------------------------------
+# Fuente de verdad unica de rangos/tipos: evita numeros magicos en el JS del
+# frontend. El backend debe servir esto en GET /assist/schema (ver
+# docs/assist/integracion.md y docs/assist/schema.md) para que la UI rellene
+# min/max/value de sus inputs dinamicamente.
+SCHEMA_VERSION = "1.0"
+
+
+def parametros_schema() -> dict:
+    """Serializa la lista blanca a un contrato JSON estable para el frontend.
+
+    Cada entrada expone: tipo, min, max, descripcion, si requiere confirmacion
+    (importante) y a que seccion del contrato pertenece. No incluye valores
+    por defecto del solver: esos los aporta ``SolverConfig()``/``Operations()``
+    y el backend puede fusionarlos al servir el esquema.
+    """
+    return {
+        "schema_version": SCHEMA_VERSION,
+        "parametros": {
+            spec.clave: {
+                "tipo": spec.tipo,
+                "min": spec.minimo,
+                "max": spec.maximo,
+                "seccion": spec.seccion,
+                "destino": spec.destino,
+                "importante": spec.importante,
+                "descripcion": spec.descripcion,
+            }
+            for spec in PARAMETROS.values()
+        },
     }

@@ -9,7 +9,6 @@ verificador anti-alucinacion. No llama a ningun LLM.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any
 
 
 @dataclass

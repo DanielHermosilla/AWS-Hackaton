@@ -11,7 +11,7 @@ import pytest
 
 from ev_routing.assist.explainer import explicar
 from ev_routing.assist.facts import extraer_hechos
-from ev_routing.assist.tools import ErrorParametro, validar_parametro
+from ev_routing.assist.tools import ErrorParametro, parametros_schema, validar_parametro
 from ev_routing.assist.verifier import verificar
 
 
@@ -21,17 +21,30 @@ def test_parametro_desconocido_se_rechaza():
         validar_parametro("inexistente", 1)
 
 
-def test_flota_maxima_es_diez():
-    spec, valor = validar_parametro("vehiculos", 10)
-    assert valor == 10
+def test_flota_maxima_es_veinte():
+    spec, valor = validar_parametro("vehiculos", 20)
+    assert valor == 20
     assert spec.importante is True
     with pytest.raises(ErrorParametro):
-        validar_parametro("vehiculos", 11)
+        validar_parametro("vehiculos", 21)
 
 
 def test_valor_fuera_de_rango_se_rechaza():
     with pytest.raises(ErrorParametro):
         validar_parametro("soc_inicial", 1.5)
+
+
+# --- esquema para el frontend ---------------------------------------------
+def test_schema_expone_rangos_y_flota_veinte():
+    schema = parametros_schema()
+    assert schema["schema_version"]
+    params = schema["parametros"]
+    assert set(params) >= {"vehiculos", "soc_inicial", "tiempo_limite_s"}
+    flota = params["vehiculos"]
+    assert flota["tipo"] == "int"
+    assert flota["min"] == 1 and flota["max"] == 20
+    assert flota["importante"] is True
+    assert flota["destino"] == "vehicle_count"
 
 
 # --- hechos y resultado de muestra ----------------------------------------
@@ -111,3 +124,36 @@ def test_explicacion_plantilla_sin_cliente():
     assert exp.fuente == "plantilla"
     assert "V1" in exp.texto
     assert exp.verificacion.confiable is True
+
+
+# --- confirmacion de cambios importantes (estado en la sesion) -------------
+class _ClienteFlota:
+    """Cliente Bedrock falso: siempre pide cambiar la flota a 3."""
+
+    def conversar(self, mensajes, *, sistema, tool_config=None):
+        return {"output": {"message": {"role": "assistant", "content": [
+            {"toolUse": {"toolUseId": "t", "name": "cambiar_parametro",
+                         "input": {"clave": "vehiculos", "valor": 3}}}]}}}
+
+
+def test_confirmacion_pendiente_vive_en_la_sesion():
+    """Un cambio importante queda pendiente en la Sesion y se confirma aunque el
+    segundo turno use una instancia de Asistente distinta (backend sin estado).
+
+    'aplicar' solo valida y registra el override; no materializa la instancia,
+    asi que el test no necesita un ProblemInstance real.
+    """
+    from ev_routing.assist import Asistente, Sesion
+
+    ses = Sesion(instancia_base=object(), config_base=object())
+    a1 = Asistente(ses, _ClienteFlota())
+    r1 = a1.turno("usa 3 vehiculos")
+    assert r1.acciones and r1.acciones[0].confirmacion_requerida is True
+    assert ses.confirmacion_pendiente == ("vehiculos", 3)
+
+    # Segundo turno con OTRA instancia de asistente sobre la MISMA sesion.
+    a2 = Asistente(ses, _ClienteFlota())
+    r2 = a2.turno("si, confirmo")
+    assert "Aplicado" in r2.respuesta
+    assert ses.confirmacion_pendiente is None
+    assert ses._overrides.get("vehiculos") == 3

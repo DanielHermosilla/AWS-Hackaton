@@ -88,8 +88,8 @@ El número de vehículos vive en `ProblemInstance.parameters.vehicle_count`
 aparece en el cuerpo HTTP `/prepare` del backend, que es otra capa).
 
 `assist.tools.PARAMETROS["vehiculos"]` apunta a `vehicle_count` y lo limita a
-1..10 por alcance de demo. Si el núcleo renombra este campo, actualiza esa
-entrada y el test de contrato (§4.1).
+1..20 (alineado con el form del frontend y el límite local del backend). Si el
+núcleo renombra este campo, actualiza esa entrada y el test de contrato (§4.1).
 
 ## 6. Números mágicos en el frontend (acción pendiente)
 
@@ -101,18 +101,20 @@ pueden desalinearse de la configuración real del solver y de la lista blanca de
 
 | Control (HTML) | Valor fijo hoy | Fuente de verdad que debería usar |
 |---|---|---|
-| `#run-count` (vehículos) | `min=1 max=20 value=2` | `assist.PARAMETROS["vehiculos"]` (máx **10**) o el límite del backend |
+| `#run-count` (vehículos) | `min=1 max=20 value=2` | `assist.PARAMETROS["vehiculos"]` (máx **20**, ya alineado) |
 | `#run-seconds` (presupuesto) | `min=1 max=120 value=120` | `SolverConfig.time_limit_seconds` / `PARAMETROS["tiempo_limite_s"]` |
 | `#run-soc` (SoC inicial) | `min=1 max=100 value=60` | `PARAMETROS["soc_inicial"]` (fracción 0..1) |
 | tolerancia energética | texto "0,5 %" fijo | `SolverConfig.energy_relative_gap` (0.005) |
 
-**Inconsistencia activa:** el form permite hasta 20 vehículos; la lista blanca de
-`assist` corta en 10. Hay que unificar antes de exponer A en la UI.
+**Flota ya alineada:** el form y la lista blanca de `assist` coinciden en 20
+vehículos. Los demás controles siguen con números fijos en JS; conviene que
+lean el esquema del backend (abajo) para no desalinearse al cambiar el solver.
 
-Recomendación: el backend expone un endpoint `GET /assist/schema` que devuelva
-los rangos desde `assist.PARAMETROS`; el frontend lee ese esquema al cargar y
-rellena `min`/`max`/`value` de los inputs dinámicamente. Si un parámetro cambia
-en el backend, el formulario se actualiza solo. No cablees los límites en JS.
+Solución (parcialmente implementada): `assist.tools.parametros_schema()` ya
+serializa la lista blanca a JSON estable (testeado). Falta la plomería:
+el backend debe exponerlo en `GET /assist/schema` y el frontend leerlo al cargar
+para rellenar `min`/`max`/`value` dinámicamente. Contrato completo y mapa de
+controles en `docs/assist/schema.md`. No cablees los límites en JS.
 
 ## 7. Qué significa "exponer A/C"
 
