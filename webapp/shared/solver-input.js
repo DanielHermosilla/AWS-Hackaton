@@ -163,13 +163,17 @@ export function parseInstanceFile(text, filename = '') {
       throw error;
     }
     if (value?.schema_version === 'zmd.integration-beta.attempt/2') {
-      if (value.prepare_request && !value.request?.instance && value.request != null) {
-        preparationAttempt = value.request;
-        requireFields(preparationAttempt, ['api_version', 'solver'], 'request');
-        if (preparationAttempt.api_version !== API_VERSION) throw new Error('Versión del intento no admitida; se requiere API 3.0.');
-        if (preparationAttempt.solver !== undefined) requireFields(preparationAttempt.solver, solverFields, 'solver');
+      if (value.prepare_request && value.request != null) {
+        const request = value.request;
+        requireFields(request, ['api_version', 'solver', 'instance', 'prepared_instance_id'], 'request');
+        if (request.api_version !== API_VERSION) throw new Error('Versión del intento no admitida; se requiere API 3.0.');
+        if (request.solver !== undefined) requireFields(request.solver, solverFields, 'solver');
+        // Rebuild paths from their source because prepared handles expire with
+        // the server. Only solver settings survive recovery of a failed solve.
+        preparationAttempt = {api_version: request.api_version,
+          ...(request.solver !== undefined ? {solver: request.solver} : {})};
       }
-      value = value.request?.instance ? value.request : value.prepare_request || value.request;
+      value = value.prepare_request || value.request;
     }
     if (value?.api_version === API_VERSION && value.result) {
       const raw = value.result.raw;

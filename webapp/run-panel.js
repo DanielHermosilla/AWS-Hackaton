@@ -69,7 +69,7 @@ export function initRunPanel() {
   let draftWarning = '';
   let scenarioLoading = null;
   let readingInstance = false;
-  let startingRun = false;
+  let startingRun = null;
   const listeners = new Set();
   function snapshot() {
     return {
@@ -77,7 +77,7 @@ export function initRunPanel() {
       scenario: input?.prepareRequest?.scenario,
       fields: Object.fromEntries([...dialog.querySelectorAll('.run-fields input, .run-fields select')]
         .map(field => [field.name, field.value])),
-      busy: busy || !!scenarioLoading || startingRun || !!readingInstance,
+      busy: busy || !!scenarioLoading || !!startingRun || !!readingInstance,
       historyId: history.profileId,
       historyName: saved?.energyProfile?.filename,
       historyChosen: Object.hasOwn(saved || {}, 'energyProfile'),
@@ -87,9 +87,12 @@ export function initRunPanel() {
     };
   }
   function notify() { for (const listener of listeners) listener(snapshot()); }
-  const history = createHistoryPanel({host: $('run-history'), onChange(profile, {invalidate}) {
+  const history = createHistoryPanel({host: $('run-history'), onChange(profile, {invalidate, invalidatePendingRun}) {
     synchronizeHistoryReference(profile?.profile_id);
-    if (invalidate && !input?.instance) dirty();
+    if (invalidate && !input?.instance) {
+      if (invalidatePendingRun) startingRun = null;
+      dirty();
+    }
     try { save({energyProfile: profile, ...(invalidate ? {energyCoverage: null} : {})}); } catch (error) { message(error.message, true); }
     if (invalidate) persistDraft();
     if (profile?.status === 'ready' && !input && !readingInstance) {
@@ -223,6 +226,7 @@ export function initRunPanel() {
     onConfirm(confirmed) {
       if (input !== editorSource) throw new Error('La entrada cambió mientras editabas. Abre de nuevo sus ubicaciones.');
       input = confirmed;
+      startingRun = null;
       dirty();
       persistDraft();
       renderInputSummary();
@@ -302,11 +306,12 @@ export function initRunPanel() {
     if (scenarioLoading) return scenarioLoading;
     if (withHistory && history.isPending) throw new Error('Espera a que termine la carga del histórico.');
     const revision = ++fileRevision;
+    startingRun = null;
     readingInstance = false;
     message(simulation ? 'Creando la variante sobre las calles de Ann Arbor…' : withHistory
       ? 'Cargando ubicaciones e histórico eléctrico de la hackatón…' : 'Cargando las ubicaciones de la hackatón en Ann Arbor…');
     $('use-hackathon').disabled = true;
-    scenarioLoading = (async () => {
+    const loading = (async () => {
       const loaded = withHistory
         ? await loadHistoricalCase({dataset: $('hackathon-dataset').value, simulation,
           ...(simulation && history.profileId ? {energy_profile_id: history.profileId} : {})})
@@ -334,9 +339,13 @@ export function initRunPanel() {
         ? 'Variante lista con el mismo histórico. Revisa las ubicaciones y ajusta flota, batería o margen de consumo antes de calcular.'
         : 'Caso de Ann Arbor cargado. Revisa la flota y calcula. Valores iniciales ajustables: capacidad útil 24 kWh, reserva 2,4 kWh y consumo de respaldo 0,2 kWh/km; no son mediciones ni reglas oficiales.');
     })();
+    scenarioLoading = loading;
     setBusy(busy);
-    try { await scenarioLoading; }
-    finally { scenarioLoading = null; setBusy(busy); }
+    try { await loading; }
+    catch (error) { if (revision === fileRevision) throw error; }
+    finally {
+      if (scenarioLoading === loading) { scenarioLoading = null; setBusy(busy); }
+    }
   }
   function buildJob() {
     if (readingInstance) throw new Error('Espera a que termine la lectura de la instancia antes de calcular.');
@@ -419,6 +428,8 @@ export function initRunPanel() {
     const file = event.target.files?.[0];
     if (!file) return;
     const revision = ++fileRevision;
+    scenarioLoading = null;
+    startingRun = null;
     readingInstance = revision;
     dirty();
     locationEditor.close();
@@ -446,6 +457,8 @@ export function initRunPanel() {
       prepareRequest = createSyntheticPreparation({clients: Number($('synthetic-clients').value), chargers: Number($('synthetic-chargers').value)});
     } catch (error) { message(error.message, true); return; }
     fileRevision++;
+    scenarioLoading = null;
+    startingRun = null;
     readingInstance = false;
     dirty();
     setInput({nodes: prepareRequest.nodes, prepareRequest}, 'Caso sintético · valores supuestos');
@@ -460,13 +473,23 @@ export function initRunPanel() {
   $('run-form').addEventListener('submit', async event => {
     event.preventDefault();
     if (busy || startingRun) return;
-    startingRun = true;
+    const attempt = {revision: fileRevision};
+    startingRun = attempt;
     notify();
     try {
       if (readingInstance) throw new Error('Espera a que termine la lectura de la instancia antes de calcular.');
-      if (history.isPending) throw new Error('Espera a que termine la carga del histórico antes de calcular.');
-      if (scenarioLoading) await scenarioLoading;
-      if (!input && history.profileId) await useHackathon();
+      if (history.isPending && !input?.instance) throw new Error('Espera a que termine la carga del histórico antes de calcular.');
+      if (scenarioLoading) {
+        await scenarioLoading;
+        if (attempt.revision !== fileRevision) return;
+      }
+      if (!input && history.profileId) {
+        const loading = useHackathon();
+        attempt.revision = fileRevision;
+        startingRun = attempt;
+        await loading;
+        if (attempt.revision !== fileRevision) return;
+      }
       if (busy) return;
       // The default preview is cheap. Load telemetry only when the user asks to
       // calculate, preserving this draft's nodes and any explicit history choice.
@@ -474,7 +497,7 @@ export function initRunPanel() {
         const revision = fileRevision, source = input;
         message('Preparando el histórico eléctrico eVED del servidor…');
         const loaded = await loadHistoricalCase({dataset: input.prepareRequest.scenario.dataset});
-        if (revision !== fileRevision || input !== source) throw new Error('La entrada cambió. Revisa el escenario y vuelve a calcular.');
+        if (startingRun !== attempt || revision !== fileRevision || input !== source) return;
         history.useProfile(loaded.profile);
         synchronizeHistoryReference(history.profileId);
         persistDraft();
@@ -487,8 +510,8 @@ export function initRunPanel() {
       save({stale: true, status: 'ready', message: ''});
       await client.solve(lastRequest, {prepareRequest: lastPrepareRequest});
       $('export-instance').disabled = !canonicalInstance;
-    } catch (error) { message(error.message, true); }
-    finally { startingRun = false; notify(); }
+    } catch (error) { if (startingRun === attempt && attempt.revision === fileRevision) message(error.message, true); }
+    finally { if (startingRun === attempt) { startingRun = null; notify(); } }
   });
   $('stop-waiting').addEventListener('click', () => client.stopWaiting());
   $('show-example').addEventListener('click', () => {

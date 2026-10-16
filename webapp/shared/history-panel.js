@@ -39,7 +39,10 @@ export function createHistoryPanel({host, onChange = () => {}, client = createHi
   let stateMessage = 'Sin histórico. Se usará el consumo supuesto.';
   const setState = message => { stateMessage = message; $('history-state').textContent = message; };
   const clearSecrets = () => { for (const id of ['bedrock-access', 'bedrock-secret', 'bedrock-token']) $(id).value = ''; };
-  function changed(invalidate = true) { onChange(profile ? {profile_id: profile.profile_id, filename: text(profile.filename), status: profile.status} : null, {invalidate}); }
+  function changed(invalidate = true, invalidatePendingRun = invalidate) {
+    onChange(profile ? {profile_id: profile.profile_id, filename: text(profile.filename), status: profile.status} : null,
+      {invalidate, invalidatePendingRun});
+  }
   function renderSession() {
     $('history-aws').textContent = session?.connected ? 'AWS conectado' : 'Conectar con AWS';
     $('bedrock-disconnect').hidden = !session?.connected;
@@ -240,7 +243,10 @@ export function createHistoryPanel({host, onChange = () => {}, client = createHi
     useProfile(value) {
       generation++; controller?.abort(); controller = null; restoringId = null; pending = false;
       $('history-upload').hidden = true;
-      accept(value);
+      // The owning scenario request already checked this response. Keep its
+      // submit while retaining the usual result and coverage invalidation.
+      accept(value, false);
+      changed(true, false);
     },
     get profileId() { return !native && !pending && profile?.status === 'ready' ? profile.profile_id : null; },
     get isPending() { return pending; },
