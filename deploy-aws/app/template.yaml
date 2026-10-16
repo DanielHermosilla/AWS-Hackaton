@@ -1,0 +1,151 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  ZMD Mobility — Lambda unificada (FastAPI vía Mangum) que sirve la webapp
+  nueva (API 3.0) con login, gestiona cuentas/sesiones/datos por usuario en
+  DynamoDB y hace de proxy autenticado hacia el solver en ECS Fargate.
+  Expuesta públicamente por una HTTP API.
+
+Parameters:
+  CookieSecure:
+    Type: String
+    Default: "1"
+    AllowedValues: ["0", "1"]
+    Description: 1 = cookie solo HTTPS (producción). 0 = permite HTTP (dev).
+  SolverApiUrl:
+    Type: String
+    Default: ""
+    Description: URL base del solver (ECS Fargate). Vacío = /prepare y /solve devuelven 503.
+  SolverInternalToken:
+    Type: String
+    Default: ""
+    NoEcho: true
+    Description: Token interno que la Lambda envía al solver en X-Solver-Token.
+
+Globals:
+  Function:
+    Timeout: 130
+    MemorySize: 512
+    Architectures:
+      - x86_64
+
+Resources:
+  UsersTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: zmd_users
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: email
+          AttributeType: S
+      KeySchema:
+        - AttributeName: email
+          KeyType: HASH
+
+  SessionsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: zmd_sessions
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: token_hash
+          AttributeType: S
+      KeySchema:
+        - AttributeName: token_hash
+          KeyType: HASH
+      TimeToLiveSpecification:
+        AttributeName: expires_at
+        Enabled: true
+
+  PlansTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: zmd_plans
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: email
+          AttributeType: S
+        - AttributeName: plan_id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: email
+          KeyType: HASH
+        - AttributeName: plan_id
+          KeyType: RANGE
+
+  FleetTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: zmd_fleet
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: email
+          AttributeType: S
+      KeySchema:
+        - AttributeName: email
+          KeyType: HASH
+
+  ActivityTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: zmd_activity
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: email
+          AttributeType: S
+        - AttributeName: ts
+          AttributeType: N
+      KeySchema:
+        - AttributeName: email
+          KeyType: HASH
+        - AttributeName: ts
+          KeyType: RANGE
+      TimeToLiveSpecification:
+        AttributeName: expires_at
+        Enabled: true
+
+  LoginFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      PackageType: Image
+      Environment:
+        Variables:
+          DDB_USERS_TABLE: !Ref UsersTable
+          DDB_SESSIONS_TABLE: !Ref SessionsTable
+          DDB_PLANS_TABLE: !Ref PlansTable
+          DDB_FLEET_TABLE: !Ref FleetTable
+          DDB_ACTIVITY_TABLE: !Ref ActivityTable
+          COOKIE_SECURE: !Ref CookieSecure
+          SOLVER_API_URL: !Ref SolverApiUrl
+          SOLVER_INTERNAL_TOKEN: !Ref SolverInternalToken
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref UsersTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref SessionsTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref PlansTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref FleetTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ActivityTable
+      Events:
+        Proxy:
+          Type: HttpApi
+          Properties:
+            Path: /{proxy+}
+            Method: ANY
+        Root:
+          Type: HttpApi
+          Properties:
+            Path: /
+            Method: ANY
+    Metadata:
+      Dockerfile: Dockerfile
+      DockerContext: .
+      DockerTag: zmd-app
+
+Outputs:
+  WebappUrl:
+    Description: URL pública de la webapp con login
+    Value: !Sub "https://${ServerlessHttpApi}.execute-api.${AWS::Region}.amazonaws.com"

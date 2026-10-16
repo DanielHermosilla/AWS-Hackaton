@@ -1,0 +1,39 @@
+# Runtime deps for the Fargate solver API (deploy-aws/solver-api).
+#
+# These are installed ON TOP of the editable engine package (`pip install -e .`
+# from pyproject.toml). They are pinned to ranges compatible with pyproject.toml
+# so the two installs agree. Every entry below is justified by what the
+# /prepare + /solve code path in backend/service.py + ev_routing actually
+# imports (network_mode="haversine", solver="scip-routes").
+
+# --- HTTP transport (this wrapper) ---
+fastapi>=0.110,<1
+uvicorn[standard]>=0.29,<1
+
+# --- Engine deps on the prepare/solve path ---
+# pydantic: ev_routing.contracts models (eager, used everywhere).
+pydantic>=2.10,<3
+# pyomo: solve.py and model.py import `pyomo.environ` EAGERLY; required just to
+# import the solve path even though the scip-routes backend drives SCIP directly.
+pyomo>=6.9,<7
+# pyscipopt: scip_tuning.py / route_solver.py (the scip-routes backend). The
+# wheel ships the SCIP binaries. Pinned to the project's exact version.
+pyscipopt==6.0.0
+# networkx: route_solver.py route graph.
+networkx>=3.4,<4
+# numpy + scipy: route_resources.py (linprog, ConvexHull) and route_heuristics.
+numpy>=1.26,<3
+scipy>=1.15,<2
+# pandas: ev_routing.inputs CSV handling (pulled in by the installed package).
+pandas>=2.2,<3
+# pyproj: network.py imports `from pyproj import CRS` eagerly. Not on the
+# haversine/native path, but kept so the installed ev_routing package imports
+# cleanly if any module touches network.py.
+pyproj>=3.6,<4
+
+# Deliberately NOT included (verified not needed on the prepare/solve path):
+#   gurobipy  -> alternate solver backend only; scip-routes never imports it.
+#   osmnx     -> imported lazily inside network.py only when downloading OSM.
+#   pygcgopt  -> GCG decomposition (dw*.py); the scip-routes path never imports it.
+#   boto3     -> imported lazily by the Bedrock LLM client (adaptive policy only).
+#   streamlit -> the other (Streamlit) solver image uses it; this API does not.

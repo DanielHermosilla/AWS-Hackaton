@@ -9,6 +9,7 @@ __pycache__/
 
 # Entornos virtuales
 .venv/
+.venv-dev/
 venv/
 
 # Credenciales y secretos (NUNCA subir)

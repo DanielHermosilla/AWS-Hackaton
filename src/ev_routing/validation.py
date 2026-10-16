@@ -1,195 +1,227 @@
-from typing import Any, List
+"""Comprobación física de un resultado, independiente de Pyomo y del solver.
 
-from pyomo.environ import value
+El checker vuelve a recorrer los arcos originales. No confía en el objetivo,
+la saturación auxiliar gamma ni el estado de terminación reportados por Pyomo.
+"""
 
-from .contracts import ProblemInstance, ValidationResult, VehicleRoute, RouteStep
+from __future__ import annotations
 
+from math import isclose, isfinite
 
-def _get(model, attr, *idx, default=None):
-    try:
-        component = getattr(model, attr)
-        if idx:
-            return value(component[idx])
-        return value(component)
-    except Exception:
-        return default
+from ev_routing.contracts import ProblemInstance, Solution, ValidationReport
+from ev_routing.operations import arc_energy, travel_seconds
 
 
-def validate_solution(model: Any, instance: ProblemInstance) -> ValidationResult:
-    violations: List[str] = []
-    nodes = [n.node_id for n in instance.nodes]
-    node_set = set(nodes)
-    vehicles = list(range(instance.fleet.num_vehicles))
-    H = instance.movement_limit
-    base = instance.base_nodes()[0] if instance.base_nodes() else None
-    clients = instance.visit_nodes()
-    chargers = set(instance.charger_nodes())
-    compatible = {k: set(instance.compatible_chargers(k)) for k in vehicles}
-    capacity = instance.fleet.battery_capacity_kwh
-    reserve = instance.fleet.reserve_kwh
-    initial = instance.fleet.initial_energy_kwh
-    energy_map = {(a.origin, a.destination): a.energy_kwh for a in instance.network.arcs}
+def validate_solution(
+    instance: ProblemInstance, solution: Solution, *, tolerance: float = 1e-5,
+    enforce_movement_limit: bool = True,
+) -> ValidationReport:
+    """Reproducir (1)–(15) del PDF desde las rutas y las energías originales.
 
-    for k in vehicles:
-        # location per position
-        locs = []
-        for r in range(H + 1):
-            nid = None
-            for i in nodes:
-                v = _get(model, "z", i, k, r, default=0)
-                if v is not None and v > 0.5:
-                    nid = i
-                    break
-            if nid is None:
-                violations.append(f"vehicle {k} has no location at position {r}")
-                nid = base
-            locs.append(nid)
-        if locs[0] != base:
-            violations.append(f"vehicle {k} does not start at base")
-        if locs[H] != base:
-            violations.append(f"vehicle {k} does not end at base")
-        # arcs valid and continuity
-        total_e_calc = 0.0
-        for r in range(H):
-            i = locs[r]
-            j = locs[r + 1]
-            if (i, j) not in energy_map:
-                violations.append(f"vehicle {k} uses arc not in network: {(i, j)} at position {r}")
-            # check x selection maybe
-            q = _get(model, "q", k, r, default=0.0) or 0.0
-            b_arr = _get(model, "b", k, r, default=None)
-            b_dep = _get(model, "bbar", k, r, default=None)
-            b_next = _get(model, "b", k, r + 1, default=None)
-            # charge constraints
-            if q < -1e-9:
-                violations.append(f"vehicle {k} negative charge at {r}")
-            if q > capacity - (b_arr or 0) + 1e-6:
-                violations.append(f"vehicle {k} overcharges at {r}")
-            if i not in compatible[k] and i not in chargers:
-                pass
-            if q > 1e-9 and i not in compatible[k]:
-                violations.append(f"vehicle {k} charges at non-compatible station {i} at {r}")
-            # battery bounds
-            for val, label in [(b_arr, "arrival"), (b_dep, "departure"), (b_next, "next arrival")]:
-                if val is None:
-                    continue
-                if val < reserve - 1e-6 or val > capacity + 1e-6:
-                    violations.append(f"vehicle {k} battery {label} out of bounds at {r}: {val}")
-            # min saturation check: b_next should be min(capacity, b_dep - e)
-            if b_dep is not None and b_next is not None:
-                e = energy_map.get((i, j), 0.0)
-                expected = min(capacity, b_dep - e)
-                if abs(b_next - expected) > 1e-4:
-                    # soft: store but not necessarily violation? keep as violation for strict
-                    pass
-                total_e_calc += b_dep - b_next
-        # initial battery
-        b0 = _get(model, "b", k, 0, default=None)
-        if b0 is not None and abs(b0 - initial) > 1e-6:
-            violations.append(f"vehicle {k} initial battery mismatch")
+    ``tolerance`` solo absorbe ruido numérico de resolución. No se usa como
+    reserva adicional, tolerancia de optimalidad ni permiso para omitir tramos.
+    Se devuelven todas las violaciones detectadas para facilitar diagnósticos.
+    """
+    if not isfinite(tolerance) or tolerance <= 0:
+        raise ValueError("tolerance debe ser finita y positiva")
+    checks = dict.fromkeys(
+        ["fleet", "topology", "deliveries", "battery", "charging", "energy"], True
+    )
+    violations: list[str] = []
 
-    # deliveries uniqueness and counting
-    y_sum = {}
-    for c in clients:
-        yval = _get(model, "y", c, default=0) or 0
-        a_count = 0
-        a_positions = set()
-        for k in vehicles:
-            for r in range(H):
-                aval = _get(model, "a", c, k, r, default=0) or 0
-                if aval > 0.5:
-                    a_count += 1
-                    # need at client location
-                    loc = None
-                    for i in nodes:
-                        if (_get(model, "z", i, k, r, default=0) or 0) > 0.5:
-                            loc = i
-                    if loc != c:
-                        violations.append(f"delivery of {c} by vehicle {k} at pos {r} not at client node")
-        if abs(a_count - (yval or 0)) > 1e-6:
-            violations.append(f"delivery count mismatch for client {c}")
-        y_sum[c] = (yval or 0)
+    def fail(category: str, message: str) -> None:
+        checks[category] = False
+        violations.append(message)
 
-    # each delivery at most once overall: ensured by count equality and y binary.
+    def equal(left: float, right: float) -> bool:
+        return isclose(left, right, rel_tol=1e-8, abs_tol=tolerance)
 
-    # energy total
-    etotal = _get(model, "Etotal", default=None)
-    if etotal is not None:
-        try:
-            if abs(float(etotal) - total_e_calc) > 1e-3 and len(violations) == 0:
-                # not hard violation; energy bookkeeping already
-                pass
-        except Exception:
-            pass
+    params = instance.parameters
+    capacity = params.battery_capacity_kwh
+    reserve = params.reserve_kwh
+    initial = params.initial_energy_kwh
+    depot = instance.depot_id
+    node_ids = {node.node_id for node in instance.nodes}
+    customers = set(instance.customer_ids)
+    energies = {
+        (a.from_node_id, a.to_node_id): arc_energy(a, instance.operations) for a in instance.arcs
+    }
+    energies[depot, depot] = 0.0  # Arco ficticio de permanencia del PDF.
+    seen_deliveries: list[str] = []
+    effective_total = 0.0
+    vehicle_ids = [route.vehicle_id for route in solution.routes]
+    if sorted(vehicle_ids) != sorted(instance.vehicle_ids):
+        fail("fleet", "La flota debe contener una ruta por vehículo, sin duplicados")
 
-    return ValidationResult(feasible=len(violations) == 0, violations=violations)
+    for route in solution.routes:
+        label = route.vehicle_id
+        if label not in instance.vehicle_ids:
+            fail("fleet", f"Vehículo desconocido: {label}")
+            continue
+        steps = route.steps
+        compatible = set(instance.chargers_for(label))
+        if enforce_movement_limit and len(steps) != params.movement_limit + 1:
+            fail("topology", f"{label}: se requieren H+1 posiciones")
+        if not steps:
+            fail("topology", f"{label}: ruta vacía")
+            continue
+        if steps[0].node_id != depot or steps[-1].node_id != depot:
+            fail("topology", f"{label}: salida y retorno deben ser el depósito")
+        if not equal(steps[0].battery_arrival_kwh, initial):
+            fail("battery", f"{label}: SoC inicial incorrecto")
+
+        route_energy = 0.0
+        route_charge = 0.0
+        for index, step in enumerate(steps):
+            prefix = f"{label}, posición {index}"
+            if step.position != index:
+                fail("topology", f"{prefix}: índice de posición incorrecto")
+            if step.node_id not in node_ids:
+                fail("topology", f"{prefix}: nodo desconocido {step.node_id}")
+            arrival = step.battery_arrival_kwh
+            departure = step.battery_departure_kwh
+            charge = step.charged_to_battery_kwh
+            for state in (arrival, departure):
+                if not reserve - tolerance <= state <= capacity + tolerance:
+                    fail("battery", f"{prefix}: batería fuera de capacidad/reserva")
+            if charge < -tolerance:
+                fail("charging", f"{prefix}: recarga negativa")
+            if charge > tolerance and step.node_id not in compatible:
+                fail("charging", f"{prefix}: recarga en nodo no compatible")
+            if index == 0 and abs(charge) > tolerance:
+                fail("charging", f"{prefix}: no se permite recarga inicial")
+            if not equal(departure, arrival + charge):
+                fail("charging", f"{prefix}: balance de recarga incorrecto")
+            route_charge += charge
+
+            for customer in step.delivered_visit_ids:
+                if customer not in customers or customer != step.node_id:
+                    fail("deliveries", f"{prefix}: entrega fuera de su cliente {customer}")
+                if index == len(steps) - 1:
+                    fail("deliveries", f"{prefix}: entrega en posición terminal")
+                seen_deliveries.append(customer)
+
+            if index == len(steps) - 1:
+                # q y arcos solo existen en R^-; no inventar una salida terminal.
+                if abs(charge) > tolerance or step.next_node_id is not None:
+                    fail("topology", f"{prefix}: posición terminal con salida/recarga")
+                if step.predicted_arc_energy_kwh is not None:
+                    fail("energy", f"{prefix}: energía de arco en posición terminal")
+                if step.effective_arc_energy_kwh is not None:
+                    fail("energy", f"{prefix}: consumo en posición terminal")
+                continue
+
+            following = steps[index + 1]
+            if step.next_node_id != following.node_id:
+                fail("topology", f"{prefix}: next_node_id no coincide con la ruta")
+            pair = (step.node_id, following.node_id)
+            if pair not in energies:
+                fail("topology", f"{prefix}: arco no permitido {pair}")
+                continue
+            predicted = energies[pair]
+            # La recuperación que excede B se pierde: nunca aumenta la batería
+            # sobre su capacidad ni reduce artificialmente el consumo informado.
+            expected_arrival = min(capacity, departure - predicted)
+            if not equal(following.battery_arrival_kwh, expected_arrival):
+                fail("battery", f"{prefix}: transición física de batería incorrecta")
+            if expected_arrival < reserve - tolerance:
+                fail("battery", f"{prefix}: el tramo agota la reserva")
+            if step.predicted_arc_energy_kwh is None or not equal(
+                step.predicted_arc_energy_kwh, predicted
+            ):
+                fail("energy", f"{prefix}: energía predicha no coincide con el arco")
+            effective = departure - following.battery_arrival_kwh
+            if step.effective_arc_energy_kwh is None or not equal(
+                step.effective_arc_energy_kwh, effective
+            ):
+                fail("energy", f"{prefix}: consumo efectivo reportado incorrecto")
+            route_energy += effective
+
+        if not equal(route.net_energy_kwh, route_energy):
+            fail("energy", f"{label}: energía de ruta incorrecta")
+        if not equal(route_energy, initial + route_charge - steps[-1].battery_arrival_kwh):
+            fail("energy", f"{label}: balance energético global incorrecto")
+        effective_total += route_energy
+        if instance.operations.final_reserve_soc is not None:
+            if steps[-1].battery_arrival_kwh < capacity * instance.operations.final_reserve_soc - tolerance:
+                fail("battery", f"{label}: reserva final insuficiente")
+        if instance.operations.timing_enabled:
+            checks.setdefault("time", True)
+            for message in _time_violations(instance, route, tolerance):
+                fail("time", f"{label}: {message}")
+
+    if len(seen_deliveries) != len(set(seen_deliveries)):
+        fail("deliveries", "Una entrega se contabilizó más de una vez")
+    if sorted(solution.served_visit_ids) != sorted(seen_deliveries):
+        fail("deliveries", "served_visit_ids no coincide con las entregas realizadas")
+    if sorted(solution.unserved_visit_ids) != sorted(customers - set(seen_deliveries)):
+        fail("deliveries", "unserved_visit_ids no coincide con los clientes pendientes")
+    if not equal(solution.net_energy_kwh, effective_total):
+        fail("energy", "El consumo total reportado no coincide con las rutas")
+    return ValidationReport(feasible=not violations, violations=violations, checks=checks)
 
 
-def validate_run_result(instance: ProblemInstance, run_result: "RunResult") -> ValidationResult:
-    # Validate from routes, independent of Pyomo
-    from .contracts import ValidationResult as VR
-    violations: List[str] = []
-    vehicles = instance.fleet.num_vehicles
-    H = instance.movement_limit
-    base = instance.base_nodes()[0] if instance.base_nodes() else None
-    clients = set(instance.visit_nodes())
-    chargers = set(instance.charger_nodes())
-    compatible = {k: set(instance.compatible_chargers(k)) for k in range(vehicles)}
-    capacity = instance.fleet.battery_capacity_kwh
-    reserve = instance.fleet.reserve_kwh
-    initial = instance.fleet.initial_energy_kwh
-    energy_map = {(a.origin, a.destination): a.energy_kwh for a in instance.network.arcs}
-
-    all_served = []
-    for route in run_result.routes:
-        k = route.vehicle_index
-        steps = route.steps or []
-        if len(steps) < H + 1:
-            violations.append(f"vehicle {k} route has too few steps")
-        # positions 0..H
-        locs = [s.node_id for s in steps[: H + 1]]
-        if locs and locs[0] != base:
-            violations.append(f"vehicle {k} does not start at base")
-        if locs and locs[-1] != base:
-            violations.append(f"vehicle {k} does not end at base")
-        prev_node = None
-        for idx, step in enumerate(steps[:H]):
-            node = step.node_id
-            nxt = steps[idx + 1].node_id if idx + 1 < len(steps) else None
-            if nxt is not None and (node, nxt) not in energy_map:
-                violations.append(f"vehicle {k} arc not in network: {(node, nxt)}")
-            # battery
-            for label, val in [("arrival", step.arrival_energy_kwh), ("departure", step.departure_energy_kwh)]:
-                if val is None:
-                    continue
-                if val < reserve - 1e-6 or val > capacity + 1e-6:
-                    violations.append(f"vehicle {k} battery {label} out of bounds at {idx}: {val}")
-            q = step.charge_kwh or 0.0
-            if q < -1e-9:
-                violations.append(f"vehicle {k} negative charge at {idx}")
-            if step.departure_energy_kwh is not None and step.arrival_energy_kwh is not None:
-                if q > capacity - (step.arrival_energy_kwh or 0) + 1e-6:
-                    violations.append(f"vehicle {k} overcharges at {idx}")
-            if q > 1e-9 and node not in compatible[k]:
-                violations.append(f"vehicle {k} charges at non-compatible station {node}")
-            # delivered visits must be at client node
-            for vid in step.delivered_visit_ids or []:
-                if node != vid:
-                    violations.append(f"vehicle {k} delivers {vid} while at {node}")
-                if vid not in clients:
-                    violations.append(f"unknown visit {vid}")
-            all_served.extend(step.delivered_visit_ids or [])
-        # initial battery first step arrival at base?
-        first = steps[0] if steps else None
-        if first and first.arrival_energy_kwh is not None:
-            if abs(first.arrival_energy_kwh - initial) > 1e-6:
-                violations.append(f"vehicle {k} initial battery mismatch")
-
-    # uniqueness
-    seen = set()
-    for vid in all_served:
-        if vid in seen:
-            violations.append(f"visit {vid} delivered more than once")
-        seen.add(vid)
-
-    return ValidationResult(feasible=len(violations) == 0, violations=violations)
+def _time_violations(instance, route, tolerance):
+    """Reproducir el calendario publicado sin consultar Pyomo ni reconstruirlo."""
+    ops = instance.operations
+    arcs = {(a.from_node_id, a.to_node_id): a for a in instance.arcs}
+    expected_arrival = 0.0
+    for step in route.steps:
+        values = (
+            step.arrival_seconds, step.service_start_seconds, step.departure_seconds,
+            step.service_duration_seconds, step.charging_duration_seconds,
+        )
+        if any(v is None or not isfinite(v) or v < -tolerance for v in values):
+            yield f"posición {step.position}: calendario ausente o inválido"
+            return
+        arrival, start, departure, service, charge = values
+        if not isclose(arrival, expected_arrival, abs_tol=tolerance, rel_tol=1e-8):
+            yield f"posición {step.position}: llegada no coincide con salida y viaje previos"
+        if start < arrival - tolerance:
+            yield f"posición {step.position}: actividad anterior a la llegada"
+        expected_service = sum(ops.service_duration(i) for i in step.delivered_visit_ids)
+        expected_charge = 0.0
+        if ops.include_charging_time and step.charged_to_battery_kwh > 0:
+            power = ops.charging_power(step.node_id)
+            if power is None:
+                yield f"posición {step.position}: recarga sin potencia configurada"
+                return
+            expected_charge = 3600 * step.charged_to_battery_kwh / (power * ops.charging_efficiency)
+        for value, expected, label in (
+            (service, expected_service, "servicio"),
+            (charge, expected_charge, "recarga"),
+            (departure, start + expected_service + expected_charge, "salida"),
+        ):
+            if not isclose(value, expected, abs_tol=tolerance, rel_tol=1e-8):
+                yield f"posición {step.position}: duración/hora de {label} incorrecta"
+        if ops.use_customer_time_windows:
+            for customer in step.delivered_visit_ids:
+                window = ops.customer_time_windows.get(customer)
+                if window and (
+                    start < window.open_seconds - tolerance
+                    or start + expected_service > window.close_seconds + tolerance
+                ):
+                    yield f"{customer}: entrega fuera de ventana horaria"
+        if step.next_node_id is None:
+            if step.travel_time_seconds is not None:
+                yield "posición terminal con tiempo de viaje"
+            expected_arrival = arrival
+            continue
+        pair = step.node_id, step.next_node_id
+        if pair == (instance.depot_id, instance.depot_id):
+            travel = 0.0
+        elif pair in arcs:
+            travel = travel_seconds(arcs[pair], ops)
+        else:
+            continue  # La auditoría topológica ya informa este error.
+        if step.travel_time_seconds is None or not isclose(
+            step.travel_time_seconds, travel, abs_tol=tolerance, rel_tol=1e-8
+        ):
+            yield f"posición {step.position}: tiempo de viaje incorrecto"
+        expected_arrival = departure + travel
+    if route.duration_seconds is None or not isclose(
+        route.duration_seconds, expected_arrival, abs_tol=tolerance, rel_tol=1e-8
+    ):
+        yield "duración total incorrecta o ausente"
+    if ops.max_route_seconds is not None and expected_arrival > ops.max_route_seconds + tolerance:
+        yield "se supera max_route_seconds"

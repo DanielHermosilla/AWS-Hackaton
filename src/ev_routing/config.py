@@ -1,13 +1,22 @@
-import os
-from typing import Optional
+"""Configuración pequeña: escenario físico y recursos del solver separados."""
 
-from pydantic import BaseModel, Field
+from pathlib import Path
 
-from .contracts import SolverConfig
+from pydantic import Field
+
+from ev_routing.contracts import Contract, ModelParameters, Operations, SolverConfig
 
 
-class AppConfig(BaseModel):
-    aws_region: str = Field(default_factory=lambda: os.getenv("AWS_DEFAULT_REGION", "us-east-1"))
-    bedrock_model_id: Optional[str] = Field(default_factory=lambda: os.getenv("BEDROCK_MODEL_ID"))
-    aws_profile: Optional[str] = Field(default_factory=lambda: os.getenv("AWS_PROFILE"))
-    default_solver_config: SolverConfig = Field(default_factory=SolverConfig)
+class ProjectConfig(Contract):
+    """No contiene configuración LLM: esta rama nunca invoca AWS."""
+
+    model: ModelParameters = Field(default_factory=ModelParameters)
+    operations: Operations = Field(default_factory=Operations)
+    solver: SolverConfig = Field(default_factory=SolverConfig)
+
+
+def load_config(path: str | Path | None = None) -> ProjectConfig:
+    """Leer JSON estricto; los parámetros no presentes usan defaults explícitos."""
+    if path is None:
+        return ProjectConfig()
+    return ProjectConfig.model_validate_json(Path(path).read_text(encoding="utf-8-sig"))

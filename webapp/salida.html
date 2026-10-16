@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="es" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <link rel="icon" href="./assets/brand/icons/favicon.ico" sizes="16x16 32x32 48x48">
+  <link rel="icon" href="./assets/brand/icons/favicon.svg" type="image/svg+xml" sizes="any">
+  <link rel="apple-touch-icon" href="./assets/brand/icons/apple-touch-icon.png" sizes="180x180">
+  <title>Plan cerrado · ZMD Mobility</title>
+  <script src="theme.js"></script>
+  <link rel="stylesheet" href="./shared/base.css">
+  <link rel="stylesheet" href="material.css">
+  <link rel="stylesheet" href="app.css?v=brand-v1">
+  <link rel="stylesheet" href="theme.css">
+</head>
+<body class="page-exit">
+  <header class="topbar"><a class="zmd-brand" href="index.html" aria-label="ZMD Mobility, inicio"><img id="brand-logo" class="zmd-brand__logo" src="./assets/brand/svg/logo.svg" width="272" height="64" alt=""></a></header>
+  <main class="exit-main" id="exit-main">
+    <section class="exit-card" aria-labelledby="exit-heading">
+      <p class="eyebrow" id="exit-organization">Mi organización</p>
+      <h1 id="exit-heading">Plan cerrado</h1>
+      <p>Se borró la selección guardada del Plan en esta pestaña: vehículo, vista, parada y estaciones visibles.</p>
+      <p>Las preferencias de accesibilidad y el nombre de la organización se conservan en este navegador. El tema vuelve a claro.</p>
+      <a href="index.html">Volver a Inicio</a>
+    </section>
+  </main>
+  <script type="module">
+    import { clearPlanContext, readPreferences } from './state.js';
+    import { ZMD_BRAND } from './assets/brand/integration/brand-assets.js';
+
+    // Opening this page directly also leaves no Plan selection behind.
+    clearPlanContext();
+    // The organization name is user text: textContent only.
+    document.getElementById('exit-organization').textContent = readPreferences().organizationName;
+    // theme.js already set html[data-theme] before paint; match the logo to it.
+    document.getElementById('brand-logo').src =
+      document.documentElement.dataset.theme === 'dark' ? ZMD_BRAND.logoInverse : ZMD_BRAND.logo;
+  </script>
+</body>
+</html>

@@ -1,102 +1,391 @@
-"""Núcleo de servicio del backend de ruteo EV.
+"""API 3.0: explicit synthetic preparation and Daniel's native ProblemInstance.
 
-Lógica agnóstica a la interfaz: la usan por igual el handler Lambda, un servidor
-local, Streamlit o cualquier UI futura. No importa boto3 ni Streamlit aquí, para
-mantenerlo liviano y testeable.
-
-Contrato de entrada/salida (estable, versionado): ver API_CONTRACT.md.
+The provider is the local ev_routing core imported from Daniel's 6242035 commit.
+The HTTP boundary never accepts file paths, free solver options, or AWS settings.
 """
+
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+import copy
+import hashlib
+import json
+import math
+import time
+import uuid
+from pathlib import Path
+from typing import Any
 
-from ev_routing.contracts import FleetConfig, Node, Network, ProblemInstance, RunResult, SolverConfig
-from ev_routing.inputs import build_heuristic_network, rows_to_nodes
-from ev_routing.pipeline import run as run_pipeline
-
-API_VERSION = "1.0"
+API_VERSION = "3.0"
+PROVIDER_COMMIT = "624203573bffdeec334a9e07a64b361a515f9725"
+MAX_PREPARE_NODES = 200
+MAX_NATIVE_NODES = 20_000
+MAX_NATIVE_ARCS = 200_000
+CSV_FIELDS = {
+    "node_id",
+    "node_type",
+    "latitude",
+    "longitude",
+    "address",
+    "network",
+    "total_ports",
+    "dc_fast_ports",
+    "level2_ports",
+    "connector_types",
+    "max_power_kw",
+}
 
 
 class SolveRequestError(ValueError):
-    """Error de validación de la petición (datos de entrada inválidos)."""
+    """Safe, actionable validation error at the HTTP boundary."""
 
 
-def _nodes_from_payload(nodes_payload: List[Dict[str, Any]]) -> List[Node]:
-    """Convierte una lista de dicts de nodos en objetos Node validados.
+class ProviderError(RuntimeError):
+    def __init__(self, message: str, code: str = "provider_error", status: int = 502):
+        super().__init__(message)
+        self.code, self.status = code, status
 
-    Reutiliza `rows_to_nodes` vía DataFrame para aplicar la misma validación que
-    la carga por CSV (coordenadas, tipos, duplicados).
-    """
-    import pandas as pd
 
-    if not nodes_payload:
-        raise SolveRequestError("La petición no incluye nodos.")
+def strict_loads(value: str | bytes) -> Any:
+    def invalid(_):
+        raise SolveRequestError("JSON no permite NaN ni Infinity.")
+
+    def pairs(items):
+        out = {}
+        for key, value in items:
+            if key in out:
+                raise SolveRequestError("JSON contiene una clave duplicada.")
+            out[key] = value
+        return out
+
     try:
-        df = pd.DataFrame(nodes_payload)
-        return rows_to_nodes(df)
-    except Exception as e:  # noqa: BLE001
-        raise SolveRequestError(f"Nodos inválidos: {e}") from e
+        return json.loads(value, parse_constant=invalid, object_pairs_hook=pairs)
+    except (ValueError, UnicodeError, RecursionError) as exc:
+        if isinstance(exc, SolveRequestError):
+            raise
+        raise SolveRequestError(
+            "JSON inválido; use un objeto UTF-8 sin claves duplicadas."
+        ) from exc
 
 
-def build_instance(payload: Dict[str, Any]) -> ProblemInstance:
-    """Construye una ProblemInstance a partir del payload JSON de la API.
+def json_bytes(value: Any) -> bytes:
+    return json.dumps(value, ensure_ascii=False, allow_nan=False, separators=(",", ":")).encode(
+        "utf-8"
+    )
 
-    Estructura esperada (todos los campos de 'fleet' y 'solver' son opcionales):
+
+def fingerprint(value: Any) -> str:
+    return hashlib.sha256(
+        json.dumps(
+            value, ensure_ascii=False, allow_nan=False, sort_keys=True, separators=(",", ":")
+        ).encode()
+    ).hexdigest()
+
+
+def object_fields(value, allowed, label, required=()):
+    if not isinstance(value, dict):
+        raise SolveRequestError(f"{label} debe ser un objeto JSON.")
+    if set(value) - set(allowed):
+        raise SolveRequestError(
+            f"{label} contiene campos no admitidos: {', '.join(sorted(set(value) - set(allowed)))}."
+        )
+    if set(required) - set(value):
+        raise SolveRequestError(f"{label}: faltan {', '.join(sorted(set(required) - set(value)))}.")
+    return value
+
+
+def number(value, label, minimum=None, maximum=None, *, integer=False):
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        raise SolveRequestError(f"{label} debe ser un número finito.")
+    try:
+        finite = math.isfinite(value)
+    except OverflowError as exc:
+        raise SolveRequestError(f"{label} está fuera del rango numérico admitido.") from exc
+    if not finite:
+        raise SolveRequestError(f"{label} debe ser un número finito.")
+    if (minimum is not None and value < minimum) or (maximum is not None and value > maximum):
+        raise SolveRequestError(f"{label} está fuera del rango admitido.")
+    if integer and int(value) != value:
+        raise SolveRequestError(f"{label} debe ser entero.")
+    return int(value) if integer else float(value)
+
+
+def _finite_json(value):
+    try:
+        return json_bytes(value)
+    except (ValueError, TypeError, OverflowError, RecursionError) as exc:
+        raise SolveRequestError("La petición debe ser JSON finito válido.") from exc
+
+
+def _models():
+    try:
+        import ev_routing
+
+        expected = Path(__file__).resolve().parents[1] / "src" / "ev_routing"
+        if not Path(ev_routing.__file__).resolve().is_relative_to(expected.resolve()):
+            raise ProviderError(
+                "Los contratos deben cargarse desde el núcleo local src/ev_routing.",
+                "provider_unavailable",
+                503,
+            )
+        from ev_routing.contracts import Node, ProblemInstance, SolverConfig
+
+        return Node, ProblemInstance, SolverConfig
+    except ImportError as exc:
+        raise ProviderError(
+            "El núcleo ev_routing no está instalado; sincronice el entorno del proyecto.",
+            "provider_unavailable",
+            503,
+        ) from exc
+
+
+def _validate_model(model, value, label):
+    try:
+        # JSON strict validation permits native geometry arrays as tuples, while
+        # rejecting bool/string coercion into physical numeric fields.
+        return model.model_validate_json(_finite_json(value), strict=True)
+    except ValueError as exc:
+        if isinstance(exc, SolveRequestError):
+            raise
+        errors = getattr(exc, "errors", lambda **_: [])(include_url=False, include_input=False)
+        details = "; ".join(
+            f"{'.'.join(map(str, item['loc']))}: {item['msg']}" for item in errors[:6]
+        )
+        raise SolveRequestError(
+            f"{label} inválida. {details or 'Revise su esquema y valores.'}"
+        ) from exc
+
+
+def _native_instance(value):
+    _, ProblemInstance, _ = _models()
+    if not isinstance(value, dict) or value.get("schema_version") != "1.0":
+        raise SolveRequestError(
+            "instance debe ser un objeto ProblemInstance con schema_version='1.0'."
+        )
+    provenance = value.get("provenance", {})
+    representation = provenance.get("representation") if isinstance(provenance, dict) else None
+    if representation == "service_paths_nonnegative" or (
+        isinstance(representation, dict)
+        and representation.get("kind") == "service_paths_nonnegative"
+    ):
+        raise SolveRequestError(
+            "La representación service_paths_nonnegative no está admitida; use la instancia nativa de arcos elementales de Daniel."
+        )
+    if (
+        not isinstance(value.get("nodes"), list)
+        or not 1 <= len(value["nodes"]) <= MAX_NATIVE_NODES
+        or not isinstance(value.get("arcs"), list)
+        or len(value["arcs"]) > MAX_NATIVE_ARCS
+    ):
+        raise SolveRequestError(
+            "La instancia supera el límite local de nodos/arcos o sus listas son inválidas."
+        )
+    instance = _validate_model(ProblemInstance, value, "Instancia nativa")
+    if any(not node.node_id.strip() for node in instance.nodes):
+        raise SolveRequestError("node_id no puede estar vacío o contener solo espacios.")
+    for arc in instance.arcs:
+        if any(abs(lat) > 90 or abs(lon) > 180 for lat, lon in arc.geometry):
+            raise SolveRequestError(
+                "La geometría nativa debe usar pares [latitud,longitud] dentro de sus rangos."
+            )
+    return instance
+
+
+def validate_request(payload):
+    object_fields(
+        payload,
+        {"api_version", "instance", "solver"},
+        "petición",
+        ("api_version", "instance", "solver"),
+    )
+    _finite_json(payload)
+    if payload["api_version"] != API_VERSION:
+        raise SolveRequestError(
+            "api_version debe ser 3.0; esta API recibe el contrato nativo de Daniel."
+        )
+    solver = object_fields(
+        payload["solver"], {"time_limit_seconds"}, "solver", ("time_limit_seconds",)
+    )
+    seconds = number(solver["time_limit_seconds"], "time_limit_seconds", 1, 120)
+    instance = _native_instance(payload["instance"])
+    _, _, SolverConfig = _models()
+    config = SolverConfig(
+        solver="scip-routes",
+        time_limit_seconds=seconds,
+        threads=1,
+        seed=0,
+        relative_gap=0,
+        tee=False,
+    )
+    return instance, config
+
+
+def prepare(payload):
+    object_fields(
+        payload,
+        {"api_version", "nodes", "fleet", "network_mode"},
+        "preparación",
+        ("api_version", "nodes", "fleet", "network_mode"),
+    )
+    _finite_json(payload)
+    if payload["api_version"] != API_VERSION or payload["network_mode"] != "haversine":
+        raise SolveRequestError(
+            "Confirme api_version='3.0' y network_mode='haversine' para la preparación sintética."
+        )
+    rows = payload["nodes"]
+    if not isinstance(rows, list) or not 1 <= len(rows) <= MAX_PREPARE_NODES:
+        raise SolveRequestError(
+            f"La preparación sintética admite entre 1 y {MAX_PREPARE_NODES} nodos."
+        )
+    fleet = object_fields(
+        payload["fleet"],
         {
-          "nodes": [ {node_id, node_type, latitude, longitude, ...}, ... ],
-          "movement_limit": 6,
-          "fleet": {num_vehicles, battery_capacity_kwh, reserve_kwh, initial_soc},
+            "num_vehicles",
+            "battery_capacity_kwh",
+            "reserve_kwh",
+            "initial_soc",
+            "consumption_kwh_km",
+            "vehicle_connector_types",
+        },
+        "fleet",
+        ("battery_capacity_kwh", "reserve_kwh", "consumption_kwh_km"),
+    )
+    count = number(fleet.get("num_vehicles", 2), "num_vehicles", 1, 20, integer=True)
+    capacity = number(fleet["battery_capacity_kwh"], "battery_capacity_kwh", 1e-12)
+    reserve = number(fleet["reserve_kwh"], "reserve_kwh", 1e-12)
+    soc = number(fleet.get("initial_soc", 0.6), "initial_soc", 1e-12, 1)
+    consumption = number(fleet["consumption_kwh_km"], "consumption_kwh_km", 1e-12)
+    connectors = fleet.get("vehicle_connector_types", ["J1772", "CHAdeMO"])
+    if not isinstance(connectors, list) or not all(
+        isinstance(c, str) and c.strip() for c in connectors
+    ):
+        raise SolveRequestError(
+            "vehicle_connector_types debe ser una lista de conectores explícitos."
+        )
+    Node, _, _ = _models()
+    nodes = []
+    for row in rows:
+        object_fields(
+            row, CSV_FIELDS, "nodo CSV", ("node_id", "node_type", "latitude", "longitude")
+        )
+        data = copy.deepcopy(row)
+        if not isinstance(data["node_type"], str) or data["node_type"] not in {
+            "base",
+            "visit",
+            "charger",
+        }:
+            raise SolveRequestError("Los nodos CSV deben ser base, visit o charger.")
+        connector_text = data.get("connector_types", "")
+        if not isinstance(connector_text, str):
+            raise SolveRequestError("connector_types CSV debe ser texto separado por ';'.")
+        data["connector_types"] = list(
+            dict.fromkeys(c.strip() for c in connector_text.split(";") if c.strip())
+        )
+        node = _validate_model(Node, data, "Nodo CSV")
+        if node.latitude is None or node.longitude is None:
+            raise SolveRequestError(
+                "La preparación haversine requiere coordenadas en todos los nodos."
+            )
+        total, dc, level2 = node.total_ports, node.dc_fast_ports, node.level2_ports
+        if total is not None and sum(v or 0 for v in (dc, level2)) > total:
+            raise SolveRequestError(
+                f"Puertos inconsistentes en {node.node_id}: DC + nivel 2 supera el total."
+            )
+        nodes.append(node.model_dump(mode="json"))
+    arcs = []
+    for origin in nodes:
+        for destination in nodes:
+            if origin is destination:
+                continue
+            lat1, lon1, lat2, lon2 = map(
+                math.radians,
+                (
+                    origin["latitude"],
+                    origin["longitude"],
+                    destination["latitude"],
+                    destination["longitude"],
+                ),
+            )
+            h = (
+                math.sin((lat2 - lat1) / 2) ** 2
+                + math.cos(lat1) * math.cos(lat2) * math.sin((lon2 - lon1) / 2) ** 2
+            )
+            distance_m = 2 * 6_371_009 * math.asin(min(1.0, math.sqrt(max(0.0, h))))
+            arcs.append(
+                {
+                    "from_node_id": origin["node_id"],
+                    "to_node_id": destination["node_id"],
+                    "distance_m": distance_m,
+                    "energy_kwh": distance_m / 1000 * consumption,
+                }
+            )
+    instance = _native_instance(
+        {
+            "schema_version": "1.0",
+            "name": "Escenario geodésico sintético",
+            "nodes": nodes,
+            "arcs": arcs,
+            "parameters": {
+                "vehicle_count": count,
+                "battery_capacity_kwh": capacity,
+                "reserve_kwh": reserve,
+                "initial_soc": soc,
+                "vehicle_connector_types": connectors,
+            },
+            "provenance": {
+                "kind": "synthetic",
+                "network": {"kind": "haversine", "vial": False},
+                "consumption_kwh_km": consumption,
+                "assumptions": [
+                    "Red completa geodésica sintética; no representa calles ni restricciones de circulación.",
+                    "Energía supuesta como distancia geodésica por consumo configurado; sin pendiente.",
+                    "No se fabrican geometrías viales.",
+                    "La coincidencia de conectores es textual y sensible a mayúsculas, conforme al contrato nativo.",
+                ],
+            },
         }
-    """
-    nodes = _nodes_from_payload(payload.get("nodes", []))
-
-    fleet_in = payload.get("fleet", {}) or {}
-    fleet = FleetConfig(
-        num_vehicles=int(fleet_in.get("num_vehicles", 2)),
-        battery_capacity_kwh=float(fleet_in.get("battery_capacity_kwh", 24.0)),
-        reserve_kwh=float(fleet_in.get("reserve_kwh", 2.4)),
-        initial_soc=float(fleet_in.get("initial_soc", 0.6)),
     )
+    return {"api_version": API_VERSION, "instance": instance.model_dump(mode="json")}
 
-    movement_limit = int(payload.get("movement_limit", 6))
 
-    # La red puede venir dada; si no, se construye la heurística (como en inputs.py).
-    network_in = payload.get("network")
-    if network_in:
-        network = Network.model_validate(network_in)
-    else:
-        network = build_heuristic_network(nodes)
+def solve(payload):
+    started = time.perf_counter()
+    instance, config = validate_request(payload)
+    prepared_seconds = time.perf_counter() - started
+    from .daniel_adapter import run
 
-    return ProblemInstance(
-        nodes=nodes,
-        fleet=fleet,
-        network=network,
-        movement_limit=movement_limit,
-        provenance={"source": "api", "api_version": API_VERSION},
+    result = run(instance, config)
+    result["run_id"] = str(uuid.uuid4())
+    canonical = instance.model_dump(mode="json")
+    result["raw"].update(input=copy.deepcopy(payload), instance=canonical)
+    result["metadata"].update(
+        provider="ev_routing",
+        provider_commit=PROVIDER_COMMIT,
+        native_schema_version="1.0",
+        input_hash=fingerprint(canonical),
+        config_hash=fingerprint(result["raw"]["effective_config"]),
+        network_hash=fingerprint(
+            {
+                "nodes": canonical["nodes"],
+                "arcs": canonical["arcs"],
+                "provenance": canonical["provenance"],
+            }
+        ),
     )
+    result["runtime_seconds"]["preparation"] = prepared_seconds
+    result["runtime_seconds"]["total"] = time.perf_counter() - started
+    envelope = {"api_version": API_VERSION, "result": result}
+    json_bytes(envelope)
+    return envelope
 
 
-def solve(payload: Dict[str, Any]) -> Dict[str, Any]:
-    """Resuelve una instancia y devuelve un dict JSON-serializable.
+def health():
+    from .daniel_adapter import provider_available
 
-    Punto de entrada único del backend. Cualquier frontend llama a esto
-    (directamente en local, o vía Lambda/API Gateway en la nube).
-    """
-    instance = build_instance(payload)
-
-    solver_in = payload.get("solver", {}) or {}
-    solver_cfg = SolverConfig(
-        time_limit_seconds=float(solver_in.get("time_limit_seconds", 120.0)),
-        mip_gap=solver_in.get("mip_gap"),
-    )
-
-    result: RunResult = run_pipeline(instance, solver_cfg)
     return {
+        "status": "ok",
         "api_version": API_VERSION,
-        "result": result.model_dump(),
+        "provider": "ev_routing",
+        "provider_commit": PROVIDER_COMMIT,
+        "native_schema_version": "1.0",
+        "provider_available": provider_available(),
     }
-
-
-def health() -> Dict[str, Any]:
-    """Estado del servicio, útil para health checks de API Gateway/ALB."""
-    return {"status": "ok", "api_version": API_VERSION}

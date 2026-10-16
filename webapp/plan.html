@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="es" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <link rel="icon" href="./assets/brand/icons/favicon.ico" sizes="16x16 32x32 48x48">
+  <link rel="icon" href="./assets/brand/icons/favicon.svg" type="image/svg+xml" sizes="any">
+  <link rel="apple-touch-icon" href="./assets/brand/icons/apple-touch-icon.png" sizes="180x180">
+  <title>Plan de reparto · ZMD Mobility</title>
+  <script src="theme.js"></script>
+  <link rel="stylesheet" href="./shared/base.css">
+  <link rel="stylesheet" href="plan.css">
+  <link rel="stylesheet" href="material.css">
+  <link rel="stylesheet" href="app.css?v=brand-v1">
+  <link rel="stylesheet" href="theme.css">
+  <link rel="stylesheet" href="run-panel.css">
+</head>
+<body class="page-plan" data-page="plan">
+  <div id="app-shell"></div>
+  <main class="workspace" id="plan-main" tabindex="-1" aria-busy="true">
+    <aside class="sidebar" aria-label="Vehículos y paradas del plan">
+      <div class="scenario">
+        <div class="row between"><p data-source-text="title">Escenario</p><span class="file-tag" data-source-text="file">Datos</span></div>
+        <h1>Plan de reparto</h1>
+        <div class="row location"><span class="pin-dot"></span><span id="scenario-location">—</span></div>
+      </div>
+      <div class="sidebar-tabs" role="tablist" aria-label="Contenido del plan">
+        <button id="fleet-tab" role="tab" aria-controls="sidebar-content" aria-selected="true">Vehículos <span>—</span></button>
+        <button id="stops-tab" role="tab" aria-controls="sidebar-content" aria-selected="false">Paradas <span>—</span></button>
+      </div>
+      <div class="sidebar-content" id="sidebar-content" role="tabpanel" aria-labelledby="fleet-tab"><p class="loading-note">Cargando escenario…</p></div>
+      <div class="sidebar-foot"><span id="foot-icon"></span><p>Recorridos y batería de ejemplo.<br>Validación del motor pendiente.</p></div>
+    </aside>
+    <section class="map-region" aria-label="Mapa del plan de reparto">
+      <div id="map"></div>
+      <div class="map-summary">
+        <div><span class="summary-icon" id="delivery-icon"></span><p><strong><b id="plan-deliveries">—</b> <span id="plan-demand">/ —</span></strong><small>entregas asignadas</small></p></div>
+        <div><span class="summary-icon" id="energy-icon"></span><p><strong><b id="plan-energy">—</b> <span>kWh</span></strong><small>consumo de ejemplo</small></p></div>
+        <div><span class="summary-icon" id="charge-icon"></span><p><strong id="plan-charges">—</strong><small>paradas de recarga</small></p></div>
+      </div>
+      <div class="map-tools">
+        <button id="chargers" aria-pressed="false"></button>
+        <button id="fit" class="icon-button" aria-label="Ver el recorrido completo"></button>
+      </div>
+      <div id="selection" class="selection" hidden></div>
+      <div class="legend">
+        <span id="base-legend"></span>
+        <span class="route-note" data-source-text="route">Trazado ilustrativo</span>
+      </div>
+    </section>
+  </main>
+  <p id="selection-status" class="sr-only" role="status" aria-live="polite"></p>
+  <noscript><p class="load-error">El Plan necesita JavaScript para cargar el escenario y sus controles.</p></noscript>
+  <script type="module" src="boot.js"></script>
+</body>
+</html>

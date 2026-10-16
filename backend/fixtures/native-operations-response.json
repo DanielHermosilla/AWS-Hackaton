@@ -1,0 +1,1064 @@
+{
+  "api_version": "3.0",
+  "result": {
+    "status": "result_available",
+    "has_solution": true,
+    "nodes": [
+      {
+        "node_id": "BASE",
+        "node_type": "base",
+        "latitude": null,
+        "longitude": null,
+        "address": "",
+        "network": "",
+        "total_ports": null,
+        "dc_fast_ports": null,
+        "level2_ports": null,
+        "connector_types": [],
+        "max_power_kw": null
+      },
+      {
+        "node_id": "A",
+        "node_type": "visit",
+        "latitude": null,
+        "longitude": null,
+        "address": "",
+        "network": "",
+        "total_ports": null,
+        "dc_fast_ports": null,
+        "level2_ports": null,
+        "connector_types": [],
+        "max_power_kw": null
+      },
+      {
+        "node_id": "F",
+        "node_type": "charger",
+        "latitude": null,
+        "longitude": null,
+        "address": "",
+        "network": "",
+        "total_ports": null,
+        "dc_fast_ports": null,
+        "level2_ports": null,
+        "connector_types": [
+          "J1772"
+        ],
+        "max_power_kw": null
+      },
+      {
+        "node_id": "B",
+        "node_type": "visit",
+        "latitude": null,
+        "longitude": null,
+        "address": "",
+        "network": "",
+        "total_ports": null,
+        "dc_fast_ports": null,
+        "level2_ports": null,
+        "connector_types": [],
+        "max_power_kw": null
+      }
+    ],
+    "fleet": [
+      {
+        "id": "vehicle_1",
+        "type": "native",
+        "label": "Vehículo 1",
+        "battery_capacity_kwh": 10.0,
+        "reserve_kwh": 1.0,
+        "initial_soc": 0.6
+      },
+      {
+        "id": "vehicle_2",
+        "type": "native",
+        "label": "Vehículo 2",
+        "battery_capacity_kwh": 10.0,
+        "reserve_kwh": 1.0,
+        "initial_soc": 0.6
+      }
+    ],
+    "routes": [
+      {
+        "vehicle_id": "vehicle_1",
+        "served_visit_ids": [
+          "A",
+          "B"
+        ],
+        "steps": [
+          {
+            "position": 0,
+            "node_id": "BASE",
+            "arrival_energy_kwh": 6.0,
+            "departure_energy_kwh": 6.0,
+            "charge_kwh": 0.0,
+            "energy_kwh": 4.0,
+            "delivered_visit_ids": [],
+            "next_node_id": "A",
+            "predicted_arc_energy_kwh": 4.0,
+            "effective_arc_energy_kwh": 4.0,
+            "arrival_seconds": 0.0,
+            "service_start_seconds": 0.0,
+            "departure_seconds": 0.0,
+            "service_duration_seconds": 0.0,
+            "charging_duration_seconds": 0.0,
+            "travel_time_seconds": 400.0
+          },
+          {
+            "position": 1,
+            "node_id": "A",
+            "arrival_energy_kwh": 2.0,
+            "departure_energy_kwh": 2.0,
+            "charge_kwh": 0.0,
+            "energy_kwh": 1.0,
+            "delivered_visit_ids": [
+              "A"
+            ],
+            "next_node_id": "F",
+            "predicted_arc_energy_kwh": 1.0,
+            "effective_arc_energy_kwh": 1.0,
+            "arrival_seconds": 400.0,
+            "service_start_seconds": 400.0,
+            "departure_seconds": 460.0,
+            "service_duration_seconds": 60.0,
+            "charging_duration_seconds": 0.0,
+            "travel_time_seconds": 100.0
+          },
+          {
+            "position": 2,
+            "node_id": "F",
+            "arrival_energy_kwh": 1.0,
+            "departure_energy_kwh": 10.0,
+            "charge_kwh": 9.0,
+            "energy_kwh": 6.0,
+            "delivered_visit_ids": [],
+            "next_node_id": "B",
+            "predicted_arc_energy_kwh": 6.0,
+            "effective_arc_energy_kwh": 6.0,
+            "arrival_seconds": 560.0,
+            "service_start_seconds": 560.0,
+            "departure_seconds": 2560.0,
+            "service_duration_seconds": 0.0,
+            "charging_duration_seconds": 2000.0,
+            "travel_time_seconds": 600.0
+          },
+          {
+            "position": 3,
+            "node_id": "B",
+            "arrival_energy_kwh": 4.0,
+            "departure_energy_kwh": 4.0,
+            "charge_kwh": 0.0,
+            "energy_kwh": 3.0,
+            "delivered_visit_ids": [
+              "B"
+            ],
+            "next_node_id": "BASE",
+            "predicted_arc_energy_kwh": 3.0,
+            "effective_arc_energy_kwh": 3.0,
+            "arrival_seconds": 3160.0,
+            "service_start_seconds": 3160.0,
+            "departure_seconds": 3280.0,
+            "service_duration_seconds": 120.0,
+            "charging_duration_seconds": 0.0,
+            "travel_time_seconds": 300.0
+          },
+          {
+            "position": 4,
+            "node_id": "BASE",
+            "arrival_energy_kwh": 1.0,
+            "departure_energy_kwh": 1.0,
+            "charge_kwh": 0.0,
+            "energy_kwh": null,
+            "delivered_visit_ids": [],
+            "next_node_id": null,
+            "predicted_arc_energy_kwh": null,
+            "effective_arc_energy_kwh": null,
+            "arrival_seconds": 3580.0,
+            "service_start_seconds": 3580.0,
+            "departure_seconds": 3580.0,
+            "service_duration_seconds": 0.0,
+            "charging_duration_seconds": 0.0,
+            "travel_time_seconds": null
+          }
+        ],
+        "geometry": null,
+        "distance_km": 14.0,
+        "energy_kwh": 14.0,
+        "duration_seconds": 3580.0
+      },
+      {
+        "vehicle_id": "vehicle_2",
+        "served_visit_ids": [],
+        "steps": [
+          {
+            "position": 0,
+            "node_id": "BASE",
+            "arrival_energy_kwh": 6.0,
+            "departure_energy_kwh": 6.0,
+            "charge_kwh": 0.0,
+            "energy_kwh": null,
+            "delivered_visit_ids": [],
+            "next_node_id": null,
+            "predicted_arc_energy_kwh": null,
+            "effective_arc_energy_kwh": null,
+            "arrival_seconds": 0.0,
+            "service_start_seconds": 0.0,
+            "departure_seconds": 0.0,
+            "service_duration_seconds": 0.0,
+            "charging_duration_seconds": 0.0,
+            "travel_time_seconds": null
+          }
+        ],
+        "geometry": null,
+        "distance_km": 0.0,
+        "energy_kwh": 0.0,
+        "duration_seconds": 0.0
+      }
+    ],
+    "served_count": 2,
+    "total_visits": 2,
+    "unserved_visit_ids": [],
+    "total_energy_kwh": 14.0,
+    "kpis": {
+      "feasible": true,
+      "total_deliveries": 2,
+      "served_deliveries": 2,
+      "net_battery_energy_kwh": 14.0,
+      "charged_to_battery_kwh": 9.0,
+      "distance_km": 14.0,
+      "charging_stops": 1,
+      "minimum_battery_kwh": 1.0,
+      "grid_energy_kwh": 10.0,
+      "operational_duration_seconds": 3580.0,
+      "time_saved_seconds": null,
+      "co2e_saved_kg": null,
+      "unavailable_reasons": {
+        "time_saved_seconds": "No se proporcionó una referencia comparable.",
+        "co2e_saved_kg": "Faltan referencia y factores de emisión documentados."
+      },
+      "route_duration_seconds": {
+        "vehicle_1": 3580.0,
+        "vehicle_2": 0.0
+      },
+      "total_vehicle_time_seconds": 3580.0,
+      "operational_duration_definition": "Tiempo hasta el último retorno (máximo por vehículo), con salida común en t=0."
+    },
+    "operations": {
+      "service_seconds": 60.0,
+      "service_seconds_by_customer": {
+        "B": 120.0
+      },
+      "max_route_seconds": 10000.0,
+      "assumed_speed_kph": 36.0,
+      "include_charging_time": true,
+      "charging_power_kw": 18.0,
+      "charging_power_kw_by_station": {},
+      "charging_efficiency": 0.9,
+      "final_reserve_soc": 0.1,
+      "energy_margin_fraction": 0.0,
+      "disabled_charger_ids": [],
+      "use_customer_time_windows": false,
+      "customer_time_windows": {}
+    },
+    "tuning": {
+      "requested_policy": "standard",
+      "active_policy": "standard",
+      "status": "disabled",
+      "calls": 0,
+      "applied_decisions": 0,
+      "decisions": [],
+      "runtime_seconds": 0.0,
+      "callback_calls": 0,
+      "policy": {
+        "route_cuts": "subset_row_triples",
+        "columns_per_round": 50,
+        "max_subset_rows": 100,
+        "subtour_batch_size": 100,
+        "branching": "relpscost",
+        "heuristics": "default",
+        "presolve": "default",
+        "separation": "default",
+        "scip_parameters": {},
+        "seed_strategy": "cheapest_insertion",
+        "seed_starts": 1,
+        "pricing_strategy": "exhaustive",
+        "pricing_search": "breadth_first",
+        "pricing_heuristic_starts": 4,
+        "dominance": "convex",
+        "rationale": ""
+      }
+    },
+    "validation": {
+      "feasible": true,
+      "violations": [],
+      "checks": {
+        "fleet": true,
+        "topology": true,
+        "deliveries": true,
+        "battery": true,
+        "charging": true,
+        "energy": true,
+        "time": true
+      },
+      "scope": "Validación independiente nativa de Daniel sobre los arcos y energía de la instancia; formulación por rutas completas sin H. No garantiza consumos reales ni una red vial no aportada."
+    },
+    "phases": [
+      {
+        "name": "deliveries",
+        "sense": "maximize",
+        "status": "optimal",
+        "termination_condition": "optimal",
+        "has_solution": true,
+        "proven_optimal": true,
+        "incumbent": 2.0,
+        "best_bound": 2.0,
+        "absolute_gap": 0.0,
+        "relative_gap": 0.0,
+        "runtime_seconds": 0.7070786249996672,
+        "message": "",
+        "warm_start": "not_requested",
+        "incumbent_source": "solver"
+      },
+      {
+        "name": "energy",
+        "sense": "minimize",
+        "status": "optimal",
+        "termination_condition": "optimal",
+        "has_solution": true,
+        "proven_optimal": true,
+        "incumbent": 14.0,
+        "best_bound": 14.0,
+        "absolute_gap": 0.0,
+        "relative_gap": 0.0,
+        "runtime_seconds": 0.01014358300017193,
+        "message": "",
+        "warm_start": "not_requested",
+        "incumbent_source": "solver"
+      }
+    ],
+    "warnings": [
+      "Formulación por rutas sin H. El certificado se refiere al grafo y energía de entrada.",
+      "Instancia sintética/geodésica: sus arcos y energía son supuestos; no representan rutas viales verificadas.",
+      "No hay geometría guardada continua con extremos asociados a sus nodos para alguna ruta; se conserva la secuencia sin fabricar líneas."
+    ],
+    "assumptions": [
+      "SCIP por rutas sin H; un hilo, semilla 0, gap relativo 0 y política estándar sin AWS.",
+      "El presupuesto de solver puede excederse por construcción, validación o sobrecostos de la biblioteca."
+    ],
+    "network": {
+      "type": "native",
+      "vial": false,
+      "geometry_source": "native_arc_geometry",
+      "provenance_verified": false
+    },
+    "metadata": {
+      "native_run_id": "b12228d392e946d98e94d88c547e5715",
+      "native_status": "optimal",
+      "lexicographic_optimal": true,
+      "time_limit_reached": null,
+      "certificate_scope": "Formulación por rutas sin H. El certificado se refiere al grafo y energía de entrada.",
+      "formulation": {
+        "kind": "complete_routes_without_h",
+        "movement_limit_used": null
+      },
+      "native_solver": {
+        "requested_solver": "scip-routes",
+        "used_solver": "scip-routes",
+        "solver_version": "SCIP 10.0.0 / PySCIPOpt 6.0.0",
+        "fallback_reason": null,
+        "solution_source": "solver",
+        "message": "Formulación por rutas sin H. El certificado se refiere al grafo y energía de entrada."
+      },
+      "provider": "ev_routing",
+      "provider_commit": "624203573bffdeec334a9e07a64b361a515f9725",
+      "native_schema_version": "1.0",
+      "input_hash": "dd3a27278f1e147730fbcb57094c757b9726cf110d9e8a7184b6e17d9bf0a3a2",
+      "config_hash": "21ab8010464c67cd64f479dd7bb2a1f4271e66e320f6ab4aabb32a2605dc9547",
+      "network_hash": "267af7ac56dec48e443874d0564ccd0714a2c6023f4e851566c389a112f31c01"
+    },
+    "raw": {
+      "effective_config": {
+        "solver": {
+          "solver": "scip-routes",
+          "time_limit_seconds": 3.0,
+          "relative_gap": 0.0,
+          "threads": 1,
+          "seed": 0,
+          "tee": false
+        },
+        "search_policy": "standard"
+      },
+      "result": {
+        "schema_version": "1.0",
+        "run_id": "b12228d392e946d98e94d88c547e5715",
+        "created_at_utc": "2026-10-15T23:01:30.655178+00:00",
+        "package_version": "0.1.0",
+        "instance_name": "toy-two-deliveries-charging-and-operational-times",
+        "instance_sha256": "d3b11278f74b5dfcb81535dbeb3f61b19658f713054a4b955d30b3faa73cc075",
+        "parameters": {
+          "vehicle_count": 2,
+          "battery_capacity_kwh": 10.0,
+          "reserve_kwh": 1.0,
+          "initial_soc": 0.6,
+          "movement_limit": 4,
+          "vehicle_connector_types": [
+            "J1772"
+          ]
+        },
+        "formulation": {
+          "kind": "complete_routes_without_h",
+          "movement_limit_used": null
+        },
+        "operations": {
+          "service_seconds": 60.0,
+          "service_seconds_by_customer": {
+            "B": 120.0
+          },
+          "max_route_seconds": 10000.0,
+          "assumed_speed_kph": 36.0,
+          "include_charging_time": true,
+          "charging_power_kw": 18.0,
+          "charging_power_kw_by_station": {},
+          "charging_efficiency": 0.9,
+          "final_reserve_soc": 0.1,
+          "energy_margin_fraction": 0.0,
+          "disabled_charger_ids": [],
+          "use_customer_time_windows": false,
+          "customer_time_windows": {}
+        },
+        "provenance": {
+          "kind": "synthetic",
+          "expected_deliveries": 2,
+          "expected_net_energy_kwh": 14.0,
+          "explanation": "Instancia sintética: dos entregas, 14 kWh netos, 9 kWh incorporados a batería, 10 kWh de red a eficiencia 0.9 y 3580 segundos de ruta. No son datos reales.",
+          "source": "Daniel Hermosilla modelamiento@624203573bffdeec334a9e07a64b361a515f9725 examples/toy_recharge.json; explicit synthetic operational extension for HTTP parity",
+          "expected_charged_to_battery_kwh": 9,
+          "expected_grid_energy_kwh": 10,
+          "expected_operational_duration_seconds": 3580
+        },
+        "solver_config": {
+          "solver": "scip-routes",
+          "time_limit_seconds": 3.0,
+          "relative_gap": 0.0,
+          "threads": 1,
+          "seed": 0,
+          "tee": false
+        },
+        "status": "optimal",
+        "solve": {
+          "requested_solver": "scip-routes",
+          "used_solver": "scip-routes",
+          "solver_version": "SCIP 10.0.0 / PySCIPOpt 6.0.0",
+          "fallback_reason": null,
+          "phases": [
+            {
+              "name": "deliveries",
+              "sense": "maximize",
+              "status": "optimal",
+              "termination_condition": "optimal",
+              "has_solution": true,
+              "proven_optimal": true,
+              "incumbent": 2.0,
+              "best_bound": 2.0,
+              "absolute_gap": 0.0,
+              "relative_gap": 0.0,
+              "runtime_seconds": 0.7070786249996672,
+              "message": "",
+              "warm_start": "not_requested",
+              "incumbent_source": "solver"
+            },
+            {
+              "name": "energy",
+              "sense": "minimize",
+              "status": "optimal",
+              "termination_condition": "optimal",
+              "has_solution": true,
+              "proven_optimal": true,
+              "incumbent": 14.0,
+              "best_bound": 14.0,
+              "absolute_gap": 0.0,
+              "relative_gap": 0.0,
+              "runtime_seconds": 0.01014358300017193,
+              "message": "",
+              "warm_start": "not_requested",
+              "incumbent_source": "solver"
+            }
+          ],
+          "solution": {
+            "routes": [
+              {
+                "vehicle_id": "vehicle_1",
+                "steps": [
+                  {
+                    "position": 0,
+                    "node_id": "BASE",
+                    "battery_arrival_kwh": 6.0,
+                    "charged_to_battery_kwh": 0.0,
+                    "battery_departure_kwh": 6.0,
+                    "delivered_visit_ids": [],
+                    "next_node_id": "A",
+                    "predicted_arc_energy_kwh": 4.0,
+                    "effective_arc_energy_kwh": 4.0,
+                    "arrival_seconds": 0.0,
+                    "service_start_seconds": 0.0,
+                    "departure_seconds": 0.0,
+                    "service_duration_seconds": 0.0,
+                    "charging_duration_seconds": 0.0,
+                    "travel_time_seconds": 400.0
+                  },
+                  {
+                    "position": 1,
+                    "node_id": "A",
+                    "battery_arrival_kwh": 2.0,
+                    "charged_to_battery_kwh": 0.0,
+                    "battery_departure_kwh": 2.0,
+                    "delivered_visit_ids": [
+                      "A"
+                    ],
+                    "next_node_id": "F",
+                    "predicted_arc_energy_kwh": 1.0,
+                    "effective_arc_energy_kwh": 1.0,
+                    "arrival_seconds": 400.0,
+                    "service_start_seconds": 400.0,
+                    "departure_seconds": 460.0,
+                    "service_duration_seconds": 60.0,
+                    "charging_duration_seconds": 0.0,
+                    "travel_time_seconds": 100.0
+                  },
+                  {
+                    "position": 2,
+                    "node_id": "F",
+                    "battery_arrival_kwh": 1.0,
+                    "charged_to_battery_kwh": 9.0,
+                    "battery_departure_kwh": 10.0,
+                    "delivered_visit_ids": [],
+                    "next_node_id": "B",
+                    "predicted_arc_energy_kwh": 6.0,
+                    "effective_arc_energy_kwh": 6.0,
+                    "arrival_seconds": 560.0,
+                    "service_start_seconds": 560.0,
+                    "departure_seconds": 2560.0,
+                    "service_duration_seconds": 0.0,
+                    "charging_duration_seconds": 2000.0,
+                    "travel_time_seconds": 600.0
+                  },
+                  {
+                    "position": 3,
+                    "node_id": "B",
+                    "battery_arrival_kwh": 4.0,
+                    "charged_to_battery_kwh": 0.0,
+                    "battery_departure_kwh": 4.0,
+                    "delivered_visit_ids": [
+                      "B"
+                    ],
+                    "next_node_id": "BASE",
+                    "predicted_arc_energy_kwh": 3.0,
+                    "effective_arc_energy_kwh": 3.0,
+                    "arrival_seconds": 3160.0,
+                    "service_start_seconds": 3160.0,
+                    "departure_seconds": 3280.0,
+                    "service_duration_seconds": 120.0,
+                    "charging_duration_seconds": 0.0,
+                    "travel_time_seconds": 300.0
+                  },
+                  {
+                    "position": 4,
+                    "node_id": "BASE",
+                    "battery_arrival_kwh": 1.0,
+                    "charged_to_battery_kwh": 0.0,
+                    "battery_departure_kwh": 1.0,
+                    "delivered_visit_ids": [],
+                    "next_node_id": null,
+                    "predicted_arc_energy_kwh": null,
+                    "effective_arc_energy_kwh": null,
+                    "arrival_seconds": 3580.0,
+                    "service_start_seconds": 3580.0,
+                    "departure_seconds": 3580.0,
+                    "service_duration_seconds": 0.0,
+                    "charging_duration_seconds": 0.0,
+                    "travel_time_seconds": null
+                  }
+                ],
+                "net_energy_kwh": 14.0,
+                "duration_seconds": 3580.0
+              },
+              {
+                "vehicle_id": "vehicle_2",
+                "steps": [
+                  {
+                    "position": 0,
+                    "node_id": "BASE",
+                    "battery_arrival_kwh": 6.0,
+                    "charged_to_battery_kwh": 0.0,
+                    "battery_departure_kwh": 6.0,
+                    "delivered_visit_ids": [],
+                    "next_node_id": null,
+                    "predicted_arc_energy_kwh": null,
+                    "effective_arc_energy_kwh": null,
+                    "arrival_seconds": 0.0,
+                    "service_start_seconds": 0.0,
+                    "departure_seconds": 0.0,
+                    "service_duration_seconds": 0.0,
+                    "charging_duration_seconds": 0.0,
+                    "travel_time_seconds": null
+                  }
+                ],
+                "net_energy_kwh": 0.0,
+                "duration_seconds": 0.0
+              }
+            ],
+            "served_visit_ids": [
+              "A",
+              "B"
+            ],
+            "unserved_visit_ids": [],
+            "net_energy_kwh": 14.0
+          },
+          "lexicographic_optimal": true,
+          "status": "optimal",
+          "runtime_seconds": 0.7231848339997669,
+          "message": "Formulación por rutas sin H. El certificado se refiere al grafo y energía de entrada.",
+          "solution_source": "solver",
+          "search": {
+            "engine": "scip_routes_without_h",
+            "movement_limit_used": null,
+            "single_tour_certificate": {
+              "applicable": false,
+              "reason": "hypotheses_not_verified"
+            },
+            "phases": [
+              {
+                "name": "deliveries",
+                "columns": 8,
+                "subset_row_cuts": 0,
+                "pricing_calls": 6,
+                "farkas_calls": 2,
+                "max_columns_added_per_call": 2,
+                "pricing_interrupted": false,
+                "pricing_error": null,
+                "oracle_complete": {
+                  "vehicle_1": true,
+                  "vehicle_2": true
+                },
+                "labels_expanded": {
+                  "vehicle_1": 9,
+                  "vehicle_2": 9
+                },
+                "branch_nodes": 1,
+                "movement_limit_used": null,
+                "native_optimize_seconds": 0.03468891699958476,
+                "pricing_seconds": 0.011716166999576672,
+                "heuristic_pricing_seconds": 0.0,
+                "heuristic_columns": 0,
+                "native_parameter_changes": {
+                  "branching/relpscost/priority": {
+                    "before": 10000,
+                    "after": 1000000
+                  }
+                },
+                "bound_source": "SCIP_with_exact_pricing_or_analytic"
+              },
+              {
+                "name": "energy",
+                "columns": 6,
+                "subset_row_cuts": 0,
+                "pricing_calls": 3,
+                "farkas_calls": 0,
+                "max_columns_added_per_call": 2,
+                "pricing_interrupted": false,
+                "pricing_error": null,
+                "oracle_complete": {
+                  "vehicle_1": true,
+                  "vehicle_2": true
+                },
+                "labels_expanded": {
+                  "vehicle_1": 9,
+                  "vehicle_2": 9
+                },
+                "branch_nodes": 1,
+                "movement_limit_used": null,
+                "native_optimize_seconds": 0.001260416000150144,
+                "pricing_seconds": 0.0001494150001235539,
+                "heuristic_pricing_seconds": 0.0,
+                "heuristic_columns": 0,
+                "native_parameter_changes": {
+                  "branching/relpscost/priority": {
+                    "before": 10000,
+                    "after": 1000000
+                  }
+                },
+                "bound_source": "SCIP_with_exact_pricing_or_analytic"
+              }
+            ],
+            "controller": {
+              "requested_policy": "standard",
+              "active_policy": "standard",
+              "status": "disabled",
+              "calls": 0,
+              "applied_decisions": 0,
+              "decisions": [],
+              "runtime_seconds": 0.0,
+              "callback_calls": 0,
+              "policy": {
+                "route_cuts": "subset_row_triples",
+                "columns_per_round": 50,
+                "max_subset_rows": 100,
+                "subtour_batch_size": 100,
+                "branching": "relpscost",
+                "heuristics": "default",
+                "presolve": "default",
+                "separation": "default",
+                "scip_parameters": {},
+                "seed_strategy": "cheapest_insertion",
+                "seed_starts": 1,
+                "pricing_strategy": "exhaustive",
+                "pricing_search": "breadth_first",
+                "pricing_heuristic_starts": 4,
+                "dominance": "convex",
+                "rationale": ""
+              }
+            },
+            "configuration": {
+              "policy": "standard",
+              "bedrock": {
+                "model_id": null,
+                "region": "us-east-1",
+                "profile": null,
+                "timeout_seconds": 8,
+                "max_output_tokens": 4096,
+                "reasoning_effort": null
+              },
+              "max_llm_calls": 1,
+              "decision_interval_seconds": 15,
+              "min_pricing_calls_between_decisions": 10,
+              "log_directory": null,
+              "show_llm_trace": false
+            },
+            "initial_routes": {
+              "strategy": "cheapest_insertion",
+              "runtime_seconds": 8.500999683747068e-06,
+              "deliveries": null,
+              "energy_kwh": null,
+              "baseline_energy_kwh": null,
+              "additional_candidate_energy_kwh": null
+            }
+          }
+        },
+        "validation": {
+          "feasible": true,
+          "violations": [],
+          "checks": {
+            "fleet": true,
+            "topology": true,
+            "deliveries": true,
+            "battery": true,
+            "charging": true,
+            "energy": true,
+            "time": true
+          }
+        },
+        "road_validation": null,
+        "initial_solution": {
+          "provided": false,
+          "validated": false,
+          "deliveries": null,
+          "energy_kwh": null
+        },
+        "kpis": {
+          "feasible": true,
+          "total_deliveries": 2,
+          "served_deliveries": 2,
+          "net_battery_energy_kwh": 14.0,
+          "charged_to_battery_kwh": 9.0,
+          "distance_km": 14.0,
+          "charging_stops": 1,
+          "minimum_battery_kwh": 1.0,
+          "grid_energy_kwh": 10.0,
+          "operational_duration_seconds": 3580.0,
+          "time_saved_seconds": null,
+          "co2e_saved_kg": null,
+          "unavailable_reasons": {
+            "time_saved_seconds": "No se proporcionó una referencia comparable.",
+            "co2e_saved_kg": "Faltan referencia y factores de emisión documentados."
+          },
+          "route_duration_seconds": {
+            "vehicle_1": 3580.0,
+            "vehicle_2": 0.0
+          },
+          "total_vehicle_time_seconds": 3580.0,
+          "operational_duration_definition": "Tiempo hasta el último retorno (máximo por vehículo), con salida común en t=0."
+        },
+        "tuning": {
+          "requested_policy": "standard",
+          "active_policy": "standard",
+          "status": "disabled",
+          "calls": 0,
+          "applied_decisions": 0,
+          "decisions": [],
+          "runtime_seconds": 0.0,
+          "callback_calls": 0,
+          "policy": {
+            "route_cuts": "subset_row_triples",
+            "columns_per_round": 50,
+            "max_subset_rows": 100,
+            "subtour_batch_size": 100,
+            "branching": "relpscost",
+            "heuristics": "default",
+            "presolve": "default",
+            "separation": "default",
+            "scip_parameters": {},
+            "seed_strategy": "cheapest_insertion",
+            "seed_starts": 1,
+            "pricing_strategy": "exhaustive",
+            "pricing_search": "breadth_first",
+            "pricing_heuristic_starts": 4,
+            "dominance": "convex",
+            "rationale": ""
+          }
+        },
+        "runtime_seconds": {
+          "resolution_including_model": 0.7231848339997669,
+          "validation": 9.479199979978148e-05,
+          "initial_solution_validation": 8.300048648379743e-08,
+          "total": 1.8401665839992347,
+          "llm": 0.0
+        }
+      },
+      "input": {
+        "api_version": "3.0",
+        "instance": {
+          "schema_version": "1.0",
+          "name": "toy-two-deliveries-charging-and-operational-times",
+          "nodes": [
+            {
+              "node_id": "BASE",
+              "node_type": "base"
+            },
+            {
+              "node_id": "A",
+              "node_type": "visit"
+            },
+            {
+              "node_id": "F",
+              "node_type": "charger",
+              "connector_types": [
+                "J1772"
+              ]
+            },
+            {
+              "node_id": "B",
+              "node_type": "visit"
+            }
+          ],
+          "arcs": [
+            {
+              "from_node_id": "BASE",
+              "to_node_id": "A",
+              "energy_kwh": 4.0,
+              "distance_m": 4000
+            },
+            {
+              "from_node_id": "A",
+              "to_node_id": "F",
+              "energy_kwh": 1.0,
+              "distance_m": 1000
+            },
+            {
+              "from_node_id": "F",
+              "to_node_id": "B",
+              "energy_kwh": 6.0,
+              "distance_m": 6000
+            },
+            {
+              "from_node_id": "B",
+              "to_node_id": "BASE",
+              "energy_kwh": 3.0,
+              "distance_m": 3000
+            }
+          ],
+          "parameters": {
+            "vehicle_count": 2,
+            "battery_capacity_kwh": 10.0,
+            "reserve_kwh": 1.0,
+            "initial_soc": 0.6,
+            "movement_limit": 4,
+            "vehicle_connector_types": [
+              "J1772"
+            ]
+          },
+          "provenance": {
+            "kind": "synthetic",
+            "expected_deliveries": 2,
+            "expected_net_energy_kwh": 14.0,
+            "explanation": "Instancia sintética: dos entregas, 14 kWh netos, 9 kWh incorporados a batería, 10 kWh de red a eficiencia 0.9 y 3580 segundos de ruta. No son datos reales.",
+            "source": "Daniel Hermosilla modelamiento@624203573bffdeec334a9e07a64b361a515f9725 examples/toy_recharge.json; explicit synthetic operational extension for HTTP parity",
+            "expected_charged_to_battery_kwh": 9,
+            "expected_grid_energy_kwh": 10,
+            "expected_operational_duration_seconds": 3580
+          },
+          "operations": {
+            "service_seconds": 60,
+            "service_seconds_by_customer": {
+              "B": 120
+            },
+            "max_route_seconds": 10000,
+            "assumed_speed_kph": 36,
+            "include_charging_time": true,
+            "charging_power_kw": 18,
+            "charging_efficiency": 0.9,
+            "final_reserve_soc": 0.1
+          }
+        },
+        "solver": {
+          "time_limit_seconds": 3
+        }
+      },
+      "instance": {
+        "schema_version": "1.0",
+        "name": "toy-two-deliveries-charging-and-operational-times",
+        "nodes": [
+          {
+            "node_id": "BASE",
+            "node_type": "base",
+            "latitude": null,
+            "longitude": null,
+            "address": "",
+            "network": "",
+            "total_ports": null,
+            "dc_fast_ports": null,
+            "level2_ports": null,
+            "connector_types": [],
+            "max_power_kw": null
+          },
+          {
+            "node_id": "A",
+            "node_type": "visit",
+            "latitude": null,
+            "longitude": null,
+            "address": "",
+            "network": "",
+            "total_ports": null,
+            "dc_fast_ports": null,
+            "level2_ports": null,
+            "connector_types": [],
+            "max_power_kw": null
+          },
+          {
+            "node_id": "F",
+            "node_type": "charger",
+            "latitude": null,
+            "longitude": null,
+            "address": "",
+            "network": "",
+            "total_ports": null,
+            "dc_fast_ports": null,
+            "level2_ports": null,
+            "connector_types": [
+              "J1772"
+            ],
+            "max_power_kw": null
+          },
+          {
+            "node_id": "B",
+            "node_type": "visit",
+            "latitude": null,
+            "longitude": null,
+            "address": "",
+            "network": "",
+            "total_ports": null,
+            "dc_fast_ports": null,
+            "level2_ports": null,
+            "connector_types": [],
+            "max_power_kw": null
+          }
+        ],
+        "arcs": [
+          {
+            "from_node_id": "BASE",
+            "to_node_id": "A",
+            "energy_kwh": 4.0,
+            "distance_m": 4000.0,
+            "travel_time_seconds": null,
+            "geometry": [],
+            "source_id": null
+          },
+          {
+            "from_node_id": "A",
+            "to_node_id": "F",
+            "energy_kwh": 1.0,
+            "distance_m": 1000.0,
+            "travel_time_seconds": null,
+            "geometry": [],
+            "source_id": null
+          },
+          {
+            "from_node_id": "F",
+            "to_node_id": "B",
+            "energy_kwh": 6.0,
+            "distance_m": 6000.0,
+            "travel_time_seconds": null,
+            "geometry": [],
+            "source_id": null
+          },
+          {
+            "from_node_id": "B",
+            "to_node_id": "BASE",
+            "energy_kwh": 3.0,
+            "distance_m": 3000.0,
+            "travel_time_seconds": null,
+            "geometry": [],
+            "source_id": null
+          }
+        ],
+        "parameters": {
+          "vehicle_count": 2,
+          "battery_capacity_kwh": 10.0,
+          "reserve_kwh": 1.0,
+          "initial_soc": 0.6,
+          "movement_limit": 4,
+          "vehicle_connector_types": [
+            "J1772"
+          ]
+        },
+        "operations": {
+          "service_seconds": 60.0,
+          "service_seconds_by_customer": {
+            "B": 120.0
+          },
+          "max_route_seconds": 10000.0,
+          "assumed_speed_kph": 36.0,
+          "include_charging_time": true,
+          "charging_power_kw": 18.0,
+          "charging_power_kw_by_station": {},
+          "charging_efficiency": 0.9,
+          "final_reserve_soc": 0.1,
+          "energy_margin_fraction": 0.0,
+          "disabled_charger_ids": [],
+          "use_customer_time_windows": false,
+          "customer_time_windows": {}
+        },
+        "compatible_chargers": null,
+        "provenance": {
+          "kind": "synthetic",
+          "expected_deliveries": 2,
+          "expected_net_energy_kwh": 14.0,
+          "explanation": "Instancia sintética: dos entregas, 14 kWh netos, 9 kWh incorporados a batería, 10 kWh de red a eficiencia 0.9 y 3580 segundos de ruta. No son datos reales.",
+          "source": "Daniel Hermosilla modelamiento@624203573bffdeec334a9e07a64b361a515f9725 examples/toy_recharge.json; explicit synthetic operational extension for HTTP parity",
+          "expected_charged_to_battery_kwh": 9,
+          "expected_grid_energy_kwh": 10,
+          "expected_operational_duration_seconds": 3580
+        }
+      }
+    },
+    "runtime_seconds": {
+      "preparation": 0.0019931659999201656,
+      "solver": 0.7231848339997669,
+      "total": 1.9307368749996385,
+      "validation": 9.479199979978148e-05,
+      "initial_solution_validation": 8.300048648379743e-08,
+      "llm": 0.0,
+      "native_resolution_including_model": 0.7231848339997669,
+      "native_total": 1.8401665839992347
+    },
+    "run_id": "23be155a-56b2-47c8-8f51-2270bbe5b3da"
+  }
+}

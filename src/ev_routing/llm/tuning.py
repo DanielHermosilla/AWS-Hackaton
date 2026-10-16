@@ -1,47 +1,44 @@
-from typing import Any, Dict, List, Tuple
+"""Esqueleto del futuro tuning; deliberadamente fuera del flujo de resolución.
 
-from ..contracts import TuningProposal, TuningRequest
+Integración futura, siguiendo LLM4MIP:
+1. Resumir estructura del MISMO modelo Pyomo con ``build_tuning_request``.
+2. Enviar únicamente ese perfil a un modelo autorizado de AWS Bedrock.
+3. Validar JSON y opciones admitidas por la versión del solver.
+4. Comparar contra el baseline con igual modelo, presupuesto y recursos.
+
+No cambiar B, reserva, H, objetivos ni tolerancias para aparentar una mejora.
+No ejecutar código, comandos o ecuaciones devueltos por el LLM.
+"""
+
+from __future__ import annotations
+
+from typing import Any
+
+import pyomo.environ as pyo
+
+from ev_routing.contracts import SolverConfig
 
 
-DEFAULT_ALLOWED = ["heuristics", "cuts", "presolve", "branching", "mip_rel_gap", "time_limit"]
-
-
-def build_structural_summary(instance) -> Dict[str, Any]:
+def build_tuning_request(model: pyo.ConcreteModel, config: SolverConfig) -> dict[str, Any]:
+    """Crear un perfil local sin direcciones, históricos, credenciales o red."""
+    variables = list(model.component_data_objects(pyo.Var, active=True))
     return {
-        "num_nodes": len(instance.nodes),
-        "num_visits": len(instance.visit_nodes()),
-        "num_chargers": len(instance.charger_nodes()),
-        "num_vehicles": instance.fleet.num_vehicles,
-        "movement_limit": instance.movement_limit,
-        "battery_capacity_kwh": instance.fleet.battery_capacity_kwh,
+        "schema_version": "1.0",
+        "problem_family": "electric_vehicle_routing",
+        "variable_count": len(variables),
+        "binary_variable_count": sum(var.is_binary() for var in variables),
+        "constraint_count": sum(
+            1 for _ in model.component_data_objects(pyo.Constraint, active=True)
+        ),
+        "solver_config": config.model_dump(),
+        "allowed_parameters": {},  # Futura allowlist específica de solver/versión.
+        "status": "disabled",
     }
 
 
-def validate_proposal(proposal_dict: Dict[str, Any], allowed_parameters: List[str]) -> Tuple[bool, List[str]]:
-    warnings: List[str] = []
-    if not isinstance(proposal_dict, dict):
-        return False, ["proposal is not a dict"]
-    params = proposal_dict.get("parameters", {})
-    if not isinstance(params, dict):
-        return False, ["parameters must be an object"]
-    unknown = [k for k in params if k not in (allowed_parameters or [])]
-    if unknown:
-        warnings.append(f"unknown parameters ignored: {unknown}")
-    # do not accept changes to problem config / model
-    forbidden = {"movement_limit", "battery_capacity_kwh", "reserve_kwh", "initial_soc", "objective"}
-    if forbidden & set(params):
-        return False, [f"forbidden tuning parameters: {forbidden & set(params)}"]
-    return True, warnings
-
-
-def apply_proposal(solver_config, proposal: TuningProposal, allowed_parameters: List[str]) -> Tuple[Any, bool]:
-    ok, ws = validate_proposal(proposal.model_dump() if hasattr(proposal, "model_dump") else {"parameters": proposal.parameters}, allowed_parameters)
-    if not ok:
-        return solver_config, False
-    # We do not mutate problem; only solver options
-    new = solver_config.model_copy() if hasattr(solver_config, "model_copy") else solver_config.copy()
-    for k, v in (proposal.parameters or {}).items():
-        if k in allowed_parameters:
-            new.options = dict(new.options or {})
-            new.options[k] = v
-    return new, True
+def propose_tuning(request: dict[str, Any]) -> dict[str, Any]:
+    """Punto futuro de llamada a Bedrock; hoy nunca devuelve un tuning ficticio."""
+    raise NotImplementedError(
+        "LLM desactivado en modelamiento: no se realizan llamadas a AWS. "
+        "Implementar aquí la propuesta JSON y su validación en una tarea posterior."
+    )

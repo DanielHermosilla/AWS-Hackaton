@@ -1,0 +1,172 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  Solver API (FastAPI wrapper del motor ev_routing / SCIP) en ECS Fargate.
+  Servicio NUEVO e INDEPENDIENTE del stack Streamlit "zmd-solver": aqui el
+  nombre es "zmd-solver-api" y escucha en el puerto 8080. La Lambda-proxy
+  (stack de la app) le reenvia /prepare y /solve anadiendo el header interno
+  X-Solver-Token. IP publica directa (sin ALB) para minimizar piezas; la imagen
+  debe estar previamente en ECR.
+
+Parameters:
+  ImageUri:
+    Type: String
+    Description: >
+      URI de la imagen en ECR
+      (p. ej. 831851703432.dkr.ecr.us-east-1.amazonaws.com/zmd-solver-api:latest)
+  SolverInternalToken:
+    Type: String
+    NoEcho: true
+    Description: >
+      Token interno que la Lambda-proxy enviara en el header X-Solver-Token.
+      DEBE coincidir con el SOLVER_INTERNAL_TOKEN de la Lambda de la app.
+  SubnetId:
+    Type: AWS::EC2::Subnet::Id
+    Description: Subred publica donde corre la tarea Fargate (debe dar IP publica).
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+    Description: VPC donde se crea el Security Group.
+  AllowedCidr:
+    Type: String
+    Default: 0.0.0.0/0
+    Description: >
+      CIDR autorizado a conectarse al puerto 8080.
+      ############################################################
+      # SEGURIDAD: el valor por defecto 0.0.0.0/0 ABRE el puerto a
+      # TODO INTERNET. Es defensa en profundidad: el contenedor ya
+      # EXIGE X-Solver-Token, pero lo IDEAL es restringir este CIDR
+      # (p. ej. a la IP/NAT desde donde sale la Lambda) o, mejor,
+      # poner la Lambda-proxy DENTRO de la VPC y abrir solo al CIDR
+      # de las subredes de la Lambda. Cambie este parametro en
+      # cuanto conozca el origen real de las llamadas del proxy.
+      ############################################################
+
+Resources:
+  Cluster:
+    Type: AWS::ECS::Cluster
+    Properties:
+      ClusterName: zmd-solver-api-cluster
+
+  LogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: /ecs/zmd-solver-api
+      RetentionInDays: 7
+
+  SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Acceso HTTP a la Solver API (FastAPI) en el puerto 8080
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        # Puerto 8080. El CIDR por defecto es 0.0.0.0/0 (ver advertencia en el
+        # parametro AllowedCidr). El contenido exige X-Solver-Token, de modo que
+        # abrir el puerto es defensa-en-profundidad, no la unica barrera.
+        - IpProtocol: tcp
+          FromPort: 8080
+          ToPort: 8080
+          CidrIp: !Ref AllowedCidr
+
+  TaskExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: { Service: ecs-tasks.amazonaws.com }
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+
+  # El motor puede, opcionalmente, invocar Bedrock (politica de busqueda
+  # "adaptive"). El camino por defecto ("standard") NO lo usa, pero dejamos el
+  # permiso por si se habilita.
+  TaskRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: { Service: ecs-tasks.amazonaws.com }
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: bedrock-invoke
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: [bedrock:InvokeModel, bedrock:Converse]
+                Resource: "*"
+
+  TaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: zmd-solver-api
+      # SCIP necesita RAM; 2 vCPU / 4 GB es un punto de partida razonable.
+      Cpu: "2048"
+      Memory: "4096"
+      NetworkMode: awsvpc
+      RequiresCompatibilities: [FARGATE]
+      ExecutionRoleArn: !GetAtt TaskExecutionRole.Arn
+      TaskRoleArn: !GetAtt TaskRole.Arn
+      ContainerDefinitions:
+        - Name: solver-api
+          Image: !Ref ImageUri
+          PortMappings:
+            - ContainerPort: 8080
+          Environment:
+            - Name: SOLVER_INTERNAL_TOKEN
+              Value: !Ref SolverInternalToken
+            - Name: PORT
+              Value: "8080"
+          # Health check interno del contenedor contra /health (sin auth).
+          # Usa python+urllib porque la imagen slim no trae curl.
+          HealthCheck:
+            Command:
+              - CMD-SHELL
+              - python -c "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8080/health',timeout=5).status==200 else 1)"
+            Interval: 30
+            Timeout: 5
+            Retries: 3
+            StartPeriod: 60
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref LogGroup
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: solver-api
+
+  Service:
+    Type: AWS::ECS::Service
+    Properties:
+      ServiceName: zmd-solver-api
+      Cluster: !Ref Cluster
+      LaunchType: FARGATE
+      DesiredCount: 1
+      TaskDefinition: !Ref TaskDefinition
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: ENABLED
+          Subnets: [!Ref SubnetId]
+          SecurityGroups: [!Ref SecurityGroup]
+
+Outputs:
+  ClusterName:
+    Description: Nombre del cluster ECS creado.
+    Value: !Ref Cluster
+  ServiceName:
+    Description: Nombre del servicio ECS (para describir tareas / obtener la IP).
+    Value: zmd-solver-api
+  Nota:
+    Description: Como obtener la IP publica y donde configurarla.
+    Value: !Sub >
+      El servicio corre en Fargate con IP publica. Obten la IP de la tarea:
+      1) aws ecs list-tasks --cluster ${Cluster} --service-name zmd-solver-api
+      2) aws ecs describe-tasks --cluster ${Cluster} --tasks <taskArn>
+         (lee attachments[].details ENI -> networkInterfaceId)
+      3) aws ec2 describe-network-interfaces --network-interface-ids <eni>
+         --query 'NetworkInterfaces[0].Association.PublicIp'
+      La URL del solver es http://IP_PUBLICA:8080 y debe ponerse en la env var
+      SOLVER_API_URL de la Lambda de la app. El header X-Solver-Token que envie
+      la Lambda debe coincidir con SolverInternalToken de este stack.

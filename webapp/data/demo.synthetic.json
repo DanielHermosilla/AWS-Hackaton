@@ -1,0 +1,1103 @@
+{
+  "SCENARIO": {
+    "id": "synthetic-ui-grid-v1",
+    "name": "Distrito de ejemplo",
+    "fileName": "demo.synthetic.json",
+    "demonstration": true,
+    "synthetic": true,
+    "deliveryCount": 20,
+    "chargerCount": 60,
+    "computeSeconds": null,
+    "fixtureBatteryKwh": 16,
+    "provenance": "Cuadrícula de coordenadas inventada para diseño, sin datos CASE ni geometrías OSRM. Los trazados son líneas entre puntos, no rutas viales. Energía y batería ilustrativas, sin solver ni validación."
+  },
+  "VEHICLES": [
+    {
+      "id": "auto-1",
+      "name": "Auto 1",
+      "model": "Nissan Leaf 2013",
+      "initialSoc": 60,
+      "color": "#1664ec"
+    },
+    {
+      "id": "auto-2",
+      "name": "Auto 2",
+      "model": "Nissan Leaf 2013",
+      "initialSoc": 60,
+      "color": "#8152d9"
+    }
+  ],
+  "NODES": [
+    {
+      "id": "BASE",
+      "type": "base",
+      "lat": -33.46,
+      "lng": -70.666,
+      "label": "Centro de distribución",
+      "connectors": "",
+      "maxPowerKw": null
+    },
+    {
+      "id": "V1",
+      "type": "visit",
+      "lat": -33.454,
+      "lng": -70.662,
+      "label": "Local 1",
+      "connectors": "",
+      "maxPowerKw": null,
+      "vehicleId": "auto-1"
+    },
+    {
+      "id": "V2",
+      "type": "visit",
+      "lat": -33.454,
+      "lng": -70.651,
+      "label": "Local 2",
+      "connectors": "",
+      "maxPowerKw": null,
+      "vehicleId": "auto-1"
+    },
+    {
+      "id": "V3",
+      "type": "visit",
+      "lat": -33.454,
+      "lng": -70.64,
+      "label": "Local 3",
+      "connectors": "",
+      "maxPowerKw": null,
+      "vehicleId": "auto-1"
+    },
+    {
+      "id": "V4",
+      "type": "visit",
+      "lat": -33.454,
+      "lng": -70.629,
+      "label": "Local 4",
+      "connectors": "",
+      "maxPowerKw": null,
+      "vehicleId": "auto-1"
+    },
+    {
+      "id": "V5",
+      "type": "visit",
+      "lat": -33.454,
+      "lng": -70.618,
+      "label": "Local 5",
+      "connectors": "",
+      "maxPowerKw": null,
+      "vehicleId": "auto-1"
+    },
+    {
+      "id": "V6",
+      "type": "visit",
+      "lat": -33.445,
+      "lng": -70.662,
+      "label": "Local 6",
+      "connectors": "",
+      "maxPowerKw": null,
+      "vehicleId": "auto-1"
+    },
+    {
+      "id": "V7",
+      "type": "visit",
+      "lat": -33.445,
+      "lng": -70.651,
+      "label": "Local 7",
+      "connectors": "",
+      "maxPowerKw": null,
+      "vehicleId": "auto-1"
+    },
+    {
+      "id": "V8",
+      "type": "visit",
+      "lat": -33.445,
+      "lng": -70.64,
+      "label": "Local 8",
+      "connectors": "",
+      "maxPowerKw": null,
+      "vehicleId": "auto-1"
+    },
+    {
+      "id": "V9",
+      "type": "visit",
+      "lat": -33.445,
+      "lng": -70.629,
+      "label": "Local 9",
+      "connectors": "",
+      "maxPowerKw": null,
+      "vehicleId": "auto-1"
+    },
+    {
+      "id": "V10",
+      "type": "visit",
+      "lat": -33.445,
+      "lng": -70.618,
+      "label": "Local 10",
+      "connectors": "",
+      "maxPowerKw": null,
+      "vehicleId": "auto-1"
+    },
+    {
+      "id": "V11",
+      "type": "visit",
+      "lat": -33.436,
+      "lng": -70.662,
+      "label": "Local 11",
+      "connectors": "",
+      "maxPowerKw": null,
+      "vehicleId": "auto-2"
+    },
+    {
+      "id": "V12",
+      "type": "visit",
+      "lat": -33.436,
+      "lng": -70.651,
+      "label": "Local 12",
+      "connectors": "",
+      "maxPowerKw": null,
+      "vehicleId": "auto-2"
+    },
+    {
+      "id": "V13",
+      "type": "visit",
+      "lat": -33.436,
+      "lng": -70.64,
+      "label": "Local 13",
+      "connectors": "",
+      "maxPowerKw": null,
+      "vehicleId": "auto-2"
+    },
+    {
+      "id": "V14",
+      "type": "visit",
+      "lat": -33.436,
+      "lng": -70.629,
+      "label": "Local 14",
+      "connectors": "",
+      "maxPowerKw": null,
+      "vehicleId": "auto-2"
+    },
+    {
+      "id": "V15",
+      "type": "visit",
+      "lat": -33.436,
+      "lng": -70.618,
+      "label": "Local 15",
+      "connectors": "",
+      "maxPowerKw": null,
+      "vehicleId": "auto-2"
+    },
+    {
+      "id": "V16",
+      "type": "visit",
+      "lat": -33.427,
+      "lng": -70.662,
+      "label": "Local 16",
+      "connectors": "",
+      "maxPowerKw": null,
+      "vehicleId": "auto-2"
+    },
+    {
+      "id": "V17",
+      "type": "visit",
+      "lat": -33.427,
+      "lng": -70.651,
+      "label": "Local 17",
+      "connectors": "",
+      "maxPowerKw": null,
+      "vehicleId": "auto-2"
+    },
+    {
+      "id": "V18",
+      "type": "visit",
+      "lat": -33.427,
+      "lng": -70.64,
+      "label": "Local 18",
+      "connectors": "",
+      "maxPowerKw": null,
+      "vehicleId": "auto-2"
+    },
+    {
+      "id": "V19",
+      "type": "visit",
+      "lat": -33.427,
+      "lng": -70.629,
+      "label": "Local 19",
+      "connectors": "",
+      "maxPowerKw": null,
+      "vehicleId": "auto-2"
+    },
+    {
+      "id": "V20",
+      "type": "visit",
+      "lat": -33.427,
+      "lng": -70.618,
+      "label": "Local 20",
+      "connectors": "",
+      "maxPowerKw": null,
+      "vehicleId": "auto-2"
+    },
+    {
+      "id": "C1",
+      "type": "charger",
+      "lat": -33.463,
+      "lng": -70.671,
+      "label": "Cargador 1",
+      "connectors": "CHAdeMO;J1772",
+      "maxPowerKw": 50
+    },
+    {
+      "id": "C2",
+      "type": "charger",
+      "lat": -33.463,
+      "lng": -70.665,
+      "label": "Cargador 2",
+      "connectors": "CHAdeMO;J1772",
+      "maxPowerKw": 50
+    },
+    {
+      "id": "C3",
+      "type": "charger",
+      "lat": -33.463,
+      "lng": -70.659,
+      "label": "Cargador 3",
+      "connectors": "CHAdeMO;J1772",
+      "maxPowerKw": 50,
+      "vehicleId": "auto-1"
+    },
+    {
+      "id": "C4",
+      "type": "charger",
+      "lat": -33.463,
+      "lng": -70.653,
+      "label": "Cargador 4",
+      "connectors": "CHAdeMO;J1772",
+      "maxPowerKw": 50
+    },
+    {
+      "id": "C5",
+      "type": "charger",
+      "lat": -33.463,
+      "lng": -70.647,
+      "label": "Cargador 5",
+      "connectors": "CHAdeMO;J1772",
+      "maxPowerKw": 50
+    },
+    {
+      "id": "C6",
+      "type": "charger",
+      "lat": -33.463,
+      "lng": -70.641,
+      "label": "Cargador 6",
+      "connectors": "CHAdeMO;J1772",
+      "maxPowerKw": 50
+    },
+    {
+      "id": "C7",
+      "type": "charger",
+      "lat": -33.463,
+      "lng": -70.635,
+      "label": "Cargador 7",
+      "connectors": "CHAdeMO;J1772",
+      "maxPowerKw": 50
+    },
+    {
+      "id": "C8",
+      "type": "charger",
+      "lat": -33.463,
+      "lng": -70.629,
+      "label": "Cargador 8",
+      "connectors": "CHAdeMO;J1772",
+      "maxPowerKw": 50
+    },
+    {
+      "id": "C9",
+      "type": "charger",
+      "lat": -33.463,
+      "lng": -70.623,
+      "label": "Cargador 9",
+      "connectors": "CHAdeMO;J1772",
+      "maxPowerKw": 50,
+      "vehicleId": "auto-2"
+    },
+    {
+      "id": "C10",
+      "type": "charger",
+      "lat": -33.463,
+      "lng": -70.617,
+      "label": "Cargador 10",
+      "connectors": "CHAdeMO;J1772",
+      "maxPowerKw": 50
+    },
+    {
+      "id": "C11",
+      "type": "charger",
+      "lat": -33.456,
+      "lng": -70.671,
+      "label": "Cargador 11",
+      "connectors": "CHAdeMO;J1772",
+      "maxPowerKw": 50
+    },
+    {
+      "id": "C12",
+      "type": "charger",
+      "lat": -33.456,
+      "lng": -70.665,
+      "label": "Cargador 12",
+      "connectors": "CHAdeMO;J1772",
+      "maxPowerKw": 50
+    },
+    {
+      "id": "C13",
+      "type": "charger",
+      "lat": -33.456,
+      "lng": -70.659,
+      "label": "Cargador 13",
+      "connectors": "CHAdeMO;J1772",
+      "maxPowerKw": 50
+    },
+    {
+      "id": "C14",
+      "type": "charger",
+      "lat": -33.456,
+      "lng": -70.653,
+      "label": "Cargador 14",
+      "connectors": "CHAdeMO;J1772",
+      "maxPowerKw": 50
+    },
+    {
+      "id": "C15",
+      "type": "charger",
+      "lat": -33.456,
+      "lng": -70.647,
+      "label": "Cargador 15",
+      "connectors": "CHAdeMO;J1772",
+      "maxPowerKw": 50
+    },
+    {
+      "id": "C16",
+      "type": "charger",
+      "lat": -33.456,
+      "lng": -70.641,
+      "label": "Cargador 16",
+      "connectors": "CHAdeMO;J1772",
+      "maxPowerKw": 50
+    },
+    {
+      "id": "C17",
+      "type": "charger",
+      "lat": -33.456,
+      "lng": -70.635,
+      "label": "Cargador 17",
+      "connectors": "CHAdeMO;J1772",
+      "maxPowerKw": 50
+    },
+    {
+      "id": "C18",
+      "type": "charger",
+      "lat": -33.456,
+      "lng": -70.629,
+      "label": "Cargador 18",
+      "connectors": "CHAdeMO;J1772",
+      "maxPowerKw": 50
+    },
+    {
+      "id": "C19",
+      "type": "charger",
+      "lat": -33.456,
+      "lng": -70.623,
+      "label": "Cargador 19",
+      "connectors": "CHAdeMO;J1772",
+      "maxPowerKw": 50
+    },
+    {
+      "id": "C20",
+      "type": "charger",
+      "lat": -33.456,
+      "lng": -70.617,
+      "label": "Cargador 20",
+      "connectors": "CHAdeMO;J1772",
+      "maxPowerKw": 50
+    },
+    {
+      "id": "C21",
+      "type": "charger",
+      "lat": -33.449,
+      "lng": -70.671,
+      "label": "Cargador 21",
+      "connectors": "CHAdeMO;J1772",
+      "maxPowerKw": 50
+    },
+    {
+      "id": "C22",
+      "type": "charger",
+      "lat": -33.449,
+      "lng": -70.665,
+      "label": "Cargador 22",
+      "connectors": "CHAdeMO;J1772",
+      "maxPowerKw": 50
+    },
+    {
+      "id": "C23",
+      "type": "charger",
+      "lat": -33.449,
+      "lng": -70.659,
+      "label": "Cargador 23",
+      "connectors": "CHAdeMO;J1772",
+      "maxPowerKw": 50
+    },
+    {
+      "id": "C24",
+      "type": "charger",
+      "lat": -33.449,
+      "lng": -70.653,
+      "label": "Cargador 24",
+      "connectors": "CHAdeMO;J1772",
+      "maxPowerKw": 50
+    },
+    {
+      "id": "C25",
+      "type": "charger",
+      "lat": -33.449,
+      "lng": -70.647,
+      "label": "Cargador 25",
+      "connectors": "CHAdeMO;J1772",
+      "maxPowerKw": 50
+    },
+    {
+      "id": "C26",
+      "type": "charger",
+      "lat": -33.449,
+      "lng": -70.641,
+      "label": "Cargador 26",
+      "connectors": "CHAdeMO;J1772",
+      "maxPowerKw": 50
+    },
+    {
+      "id": "C27",
+      "type": "charger",
+      "lat": -33.449,
+      "lng": -70.635,
+      "label": "Cargador 27",
+      "connectors": "CHAdeMO;J1772",
+      "maxPowerKw": 50
+    },
+    {
+      "id": "C28",
+      "type": "charger",
+      "lat": -33.449,
+      "lng": -70.629,
+      "label": "Cargador 28",
+      "connectors": "CHAdeMO;J1772",
+      "maxPowerKw": 50
+    },
+    {
+      "id": "C29",
+      "type": "charger",
+      "lat": -33.449,
+      "lng": -70.623,
+      "label": "Cargador 29",
+      "connectors": "CHAdeMO;J1772",
+      "maxPowerKw": 50
+    },
+    {
+      "id": "C30",
+      "type": "charger",
+      "lat": -33.449,
+      "lng": -70.617,
+      "label": "Cargador 30",
+      "connectors": "CHAdeMO;J1772",
+      "maxPowerKw": 50
+    },
+    {
+      "id": "C31",
+      "type": "charger",
+      "lat": -33.442,
+      "lng": -70.671,
+      "label": "Cargador 31",
+      "connectors": "CHAdeMO;J1772",
+      "maxPowerKw": 50
+    },
+    {
+      "id": "C32",
+      "type": "charger",
+      "lat": -33.442,
+      "lng": -70.665,
+      "label": "Cargador 32",
+      "connectors": "CHAdeMO;J1772",
+      "maxPowerKw": 50
+    },
+    {
+      "id": "C33",
+      "type": "charger",
+      "lat": -33.442,
+      "lng": -70.659,
+      "label": "Cargador 33",
+      "connectors": "CHAdeMO;J1772",
+      "maxPowerKw": 50
+    },
+    {
+      "id": "C34",
+      "type": "charger",
+      "lat": -33.442,
+      "lng": -70.653,
+      "label": "Cargador 34",
+      "connectors": "CHAdeMO;J1772",
+      "maxPowerKw": 50
+    },
+    {
+      "id": "C35",
+      "type": "charger",
+      "lat": -33.442,
+      "lng": -70.647,
+      "label": "Cargador 35",
+      "connectors": "CHAdeMO;J1772",
+      "maxPowerKw": 50
+    },
+    {
+      "id": "C36",
+      "type": "charger",
+      "lat": -33.442,
+      "lng": -70.641,
+      "label": "Cargador 36",
+      "connectors": "CHAdeMO;J1772",
+      "maxPowerKw": 50
+    },
+    {
+      "id": "C37",
+      "type": "charger",
+      "lat": -33.442,
+      "lng": -70.635,
+      "label": "Cargador 37",
+      "connectors": "CHAdeMO;J1772",
+      "maxPowerKw": 50
+    },
+    {
+      "id": "C38",
+      "type": "charger",
+      "lat": -33.442,
+      "lng": -70.629,
+      "label": "Cargador 38",
+      "connectors": "CHAdeMO;J1772",
+      "maxPowerKw": 50
+    },
+    {
+      "id": "C39",
+      "type": "charger",
+      "lat": -33.442,
+      "lng": -70.623,
+      "label": "Cargador 39",
+      "connectors": "CHAdeMO;J1772",
+      "maxPowerKw": 50
+    },
+    {
+      "id": "C40",
+      "type": "charger",
+      "lat": -33.442,
+      "lng": -70.617,
+      "label": "Cargador 40",
+      "connectors": "CHAdeMO;J1772",
+      "maxPowerKw": 50
+    },
+    {
+      "id": "C41",
+      "type": "charger",
+      "lat": -33.435,
+      "lng": -70.671,
+      "label": "Cargador 41",
+      "connectors": "CHAdeMO;J1772",
+      "maxPowerKw": 50
+    },
+    {
+      "id": "C42",
+      "type": "charger",
+      "lat": -33.435,
+      "lng": -70.665,
+      "label": "Cargador 42",
+      "connectors": "CHAdeMO;J1772",
+      "maxPowerKw": 50
+    },
+    {
+      "id": "C43",
+      "type": "charger",
+      "lat": -33.435,
+      "lng": -70.659,
+      "label": "Cargador 43",
+      "connectors": "CHAdeMO;J1772",
+      "maxPowerKw": 50
+    },
+    {
+      "id": "C44",
+      "type": "charger",
+      "lat": -33.435,
+      "lng": -70.653,
+      "label": "Cargador 44",
+      "connectors": "CHAdeMO;J1772",
+      "maxPowerKw": 50
+    },
+    {
+      "id": "C45",
+      "type": "charger",
+      "lat": -33.435,
+      "lng": -70.647,
+      "label": "Cargador 45",
+      "connectors": "CHAdeMO;J1772",
+      "maxPowerKw": 50
+    },
+    {
+      "id": "C46",
+      "type": "charger",
+      "lat": -33.435,
+      "lng": -70.641,
+      "label": "Cargador 46",
+      "connectors": "CHAdeMO;J1772",
+      "maxPowerKw": 50
+    },
+    {
+      "id": "C47",
+      "type": "charger",
+      "lat": -33.435,
+      "lng": -70.635,
+      "label": "Cargador 47",
+      "connectors": "CHAdeMO;J1772",
+      "maxPowerKw": 50
+    },
+    {
+      "id": "C48",
+      "type": "charger",
+      "lat": -33.435,
+      "lng": -70.629,
+      "label": "Cargador 48",
+      "connectors": "CHAdeMO;J1772",
+      "maxPowerKw": 50
+    },
+    {
+      "id": "C49",
+      "type": "charger",
+      "lat": -33.435,
+      "lng": -70.623,
+      "label": "Cargador 49",
+      "connectors": "CHAdeMO;J1772",
+      "maxPowerKw": 50
+    },
+    {
+      "id": "C50",
+      "type": "charger",
+      "lat": -33.435,
+      "lng": -70.617,
+      "label": "Cargador 50",
+      "connectors": "CHAdeMO;J1772",
+      "maxPowerKw": 50
+    },
+    {
+      "id": "C51",
+      "type": "charger",
+      "lat": -33.428,
+      "lng": -70.671,
+      "label": "Cargador 51",
+      "connectors": "CHAdeMO;J1772",
+      "maxPowerKw": 50
+    },
+    {
+      "id": "C52",
+      "type": "charger",
+      "lat": -33.428,
+      "lng": -70.665,
+      "label": "Cargador 52",
+      "connectors": "CHAdeMO;J1772",
+      "maxPowerKw": 50
+    },
+    {
+      "id": "C53",
+      "type": "charger",
+      "lat": -33.428,
+      "lng": -70.659,
+      "label": "Cargador 53",
+      "connectors": "CHAdeMO;J1772",
+      "maxPowerKw": 50
+    },
+    {
+      "id": "C54",
+      "type": "charger",
+      "lat": -33.428,
+      "lng": -70.653,
+      "label": "Cargador 54",
+      "connectors": "CHAdeMO;J1772",
+      "maxPowerKw": 50
+    },
+    {
+      "id": "C55",
+      "type": "charger",
+      "lat": -33.428,
+      "lng": -70.647,
+      "label": "Cargador 55",
+      "connectors": "CHAdeMO;J1772",
+      "maxPowerKw": 50
+    },
+    {
+      "id": "C56",
+      "type": "charger",
+      "lat": -33.428,
+      "lng": -70.641,
+      "label": "Cargador 56",
+      "connectors": "CHAdeMO;J1772",
+      "maxPowerKw": 50
+    },
+    {
+      "id": "C57",
+      "type": "charger",
+      "lat": -33.428,
+      "lng": -70.635,
+      "label": "Cargador 57",
+      "connectors": "CHAdeMO;J1772",
+      "maxPowerKw": 50
+    },
+    {
+      "id": "C58",
+      "type": "charger",
+      "lat": -33.428,
+      "lng": -70.629,
+      "label": "Cargador 58",
+      "connectors": "CHAdeMO;J1772",
+      "maxPowerKw": 50
+    },
+    {
+      "id": "C59",
+      "type": "charger",
+      "lat": -33.428,
+      "lng": -70.623,
+      "label": "Cargador 59",
+      "connectors": "CHAdeMO;J1772",
+      "maxPowerKw": 50
+    },
+    {
+      "id": "C60",
+      "type": "charger",
+      "lat": -33.428,
+      "lng": -70.617,
+      "label": "Cargador 60",
+      "connectors": "CHAdeMO;J1772",
+      "maxPowerKw": 50
+    }
+  ],
+  "ROUTES": [
+    {
+      "vehicleId": "auto-1",
+      "stopIds": [
+        "BASE",
+        "V1",
+        "V2",
+        "V3",
+        "V4",
+        "V5",
+        "C3",
+        "V10",
+        "V9",
+        "V8",
+        "V7",
+        "V6",
+        "BASE"
+      ],
+      "energyKwh": 6.4,
+      "chargeKwh": 3.2,
+      "finalSoc": 40,
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -70.666,
+            -33.46
+          ],
+          [
+            -70.662,
+            -33.454
+          ],
+          [
+            -70.651,
+            -33.454
+          ],
+          [
+            -70.64,
+            -33.454
+          ],
+          [
+            -70.629,
+            -33.454
+          ],
+          [
+            -70.618,
+            -33.454
+          ],
+          [
+            -70.659,
+            -33.463
+          ],
+          [
+            -70.618,
+            -33.445
+          ],
+          [
+            -70.629,
+            -33.445
+          ],
+          [
+            -70.64,
+            -33.445
+          ],
+          [
+            -70.651,
+            -33.445
+          ],
+          [
+            -70.662,
+            -33.445
+          ],
+          [
+            -70.666,
+            -33.46
+          ]
+        ]
+      },
+      "stops": [
+        {
+          "nodeId": "BASE",
+          "arrivalSoc": 60,
+          "departureSoc": 60.0,
+          "chargeKwh": 0
+        },
+        {
+          "nodeId": "V1",
+          "arrivalSoc": 56.67,
+          "departureSoc": 56.67,
+          "chargeKwh": 0
+        },
+        {
+          "nodeId": "V2",
+          "arrivalSoc": 53.33,
+          "departureSoc": 53.33,
+          "chargeKwh": 0
+        },
+        {
+          "nodeId": "V3",
+          "arrivalSoc": 50.0,
+          "departureSoc": 50.0,
+          "chargeKwh": 0
+        },
+        {
+          "nodeId": "V4",
+          "arrivalSoc": 46.67,
+          "departureSoc": 46.67,
+          "chargeKwh": 0
+        },
+        {
+          "nodeId": "V5",
+          "arrivalSoc": 43.33,
+          "departureSoc": 43.33,
+          "chargeKwh": 0
+        },
+        {
+          "nodeId": "C3",
+          "arrivalSoc": 40.0,
+          "departureSoc": 60.0,
+          "chargeKwh": 3.2
+        },
+        {
+          "nodeId": "V10",
+          "arrivalSoc": 56.67,
+          "departureSoc": 56.67,
+          "chargeKwh": 0
+        },
+        {
+          "nodeId": "V9",
+          "arrivalSoc": 53.33,
+          "departureSoc": 53.33,
+          "chargeKwh": 0
+        },
+        {
+          "nodeId": "V8",
+          "arrivalSoc": 50.0,
+          "departureSoc": 50.0,
+          "chargeKwh": 0
+        },
+        {
+          "nodeId": "V7",
+          "arrivalSoc": 46.67,
+          "departureSoc": 46.67,
+          "chargeKwh": 0
+        },
+        {
+          "nodeId": "V6",
+          "arrivalSoc": 43.33,
+          "departureSoc": 43.33,
+          "chargeKwh": 0
+        },
+        {
+          "nodeId": "BASE",
+          "arrivalSoc": 40.0,
+          "departureSoc": 40.0,
+          "chargeKwh": 0
+        }
+      ],
+      "distanceKm": 18.9
+    },
+    {
+      "vehicleId": "auto-2",
+      "stopIds": [
+        "BASE",
+        "V11",
+        "V12",
+        "V13",
+        "V14",
+        "V15",
+        "C9",
+        "V20",
+        "V19",
+        "V18",
+        "V17",
+        "V16",
+        "BASE"
+      ],
+      "energyKwh": 4.8,
+      "chargeKwh": 2.4,
+      "finalSoc": 45,
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -70.666,
+            -33.46
+          ],
+          [
+            -70.662,
+            -33.436
+          ],
+          [
+            -70.651,
+            -33.436
+          ],
+          [
+            -70.64,
+            -33.436
+          ],
+          [
+            -70.629,
+            -33.436
+          ],
+          [
+            -70.618,
+            -33.436
+          ],
+          [
+            -70.623,
+            -33.463
+          ],
+          [
+            -70.618,
+            -33.427
+          ],
+          [
+            -70.629,
+            -33.427
+          ],
+          [
+            -70.64,
+            -33.427
+          ],
+          [
+            -70.651,
+            -33.427
+          ],
+          [
+            -70.662,
+            -33.427
+          ],
+          [
+            -70.666,
+            -33.46
+          ]
+        ]
+      },
+      "stops": [
+        {
+          "nodeId": "BASE",
+          "arrivalSoc": 60,
+          "departureSoc": 60.0,
+          "chargeKwh": 0
+        },
+        {
+          "nodeId": "V11",
+          "arrivalSoc": 57.5,
+          "departureSoc": 57.5,
+          "chargeKwh": 0
+        },
+        {
+          "nodeId": "V12",
+          "arrivalSoc": 55.0,
+          "departureSoc": 55.0,
+          "chargeKwh": 0
+        },
+        {
+          "nodeId": "V13",
+          "arrivalSoc": 52.5,
+          "departureSoc": 52.5,
+          "chargeKwh": 0
+        },
+        {
+          "nodeId": "V14",
+          "arrivalSoc": 50.0,
+          "departureSoc": 50.0,
+          "chargeKwh": 0
+        },
+        {
+          "nodeId": "V15",
+          "arrivalSoc": 47.5,
+          "departureSoc": 47.5,
+          "chargeKwh": 0
+        },
+        {
+          "nodeId": "C9",
+          "arrivalSoc": 45.0,
+          "departureSoc": 60.0,
+          "chargeKwh": 2.4
+        },
+        {
+          "nodeId": "V20",
+          "arrivalSoc": 57.5,
+          "departureSoc": 57.5,
+          "chargeKwh": 0
+        },
+        {
+          "nodeId": "V19",
+          "arrivalSoc": 55.0,
+          "departureSoc": 55.0,
+          "chargeKwh": 0
+        },
+        {
+          "nodeId": "V18",
+          "arrivalSoc": 52.5,
+          "departureSoc": 52.5,
+          "chargeKwh": 0
+        },
+        {
+          "nodeId": "V17",
+          "arrivalSoc": 50.0,
+          "departureSoc": 50.0,
+          "chargeKwh": 0
+        },
+        {
+          "nodeId": "V16",
+          "arrivalSoc": 47.5,
+          "departureSoc": 47.5,
+          "chargeKwh": 0
+        },
+        {
+          "nodeId": "BASE",
+          "arrivalSoc": 45.0,
+          "departureSoc": 45.0,
+          "chargeKwh": 0
+        }
+      ],
+      "distanceKm": 21.6
+    }
+  ]
+}
