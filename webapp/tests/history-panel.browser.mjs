@@ -10,11 +10,11 @@ const browser = await chromium.launch({headless: true});
 const context = await browser.newContext({viewport: {width: 1250, height: 1000}, reducedMotion: 'reduce'});
 const errors = [], calls = [];
 const native = JSON.parse(await readFile(new URL('../../backend/fixtures/native-request.json', import.meta.url)));
-let connected = false, expired = false, uploadStatus = 'ready', resolveConnect;
+let connected = false, expired = false, uploadStatus = 'ready', aiStatus = 'not_requested', resolveConnect;
 const profile = () => ({profile_id: 'history-123', status: uploadStatus, filename: 'Viajes EV.csv',
   summary: {row_count: 340, trip_count: 4, vehicle_count: 2, energy_kwh: -0.5, distance_km: 30},
   assumptions: [{label: 'Velocidad observada', value: 28, unit: 'km/h', evidence: 'Mediana de cuatro viajes.'}],
-  warnings: ['Los intervalos sin señal se excluyen.'], ai_analysis: {status: 'not_requested'}});
+  warnings: ['Los intervalos sin señal se excluyen.'], ai_analysis: {status: aiStatus}});
 const status = () => ({state: connected ? 'connected' : 'disconnected', connected, region: 'us-east-1', model_id: 'model-with-high', reasoning_effort: 'high'});
 await context.route('**/*', async route => {
   const request = route.request(), url = new URL(request.url());
@@ -30,12 +30,13 @@ await context.route('**/*', async route => {
   }
   if (url.pathname === '/bedrock/disconnect') { connected = false; calls.push({path: url.pathname}); return fulfill({status: status()}); }
   if (url.pathname === '/history/upload') {
+    aiStatus = 'not_requested';
     calls.push({path: url.pathname, filename: request.headers()['x-history-filename'], body: request.postData()});
     return fulfill({profile: profile()});
   }
   if (url.pathname === '/history') return expired ? fulfill({error: {message: 'expired'}}, 404) : fulfill({profile: profile()});
   if (url.pathname === '/history/remove') { calls.push({path: url.pathname}); return fulfill({removed: true}); }
-  if (url.pathname === '/history/analyze') { uploadStatus = 'ready'; calls.push({path: url.pathname}); return fulfill({profile: profile()}); }
+  if (url.pathname === '/history/analyze') { uploadStatus = 'ready'; aiStatus = 'reviewed'; calls.push({path: url.pathname}); return fulfill({profile: profile()}); }
   if (url.pathname === '/prepare') {
     calls.push({path: url.pathname, body: request.postDataJSON()});
     return fulfill({instance: native.instance, preparation: {energy_profile: {summary: {calibrated_arc_count: 3, road_arc_count: 10, arc_coverage_fraction: .3}}}});

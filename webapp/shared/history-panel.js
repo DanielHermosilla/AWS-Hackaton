@@ -32,7 +32,7 @@ export function createHistoryPanel({host, onChange = () => {}, client = createHi
     <div class="dialog-actions"><button id="bedrock-disconnect" type="button" hidden>Desconectar</button><button id="bedrock-connect" type="submit" class="primary">Conectar y comprobar</button></div></form>`;
   document.body.append(dialog);
   const $ = id => document.getElementById(id);
-  let profile = null, session = null, native = false, pending = false, runBusy = false, generation = 0, controller = null;
+  let profile = null, session = null, native = false, pending = false, runBusy = false, generation = 0, controller = null, restoringId = null;
   let connectionPending = false;
   let stateMessage = 'Sin histórico. Se usará el consumo supuesto.';
   const setState = message => { stateMessage = message; $('history-state').textContent = message; };
@@ -47,7 +47,8 @@ export function createHistoryPanel({host, onChange = () => {}, client = createHi
     $('choose-history').disabled = native || pending || runBusy;
     $('history-remove').hidden = !profile;
     $('history-remove').disabled = pending || runBusy;
-    $('history-analyze').hidden = !profile || profile.status === 'ready';
+    $('history-analyze').hidden = !profile || ['reviewed', 'applied'].includes(profile.ai_analysis?.status);
+    $('history-analyze').textContent = profile?.status === 'ready' ? 'Ampliar análisis con IA' : 'Interpretar con IA';
     $('history-analyze').disabled = native || pending || runBusy;
     $('history-cancel').hidden = !controller;
     $('history-profile').hidden = !profile;
@@ -98,8 +99,16 @@ export function createHistoryPanel({host, onChange = () => {}, client = createHi
     if (notify) changed();
   }
   async function restore(profileId) {
-    if (!profileId || profile?.profile_id === profileId) return;
+    if (!profileId) {
+      generation++; controller?.abort(); controller = null; restoringId = null; pending = false; profile = null;
+      $('history-upload').hidden = true;
+      setState('Sin histórico. Se usará el consumo supuesto.'); render();
+      return;
+    }
+    if (profile?.profile_id === profileId || restoringId === profileId) return;
     const current = ++generation;
+    controller?.abort(); controller = null; $('history-upload').hidden = true;
+    restoringId = profileId;
     pending = true; setState('Recuperando el histórico…'); render();
     try {
       const value = await client.get(profileId);
@@ -109,7 +118,7 @@ export function createHistoryPanel({host, onChange = () => {}, client = createHi
       profile = null;
       setState(error.message);
       changed();
-    } finally { if (current === generation) { pending = false; render(); } }
+    } finally { if (current === generation) { restoringId = null; pending = false; render(); } }
   }
   $('choose-history').addEventListener('click', () => $('history-file').click());
   $('history-file').addEventListener('change', async event => {
@@ -118,6 +127,7 @@ export function createHistoryPanel({host, onChange = () => {}, client = createHi
     if (!file) return;
     try { validateHistoryFile(file); } catch (error) { setState(error.message); return; }
     const current = ++generation;
+    restoringId = null;
     controller?.abort(); controller = new AbortController();
     profile = null; pending = true; changed(); render();
     $('history-upload').hidden = false;
@@ -139,7 +149,7 @@ export function createHistoryPanel({host, onChange = () => {}, client = createHi
   $('history-cancel').addEventListener('click', () => controller?.abort());
   $('history-remove').addEventListener('click', async () => {
     const old = profile;
-    generation++; profile = null;
+    generation++; restoringId = null; profile = null;
     setState('Histórico retirado. Se usará el consumo supuesto.'); render(); changed();
     if (old) try { await client.remove(old.profile_id); } catch (error) { if (!profile) setState(error.message); }
   });

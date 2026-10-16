@@ -62,10 +62,19 @@ export function initRunPanel() {
   let inputName = '', editorSource = null;
   let draftWarning = '';
   const history = createHistoryPanel({host: $('run-history'), onChange(profile, {invalidate}) {
+    synchronizeHistoryReference(profile?.profile_id);
     if (invalidate && !input?.instance) dirty();
     try { save({energyProfile: profile, ...(invalidate ? {energyCoverage: null} : {})}); } catch (error) { message(error.message, true); }
     if (invalidate) persistDraft();
   }});
+  function synchronizeHistoryReference(profileId) {
+    if (!input?.prepareRequest) return;
+    if ((input.prepareRequest.energy_profile_id || null) === (profileId || null)) return;
+    const preparation = {...input.prepareRequest};
+    if (profileId) preparation.energy_profile_id = profileId;
+    else delete preparation.energy_profile_id;
+    input = {...input, prepareRequest: preparation};
+  }
 
   function save(patch) {
     saved = {...saved, ...patch, revision: crypto.randomUUID()};
@@ -223,14 +232,20 @@ export function initRunPanel() {
       }
     }
   }
-  function setInput(value, name) {
+  function setInput(value, name, {preferSavedHistory = false} = {}) {
     locationEditor.close();
     input = value;
     lastPrepareRequest = value.prepareRequest || null;
     inputName = name;
     const native = !!value.instance;
     history.setNative(native);
-    if (value.prepareRequest?.energy_profile_id) history.restore(value.prepareRequest.energy_profile_id);
+    // A saved explicit choice (including removal) takes precedence over the
+    // previous execution's preparation when recovering this tab's current draft.
+    if (preferSavedHistory && Object.hasOwn(saved || {}, 'energyProfile')) {
+      const selectedId = saved.energyProfile?.profile_id || null;
+      synchronizeHistoryReference(selectedId);
+      history.restore(selectedId);
+    } else if (value.prepareRequest?.energy_profile_id) history.restore(value.prepareRequest.energy_profile_id);
     renderInputSummary();
     $('edit-locations').disabled = false;
     $('edit-locations').textContent = native ? 'Revisar ubicaciones' : 'Editar ubicaciones';
@@ -414,11 +429,12 @@ export function initRunPanel() {
     if (saved?.energyCoverage?.profile_id === history.profileId) history.showCoverage(saved.energyCoverage);
   });
   if (restoredDraft) {
-    setInput(restoredDraft.input, 'Borrador sin calcular');
+    setInput(restoredDraft.input, 'Borrador sin calcular', {preferSavedHistory: true});
     for (const [name, value] of Object.entries(restoredDraft.fields)) {
       const field = $('run-form').elements.namedItem(name);
       if (field) field.value = value;
     }
+    if (restoredDraft.input.prepareRequest?.energy_profile_id !== input.prepareRequest?.energy_profile_id) persistDraft();
     draftEdited = true;
     canonicalInstance = null;
     $('export-instance').disabled = true;
@@ -441,7 +457,7 @@ export function initRunPanel() {
           const preparation = result.raw.prepare_request || editable?.prepareRequest;
           setInput(preparation
             ? {nodes: preparation.nodes, prepareRequest: preparation, request}
-            : {instance: result.raw.instance, request}, 'Entrada de esta ejecución');
+            : {instance: result.raw.instance, request}, 'Entrada de esta ejecución', {preferSavedHistory: true});
           canonicalInstance = result.raw.instance;
           lastRequest = request;
           lastPrepareRequest = preparation || null;
