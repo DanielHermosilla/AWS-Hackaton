@@ -1,4 +1,43 @@
-# ZMD · orquestación
+# ZMD · orquestación vigente
+
+Sesión madre `01a1415b-d61e-7a51-b306-2ef1441f7bf0`, 16-10-2026.
+[Contexto](ZMD-MASTER-CONTEXT.md) · [Backlog](implementation/ZMD-FULL-INTEGRATION.md).
+
+## Ola de integración completa
+
+Base común `f5b4ea8`: merge de `origin/main@9f03027` con F02/F03/F05.
+Rollback conservado en `codex/pre-main-refinement@d3e045a`. Checkout principal
+sin modificar. Goal activo sin presupuesto de tokens; integración local, sin push.
+
+| Área | Agente / rama / worktree | Propiedad | Estado |
+|---|---|---|---|
+| Integración, evidencia y documentación | Madre / codex/features-implementation / features-review | Contexto, guías y unión final | Merge completo; QA en curso |
+| Entrada y motor | refine_engine / codex/refine-engine / zmd-refine-engine | backend, solver-input/client, tests del puente | Implementando |
+| Panel y configuración | refine_panel / codex/refine-panel / zmd-refine-panel | run-panel, location-draft, tests de formulario | Implementando |
+| Tema, navegación y resultados | refine_experience / codex/refine-experience / zmd-refine-experience | theme/state/shell/home/plan/map, output/adapter/data, resumen | Implementando |
+| Revisión independiente | A asignar al liberar una plaza | Solo lectura de la unión | Pendiente |
+
+Puertos exclusivos: 4330 madre; 4332 motor; 4333 panel; 4335 experiencia.
+Servidor anterior propio 4310 detenido para no mezclar Python antiguo con frontend nuevo.
+No modificar archivos de otro agente; coordinar contratos y luego integrar commits.
+Evidencia local nueva: `.local/full-integration-2026-10-16/`.
+
+### Baseline del merge
+
+- Node: 137/137 pruebas aprobadas.
+- Puente/Python: 13 aprobadas, 10 subtests aprobados.
+- Suite Python completa: 704 aprobadas, 10 omisiones, 37 subtests; una prueba
+  temporal de orquestación falló al exigir óptimo exacto. Aislada pasó en 3,04 s.
+  Se conserva el log y se verificará al cierre antes de concluir.
+- Los 10 skips corresponden al ejecutable SCIP alternativo de Pyomo o a escenarios
+  cuyo backend no estuvo disponible; PySCIPOpt sí funciona en los cálculos web.
+
+## Registro histórico de la ola F02/F03/F05
+
+Las restricciones y estados que siguen pertenecen a esa ola cerrada. La petición
+actual reemplaza la exclusión del preprocesador, política solo estándar y tema
+siempre claro. No aplicar sus prohibiciones antiguas a la integración vigente.
+
 
 Sesión madre: **ZMD Features Implementation**,
 `01a1415b-d61e-7a51-b306-2ef1441f7bf0`.

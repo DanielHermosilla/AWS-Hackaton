@@ -8,8 +8,8 @@ La referencia vigente incluye preprocesamiento vial, SCIP sin H y Bedrock de mai
 
 | ID | Resultado esperado | Responsable | Estado / evidencia |
 |---|---|---|---|
-| I01 | Main fusionado con historia y F02/F03/F05 conservadas | Integración | Merge en curso; tres conflictos acotados |
-| I02 | CSV completos de data/raw y JSON grandes válidos admitidos | Entrada/motor | Pendiente; distinguir nodos de históricos eVED |
+| I01 | Main fusionado con historia y F02/F03/F05 conservadas | Integración | Integrado en f5b4ea8; historia conservada |
+| I02 | CSV completos de data/raw y JSON grandes válidos admitidos | Entrada/motor | En curso; usuario confirmó excluir eVED, aceptar instancias y parámetros |
 | I03 | Tema oscuro se mantiene entre Inicio, Plan y resultados | Navegación | Pendiente |
 | I04 | Caso sintético permite elegir clientes y cargadores | Panel + entrada | Pendiente |
 | I05 | Botón del caso sintético rediseñado | Panel | Pendiente |
@@ -32,6 +32,15 @@ La referencia vigente incluye preprocesamiento vial, SCIP sin H y Bedrock de mai
 | I22 | Inicio permite scroll con Sobre estos indicadores abierto | Navegación | Pendiente |
 | I23 | Sobre estos indicadores breve, sin frase de telemetría | Navegación | Pendiente |
 | I24 | Revisión independiente y pruebas integradas de archivos/rutas/estado/UI | Auditoría | Pendiente |
+
+## Priorización y causas
+
+P0: integración, carga y casos que no resuelven o no muestran ruta (I01/I02/I07/I16).
+P1: persistencia, parámetros efectivos y conservación de resultados (I03/I04/I10/I11/I12/I20/I21).
+P2: panel, ayuda, claridad y navegación (I05/I06/I08/I09/I13–I19/I22/I23).
+P3: transiciones y ajustes visuales finales. I24 verifica todos los niveles.
+
+Confirmado: choque Santiago/Ann Arbor en sintéticos; límites de importación/transporte distintos; tema forzado claro; formulario recarga la página al resolver. Las pruebas reproducen cada corrección; solicitudes de diseño no se describen como defectos del solver.
 
 ## Límites de la verificación
 

@@ -16,4 +16,3 @@ Ver [API_CONTRACT.md](../backend/API_CONTRACT.md) y
 La aplicación sigue siendo local y sin autenticación. No se ha desplegado como
 servicio público. Los ejemplos sintéticos siguen separados de las ejecuciones
 reales y la cartografía de fondo requiere Internet.
-
