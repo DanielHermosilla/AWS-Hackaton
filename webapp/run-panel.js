@@ -4,6 +4,7 @@ import { nativeRunResult, resultSections } from './shared/solver-output.js';
 import { createLocationEditor } from './location-editor.js';
 import { readEditableSource, saveEditableSource, readEditableDraft, saveEditableDraft, clearEditableDraft } from './shared/location-draft.js';
 import { createHistoryPanel } from './shared/history-panel.js';
+import { historyCoverageSnapshot } from './shared/history-details.js';
 
 export function initRunPanel() {
   const fileLimitLabel = `${Math.round(MAX_FILE_BYTES / 1024 / 1024)} MB`;
@@ -155,12 +156,7 @@ export function initRunPanel() {
       history.showCoverage(coverage);
       if (coverage) {
         // Retain only the small display summary, never telemetry or credentials.
-        const summary = coverage.summary || {};
-        save({energyCoverage: {profile_id: history.profileId, summary: {
-          calibrated_arc_count: summary.calibrated_arc_count,
-          road_arc_count: summary.road_arc_count,
-          arc_coverage_fraction: summary.arc_coverage_fraction,
-        }}});
+        save({energyCoverage: {profile_id: history.profileId, ...historyCoverageSnapshot(coverage)}});
       }
     },
     async onResult(response, isCurrent) {

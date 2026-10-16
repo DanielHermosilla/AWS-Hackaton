@@ -1,4 +1,5 @@
 import {createHistoryClient, validateHistoryFile} from './history-client.js';
+import {historyDetailGroups} from './history-details.js';
 
 const text = value => typeof value === 'string' ? value.slice(0, 1200) : '';
 const number = value => Number.isFinite(value) ? new Intl.NumberFormat('es-CL', {maximumFractionDigits: 2}).format(value) : null;
@@ -12,7 +13,7 @@ export function createHistoryPanel({host, onChange = () => {}, client = createHi
     <div class="run-history-actions"><button id="choose-history" type="button">Adjuntar histórico</button><button id="history-remove" type="button" hidden>Quitar</button><button id="history-analyze" type="button" hidden>Interpretar con IA</button><button id="history-cancel" type="button" hidden>Cancelar carga</button></div>
     <div id="history-upload" hidden><progress id="history-progress" max="1" aria-label="Carga del histórico"></progress></div>
     <p id="history-state" class="run-history-state" role="status" aria-live="polite">Sin histórico. Se usará el consumo supuesto.</p>
-    <div id="history-profile" hidden><strong id="history-filename"></strong><dl id="history-stats"></dl><p id="history-coverage" class="run-help" hidden></p><div id="history-warnings"></div><details id="history-assumptions" hidden><summary>Qué aportan estos datos</summary><ul></ul><p class="run-help">Estas observaciones no cambian automáticamente la capacidad, la reserva ni la flota.</p></details></div>`;
+    <div id="history-profile" hidden><strong id="history-filename"></strong><dl id="history-stats"></dl><p id="history-coverage" class="run-help" hidden></p><div id="history-warnings"></div><details id="history-assumptions" hidden><summary>Qué aportan estos datos</summary><div id="history-detail-groups"></div><p class="run-help">Las observaciones y sugerencias de la IA no cambian automáticamente la capacidad, la reserva ni la flota.</p></details></div>`;
   const dialog = document.createElement('dialog');
   dialog.id = 'bedrock-dialog';
   dialog.className = 'app-dialog run-dialog bedrock-dialog';
@@ -34,6 +35,7 @@ export function createHistoryPanel({host, onChange = () => {}, client = createHi
   const $ = id => document.getElementById(id);
   let profile = null, session = null, native = false, pending = false, runBusy = false, generation = 0, controller = null, restoringId = null;
   let connectionPending = false;
+  let coverageReport = null;
   let stateMessage = 'Sin histórico. Se usará el consumo supuesto.';
   const setState = message => { stateMessage = message; $('history-state').textContent = message; };
   const clearSecrets = () => { for (const id of ['bedrock-access', 'bedrock-secret', 'bedrock-token']) $(id).value = ''; };
@@ -71,21 +73,23 @@ export function createHistoryPanel({host, onChange = () => {}, client = createHi
       const p = document.createElement('p'); p.className = 'run-help'; p.textContent = content;
       $('history-warnings').append(p);
     }
-    const list = $('history-assumptions').querySelector('ul'); list.replaceChildren();
-    for (const item of (Array.isArray(profile.assumptions) ? profile.assumptions : []).slice(0, 20)) {
-      const description = text(item) || text(item?.description) || text(item?.label) || text(item?.name);
-      if (!description) continue;
-      const li = document.createElement('li');
-      li.textContent = description;
-      if (item && typeof item === 'object') {
-        const value = number(item.value) ?? text(item.value);
-        if (value) li.append(document.createTextNode(`: ${value}${text(item.unit) ? ` ${text(item.unit)}` : ''}`));
-        const evidence = text(item.evidence) || text(item.reason);
-        if (evidence) { const small = document.createElement('small'); small.textContent = evidence; li.append(small); }
+    renderDetails();
+  }
+  function renderDetails() {
+    const container = $('history-detail-groups');
+    container.replaceChildren();
+    for (const group of historyDetailGroups(profile, coverageReport)) {
+      const heading = document.createElement('h5'), list = document.createElement('ul');
+      heading.textContent = group.title;
+      for (const item of group.items) {
+        const li = document.createElement('li');
+        li.textContent = item.text;
+        if (item.note) { const small = document.createElement('small'); small.textContent = item.note; li.append(small); }
+        list.append(li);
       }
-      list.append(li);
+      container.append(heading, list);
     }
-    $('history-assumptions').hidden = !list.children.length;
+    $('history-assumptions').hidden = !container.children.length;
   }
   function profileMessage(value) {
     if (value.status === 'ready') return 'Histórico preparado. Comprobaremos su cobertura por calle al calcular.';
@@ -93,6 +97,7 @@ export function createHistoryPanel({host, onChange = () => {}, client = createHi
   }
   function accept(value, notify = true) {
     profile = value;
+    coverageReport = null;
     $('history-coverage').hidden = true;
     setState(profileMessage(value));
     render();
@@ -236,11 +241,14 @@ export function createHistoryPanel({host, onChange = () => {}, client = createHi
     setNative(value) { native = value; render(); },
     setRunBusy(value) { runBusy = value; render(); },
     invalidateCoverage() {
+      coverageReport = null;
       $('history-coverage').hidden = true;
       if (profile?.status === 'ready') { setState(profileMessage(profile)); render(); }
     },
     showCoverage(coverage) {
       if (!coverage || !profile) return;
+      coverageReport = coverage;
+      renderDetails();
       const observed = coverage.summary?.calibrated_arc_count;
       const total = coverage.summary?.road_arc_count;
       const ratio = coverage.summary?.arc_coverage_fraction;

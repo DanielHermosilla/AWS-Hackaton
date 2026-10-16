@@ -14,7 +14,9 @@ let connected = false, expired = false, uploadStatus = 'ready', aiStatus = 'not_
 const profile = () => ({profile_id: 'history-123', status: uploadStatus, filename: 'Viajes EV.csv',
   summary: {row_count: 340, trip_count: 4, vehicle_count: 2, energy_kwh: -0.5, distance_km: 30},
   assumptions: [{label: 'Velocidad observada', value: 28, unit: 'km/h', evidence: 'Mediana de cuatro viajes.'}],
-  warnings: ['Los intervalos sin señal se excluyen.'], ai_analysis: {status: aiStatus}});
+  warnings: ['Los intervalos sin señal se excluyen.'], ai_analysis: {status: aiStatus,
+    observations: aiStatus === 'reviewed' ? [{name: 'Temperatura', value: 18, unit: '°C', evidence: [{kind: 'computed', key: 'temperature.median', value: 18}]}] : [],
+    assumptions: aiStatus === 'reviewed' ? [{description: 'Evaluar un escenario frío <img src=x onerror=alert(1)>', applied: false, evidence: [{kind: 'metadata', key: 'season', value: 'invierno'}]}] : []}});
 const status = () => ({state: connected ? 'connected' : 'disconnected', connected, region: 'us-east-1', model_id: 'model-with-high', reasoning_effort: 'high'});
 await context.route('**/*', async route => {
   const request = route.request(), url = new URL(request.url());
@@ -39,7 +41,11 @@ await context.route('**/*', async route => {
   if (url.pathname === '/history/analyze') { uploadStatus = 'ready'; aiStatus = 'reviewed'; calls.push({path: url.pathname}); return fulfill({profile: profile()}); }
   if (url.pathname === '/prepare') {
     calls.push({path: url.pathname, body: request.postDataJSON()});
-    return fulfill({instance: native.instance, preparation: {energy_profile: {summary: {calibrated_arc_count: 3, road_arc_count: 10, arc_coverage_fraction: .3}}}});
+    return fulfill({instance: native.instance, preparation: {energy_profile: {
+      summary: {calibrated_arc_count: 3, road_arc_count: 10, arc_coverage_fraction: .3, mixed_sign_arc_count: 2},
+      assumptions: [{key: 'mixed_sign_order', label: 'Descarga y recuperación', value: 'Descarga primero', kind: 'model_assumption', evidence: 'El orden interno es supuesto.'}],
+      warnings: ['La cobertura de calles es parcial.'],
+    }}});
   }
   if (url.pathname === '/solve' && request.method() === 'POST') return fulfill({error: {message: 'Error sintético de prueba: no se ejecutó el solver.'}}, 400);
   return route.continue();
@@ -65,6 +71,11 @@ try {
   await page.waitForFunction(() => document.querySelector('#run-message').textContent.includes('Error sintético'));
   assert.equal(calls.find(call => call.path === '/prepare').body.energy_profile_id, 'history-123');
   assert.match(await page.locator('#history-coverage').textContent(), /3 de 10 tramos/);
+  assert.match(await page.locator('#history-detail-groups').textContent(), /Supuesto aplicado.*Descarga primero.*cobertura de calles es parcial/s);
+  await page.reload();
+  await page.locator('#open-run').click();
+  await page.waitForFunction(() => !document.querySelector('#history-coverage').hidden);
+  assert.match(await page.locator('#history-detail-groups').textContent(), /2 tramos combinan.*Descarga primero.*cobertura de calles es parcial/s);
   await page.locator('#run-consumption').fill('1.2');
   assert.equal(await page.locator('#history-coverage').isVisible(), false);
   await page.locator('#history-remove').click();
@@ -98,6 +109,8 @@ try {
   await page.locator('#history-analyze').click();
   await page.waitForFunction(() => document.querySelector('#history-analyze').hidden);
   assert.equal(calls.filter(call => call.path === '/history/analyze').length, 1);
+  assert.match(await page.locator('#history-detail-groups').textContent(), /Observaciones de la IA.*Temperatura: 18 °C.*Sugerencias de la IA · sin aplicar.*escenario frío/s);
+  assert.equal(await page.locator('#history-detail-groups img').count(), 0);
   await page.locator('#close-run').click();
   await page.goto(`${origin}/plan.html`);
   await page.locator('#open-run').click();

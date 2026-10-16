@@ -97,6 +97,7 @@ main[data-run-pending="true"]>:not(.run-pending-placeholder){display:none}
 #history-stats dd{margin:0;font-variant-numeric:tabular-nums;text-align:right}
 #history-assumptions{margin-top:12px;font-size:12px;line-height:1.55}
 #history-assumptions summary{cursor:pointer;font-weight:550}
+#history-assumptions h5{font-size:12px;font-weight:600;margin:14px 0 0}
 #history-assumptions ul{padding-left:18px;margin:10px 0 0}
 #history-assumptions li+li{margin-top:8px}
 #history-assumptions small{display:block;color:var(--shell-muted);font-size:11px;margin-top:3px}
