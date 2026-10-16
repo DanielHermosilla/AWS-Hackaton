@@ -27,6 +27,11 @@ dw = [
   "pygcgopt==1.0.0b0",
   "boto3>=1.40,<2",
 ]
+# Asistente conversacional y explicacion (paquete ev_routing.assist). Solo
+# requiere boto3 para Bedrock Converse; no arrastra el stack de GCG del extra dw.
+assist = [
+  "boto3>=1.40,<2",
+]
 
 [dependency-groups]
 dev = [
