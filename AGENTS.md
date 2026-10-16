@@ -80,7 +80,15 @@ La reducción a tour DFJ exige verificar métrica dirigida, costes no negativos,
 ausencia de jornada/ventanas/reserva final adicional y un tour completo que cabe
 en la batería inicial. Nunca aplicarla por una sugerencia no verificada del LLM.
 Región inicial `us-east-1`, perfil AWS inicial `hackathon`, ambos configurables.
-El modelo/perfil de inferencia es entrada obligatoria de la política adaptativa.
+En esta rama, la CLI usa `us.openai.gpt-6-luna` con esfuerzo `low` por defecto,
+mediante Converse y `additionalModelRequestFields.reasoning.effort`.
+La API Python adaptativa requiere `model_id` explícito. No dar por acreditado
+el acceso: `hackathon` tiene un deny explícito para ese modelo al verificarlo
+el 16 de octubre de 2026. Registrar fallback; nunca alterar IAM automáticamente.
+Por petición del usuario, `energy_relative_gap=0.005` controla solo energía en
+`scip-routes`. Una parada por ese gap necesita cota global válida y no acredita
+optimalidad exacta; cero conserva la búsqueda de cierre. Ver
+`docs/webapp-integration.md` para el futuro merge con `origin/codex/webapp`.
 El benchmark compara las tres políticas del mismo motor y snapshot, registra
 llamadas reales y distingue un fallback de una corrida adaptativa efectiva.
 El flujo Gurobi/SCIP original continúa disponible como referencia.

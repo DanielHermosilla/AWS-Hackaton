@@ -285,6 +285,8 @@ class SolverConfig(Contract):
     solver: Literal["auto", "gurobi", "scip", "gcg", "scip-routes"] = "scip-routes"
     time_limit_seconds: float = Field(default=60.0, gt=0)
     relative_gap: float = Field(default=0.0, ge=0, le=1)
+    # Solo scip-routes: tolerancia energética con cota global, no de entregas.
+    energy_relative_gap: float = Field(default=0.005, ge=0, le=1)
     threads: int = Field(default=1, ge=1)
     seed: int = Field(default=0, ge=0, le=2_000_000_000)
     tee: bool = False

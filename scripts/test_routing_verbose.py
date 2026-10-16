@@ -17,7 +17,7 @@ from ev_routing.contracts import SolverConfig
 from ev_routing.heuristics import InitialSolution
 from ev_routing.inputs import load_instance, save_instance
 from ev_routing.resource_graph import prepare_service_graph
-from ev_routing.search_policy import BedrockConfig, SearchConfig
+from ev_routing.search_policy import DEFAULT_BEDROCK_MODEL, BedrockConfig, SearchConfig
 from ev_routing.service_graph import SERVICE_REPRESENTATIONS, fingerprint
 from ev_routing.simulation import simulate_customers
 
@@ -36,11 +36,13 @@ def parser() -> argparse.ArgumentParser:
                         help="Semilla de ubicaciones, independiente de --seed del solver (default: 0)")
     result.add_argument("--output-dir", type=Path, help="Directorio nuevo; por defecto uno por ejecución")
     result.add_argument("--time-limit-seconds", type=float, default=60)
+    result.add_argument("--energy-relative-gap", type=float, default=.005,
+                        help="Gap energético: 0.005 = 0.5%%; 0 desactiva la parada aproximada")
     result.add_argument("--threads", type=int, default=1)
     result.add_argument("--seed", type=int, default=0)
     result.add_argument("--search-policy", choices=["adaptive", "standard", "deterministic"],
                         default="adaptive")
-    result.add_argument("--bedrock-model", default=os.getenv("BEDROCK_MODEL_ID"))
+    result.add_argument("--bedrock-model", default=os.getenv("BEDROCK_MODEL_ID", DEFAULT_BEDROCK_MODEL))
     result.add_argument("--bedrock-fast-model", default=os.getenv("BEDROCK_FAST_MODEL_ID"))
     result.add_argument("--aws-region", default=os.getenv("AWS_DEFAULT_REGION", "us-east-1"))
     result.add_argument("--aws-profile", default=os.getenv("AWS_PROFILE", "hackathon"))
@@ -64,6 +66,7 @@ def run(args) -> int:
     config = SolverConfig(
         solver="scip-routes", time_limit_seconds=args.time_limit_seconds,
         threads=args.threads, seed=args.seed, tee=True,
+        energy_relative_gap=args.energy_relative_gap,
     )
     search = SearchConfig(
         policy=args.search_policy, max_llm_calls=args.llm_max_calls, show_llm_trace=True,
@@ -149,6 +152,7 @@ def run(args) -> int:
         sys.executable, "-u", "-m", "ev_routing.cli", "run",
         "--solver", "scip-routes", "--tee", "--show-llm-trace",
         "--time-limit-seconds", str(config.time_limit_seconds),
+        "--energy-relative-gap", str(config.energy_relative_gap),
         "--threads", str(config.threads), "--seed", str(config.seed),
         "--search-policy", search.policy,
         "--aws-region", search.bedrock.region, "--aws-profile", search.bedrock.profile or "",

@@ -5,6 +5,14 @@ Implementación en `codex/evrp-llm-search`, basada en el preprocesamiento
 `2a89b041db5d28610d5182a6da90ed6137be4051`. El checkout original y sus otros
 worktrees no se modifican. Esta rama conserva (25)–(31) de `modelamiento.pdf`.
 
+Actualización: el objetivo de gap energético es **0,5 %**, configurable mediante
+`--energy-relative-gap`; cero vuelve a buscar cierre exacto. No se relaja el
+objetivo principal de entregas. La CLI usa **GPT-6 Luna con esfuerzo `low`**
+por Converse. La prueba real encontró un deny explícito de AWS para el perfil
+`hackathon`; hace falta acceso autorizado antes de atribuir decisiones a GPT.
+La [guía de integración](webapp-integration.md) reúne comandos, estado del acceso,
+semántica del gap y conexión futura con `origin/codex/webapp`.
+
 ## Conexión con el preprocesamiento auditado
 
 Se revisaron `resource_graph.py`, `service_graph.py`, el informe
@@ -94,7 +102,7 @@ durante `optimize()` se difieren al siguiente maestro.
 `LLMHead` inicia análisis antes de la búsqueda y recibe eventos de heurísticas,
 pricing, nodos, LP, separación e incumbentes. Envía mediciones, rutas incumbentes,
 duales de clientes, presupuesto, esquema de acciones y contexto físico.
-El modelo fuerte se configura con `--bedrock-model`; `--bedrock-fast-model`
+El modelo principal se configura con `--bedrock-model`; `--bedrock-fast-model`
 permite usar otro de menor latencia en eventos durante la búsqueda.
 
 La inferencia usa un hilo que recibe únicamente JSON. Los callbacks continúan
@@ -144,7 +152,8 @@ enumeración exhaustiva para duales positivos/negativos y Farkas, perfiles paral
 regeneración, recarga repetida, ventanas, recombinación, callbacks SCIP reales
 con LLM doble y respuestas inválidas, vencidas y tardías.
 
-Mediciones iniciales del 15 de octubre de 2026, sin atribución causal de aceleración:
+Mediciones iniciales del 15 de octubre de 2026, anteriores a la parada en 0,5 %
+y sin atribución causal de aceleración:
 
 | Instancia/política | Entregas | Energía kWh | Resolución | Certificado |
 |---|---:|---:|---:|---|
@@ -195,7 +204,7 @@ el resultado ni el tiempo**. Los fallos, respuestas tardías y consumo recibido
 permanecen en los logs. Un presupuesto corto puede terminar antes de que un
 modelo de mayor latencia tenga oportunidad de intervenir.
 
-### Verificación con el código final
+### Verificación histórica anterior al gap de 0,5 %
 
 Suite completa: **644 pruebas aprobadas en 7,69 s**; `ruff check src tests` sin
 errores. PDF compilado, nueve páginas; revisión visual de las páginas modificadas

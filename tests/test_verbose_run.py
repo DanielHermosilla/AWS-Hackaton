@@ -186,10 +186,12 @@ def test_script_streams_raw_solver_output_and_propagates_exit_status(script, inp
         *inputs, "--llm-reasoning-effort", "max", "--bedrock-fast-model", "fast-model",
         "--llm-fast-timeout-seconds", "6", "--llm-instance-context-bytes", "8000",
         "--decision-interval-seconds", "10",
+        "--energy-relative-gap", "0.003",
     ]) == 1
     command = seen[0]
     assert "--tee" in command and "--show-llm-trace" in command
     assert command[command.index("--solver") + 1] == "scip-routes"
+    assert command[command.index("--energy-relative-gap") + 1] == "0.003"
     assert command[command.index("--llm-max-calls") + 1] == "4"
     assert command[command.index("--llm-reasoning-effort") + 1] == "max"
     assert command[command.index("--bedrock-fast-model") + 1] == "fast-model"
@@ -201,6 +203,7 @@ def test_script_streams_raw_solver_output_and_propagates_exit_status(script, inp
     manifest = json.loads((tmp_path / "output/run-config.json").read_text())
     assert (manifest["customers"], manifest["chargers"]) == (20, 60)
     assert manifest["search_config"]["log_directory"] == str(tmp_path / "output/logs")
+    assert manifest["solver_config"]["energy_relative_gap"] == .003
 
 
 def test_script_rejects_wrong_counts_before_starting_solver(script, inputs, monkeypatch, capsys):

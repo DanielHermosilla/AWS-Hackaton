@@ -24,6 +24,25 @@ y resuelve sus dos fases. El flujo Gurobi/SCIP no utiliza un LLM y no modifica e
 El resultado extraído requiere posteriormente la comprobación independiente de
 `validation.py`.
 
+## Gap energético del motor por rutas
+
+`scip-routes` acepta `SolverConfig.energy_relative_gap`, default **0.005**,
+o `--energy-relative-gap 0.005`. Se aplica a energía; no relaja el objetivo de
+entregas. Con una solución factible de energía `U` y una cota global válida `L`,
+se detiene si `abs(U-L)/max(abs(U),1e-10)` satisface ese límite.
+La comprobación usa la cota del problema completo o de una relajación válida,
+nunca la cota de pricing incompleto o de un pool restringido.
+
+La terminación es `energy_gap_limit` y el estado sigue siendo `feasible`
+cuando no se probó el cierre numérico. `lexicographic_optimal` no se activa
+por alcanzar un gap positivo. La energía continúa condicionada al número
+de entregas fijado. Usar cero desactiva esta parada anticipada.
+Se configura también `limits/gap` nativo en los maestros energéticos, cuyo
+gap puede tener otro denominador; el criterio global del JSON es el anterior.
+
+Los adaptadores posicionales siguientes conservan `relative_gap` y su
+normalización descriptiva previa. No consumen `energy_relative_gap`.
+
 ## Backends y fallback
 
 `solver="auto"` intenta Gurobi mediante `gurobi_direct` de Pyomo y, solo ante

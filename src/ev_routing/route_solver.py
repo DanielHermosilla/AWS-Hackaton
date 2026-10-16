@@ -9,6 +9,7 @@ se ramifica sobre columnas que todavía no existen.
 from __future__ import annotations
 
 from itertools import combinations, islice
+from math import isfinite
 from pathlib import Path
 from time import monotonic
 
@@ -29,12 +30,13 @@ from ev_routing.search_policy import SearchConfig
 from ev_routing.validation import validate_solution
 
 
-def _configure(model, config, policy, log_directory=None, name="solve", *, single_tour=False):
+def _configure(model, config, policy, log_directory=None, name="solve", *, single_tour=False,
+               energy_phase=False):
     model.hideOutput(not config.tee)
     model.setIntParam("parallel/maxnthreads", config.threads)
     model.setIntParam("lp/threads", config.threads)
     model.setIntParam("randomization/randomseedshift", config.seed)
-    model.setRealParam("limits/gap", config.relative_gap)
+    model.setRealParam("limits/gap", config.energy_relative_gap if energy_phase else config.relative_gap)
     model.setIntParam(f"branching/{policy.branching}/priority", 1000000)
     if log_directory:
         directory = Path(log_directory)
@@ -132,6 +134,16 @@ def _phase(name, best, bound, termination, seconds, *, valid_bound=True, message
     )
 
 
+def _energy_gap_reached(best, bound, tolerance):
+    """Misma definición que PhaseResult; solo recibe cotas globales válidas."""
+    if best is None or bound is None or tolerance <= 0:
+        return False
+    value = best.net_energy_kwh
+    if not isfinite(value) or not isfinite(bound) or bound > value + 1e-7:
+        return False
+    return abs(value - bound) / max(abs(value), 1e-10) <= tolerance
+
+
 def _tour_solve(instance, config, policy, deadline, best, log_directory=None, controller=None):
     """DFJ dirigido. Cada relajación conserva una cota, incluso con subtours."""
     started = monotonic()
@@ -139,7 +151,8 @@ def _tour_solve(instance, config, policy, deadline, best, log_directory=None, co
     costs = {(a.from_node_id, a.to_node_id): arc_energy(a, instance.operations)
              for a in instance.arcs if a.from_node_id in nodes and a.to_node_id in nodes}
     model = Model("certified_directed_tour")
-    native_changes = _configure(model, config, policy, log_directory, "energy", single_tour=True)
+    native_changes = _configure(model, config, policy, log_directory, "energy", single_tour=True,
+                                energy_phase=True)
     x = {ij: model.addVar(vtype="B", obj=c, name=f"arc_{n}")
          for n, (ij, c) in enumerate(costs.items())}
     for node in nodes:
@@ -187,6 +200,11 @@ def _tour_solve(instance, config, policy, deadline, best, log_directory=None, co
             candidate = assemble_solution(instance, [route, *best.routes[1:]])
             if _valid(instance, candidate).feasible and candidate.net_energy_kwh <= best.net_energy_kwh:
                 best = candidate
+            if _energy_gap_reached(best, bound, config.energy_relative_gap):
+                termination = "energy_gap_limit"
+            break
+        if _energy_gap_reached(best, bound, config.energy_relative_gap):
+            termination = "energy_gap_limit"
             break
         model.freeTransform()
         for component in components[:policy.subtour_batch_size]:
@@ -431,6 +449,7 @@ def _master_phase(instance, config, policy, oracles, name, deadline, best, log_d
     model = Model(f"routes_{name}")
     native_changes = _configure(
         model, config, policy, log_directory, f"{name}-{'pool' if restricted else 'exact'}-{epoch:02d}",
+        energy_phase=name == "energy",
     )
     model.setPresolve(SCIP_PARAMSETTING.OFF)
     model.setSeparating(SCIP_PARAMSETTING.OFF)
@@ -580,6 +599,7 @@ def solve_routes(instance, config: SolverConfig, search_config=None, *, initial_
         "customers": len(instance.customer_ids), "vehicles": len(instance.vehicle_ids),
         "chargers": len(instance.charger_ids),
         "nodes": len(instance.nodes), "arcs": len(instance.arcs),
+        "energy_relative_gap_target": config.energy_relative_gap,
         "single_tour_certificate": certificate,
         "operations": instance.operations.model_dump(exclude={
             "customer_time_windows", "service_seconds_by_customer", "charging_power_kw_by_station",
@@ -696,6 +716,9 @@ def solve_routes(instance, config: SolverConfig, search_config=None, *, initial_
                 if best is not None and name == "energy" and abs(best.net_energy_kwh-bound) <= 1e-7:
                     termination = "validated_route_and_relaxation_bound"
                     break
+                if name == "energy" and _energy_gap_reached(best, bound, config.energy_relative_gap):
+                    termination = "energy_gap_limit"
+                    break
                 for oracle in shared.values():
                     oracle.search, oracle.dominance = policy.pricing_search, policy.dominance
                 construction.pool_limit = policy.pricing_pool_limit
@@ -708,6 +731,9 @@ def solve_routes(instance, config: SolverConfig, search_config=None, *, initial_
                         controller=controller,
                     )
                     stats.append(pool_stat)
+                    if name == "energy" and _energy_gap_reached(best, bound, config.energy_relative_gap):
+                        termination = "energy_gap_limit"
+                        break
                 if monotonic() >= phase_deadline:
                     break
                 best, phase, stat = _master_phase(
@@ -722,6 +748,9 @@ def solve_routes(instance, config: SolverConfig, search_config=None, *, initial_
                 termination, message = phase.termination_condition, phase.message
                 epoch += 1
                 if phase.proven_optimal or phase.status in {"infeasible", "error"}:
+                    break
+                if name == "energy" and _energy_gap_reached(best, bound, config.energy_relative_gap):
+                    termination = "energy_gap_limit"
                     break
                 after = (len(best.served_visit_ids), best.net_energy_kwh) if best else None
                 if after == before:
@@ -747,6 +776,11 @@ def solve_routes(instance, config: SolverConfig, search_config=None, *, initial_
                     break
             if name == "energy" and relaxation and relaxation["applicable"] and termination == "pricing_incomplete":
                 message = "Pricing incompleto; cota válida de la relajación energética sin recursos."
+            if termination == "energy_gap_limit":
+                message = (
+                    f"Gap energético <= {config.energy_relative_gap:.6g} con cota global válida; "
+                    "no implica optimalidad energética exacta. Condicionado a las entregas fijadas."
+                )
             phase = _phase(name, best, bound, termination, monotonic()-phase_started, message=message)
             phases.append(phase)
             if phase.status in {"infeasible", "error"}:

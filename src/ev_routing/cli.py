@@ -30,7 +30,7 @@ from ev_routing.network import build_osm_instance
 from ev_routing.operations import travel_seconds
 from ev_routing.pipeline import run_instance
 from ev_routing.resource_graph import prepare_service_graph
-from ev_routing.search_policy import BedrockConfig, SearchConfig
+from ev_routing.search_policy import DEFAULT_BEDROCK_MODEL, BedrockConfig, SearchConfig
 from ev_routing.service_graph import (
     PathArchive,
     build_service_graph,
@@ -109,6 +109,8 @@ def build_parser() -> argparse.ArgumentParser:
     run.add_argument("--output", required=True, type=Path)
     run.add_argument("--solver", choices=["scip-routes", "auto", "gurobi", "scip", "gcg"])
     run.add_argument("--time-limit-seconds", type=float)
+    run.add_argument("--energy-relative-gap", type=float,
+                     help="Gap energético scip-routes: 0.005 = 0.5%%; 0 exige cierre exacto")
     run.add_argument("--threads", type=int)
     run.add_argument("--seed", type=int)
     run.add_argument("--tee", action="store_true", help="Mostrar salida nativa del solver")
@@ -118,7 +120,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--initial-solution", type=Path, help="Incumbente validable vinculado al snapshot exacto"
     )
     run.add_argument("--search-policy", choices=["standard", "deterministic", "adaptive"])
-    run.add_argument("--bedrock-model", default=os.getenv("BEDROCK_MODEL_ID"))
+    run.add_argument("--bedrock-model", default=os.getenv("BEDROCK_MODEL_ID", DEFAULT_BEDROCK_MODEL))
     run.add_argument("--bedrock-fast-model", default=os.getenv("BEDROCK_FAST_MODEL_ID"),
                      help="Modelo Bedrock de menor latencia para decisiones durante la búsqueda")
     run.add_argument("--aws-region", default=os.getenv("AWS_DEFAULT_REGION", "us-east-1"))
@@ -133,7 +135,7 @@ def build_parser() -> argparse.ArgumentParser:
                      help="Ablación: desactivar callbacks de control, conservando pricing")
     run.add_argument("--llm-max-output-tokens", type=int, default=2048)
     run.add_argument("--llm-reasoning-effort", choices=["low", "medium", "high", "xhigh", "max"],
-                     help="Esfuerzo Anthropic; exige un modelo compatible con output_config")
+                     help="Esfuerzo del modelo; GPT usa low por defecto mediante Bedrock Converse")
     run.add_argument("--llm-time-fraction", type=float, default=.25)
     run.add_argument("--decision-interval-seconds", type=float, default=15)
     run.add_argument("--solver-log-directory", type=Path)
@@ -224,7 +226,7 @@ def _prepare(args: argparse.Namespace) -> int:
 def _run(args: argparse.Namespace) -> int:
     instance = load_instance(args.instance)
     values = load_config(args.config).solver.model_dump()
-    for key in ("solver", "time_limit_seconds", "threads", "seed"):
+    for key in ("solver", "time_limit_seconds", "energy_relative_gap", "threads", "seed"):
         if getattr(args, key) is not None:
             values[key] = getattr(args, key)
     if args.tee:

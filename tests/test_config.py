@@ -17,6 +17,7 @@ def test_default_scenario_and_solver_selection_are_explicit():
     )
     assert config.solver.solver == "scip-routes"
     assert config.solver.relative_gap == 0
+    assert config.solver.energy_relative_gap == .005
     assert "llm" not in config.model_dump()
 
 
@@ -77,6 +78,8 @@ def test_unsupported_settings_are_not_silently_ignored(values):
         {"solver": {"time_limit_seconds": 0}},
         {"solver": {"relative_gap": -0.01}},
         {"solver": {"relative_gap": 1.01}},
+        {"solver": {"energy_relative_gap": -0.001}},
+        {"solver": {"energy_relative_gap": 1.01}},
         {"solver": {"threads": 0}},
         {"solver": {"threads": 1.5}},
         {"solver": {"seed": -1}},

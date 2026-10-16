@@ -1,4 +1,4 @@
-"""Cliente Bedrock Converse; no contiene credenciales ni ejecuta código del LLM."""
+"""Bedrock Converse; credenciales AWS y decisiones JSON validadas."""
 
 from __future__ import annotations
 
@@ -60,14 +60,15 @@ class BedrockPolicyClient:
         self.show_trace = show_trace
 
     def request_payload(self, request: dict[str, Any]) -> dict[str, Any]:
-        """Cuerpo exacto de Converse; no contiene credenciales ni cabeceras."""
+        """Cuerpo exacto del proveedor; no contiene credenciales ni cabeceras."""
         text = json.dumps(request, ensure_ascii=False, allow_nan=False)
         if len(text.encode("utf-8")) > self.config.max_input_bytes:
             raise ValueError("El perfil excede el límite de entrada de Bedrock")
         inference = {"maxTokens": self.config.max_output_tokens}
         # El razonamiento adaptativo de Claude Fable no admite temperature=0.
         # Al solicitar esfuerzo explícito se conserva el muestreo del proveedor.
-        if self.temperature is not None and self.config.reasoning_effort is None:
+        if (self.temperature is not None and self.config.reasoning_effort is None
+                and not self.config.is_openai_reasoning_model):
             inference["temperature"] = self.temperature
         payload = {
             "modelId": self.config.model_id,
@@ -75,7 +76,11 @@ class BedrockPolicyClient:
             "messages": [{"role": "user", "content": [{"text": text}]}],
             "inferenceConfig": inference,
         }
-        if self.config.reasoning_effort is not None:
+        if self.config.is_openai_reasoning_model:
+            payload["additionalModelRequestFields"] = {
+                "reasoning": {"effort": self.config.reasoning_effort or "low"},
+            }
+        elif self.config.reasoning_effort is not None:
             payload["additionalModelRequestFields"] = {
                 "output_config": {"effort": self.config.reasoning_effort},
             }
@@ -93,26 +98,16 @@ class BedrockPolicyClient:
     def __call__(self, request: dict[str, Any]) -> dict[str, Any]:
         payload = self.request_payload(request)
         self._trace("llm-request.json", payload)
-        if self.client is None:
-            import boto3
-            from botocore.config import Config
-
-            session = boto3.Session(
-                profile_name=self.config.profile, region_name=self.config.region,
-            )
-            self.client = session.client(
-                "bedrock-runtime", region_name=self.config.region,
-                config=Config(
-                    connect_timeout=min(3, self.config.timeout_seconds * .2),
-                    read_timeout=max(.05, self.config.timeout_seconds * .8),
-                    retries={"total_max_attempts": 1},
-                ),
-            )
-        response = self.client.converse(**payload)
-        # La respuesta del modelo, incluso inválida, permite diagnosticar fallback.
-        # Omitir cabeceras HTTP y metadatos de transporte.
+        response = self._converse(payload)
+        # Conservar respuesta final y uso, sin cabeceras ni razonamiento interno.
+        message = response.get("output", {}).get("message", {})
         self._trace("llm-response.json", {
-            key: response.get(key) for key in ("output", "usage", "stopReason", "metrics")
+            **{key: response.get(key) for key in ("usage", "stopReason", "metrics")},
+            "output": {"message": {
+                "role": message.get("role"),
+                "content": [{"text": block["text"]} for block in message.get("content", [])
+                            if "text" in block],
+            }},
         })
         answer = "".join(
             block.get("text", "")
@@ -140,3 +135,21 @@ class BedrockPolicyClient:
             "usage": response.get("usage", {}),
             "stop_reason": response.get("stopReason"),
         }
+
+    def _converse(self, payload):
+        if self.client is None:
+            import boto3
+            from botocore.config import Config
+
+            session = boto3.Session(
+                profile_name=self.config.profile, region_name=self.config.region,
+            )
+            self.client = session.client(
+                "bedrock-runtime", region_name=self.config.region,
+                config=Config(
+                    connect_timeout=min(3, self.config.timeout_seconds * .2),
+                    read_timeout=max(.05, self.config.timeout_seconds * .8),
+                    retries={"total_max_attempts": 1},
+                ),
+            )
+        return self.client.converse(**payload)

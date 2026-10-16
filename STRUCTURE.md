@@ -37,7 +37,7 @@ Pyomo/Gurobi/SCIP y GCG posicional se conservan como referencias explícitas.
 | `src/ev_routing/dw_bridge.py` | Traducción lineal Pyomo/GCG y dos particiones de restricciones. |
 | `src/ev_routing/dw_callbacks.py` | Observación de pricing, selección de cortes nativos y aplicación de políticas. |
 | `src/ev_routing/search_policy.py` | Contratos, política determinista y controlador adaptativo acotado. |
-| `src/ev_routing/llm/bedrock.py` | Bedrock Converse, perfil/configuración externa y respuestas JSON. |
+| `src/ev_routing/llm/bedrock.py` | Bedrock Converse, esfuerzo específico de GPT/Anthropic, perfil externo y respuestas JSON. |
 | `src/ev_routing/benchmark.py` | Procesos pareados, hashes, reanudación y resúmenes CSV/JSON. |
 | `src/ev_routing/validation.py` | `validate_solution`: reproduce recorridos y batería sin usar Pyomo. |
 | `src/ev_routing/metrics.py` | `compute_metrics`: entregas, energía, recargas y distancia verificadas. |
@@ -60,6 +60,7 @@ Pyomo/Gurobi/SCIP y GCG posicional se conservan como referencias explícitas.
 | `docs/dantzig-wolfe.md` | Formulación descompuesta, decisiones admitidas, presupuesto y benchmark. |
 | `docs/orchestration.md` | Flujo del orquestador, acciones, presupuestos y demostración de las cotas energéticas. |
 | `docs/llm-head-search.md` | Integración actual, API de SCIP, trazabilidad, validación y mediciones. |
+| `docs/webapp-integration.md` | Gap energético 0,5 %, GPT-6 Luna, estado del acceso AWS, API Python y cambios para el futuro merge con webapp. |
 | `docs/performance-orchestrator.md` | Comparación medida, acceso real a modelos Bedrock, hashes y límites de la evidencia. |
 | `docs/llm4mip-adaptation.md` | Material reutilizado, cambios, licencia y alcance. |
 | `docs/contracts.md` | Campos de entrada/salida y sus límites. |

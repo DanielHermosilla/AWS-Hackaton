@@ -176,19 +176,27 @@ es de hasta cuatro llamadas y un 25 % del tiempo global para inferencia.
 Los callbacks ejecutan la política local mientras la inferencia avanza en otro
 hilo. El motor conserva control de los certificados y el checker valida la física.
 Ver [implementación, API de SCIP, mediciones y límites](docs/llm-head-search.md).
+La fase energética se detiene al alcanzar un gap global de **0,5 %**
+(`--energy-relative-gap 0.005`); las entregas mantienen su prioridad.
+El modelo predeterminado de la CLI es **GPT-6 Luna**, con razonamiento `low`.
+**El perfil AWS local `hackathon` actualmente tiene una prohibición explícita
+para invocarlo**: requiere un perfil autorizado o habilitación del administrador.
+Ante ese error se registra fallback y continúa la política local.
+La [guía de conexión con webapp](docs/webapp-integration.md) explica arquitectura,
+autenticación, resultados y cambios necesarios para el merge posterior.
 La mejora histórica de 2/40 a 40/40 corresponde al motor anterior; no acredita
 una mejora adicional de esta rama ni del LLM.
 
 Para resolver una instancia preparada con control asíncrono:
 
 ```bash
-uv run ev-routing run --instance artifacts/service-instance.json \
+uv run --locked --extra dw ev-routing run --instance artifacts/service-instance.json \
   --road-instance artifacts/instance.json --path-archive artifacts/service-paths.json \
   --solver scip-routes --search-policy adaptive --time-limit-seconds 120 \
-  --bedrock-model us.anthropic.claude-fable-5 \
-  --bedrock-fast-model us.amazon.nova-micro-v1:0 \
-  --llm-timeout-seconds 45 --llm-fast-timeout-seconds 8 \
-  --llm-reasoning-effort high --llm-max-output-tokens 4096 \
+  --energy-relative-gap 0.005 \
+  --bedrock-model us.openai.gpt-6-luna \
+  --llm-timeout-seconds 8 \
+  --llm-reasoning-effort low --llm-max-output-tokens 2048 \
   --llm-instance-context-bytes 8000 \
   --llm-max-calls 2 --llm-time-fraction .5 --decision-interval-seconds 15 \
   --solver-log-directory artifacts/solve/native --output artifacts/solve/result.json
@@ -201,13 +209,13 @@ Un `.mps` restringido no contiene la familia implícita de rutas futuras.
 
 ```bash
 uv sync --locked --extra dw
-# Modelo de alta capacidad permitido por el perfil hackathon:
-export BEDROCK_MODEL_ID='us.anthropic.claude-fable-5'
+# Requiere un perfil AWS autorizado para este modelo:
+export BEDROCK_MODEL_ID='us.openai.gpt-6-luna'
 bash scripts/benchmark_dw.sh \
   --instance examples/toy_recharge.json \
   --bedrock-model "$BEDROCK_MODEL_ID" \
   --aws-region us-east-1 --aws-profile hackathon \
-  --llm-reasoning-effort high --llm-max-output-tokens 4096 \
+  --llm-reasoning-effort low --llm-max-output-tokens 2048 \
   --llm-max-calls 3 --llm-timeout-seconds 25 --llm-time-fraction .5 \
   --time-limit-seconds 120 --threads 1 --seeds 0 \
   --output-dir artifacts/benchmark-dw-toy
@@ -215,9 +223,9 @@ bash scripts/benchmark_dw.sh \
 
 Ejecuta las tres políticas en procesos separados y genera `summary.csv`,
 `summary.json`, manifiesto, resultados y logs. `us-east-1` y `hackathon` son
-valores iniciales configurables; no se fija un modelo ni se guardan credenciales.
+valores iniciales configurables; no se guardan credenciales.
 Ejecutar el `export` en la misma terminal antes del benchmark. También se puede
-pasar el identificador directamente: `--bedrock-model us.anthropic.claude-fable-5`.
+pasar el identificador directamente: `--bedrock-model us.openai.gpt-6-luna`.
 Para los servicios del concurso hay que añadir red original, archivo de caminos
 y, opcionalmente, el arranque compartido.
 
@@ -232,9 +240,9 @@ Con los archivos de `artifacts/hackathon/` ya preparados:
 
 ```bash
 bash scripts/test_clients.sh \
-  --bedrock-model us.anthropic.claude-fable-5 \
-  --llm-reasoning-effort high --llm-max-output-tokens 4096 \
-  --llm-max-calls 3 --llm-timeout-seconds 25 --llm-time-fraction .5 \
+  --energy-relative-gap 0.005 --bedrock-model us.openai.gpt-6-luna \
+  --llm-reasoning-effort low --llm-max-output-tokens 2048 \
+  --llm-max-calls 2 --llm-timeout-seconds 8 --llm-time-fraction .5 \
   --time-limit-seconds 120 --threads 1 --seed 0
 ```
 
@@ -274,10 +282,10 @@ Para simular **40 clientes totales** (los 20 originales más 20 sintéticos):
 ```bash
 bash scripts/test_clients.sh \
   --simulate-customers 40 --simulation-seed 0 \
-  --bedrock-model us.anthropic.claude-fable-5 \
+  --energy-relative-gap 0.005 --bedrock-model us.openai.gpt-6-luna \
   --aws-region us-east-1 --aws-profile hackathon \
-  --llm-reasoning-effort high --llm-max-output-tokens 4096 \
-  --llm-max-calls 3 --llm-timeout-seconds 25 --llm-time-fraction .5 \
+  --llm-reasoning-effort low --llm-max-output-tokens 2048 \
+  --llm-max-calls 2 --llm-timeout-seconds 8 --llm-time-fraction .5 \
   --time-limit-seconds 120 --threads 1 --seed 0
 ```
 
@@ -311,10 +319,9 @@ bash scripts/test_clients.sh \
   --road-instance "$EVRP_RUN/instance.json" \
   --simulate-customers 40 --simulation-seed 0 \
   --search-policy adaptive --time-limit-seconds 120 \
-  --bedrock-model us.anthropic.claude-fable-5 \
-  --bedrock-fast-model us.amazon.nova-micro-v1:0 \
-  --llm-reasoning-effort high --llm-max-output-tokens 4096 \
-  --llm-timeout-seconds 45 --llm-fast-timeout-seconds 8 \
+  --energy-relative-gap 0.005 --bedrock-model us.openai.gpt-6-luna \
+  --llm-reasoning-effort low --llm-max-output-tokens 2048 \
+  --llm-timeout-seconds 8 \
   --llm-instance-context-bytes 8000 --llm-max-calls 2 \
   --llm-time-fraction .5 --decision-interval-seconds 15 \
   --aws-profile hackathon --aws-region us-east-1 \
@@ -327,14 +334,16 @@ Para incluir una descarga nueva, cambiar `--graphml` por
 `"$EVRP_RUN/network.graphml"` y agregar `--download-network` al comando `prepare`.
 La latencia de OSM es adicional y no se ha medido en este ensayo.
 
-Medición del 15 de octubre de 2026: CSV + eVED sin caché + GraphML local hasta
+Medición histórica del 15 de octubre de 2026, anterior a la parada en 0,5 %:
+CSV + eVED sin caché + GraphML local hasta
 instancia vial, **16,318 s**; simulación a 40 clientes y preparación de caminos,
 **9,448 s**; SCIP estándar con presupuesto de 15 s, **15,001 s**. Incluyendo
 procesos, hashes, lectura/escritura y validación vial, **45,329 s** en total.
 Resultado: 40/40, 14,56660712 kWh, gap energético final 0,2838 %.
 Es el tiempo de una corrida completa, no el primer instante de ese gap.
-Con presupuesto adaptativo de 120 s, sumar los mismos costes de preparación
-da aproximadamente **150 s**; es una estimación, no una nueva medición conjunta.
+La estimación anterior de aproximadamente **150 s** correspondía a buscar
+cierre exacto con presupuesto adaptativo de 120 s, no al nuevo criterio de 0,5 %.
+No se ha repetido aquí toda la preparación desde cero con la nueva configuración.
 Evidencia local: `artifacts/llm-head/cold-local-20261015/`.
 
 La semilla de ubicaciones (`--simulation-seed`) es independiente de la semilla

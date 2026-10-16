@@ -11,6 +11,8 @@ from pydantic import Field, field_validator, model_validator
 
 from ev_routing.contracts import Contract
 
+DEFAULT_BEDROCK_MODEL = "us.openai.gpt-6-luna"
+
 
 class SearchPolicy(Contract):
     decomposition: Literal["vehicle", "vehicle_routing"] = "vehicle"
@@ -30,11 +32,16 @@ class BedrockConfig(Contract):
     profile: str | None = "hackathon"
     timeout_seconds: float = Field(default=8, gt=0, le=60)
     max_output_tokens: int = Field(default=700, ge=128, le=4096)
-    # Parámetro Anthropic explícito; el modelo/perfil debe admitir output_config.
+    # Converse: Anthropic usa output_config.effort; GPT usa reasoning.effort.
     reasoning_effort: Literal["low", "medium", "high", "xhigh", "max"] | None = None
     fast_model_id: str | None = Field(default=None, min_length=1)
     fast_timeout_seconds: float = Field(default=8, gt=0, le=60)
     max_input_bytes: int = Field(default=180_000, ge=40_000, le=2_000_000)
+
+    @property
+    def is_openai_reasoning_model(self) -> bool:
+        model = self.model_id or ""
+        return "openai.gpt-" in model and "openai.gpt-oss-" not in model
 
     @field_validator("model_id", mode="before")
     @classmethod

@@ -16,7 +16,7 @@ desconocidos y valores numéricos no finitos.
 | `BatteryProfile` | Dominio desde `minimum_departure_kwh`; llegada `min(b-consumption_kwh, maximum_arrival_kwh)`. Incluye el margen por calle. |
 | `ModelParameters` | Flota, capacidad útil, reserva, SoC inicial, conectores y `movement_limit` (H). |
 | `ProblemInstance` | Nodos, arcos, parámetros, compatibilidad y procedencia. Es el JSON de entrada al solver. |
-| `SolverConfig` | Backend, segundos, threads, semilla y gap solicitado; no cambia el problema. |
+| `SolverConfig` | Backend, segundos, threads, semilla, `relative_gap` y `energy_relative_gap`; no cambia el problema. |
 | `PhaseResult` | Incumbente, cota, gap y terminación de una fase concreta. |
 | `RouteStep` | Una posición: nodo, entrega, recarga, batería antes/después y arco siguiente. |
 | `Solution` | Rutas e indicadores declarados por el solver, pendientes de validar. |
@@ -27,6 +27,16 @@ El JSON final de `run_instance` envuelve `SolveResult`, validación, KPIs,
 configuración, procedencia, hash de instancia y tiempos. Tiene
 `schema_version="1.0"`; sin política adaptativa, `tuning.status="disabled"`. Los campos desconocidos
 por falta de datos se expresan como `null`, nunca como `NaN` o un ahorro cero.
+
+`SolverConfig.energy_relative_gap` admite valores entre 0 y 1 y tiene default
+`0.005` (0,5 %). Solo controla la fase energética de `scip-routes`;
+`relative_gap` conserva su comportamiento anterior. Los JSON de configuración
+que omiten el nuevo campo reciben ese default; usar cero para reproducir la
+búsqueda anterior de cierre exacto.
+`PhaseResult.termination_condition="energy_gap_limit"` requiere una cota
+global válida y `abs(U-L)/max(abs(U),1e-10)` dentro de la tolerancia.
+La salida sigue siendo factible, sin afirmar óptimo energético exacto.
+La configuración y la tolerancia quedan registradas en `solver_config`.
 
 En la referencia posicional, cada ruta conserva **H+1 posiciones**, incluidas
 permanencias en el depósito. En `scip-routes` su longitud es variable.
@@ -121,8 +131,11 @@ un cliente sin ventana configurada no recibe una automáticamente.
 `SolverConfig.solver` admite `gcg` además de los backends existentes.
 `SearchConfig`, `SearchPolicy` y `BedrockConfig` están en `search_policy.py`.
 Son configuración de algoritmo e inferencia, separada de `ProblemInstance`.
-Rechazan campos ajenos a la lista admitida; la política adaptativa exige un
-modelo explícito. Región inicial `us-east-1`, perfil inicial `hackathon`.
+Rechazan campos ajenos a la lista admitida; la API Python adaptativa exige un
+modelo explícito. La CLI completa por defecto `us.openai.gpt-6-luna`;
+Converse usa `reasoning.effort="low"` si no se indica otro esfuerzo.
+Región inicial `us-east-1`, perfil inicial `hackathon`; el perfil necesita
+permiso de invocación. Ver el [estado de acceso e integración](webapp-integration.md).
 
 `SolveResult.search` es `null` para Gurobi/SCIP. En GCG contiene versión,
 configuración, huellas de matrices, particiones, parámetros efectivos,
