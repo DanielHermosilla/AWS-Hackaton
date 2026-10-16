@@ -1,3 +1,5 @@
+> **REPOSITORIO CONGELADO (15-10-2026).** Se conserva solo como evidencia. El motor `evrp` ya no se desarrolla; el proyecto sigue en `DanielHermosilla/AWS-Hackaton` (`main`). Versión final: tag `v0.4.0-congelado`.
+
 # evrp-lab
 
 Motor E-VRP "contraído" y laboratorio de experimentos para el desafío CASE (AWS Breaking Barriers Chile 2026).

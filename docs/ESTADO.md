@@ -1,3 +1,5 @@
+> **REPOSITORIO CONGELADO (15-10-2026).** Se conserva solo como evidencia. El motor `evrp` ya no se desarrolla; el proyecto sigue en `DanielHermosilla/AWS-Hackaton` (`main`). Versión final: tag `v0.4.0-congelado`.
+
 # Estado de la implementación
 
 Cada rama `exp/*` mantiene su propio `docs/ESTADO.md` con uno de estos estados por componente:
