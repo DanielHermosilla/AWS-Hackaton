@@ -331,3 +331,61 @@ def test_match_type_header_alone_cannot_claim_eved_code_convention():
     answer["mapping"]["evidence"].append({"kind": "column", "key": "Match Type"})
     with pytest.raises(HistoryInterpretationError):
         analyze(answer, data)
+
+
+@pytest.mark.parametrize("column", [
+    "vehicle_kind", "Vehicle Type", "powertrain", "fuel_type", "tipo_vehículo",
+])
+@pytest.mark.parametrize("other_kind", ["HEV", "ICE", "unknown", "", None])
+def test_one_ev_row_cannot_hide_non_electric_or_unknown_samples(column, other_kind):
+    from ev_routing.llm.history import HistoryInterpretationError, analyze_history_profile
+
+    data = profile()
+    data["columns"].append(column)
+    data["sample_rows"][0][column] = "EV"
+    data["sample_rows"].append({**data["sample_rows"][0], column: other_kind})
+    answer = proposal()
+    answer["mapping"]["evidence"].append({
+        "kind": "sample", "key": column, "row_index": 0, "value": "EV",
+    })
+    called = []
+
+    def provider(request):
+        called.append(request)
+        return {"policy": answer}
+
+    with pytest.raises(HistoryInterpretationError, match="eléctricos"):
+        analyze_history_profile(data, config=config(), provider=provider)
+    assert not called  # The conflict is known locally, before paying for AI.
+
+
+def test_ev_row_evidence_cannot_override_contradictory_declared_metadata():
+    from ev_routing.llm.history import HistoryInterpretationError, analyze_history_profile
+
+    data = profile()
+    data["declared_metadata"]["Vehicle Type"] = "PHEV"
+    called = []
+    with pytest.raises(HistoryInterpretationError, match="eléctricos"):
+        analyze_history_profile(data, config=config(), provider=lambda x: called.append(x))
+    assert not called
+
+
+def test_matching_explicit_electric_classifiers_are_not_treated_as_conflicts():
+    data = profile()
+    data["columns"].append("Vehicle Type")
+    data["sample_rows"][0]["Vehicle Type"] = " bev "
+    data["sample_rows"].append({**data["sample_rows"][0], "Vehicle Type": "electric"})
+    result = analyze(proposal(), data)
+    assert result["interpretation"]["mapping"]["vehicle_kind"] == "EV"
+
+
+def test_missing_classifier_cell_is_unknown_even_when_another_row_is_ev():
+    from ev_routing.llm.history import HistoryInterpretationError
+
+    data = profile()
+    data["columns"].append("vehicle_kind")
+    data["sample_rows"][0]["vehicle_kind"] = "EV"
+    data["sample_rows"].append({key: value for key, value in data["sample_rows"][0].items()
+                                if key != "vehicle_kind"})
+    with pytest.raises(HistoryInterpretationError, match="eléctricos"):
+        analyze(proposal(), data)
