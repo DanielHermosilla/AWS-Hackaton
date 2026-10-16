@@ -235,6 +235,73 @@ def test_combustion_signals_cannot_be_overridden_with_ev_mapping(tmp_path):
         normalize_history(write_csv(tmp_path, frame))
 
 
+@pytest.mark.parametrize(
+    "column", ["vehicle_kind", " Vehicle Type ", "POWERTRAIN", "Fuel_Type", " tipo_vehículo "],
+)
+@pytest.mark.parametrize("invalid_type", ["HEV", "ICE", "PHEV", "mixed", None, " "])
+def test_every_declared_vehicle_class_is_checked_before_signal_selection(
+    tmp_path, column, invalid_type,
+):
+    frame = eved().rename(columns={"VehId": "vehicle", "Trip": "journey"})
+    frame[column] = "EV"
+    frame.loc[len(frame) - 1, column] = invalid_type
+    with pytest.raises(ValueError, match="Todas las filas deben indicar"):
+        normalize_history(write_csv(tmp_path, frame), custom_mapping())
+
+
+def test_hybrid_beyond_ai_preview_cannot_be_hidden_by_first_ev_sample(tmp_path):
+    frame = pd.concat([eved()] * 41, ignore_index=True).rename(
+        columns={"VehId": "vehicle", "Trip": "journey"}
+    )
+    frame["journey"] = (frame.index // 5).astype(str)
+    frame["vehicle_kind"] = "EV"
+    frame.loc[1000, "vehicle_kind"] = "HEV"
+    source = write_csv(tmp_path, frame)
+    inspection = inspect_history(source)
+    assert inspection["sample_row_count"] == 256
+    assert all(row["vehicle_kind"] == "EV" for row in inspection["sample_rows"])
+    with pytest.raises(ValueError, match="Todas las filas deben indicar"):
+        normalize_history(source, custom_mapping())
+
+
+def test_equivalent_ev_class_labels_accept_case_and_surrounding_spaces(tmp_path):
+    frame = eved().rename(columns={"VehId": "vehicle", "Trip": "journey"})
+    frame[" Vehicle Kind "] = [" ev ", "BEV", "electric", "EV", "  Electric  "] * 5
+    data = normalize_history(write_csv(tmp_path, frame), custom_mapping())
+    assert data.summary["row_count"] == len(frame)
+
+
+def test_explicit_non_ev_metadata_alias_cannot_override_ev_mapping(tmp_path):
+    frame = eved().rename(columns={"VehId": "vehicle", "Trip": "journey"})
+    source = tmp_path / "history.json"
+    source.write_text(json.dumps({
+        "metadata": {" Vehicle Type ": "HEV", "mapping": custom_mapping()},
+        "records": frame.to_dict("records"),
+    }))
+    with pytest.raises(ValueError, match="metadatos"):
+        normalize_history(source)
+
+
+def test_csv_duplicate_headers_cannot_be_silently_renamed(tmp_path):
+    source = tmp_path / "duplicate.csv"
+    source.write_text("vehicle_kind,vehicle_kind,power_kw\nEV,HEV,1\n")
+    with pytest.raises(ValueError, match="columnas repetidos"):
+        inspect_history(source)
+    with pytest.raises(ValueError, match="columnas repetidos"):
+        normalize_history(source, custom_mapping())
+
+
+def test_json_duplicate_keys_cannot_hide_conflicting_vehicle_classes(tmp_path):
+    source = tmp_path / "duplicate.json"
+    source.write_text(
+        '{"metadata":{"vehicle_kind":"HEV","vehicle_kind":"EV"},"records":[{"power_kw":1}]}'
+    )
+    with pytest.raises(ValueError, match="claves repetidas"):
+        inspect_history(source)
+    with pytest.raises(ValueError, match="claves repetidas"):
+        normalize_history(source, custom_mapping())
+
+
 def test_duplicate_timestamps_fail_without_silent_sensor_merging(tmp_path):
     frame = eved()
     frame.loc[1, "Timestamp"] = frame.loc[0, "Timestamp"]

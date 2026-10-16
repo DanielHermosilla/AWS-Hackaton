@@ -9,6 +9,7 @@ from __future__ import annotations
 import csv
 import hashlib
 import json
+import unicodedata
 from collections import Counter, defaultdict
 from dataclasses import dataclass
 from math import isfinite
@@ -28,7 +29,7 @@ from ev_routing.energy import file_sha256
 
 MAX_HISTORY_BYTES = 256 * 1024 * 1024
 MAX_HISTORY_ROWS = 2_000_000
-MODEL_VERSION = "historical-streets-1.1"
+MODEL_VERSION = "historical-streets-1.2"
 _UNITS = {
     "timestamp": {"iso8601", "unix_s", "unix_ms", "elapsed_s"},
     "latitude": {"degrees"}, "longitude": {"degrees"},
@@ -49,6 +50,10 @@ _NON_EV_COLUMNS = {
     "Engine RPM[RPM]", "Engine Speed[RPM]", "MAF[g/sec]", "Fuel Rate[L/hr]",
     "Absolute Load[%]", "Short Term Fuel Trim Bank 1[%]",
 }
+_VEHICLE_CLASS_FIELDS = {
+    "vehiclekind", "vehicletype", "powertrain", "fueltype", "tipovehiculo",
+}
+_EV_CLASSES = {"EV", "BEV", "ELECTRIC"}
 
 
 class HistoryNeedsMapping(ValueError):
@@ -118,6 +123,18 @@ def _check_file(path: str | Path) -> Path:
     return source
 
 
+def _unique_json_object(pairs):
+    content = {}
+    for key, value in pairs:
+        if key in content:
+            raise ValueError(
+                "El JSON histórico contiene claves repetidas; corrige el archivo "
+                "para evitar interpretaciones contradictorias."
+            )
+        content[key] = value
+    return content
+
+
 def _read_history(
     path: str | Path, *, preview=False, identifier_columns=(),
 ) -> tuple[pd.DataFrame, dict, str]:
@@ -126,7 +143,7 @@ def _read_history(
         prefix = handle.read(8192)
     if prefix.lstrip().startswith(("[", "{")):
         with source.open("r", encoding="utf-8-sig") as handle:
-            content = json.load(handle)
+            content = json.load(handle, object_pairs_hook=_unique_json_object)
         metadata = content.get("metadata", {}) if isinstance(content, dict) else {}
         records = content.get("records") if isinstance(content, dict) else content
         if not isinstance(records, list) or not all(isinstance(r, dict) for r in records):
@@ -164,6 +181,34 @@ def _read_history(
 
 def _recognized_eved(columns) -> bool:
     return _EVED_REQUIRED <= set(columns) and not (_NON_EV_COLUMNS & set(columns))
+
+
+def _classification_key(value: str) -> str:
+    return "".join(
+        character for character in unicodedata.normalize("NFKD", str(value)).casefold()
+        if character.isalnum()
+    )
+
+
+def _validate_declared_vehicle_types(frame: pd.DataFrame, metadata: dict) -> None:
+    """Check every declared class, including rows outside the AI preview."""
+    for column in frame.columns:
+        if _classification_key(column) not in _VEHICLE_CLASS_FIELDS:
+            continue
+        values = frame[column].astype("string").str.strip().str.upper()
+        if not values.isin(_EV_CLASSES).all():
+            raise ValueError(
+                f"La columna «{column}» contiene tipos de vehículo ausentes o no exclusivamente "
+                "eléctricos. Todas las filas deben indicar EV, BEV o ELECTRIC; "
+                "no se mezclan ni se filtran silenciosamente vehículos híbridos o de combustión."
+            )
+    for key, value in metadata.items():
+        if _classification_key(key) in _VEHICLE_CLASS_FIELDS:
+            if not isinstance(value, str) or value.strip().upper() not in _EV_CLASSES:
+                raise ValueError(
+                    f"Los metadatos «{key}» no identifican vehículos exclusivamente eléctricos "
+                    "(EV, BEV o ELECTRIC). Corrige la clasificación antes de calibrar."
+                )
 
 
 def _safe_value(value):
@@ -285,15 +330,13 @@ def normalize_history(
         columns[key] for key in _IDENTIFIERS if key in columns
     ] if isinstance(columns, dict) else []
     raw, metadata, file_format = _read_history(path, identifier_columns=identifier_columns)
+    _validate_declared_vehicle_types(raw, metadata)
     recognized = _recognized_eved(raw.columns)
     if _NON_EV_COLUMNS & set(raw.columns):
         raise ValueError("Este histórico incluye señales de combustión o híbridos; usa datos EV.")
     if mapping is None:
         mapping = _eved_mapping(raw.columns) if recognized else metadata.get("mapping")
     _validate_mapping(mapping, raw.columns)
-    # JSON metadata cannot contradict a proposed EV interpretation.
-    if str(metadata.get("vehicle_kind", "EV")).upper() not in {"EV", "BEV", "ELECTRIC"}:
-        raise ValueError("Los metadatos no identifican vehículos exclusivamente eléctricos.")
     names, units = mapping["columns"], mapping["units"]
     frame = raw[list(names.values())].rename(columns={v: k for k, v in names.items()}).copy()
     for field in _IDENTIFIERS:
