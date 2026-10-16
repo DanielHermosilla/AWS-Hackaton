@@ -3,6 +3,7 @@ import { parseInstanceFile, inputNodes, inputFormValues, makeSolveRequest, makeP
 import { nativeRunResult, resultSections } from './shared/solver-output.js';
 import { createLocationEditor } from './location-editor.js';
 import { readEditableSource, saveEditableSource, readEditableDraft, saveEditableDraft, clearEditableDraft } from './shared/location-draft.js';
+import { createHistoryPanel } from './shared/history-panel.js';
 
 export function initRunPanel() {
   const fileLimitLabel = `${Math.round(MAX_FILE_BYTES / 1024 / 1024)} MB`;
@@ -33,12 +34,12 @@ export function initRunPanel() {
         <label>Batería inicial · %<input id="run-soc" name="initial_soc" type="number" min="1" max="100" step="any" value="60" required></label>
         <label>Capacidad útil · kWh<input id="run-capacity" name="battery_capacity_kwh" type="number" min="0.01" step="any" placeholder="Por confirmar" required></label>
         <label>Reserva mínima · kWh<input id="run-reserve" name="reserve_kwh" type="number" min="0.001" step="any" placeholder="Por confirmar" required></label>
-        <label>Consumo · kWh/km<input id="run-consumption" name="consumption_kwh_km" type="number" min="0.001" step="any" placeholder="Por confirmar" required></label>
+        <label>Consumo supuesto · kWh/km<input id="run-consumption" name="consumption_kwh_km" type="number" min="0.001" step="any" placeholder="Por confirmar" required></label>
         <label>Red para las ubicaciones<select id="run-network" name="network_mode"><option value="road">Calles del servidor</option><option value="haversine">Distancia · caso sintético</option></select></label>
       </div>
       <p id="native-note" class="run-help" hidden></p>
       <p id="fleet-help" class="run-help">El escenario oficial usa 2 vehículos al 60 %. Capacidad, reserva y consumo son supuestos que puedes ajustar.</p>
-      <p id="network-note" class="run-help">El CSV contiene lugares, no calles. Usa la red del servidor para rutas viales; «Distancia» une los puntos para una prueba sintética.</p></section>
+      <p id="network-note" class="run-help">El CSV contiene lugares, no calles. Usa la red del servidor para rutas viales; «Distancia» une los puntos para una prueba sintética.</p><section id="run-history" class="run-history" aria-label="Consumo con históricos"></section></section>
       <section class="run-card" aria-labelledby="engine-heading"><h3 id="engine-heading">Parámetros del motor</h3><div class="run-fields">
         <label>Presupuesto solver · s<input id="run-seconds" name="time_limit_seconds" type="number" min="1" max="120" step="1" value="120" required></label>
         <label>Gap de optimalidad · %<input id="run-gap" name="energy_gap_percent" type="number" min="0" max="100" step="any" value="0.5" required aria-describedby="engine-help"></label>
@@ -60,6 +61,11 @@ export function initRunPanel() {
   let fileRevision = 0;
   let inputName = '', editorSource = null;
   let draftWarning = '';
+  const history = createHistoryPanel({host: $('run-history'), onChange(profile, {invalidate}) {
+    if (invalidate && !input?.instance) dirty();
+    try { save({energyProfile: profile, ...(invalidate ? {energyCoverage: null} : {})}); } catch (error) { message(error.message, true); }
+    if (invalidate) persistDraft();
+  }});
 
   function save(patch) {
     saved = {...saved, ...patch, revision: crypto.randomUUID()};
@@ -112,6 +118,7 @@ export function initRunPanel() {
     $('solve-run').textContent = value ? 'Calculando…' : 'Calcular rutas';
     $('stop-waiting').hidden = !value;
     $('run-form').setAttribute('aria-busy', String(value));
+    history.setRunBusy(value);
   }
   const client = createSolverClient({
     onChange(state) {
@@ -129,12 +136,23 @@ export function initRunPanel() {
       }
       renderStrip();
     },
-    onPrepared(request, isCurrent) {
+    onPrepared(request, isCurrent, prepared) {
       validateNativeInstance(request.instance);
       if (!isCurrent()) return;
       canonicalInstance = request.instance;
       lastRequest = request;
       $('export-instance').disabled = false;
+      const coverage = prepared?.preparation?.energy_profile;
+      history.showCoverage(coverage);
+      if (coverage) {
+        // Retain only the small display summary, never telemetry or credentials.
+        const summary = coverage.summary || {};
+        save({energyCoverage: {profile_id: history.profileId, summary: {
+          calibrated_arc_count: summary.calibrated_arc_count,
+          road_arc_count: summary.road_arc_count,
+          arc_coverage_fraction: summary.arc_coverage_fraction,
+        }}});
+      }
     },
     async onResult(response, isCurrent) {
       // Validate the exact result that will be consumed on both pages before retaining its ID.
@@ -154,11 +172,12 @@ export function initRunPanel() {
   function dirty() {
     draftEdited = true;
     canonicalInstance = null;
+    history.invalidateCoverage();
     client.invalidate();
     setBusy(false);
     $('export-instance').disabled = true;
     message('Cambios guardados para el próximo cálculo.');
-    try { save({stale: true, status: 'editing', message: '', draftId: null}); }
+    try { save({stale: true, status: 'editing', message: '', draftId: null, energyCoverage: null}); }
     catch (error) { message(error.message, true); }
     renderStrip();
   }
@@ -210,6 +229,8 @@ export function initRunPanel() {
     lastPrepareRequest = value.prepareRequest || null;
     inputName = name;
     const native = !!value.instance;
+    history.setNative(native);
+    if (value.prepareRequest?.energy_profile_id) history.restore(value.prepareRequest.energy_profile_id);
     renderInputSummary();
     $('edit-locations').disabled = false;
     $('edit-locations').textContent = native ? 'Revisar ubicaciones' : 'Editar ubicaciones';
@@ -229,6 +250,7 @@ export function initRunPanel() {
   }
   function buildJob() {
     if (!input) throw new Error('Falta una instancia. Selecciona un archivo CSV o JSON, o crea un caso de prueba arriba.');
+    if (!input.instance && history.isPending) throw new Error('Espera a que termine el histórico o cancela su carga antes de calcular.');
     if (locationEditor.isOpen) throw new Error('Confirma o cancela la edición de ubicaciones antes de calcular.');
     for (const field of dialog.querySelectorAll('.run-fields input')) {
       field.removeAttribute('aria-invalid');
@@ -244,6 +266,7 @@ export function initRunPanel() {
       .map(key => [key, $('run-form').elements.namedItem(key).value]));
     values.initial_soc = Number(values.initial_soc) / 100;
     values.network_mode = $('run-network').value;
+    values.energy_profile_id = history.profileId;
     return {request: {api_version: API_VERSION, solver: solverSettings(...settings)},
       prepareRequest: makePrepareRequest(input, values)};
   }
@@ -381,12 +404,15 @@ export function initRunPanel() {
   addEventListener('pageshow', event => {
     if (event.persisted && arrivalRevision !== readExecution()?.revision) location.reload();
   });
-  addEventListener('pagehide', () => client.invalidate());
+  addEventListener('pagehide', () => { client.invalidate(); history.close(); });
   if (saved?.status === 'running') {
     saved = {...saved, status: 'stopped', message: 'La espera anterior terminó al salir de la página. El cálculo puede continuar en el servidor.', stale: true};
     saveExecution(saved);
   }
   const restoredDraft = readEditableDraft(saved?.draftId);
+  if (saved?.energyProfile?.profile_id) history.restore(saved.energyProfile.profile_id).then(() => {
+    if (saved?.energyCoverage?.profile_id === history.profileId) history.showCoverage(saved.energyCoverage);
+  });
   if (restoredDraft) {
     setInput(restoredDraft.input, 'Borrador sin calcular');
     for (const [name, value] of Object.entries(restoredDraft.fields)) {

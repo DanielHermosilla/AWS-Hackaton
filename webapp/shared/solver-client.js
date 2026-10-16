@@ -78,7 +78,7 @@ export function createSolverClient({fetchImpl = fetch, onChange = () => {}, onPr
             throw new Error('La preparación no devolvió una instancia nativa compatible.');
           solveRequest = {api_version: API_VERSION, instance: prepared.instance, solver: request.solver,
             ...(prepared.prepared_instance_id ? {prepared_instance_id: prepared.prepared_instance_id} : {})};
-          await onPrepared(solveRequest, () => current === revision);
+          await onPrepared(solveRequest, () => current === revision, prepared);
           if (current !== revision) return null;
           stage = 'solving';
           onChange({status: 'running', stage, message: 'Instancia preparada. Resolviendo con el motor…'});

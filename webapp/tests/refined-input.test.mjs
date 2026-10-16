@@ -44,7 +44,7 @@ test('invalid seed and gap are rejected before transport', () => {
 test('eVED telemetry is rejected with instructions for the correct input', () => {
   assert.throws(() => inputs.parseInstanceFile(
     'VehId,Trip,Timestamp(ms),Latitude[deg],Longitude[deg]\n1,2,3,42,-83', 'eVED_EV.csv'
-  ), /histórico.*eVED.*CSV.*nodos/i);
+  ), /histórico.*eVED.*Consumo con históricos.*CSV de ubicaciones/i);
 });
 
 test('connection failure does not expose beta wording to the operator', async () => {

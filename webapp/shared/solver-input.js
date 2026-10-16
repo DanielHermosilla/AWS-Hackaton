@@ -189,7 +189,9 @@ export function parseInstanceFile(text, filename = '') {
       if (request.prepared_instance_id) throw new Error('Carga la ejecución completa o la entrada de preparación para reconstruir los caminos; este identificador es temporal.');
       value = {instance: validateNativeInstance(request.instance), request};
     } else if (value.api_version === API_VERSION && value.nodes) {
-      requireFields(value, ['api_version', 'nodes', 'fleet', 'network_mode', 'operations'], 'prepare');
+      requireFields(value, ['api_version', 'nodes', 'fleet', 'network_mode', 'operations', 'energy_profile_id'], 'prepare');
+      if (value.energy_profile_id !== undefined && (typeof value.energy_profile_id !== 'string' || !value.energy_profile_id || value.energy_profile_id.length > 200))
+        throw new Error('El identificador del histórico no es válido. Vuelve a adjuntar el histórico.');
       requireFields(value.fleet, ['num_vehicles', 'battery_capacity_kwh', 'reserve_kwh', 'initial_soc', 'consumption_kwh_km', 'vehicle_connector_types'], 'fleet');
       if (!['haversine', 'road'].includes(value.network_mode)) throw new Error('La preparación requiere network_mode road o haversine explícito.');
       value = {nodes: value.nodes, prepareRequest: value, ...(preparationAttempt ? {request: preparationAttempt} : {})};
@@ -240,7 +242,10 @@ export function makePrepareRequest(input, values) {
   const connectors = input.prepareRequest?.fleet?.vehicle_connector_types;
   const networkMode = values.network_mode || input.prepareRequest?.network_mode || 'haversine';
   if (!['road', 'haversine'].includes(networkMode)) throw new Error('Modo de red inválido.');
+  if (values.energy_profile_id != null && (typeof values.energy_profile_id !== 'string' || !values.energy_profile_id || values.energy_profile_id.length > 200))
+    throw new Error('El identificador del histórico no es válido. Vuelve a adjuntar el histórico.');
   return {api_version: API_VERSION, nodes: input.nodes, network_mode: networkMode,
+    ...(values.energy_profile_id ? {energy_profile_id: values.energy_profile_id} : {}),
     ...(input.prepareRequest?.operations ? {operations: structuredClone(input.prepareRequest.operations)} : {}),
     fleet: {num_vehicles: count, battery_capacity_kwh: capacity, reserve_kwh: reserve,
       initial_soc: initial, consumption_kwh_km: consumption,
@@ -253,7 +258,7 @@ export function validateInstanceFileHeader(text) {
   if (firstLine.trimStart().startsWith('{')) return;
   const headers = firstLine.split(',').map(value => value.replace(/^"|"$/g, '').trim().toLowerCase());
   if (headers.includes('vehid') && headers.includes('trip'))
-    throw new Error('Este archivo es un histórico eVED de mediciones. Para calcular rutas, carga un CSV de nodos o un JSON con la instancia y sus parámetros.');
+    throw new Error('Este archivo es un histórico eVED de mediciones. Adjunta ese archivo en «Consumo con históricos». Aquí se carga el CSV de ubicaciones o el JSON de la instancia.');
 }
 
 export function inputFormValues(input) {
