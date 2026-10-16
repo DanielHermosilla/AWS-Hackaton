@@ -49,12 +49,30 @@ class BedrockResponseError(ValueError):
         self.stop_reason = response.get("stopReason")
 
 
-def create_bedrock_client(config: BedrockConfig):
+def supports_high_reasoning(model_id: str | None) -> bool:
+    """Capabilities used by this adapter; unknown providers are never guessed.
+
+    Model availability and permissions still require a real Converse response.
+    An opaque application-profile ARN cannot establish a model's capabilities.
+    """
+    model = model_id or ""
+    return any(name in model for name in (
+        "openai.gpt-5.4", "openai.gpt-5.5", "openai.gpt-5.6-",
+        "openai.gpt-6-", "openai.gpt-6.1-",
+        "anthropic.claude-sonnet-4-6", "anthropic.claude-opus-4-6",
+        "anthropic.claude-opus-4-7", "anthropic.claude-opus-4-8",
+        "anthropic.claude-sonnet-5", "anthropic.claude-opus-5",
+        "anthropic.claude-fable-5", "anthropic.claude-mythos-5",
+        "anthropic.claude-haiku-5-5",
+    ))
+
+
+def create_bedrock_client(config: BedrockConfig, *, session: Any = None):
     """Preparar SDK y transporte antes de competir con las heurísticas por el GIL."""
     import boto3
     from botocore.config import Config
 
-    session = boto3.Session(profile_name=config.profile, region_name=config.region)
+    session = session or boto3.Session(profile_name=config.profile, region_name=config.region)
     return session.client(
         "bedrock-runtime", region_name=config.region,
         config=Config(
@@ -97,7 +115,10 @@ class BedrockPolicyClient:
                 "reasoning": {"effort": self.config.reasoning_effort or "low"},
             }
         elif self.config.reasoning_effort is not None:
+            if not supports_high_reasoning(self.config.model_id):
+                raise ValueError("El modelo configurado no tiene razonamiento compatible verificado.")
             payload["additionalModelRequestFields"] = {
+                "thinking": {"type": "adaptive"},
                 "output_config": {"effort": self.config.reasoning_effort},
             }
         return payload

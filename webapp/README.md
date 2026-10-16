@@ -20,7 +20,7 @@ en [la guía de integración](../docs/webapp-integration.md).
 También se puede cargar directamente un **JSON nativo ProblemInstance 1.0/1.1**.
 Sus arcos, parámetros, operaciones, compatibilidad de cargadores y procedencia
 se conservan sin cambios. Los campos físicos se bloquean en el formulario;
-se puede modificar el presupuesto del solver y escoger una política de búsqueda. Para cambiar la instancia,
+se pueden modificar presupuesto, gap energético, política de búsqueda y semilla. Para cambiar la instancia,
 editar el JSON y volver a cargarlo. Los formatos antiguos de preparación y
 el API beta 2 no se admiten.
 
@@ -38,6 +38,33 @@ desconocidas y sus fases, sin convertirlo en cero entregas o infactibilidad
 probada. El servidor temporal conserva hasta cuatro resultados y estos expiran
 al reiniciarlo. Ver [el contrato y sus límites](../docs/integration-beta.md).
 
+## Panel de cálculo y recuperación
+
+**Instancia** permite seleccionar un archivo o crear un caso sintético con la cantidad
+escogida de clientes y cargadores (hasta 200 ubicaciones en total). El signo `?`
+explica el formato por mouse, teclado y toque. El caso sintético selecciona una red
+por distancia; sus líneas discontinuas son aproximaciones, no calles.
+
+**Flota y supuestos** reúne vehículos, batería, reserva, consumo y red. El CSV solo
+aporta lugares; sus supuestos se completan en el formulario. Un JSON nativo o una
+exportación completa rellena los valores presentes y conserva la configuración
+física del archivo. **Parámetros del motor** configura tiempo (1–120 s), gap de
+energía (0,5 % inicial), búsqueda y semilla. La fase de entregas mantiene gap cero.
+El servidor permite los CPU disponibles dentro del límite de SCIP, sin un control
+de recursos en la interfaz; eso no fuerza uso paralelo en todas las etapas.
+
+**Calcular rutas** permanece disponible para explicar los datos faltantes en línea;
+solo se bloquea durante una petición en curso. No requiere un checkbox adicional.
+Al terminar se abre el resultado y **Ver resultados** permite consultarlo de nuevo,
+incluso después de navegar. Los parámetros y borradores se conservan por pestaña;
+un límite de almacenamiento muestra una advertencia sin reemplazar el borrador.
+
+Se admiten CSV de nodos con sus cuatro columnas obligatorias, instancias nativas,
+entradas de preparación y ejecuciones exportadas. Los históricos eVED se rechazan
+leyendo solo su encabezado. Límite de importación: 256 MiB; de petición de instancia:
+64 MiB. El almacén temporal conserva hasta cuatro resultados y 256 MiB en total.
+Estos límites de bytes no garantizan memoria ni tiempo para cualquier grafo.
+
 Para consultar únicamente el ejemplo de diseño, desde la raíz:
 
 ```sh
@@ -51,9 +78,25 @@ Usa HTTP: los módulos JavaScript y el mapa no funcionan abriendo el HTML como a
 
 ## Pantallas
 
-**Inicio** resume el plan de ejemplo en tres paneles: medidores de batería al regreso por vehículo (con una marca para la batería de salida), entregas asignadas por vehículo y consumo por vehículo, junto con paradas de recarga y estaciones del escenario. Cada local cuenta una sola vez aunque se visite varias veces. Un vehículo sin recorrido aparece como «Sin recorrido». Los vehículos, «Ver vehículos», «Ver paradas» y el enlace de estaciones abren el Plan en esa vista.
+**Inicio** resume el plan seleccionado en tres paneles: medidores de batería al regreso por vehículo (con una marca para la batería de salida), entregas asignadas por vehículo y consumo por vehículo, junto con paradas de recarga y estaciones del escenario. Cada local cuenta una sola vez aunque se visite varias veces. Un vehículo sin recorrido aparece como «Sin recorrido». Los vehículos, «Ver vehículos», «Ver paradas» y el enlace de estaciones abren el Plan en esa vista.
 
-**Plan** muestra el mapa con los recorridos, la lista de vehículos y paradas, las estaciones de carga y el detalle de cada parada. Los números compactos identifican el mismo local en mapa y lista; no representan su posición en el recorrido. El ID completo se conserva en la lista y en el nombre accesible del marcador.
+**Plan** muestra el mapa con los recorridos, la lista de vehículos y paradas, las estaciones de carga y el detalle de cada parada. Los números compactos identifican el mismo local en mapa y lista; no representan su posición en el recorrido. Las paradas usan referencias o nombres legibles (cliente, estación, salida y regreso); los identificadores originales se conservan en los datos y las exportaciones.
+
+La pestaña **Cargadores** lista todas las estaciones de la instancia, usadas o
+no, con sus metadatos y pasos por vehículo. Conserva estaciones sin coordenadas
+y distingue cero de información ausente. No consulta disponibilidad en vivo.
+
+**Ver resumen**, disponible en ambas pantallas, reúne la ejecución y permite
+imprimirla o guardarla como PDF. Usa el mismo resultado del motor; al editar,
+advierte que el resumen anterior ya no corresponde al borrador. El ejemplo de
+diseño se identifica como ejemplo y no genera un resultado ficticio imprimible.
+
+En **Cargar y calcular → Editar ubicaciones**, los CSV y el caso sintético
+permiten modificar referencias y coordenadas, arrastrar el marcador o elegir
+un punto. Confirmar exige nueva preparación y cálculo; cancelar conserva el
+original. El formulario funciona sin cartografía. La búsqueda es entre puntos
+cargados, sin geocodificación externa. Un JSON nativo con grafo conserva sus
+ubicaciones protegidas hasta disponer de una red preparada para esos cambios.
 
 En modo motor, **Datos y límites de la ejecución** presenta sus KPIs, motivos de
 datos no disponibles, operaciones, comprobaciones, fases, tiempos y trazabilidad.
@@ -68,8 +111,8 @@ cómputo se presentan por separado, sin sumar intervalos contenidos.
 - Cabecera: nombre de la organización («Mi organización» por defecto), marca, botón de tema claro/oscuro y enlace al Plan. En Inicio ese enlace dice «Continuar plan» cuando hay una selección guardada.
 - La etiqueta «Datos de ejemplo» abre el origen de los datos.
 - Navegación Inicio/Plan en barra lateral; en móvil, en un cajón.
-- Perfil local Diego Caballero (DC), sin cuenta ni sesión remota. Su menú abre los Ajustes (tema, superficies sólidas, movimiento reducido y nombre de la organización) y «Cerrar plan», que borra la selección guardada y conserva los ajustes.
-- Cada documento inicia en tema claro, también al recargar o navegar entre Inicio y Plan, aunque el sistema o una preferencia antigua indiquen oscuro. El interruptor permite cambiar el tema durante la página abierta; esa elección queda solo en memoria. El nombre de organización, las superficies sólidas y el movimiento reducido siguen guardándose en `localStorage`. El HTML y `theme.js` establecen el tema claro antes de pintar.
+- Perfil local genérico (FL), sin cuenta ni sesión remota. Su menú abre los Ajustes (tema, superficies sólidas, movimiento reducido y nombre de la organización) y «Cerrar plan», que borra la selección guardada y conserva los ajustes.
+- El tema claro es el inicial si no hay preferencia guardada. El interruptor conserva la elección en `localStorage` y la aplica antes de pintar en Inicio, Plan y salida, también al recargar. Organización, superficies sólidas y movimiento reducido se guardan junto a esa preferencia.
 - La selección del Plan (vehículo, pestaña, parada y estaciones visibles) se guarda en `sessionStorage` de la pestaña y también se refleja en la URL del Plan.
 - Se respetan el movimiento reducido del sistema y el del ajuste, el alto contraste y los colores forzados.
 
@@ -97,6 +140,9 @@ El formato del ejemplo continúa separado del contrato HTTP beta.
 - `theme.js` (en `<head>`, antes de pintar) y `theme.css` (última hoja): tema global.
 - `shared/`: estilos, iconos, movimiento, lectura y comprobación de la estructura de los ejemplos. Inicio y Plan comparten el recuento de locales únicos; los textos interpolados se escapan antes de renderizar.
 - `run-panel.js`, `run-panel.css`: carga, revisión, estado y descarga de ejecuciones.
+- `location-editor.js`, `location-editor.css`, `shared/location-draft.js`: edición confirmada de ubicaciones, independiente del resultado.
+- `plan-summary.js`, `plan-summary.css`, `shared/plan-summary-model.js`: resumen e impresión de la ejecución.
+- `shared/charger-details.js`, `charger-details.css`: ficha y lista de cargadores con sus metadatos.
 - `shared/solver-input.js`, `solver-client.js`, `solver-adapter.js`: entrada, transporte y presentación versionada del motor; pruebas en `tests/`.
 - `salida.html`: confirmación después de cerrar el plan.
 
@@ -119,3 +165,7 @@ node --test webapp/tests/*.test.mjs
 Estas pruebas comprueban referencias, unidades, estados y tipos usados por la
 interfaz; no certifican factibilidad energética. La guía beta incluye las pruebas
 Python con HTTP y el solver nativo; cada evidencia declara su alcance.
+
+El [contexto maestro](../docs/ZMD-MASTER-CONTEXT.md) y el
+[registro de orquestación](../docs/ZMD-ORCHESTRATION.md) identifican las bases,
+responsabilidades, cambios revisados y evidencia de esta implementación.

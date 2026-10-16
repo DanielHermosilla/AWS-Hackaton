@@ -23,7 +23,7 @@ Queremos ayudar a un operador a planificar entregas sin quedarse sin batería: c
 
 El escenario del desafío considera dos Nissan Leaf 2013 con un 60 % de carga inicial. Las entradas actuales contienen un depósito, 20 locales y 60 cargadores. El mismo código deberá aceptar nuevas instancias y flotas parametrizadas.
 
-**Estado de `codex/evrp-llm-search`:** integra el preprocesamiento de `b14b976` y el motor previo en un worktree aislado. Maestro por rutas **sin H**, pricing por coste reducido, ALNS, búsqueda memética y sub-SCIP de recombinación. Bedrock coordina políticas desde callbacks mediante inferencia asíncrona. Se conservan la verificación independiente y las referencias Pyomo/Gurobi/SCIP y GCG. La UI queda pendiente.
+**Estado integrado:** webapp conectada al maestro por rutas **sin H**, pricing por coste reducido, ALNS, búsqueda memética y sub-SCIP de recombinación. Bedrock coordina políticas mediante inferencia asíncrona. Se conservan validación independiente y las referencias Pyomo/Gurobi/SCIP y GCG. El refinamiento local del panel, archivos y resultados está documentado en [la entrega de integración](docs/implementation/ZMD-FULL-INTEGRATION.md).
 
 ## Nuestro modelamiento
 
@@ -55,7 +55,11 @@ Requiere Python 3.12 o 3.13 y `uv`. Las dependencias Python, incluida la interfa
 uv sync --locked
 uv run ev-routing run \
   --instance examples/toy_recharge.json \
-  --output artifacts/toy_recharge.json
+  --time-limit-seconds 30 \
+  --output artifacts/toy-result.json
+
+uv run --locked --extra dw python -m pytest -q
+node --test webapp/tests/*.test.mjs
 ```
 
 El ejemplo requiere dos entregas y una recarga: el óptimo consume 14 kWh netos e incorpora 9 kWh a la batería. `examples/toy_regeneration.json` tiene una entrega y óptimo de 2 kWh; comprueba que la regeneración excedente se pierde cuando la batería se llena. Son ejemplos sintéticos, no resultados del concurso.
@@ -173,8 +177,8 @@ validaciones y comandos para conservar el baseline](docs/operations.md).
 ## Pruebas
 
 ```bash
-uv run pytest -q
-uv run pytest --cov=ev_routing --cov-report=term-missing \
+uv run --locked --extra dw python -m pytest -q
+uv run --locked --extra dw python -m pytest --cov=ev_routing --cov-report=term-missing \
   --junitxml=artifacts/tests/results.xml
 uv run ruff check src tests
 ```
@@ -397,7 +401,7 @@ simular ni preparar caminos, omitir `--simulate-customers` y pasar esos tres
 snapshots mediante `--road-instance`, `--instance` y `--path-archive`.
 No combinar la simulación con un arranque de la instancia original.
 
-Priorizamos código simple, modular y bibliotecas existentes. [STRUCTURE.md](STRUCTURE.md) explica brevemente cada archivo y sus funciones. Los equipos trabajan en ramas y worktrees separados; la integración objetivo del proyecto es `master`.
+Priorizamos código simple, modular y bibliotecas existentes. [STRUCTURE.md](STRUCTURE.md) explica brevemente cada archivo y sus funciones. Los equipos trabajan en ramas y worktrees separados; la integración vigente conserva `main` y la historia de sus ramas.
 
 Documentos de referencia:
 

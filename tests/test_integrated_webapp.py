@@ -151,7 +151,7 @@ def test_bounded_server_gpt_configuration(runtime, monkeypatch):
     assert config.instance_context_bytes == 8000
     assert config.log_directory.endswith("test-run/logs")
     payload = native_request()
-    for forbidden in ("model_id", "aws_profile", "energy_relative_gap", "log_directory"):
+    for forbidden in ("model_id", "aws_profile", "relative_gap", "log_directory"):
         payload["solver"][forbidden] = "browser-cannot-set-this"
         with pytest.raises(service.SolveRequestError, match="campos no admitidos"):
             service.validate_request(payload)

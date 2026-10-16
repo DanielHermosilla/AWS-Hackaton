@@ -111,7 +111,7 @@ def project_result(instance, config, native, *, road_instance=None, search_confi
         else:
             display_instance = instance
     scope = (
-        "Validación independiente nativa de Daniel sobre los arcos y energía de la instancia; "
+        "Validación independiente sobre los arcos y la energía de la instancia; "
         "formulación por rutas completas sin H. No garantiza consumos reales ni una red vial no aportada."
     )
     warnings = []
@@ -274,15 +274,19 @@ def project_result(instance, config, native, *, road_instance=None, search_confi
         "warnings": list(dict.fromkeys(warnings)),
         "assumptions": [
             *assumptions,
-            f"SCIP por rutas sin H; un hilo, semilla 0; tolerancia energética "
-            f"{100 * config.energy_relative_gap:g} %; política solicitada {policy}.",
+            f"Primero se priorizan las entregas; después se reduce la energía con una tolerancia de "
+            f"{100 * config.energy_relative_gap:g} %.",
             "El presupuesto de solver puede excederse por construcción, validación o sobrecostos de la biblioteca.",
         ],
         "network": {
             "type": network_kind,
             "vial": not synthetic
             and network_kind in {"osm", "road", "graphml", "directed_road_graph"},
-            "geometry_source": "native_arc_geometry",
+            "geometry_source": (
+                "synthetic_haversine" if synthetic and network_kind == "haversine"
+                and isinstance(network, dict) and network.get("geometry_source") == "synthetic_haversine"
+                else "native_arc_geometry"
+            ),
             "provenance_verified": False,
         },
         "metadata": {
@@ -322,7 +326,8 @@ def project_result(instance, config, native, *, road_instance=None, search_confi
     }
 
 
-def run(instance, config, *, search_config=None, road_instance=None, path_archive=None):
+def run(instance, config, *, search_config=None, road_instance=None, path_archive=None,
+        policy_provider=None):
     run_instance, SearchConfig = load_provider()
     try:
         native = run_instance(
@@ -332,6 +337,7 @@ def run(instance, config, *, search_config=None, road_instance=None, path_archiv
                 policy="standard", bedrock={"profile": None}, log_directory=None
             ),
             road_instance=road_instance, path_archive=path_archive,
+            **({"policy_provider": policy_provider} if policy_provider is not None else {}),
             output_path=Path(search_config.log_directory).parent / "result.json"
             if search_config and search_config.log_directory else None,
         )
@@ -341,7 +347,7 @@ def run(instance, config, *, search_config=None, road_instance=None, path_archiv
         ) from exc
     except Exception as exc:
         raise ProviderError(
-            "El núcleo de Daniel no pudo completar la ejecución; revise la instancia y el entorno local."
+            "El motor no pudo completar el cálculo. Revisa los datos de la instancia y la conexión con el servidor."
         ) from exc
     return project_result(
         instance, config, native, road_instance=road_instance, search_config=search_config,

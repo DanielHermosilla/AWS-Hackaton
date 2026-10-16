@@ -18,8 +18,6 @@ const themes = new Set(['light', 'dark']);
 const unsafeCharacters = /[\u0000-\u001f\u007f-\u009f\u00ad\u200b-\u200f\u2028-\u202e\u2060-\u2069\ufeff]/g;
 const osReducedMotion = typeof matchMedia === 'function' ? matchMedia('(prefers-reduced-motion: reduce)') : null;
 
-// Theme belongs to this document. A reload or navigation starts light again.
-let pageTheme = DEFAULT_PREFERENCES.theme;
 // Used only when the browser refuses storage, so the current page keeps working.
 let unsavedPreferences = null;
 let contextInMemory = null;
@@ -53,13 +51,11 @@ export function readPreferences() {
       saved = null;
     }
   }
-  const stored = saved && typeof saved === 'object' ? saved : {};
-  return normalizePreferences({ ...stored, theme: pageTheme });
+  return normalizePreferences(saved);
 }
 
 export function savePreferences(preferences) {
-  const { theme, ...persistent } = normalizePreferences(preferences);
-  pageTheme = theme;
+  const persistent = normalizePreferences(preferences);
   try {
     localStorage.setItem(PREFERENCE_STORAGE_KEY, JSON.stringify(persistent));
     unsavedPreferences = null;
@@ -73,7 +69,6 @@ export function savePreferences(preferences) {
 /** Reflect preferences on <html> and notify listeners on this page. */
 export function applyPreferences(preferences, { notify = true } = {}) {
   const normalized = normalizePreferences(preferences);
-  pageTheme = normalized.theme;
   const root = document.documentElement;
   root.dataset.theme = normalized.theme;
   root.dataset.solidSurfaces = String(normalized.solidSurfaces);
@@ -84,7 +79,7 @@ export function applyPreferences(preferences, { notify = true } = {}) {
   return normalized;
 }
 
-/** Merge, persist non-theme preferences (when allowed) and apply immediately. */
+/** Merge, persist preferences (when allowed) and apply immediately. */
 export function updatePreferences(patch) {
   const preferences = normalizePreferences({ ...readPreferences(), ...patch });
   const saved = savePreferences(preferences);

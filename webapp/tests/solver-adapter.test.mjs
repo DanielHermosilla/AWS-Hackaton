@@ -69,6 +69,17 @@ test('passing through a client does not add an explicit delivery', () => {
   assert.equal(RUN_INFO.servedCount, 1);
 });
 
+test('opaque node IDs stay intact while the interface receives friendly fallback labels', () => {
+  const envelope = response();
+  for (const node of envelope.result.nodes) node.address = node.node_id;
+  const before = structuredClone(envelope);
+  const {NODES, ROUTES} = adaptSolverResponse(envelope);
+  assert.deepEqual(NODES.map(node => node.label), ['Depósito', 'Cliente 1', 'Cliente 2', 'Estación de carga 1']);
+  assert.deepEqual(NODES.map(node => node.id), envelope.result.nodes.map(node => node.node_id));
+  assert.deepEqual(ROUTES[0].stopIds, envelope.result.routes[0].steps.map(step => step.node_id));
+  assert.deepEqual(envelope, before);
+});
+
 test('repeated visits, chargers and intermediate base keep their occurrences', () => {
   const envelope = response();
   const route = envelope.result.routes[0];

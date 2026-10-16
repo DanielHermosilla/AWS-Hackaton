@@ -33,6 +33,7 @@ def run_instance(
     path_archive: PathArchive | None = None,
     initial_solution: Solution | None = None,
     search_config: SearchConfig | None = None,
+    policy_provider=None,
 ) -> dict[str, Any]:
     """Resolver y conservar solución, certificados y auditoría separadas."""
     started = time.perf_counter()
@@ -68,6 +69,8 @@ def run_instance(
         options["initial_solution"] = initial_solution
     if search_config is not None:
         options["search_config"] = search_config
+    if policy_provider is not None:
+        options["policy_provider"] = policy_provider
     solved = solve_instance(instance, config, **options)
     checking = time.perf_counter()
     validation = (

@@ -85,7 +85,7 @@ function resumeFrom(saved) {
   const stopRoute = routeById(saved.stop?.vehicleId);
   const stop = saved.stop && Number.isInteger(saved.stop.index) ? stopsOf(stopRoute)[saved.stop.index] : null;
   const valid = (saved.vehicle === null || !!vehicle)
-    && ['fleet', 'stops'].includes(saved.tab)
+    && ['fleet', 'stops', 'chargers'].includes(saved.tab)
     && (saved.stop === null || (!!stop && saved.stop.vehicleId === saved.vehicle))
     && typeof saved.chargers === 'boolean';
   if (!valid) return fallback;
@@ -96,7 +96,7 @@ function resumeFrom(saved) {
   return {
     title: 'Donde lo dejaste',
     cta: 'Continuar plan',
-    context: [vehicle?.name || 'Toda la flota', saved.tab === 'stops' ? 'Paradas' : 'Vehículos', stopLabel,
+    context: [vehicle?.name || 'Toda la flota', { fleet: 'Vehículos', stops: 'Paradas', chargers: 'Cargadores' }[saved.tab], stopLabel,
       saved.chargers ? 'Estaciones visibles' : null].filter(Boolean).join(' · '),
   };
 }
@@ -127,10 +127,10 @@ if (RUN_INFO || pending) {
     ? 'Consumo no disponible para esta ejecución' : 'Energía informada por el motor';
   main.querySelector('.vision-footer-top > p').textContent = pending
     ? 'Sin resultado. Los indicadores aparecerán después del cálculo.'
-    : 'Resultado del motor · Entregas previstas por el modelo, sin telemetría en vivo';
+    : 'Resultado del motor · Entregas planificadas';
   main.querySelector('.data-note [data-motion-detail] p').textContent = pending
     ? 'Selecciona una entrada y calcula el plan. Los datos de ejemplo se consultan como una fuente separada.'
-    : 'Solo se cuentan los locales con servicio explícito en el resultado. Pasar por un local no implica atenderlo. Cada local cuenta una sola vez; las paradas repetidas conservan su orden. La batería se convierte de kWh a porcentaje con la capacidad configurada. “—” indica información no disponible. La energía de recarga es la incorporada a la batería, no la electricidad comprada. La factibilidad tiene el alcance informado por el proveedor; no garantiza el consumo real. La disponibilidad de estaciones no está verificada.';
+    : 'Cada cliente atendido cuenta una vez. Batería y energía son estimaciones del plan; “—” indica un dato no disponible. Las entregas aún no se han realizado.';
 }
 
 // The shell owns the only Continue link (#continue-plan); only its text is updated.

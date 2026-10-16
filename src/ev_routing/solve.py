@@ -489,6 +489,7 @@ def _run_phase(
 def solve_instance(
     instance: ProblemInstance, config: SolverConfig, *, initial_solution: Solution | None = None,
     search_config: SearchConfig | None = None,
+    policy_provider=None,
 ) -> SolveResult:
     """Resolver (16) en dos fases y conservar el mejor incumbente extraído.
 
@@ -504,7 +505,12 @@ def solve_instance(
             from ev_routing.route_solver import solve_routes
         except ImportError as error:
             raise RuntimeError("Instalar el backend por rutas con uv sync --extra dw") from error
-        return solve_routes(instance, config, search_config, initial_solution=initial_solution)
+        options = {"initial_solution": initial_solution}
+        if policy_provider is not None:
+            options["policy_provider"] = policy_provider
+        return solve_routes(instance, config, search_config, **options)
+    if policy_provider is not None:
+        raise ValueError("Un proveedor de políticas inyectado requiere solver='scip-routes'")
     if config.solver == "gcg":
         try:
             from ev_routing.dw import solve_dantzig_wolfe

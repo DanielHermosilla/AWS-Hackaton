@@ -98,7 +98,7 @@ class BoundaryTests(unittest.TestCase):
         self.assertEqual(instance.nodes[0].node_id, "Centro|#fin")
         self.assertIsNone(instance.nodes[0].latitude)
         self.assertEqual(config.solver, "scip-routes")
-        self.assertEqual((config.threads, config.seed, config.relative_gap), (1, 0, 0))
+        self.assertEqual((config.threads, config.seed, config.relative_gap), (service.available_solver_threads(), 0, 0))
 
     def test_service_path_representation_and_nonfinite_values_are_rejected(self):
         for representation in ("service_paths_nonnegative", {"kind": "service_paths_nonnegative"}):
@@ -134,7 +134,7 @@ class BoundaryTests(unittest.TestCase):
         with self.assertRaises(service.SolveRequestError):
             service.prepare(p)
 
-    def test_prepare_builds_labelled_synthetic_native_instance_without_geometry(self):
+    def test_prepare_builds_labelled_synthetic_native_instance_with_synthetic_geometry(self):
         response = service.prepare(prepare_request())
         self.assertEqual(response["api_version"], "3.0")
         i = response["instance"]
@@ -143,7 +143,8 @@ class BoundaryTests(unittest.TestCase):
         self.assertEqual(i["provenance"]["network"]["kind"], "haversine")
         self.assertEqual(len(i["arcs"]), 2)
         self.assertAlmostEqual(i["arcs"][0]["energy_kwh"], 0.111195, places=5)
-        self.assertEqual(i["arcs"][0]["geometry"], [])
+        self.assertEqual(i["arcs"][0]["geometry"], [[0, 0], [0, .001]])
+        self.assertEqual(i["provenance"]["network"]["geometry_source"], "synthetic_haversine")
         self.assertEqual(i["nodes"][0]["connector_types"], [])
         self.assertEqual(i["nodes"][0]["node_id"], "B|#fin")
 
@@ -215,7 +216,8 @@ class NativeSolverTests(unittest.TestCase):
         self.assertEqual(result["status"], "result_available")
         self.assertEqual(result["served_count"], 1)
         self.assertFalse(result["network"]["vial"])
-        self.assertTrue(all(r["geometry"] is None for r in result["routes"]))
+        active = next(r for r in result["routes"] if r["served_visit_ids"])
+        self.assertEqual(active["geometry"]["coordinates"], [[0, 0], [.001, 0], [0, 0]])
 
     def test_native_no_solution_is_complete_result_not_infeasibility_inference(self):
         from ev_routing.contracts import PhaseResult, SolveResult

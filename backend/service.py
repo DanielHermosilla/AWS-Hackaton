@@ -9,6 +9,7 @@ import copy
 import hashlib
 import json
 import math
+import os
 import time
 import uuid
 from pathlib import Path
@@ -206,6 +207,15 @@ def _native_instance(value, *, prepared=False):
     return instance
 
 
+def available_solver_threads():
+    """Allow all CPUs available to the process, within SCIP's 64-thread limit."""
+    if hasattr(os, "sched_getaffinity"):
+        count = len(os.sched_getaffinity(0))
+    else:
+        count = getattr(os, "process_cpu_count", os.cpu_count)() or 1
+    return max(1, min(count, 64))
+
+
 def validate_request(payload, *, runtime=None):
     object_fields(
         payload,
@@ -216,13 +226,15 @@ def validate_request(payload, *, runtime=None):
     _finite_json(payload)
     if payload["api_version"] != API_VERSION:
         raise SolveRequestError(
-            "api_version debe ser 3.0; esta API recibe el contrato nativo de Daniel."
+            "La instancia usa una versión incompatible. Cargue un archivo de la API 3.0."
         )
     solver = object_fields(
-        payload["solver"], {"time_limit_seconds", "search_policy"}, "solver",
+        payload["solver"], {"time_limit_seconds", "search_policy", "energy_relative_gap", "random_seed"}, "solver",
         ("time_limit_seconds",),
     )
     seconds = number(solver["time_limit_seconds"], "time_limit_seconds", 1, 120)
+    energy_gap = number(solver.get("energy_relative_gap", .005), "El gap de optimalidad", 0, 1)
+    seed = number(solver.get("random_seed", 0), "La semilla", 0, 2_000_000_000, integer=True)
     policy = solver.get("search_policy", "standard")
     if not isinstance(policy, str) or policy not in {"standard", "adaptive", "deterministic"}:
         raise SolveRequestError("search_policy debe ser standard, deterministic o adaptive.")
@@ -238,10 +250,10 @@ def validate_request(payload, *, runtime=None):
     config = SolverConfig(
         solver="scip-routes",
         time_limit_seconds=seconds,
-        threads=1,
-        seed=0,
+        threads=available_solver_threads(),
+        seed=seed,
         relative_gap=0,
-        energy_relative_gap=0.005,
+        energy_relative_gap=energy_gap,
         tee=False,
     )
     return instance, config
@@ -250,7 +262,7 @@ def validate_request(payload, *, runtime=None):
 def prepare(payload, *, runtime=None):
     object_fields(
         payload,
-        {"api_version", "nodes", "fleet", "network_mode", "operations"},
+        {"api_version", "nodes", "fleet", "network_mode", "operations", "energy_profile_id"},
         "preparación",
         ("api_version", "nodes", "fleet", "network_mode"),
     )
@@ -264,10 +276,17 @@ def prepare(payload, *, runtime=None):
     from ev_routing.contracts import Operations
 
     operations = _validate_model(Operations, payload.get("operations", {}), "Operaciones")
+    history_id = payload.get("energy_profile_id")
+    if "energy_profile_id" in payload:
+        if not isinstance(history_id, str) or not history_id.strip():
+            raise SolveRequestError("Indica un histórico disponible o retíralo de la preparación.")
+        if runtime is None:
+            raise SolveRequestError("Adjunta el histórico en el servidor antes de preparar la instancia.")
+        runtime.histories.get(history_id)
     rows = payload["nodes"]
     if not isinstance(rows, list) or not 1 <= len(rows) <= MAX_PREPARE_NODES:
         raise SolveRequestError(
-            f"La preparación sintética admite entre 1 y {MAX_PREPARE_NODES} nodos."
+            f"La preparación admite entre 1 y {MAX_PREPARE_NODES} ubicaciones."
         )
     fleet = object_fields(
         payload["fleet"],
@@ -342,7 +361,10 @@ def prepare(payload, *, runtime=None):
             "api_version": API_VERSION,
             "instance": context.instance.model_dump(mode="json"),
             "prepared_instance_id": identifier,
-            "preparation": {"runtime_seconds": context.seconds, "reused": reused},
+            "preparation": {
+                "runtime_seconds": context.seconds, "reused": reused,
+                **({"energy_profile": context.energy_report} if context.energy_report else {}),
+            },
         }
     arcs = []
     for origin in nodes:
@@ -369,6 +391,10 @@ def prepare(payload, *, runtime=None):
                     "to_node_id": destination["node_id"],
                     "distance_m": distance_m,
                     "energy_kwh": distance_m / 1000 * consumption,
+                    "geometry": [
+                        [origin["latitude"], origin["longitude"]],
+                        [destination["latitude"], destination["longitude"]],
+                    ],
                 }
             )
     instance = _native_instance(
@@ -387,18 +413,26 @@ def prepare(payload, *, runtime=None):
             "operations": operations.model_dump(mode="json"),
             "provenance": {
                 "kind": "synthetic",
-                "network": {"kind": "haversine", "vial": False},
+                "network": {"kind": "haversine", "vial": False, "geometry_source": "synthetic_haversine"},
                 "consumption_kwh_km": consumption,
                 "assumptions": [
                     "Red completa geodésica sintética; no representa calles ni restricciones de circulación.",
                     "Energía supuesta como distancia geodésica por consumo configurado; sin pendiente.",
-                    "No se fabrican geometrías viales.",
+                    "Las líneas del mapa unen las ubicaciones por distancia; no representan calles.",
                     "La coincidencia de conectores es textual y sensible a mayúsculas, conforme al contrato nativo.",
                 ],
             },
         }
     )
-    return {"api_version": API_VERSION, "instance": instance.model_dump(mode="json")}
+    energy_report = None
+    if history_id:
+        instance, energy_report = runtime.histories.apply(
+            history_id, instance, consumption, synthetic=True,
+        )
+    return {
+        "api_version": API_VERSION, "instance": instance.model_dump(mode="json"),
+        **({"preparation": {"energy_profile": energy_report}} if energy_report else {}),
+    }
 
 
 def solve(payload, *, runtime=None):
@@ -418,6 +452,7 @@ def solve(payload, *, runtime=None):
         instance, config, search_config=search,
         road_instance=context.road if context else None,
         path_archive=context.archive if context else None,
+        policy_provider=runtime.policy_provider(search),
     )
     result["run_id"] = run_id
     canonical = instance.model_dump(mode="json")
@@ -462,5 +497,8 @@ def health(*, runtime=None):
             "road_preparation": runtime is not None and runtime.graphml is not None,
             "search_policies": ["standard", "deterministic", "adaptive"],
             "energy_relative_gap": 0.005,
+            "historical_energy": runtime is not None,
+            "historical_upload_max_bytes": 256 * 1024 * 1024,
+            "bedrock_session": runtime is not None,
         },
     }

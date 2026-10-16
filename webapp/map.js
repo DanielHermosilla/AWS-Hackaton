@@ -42,8 +42,12 @@ export async function createMap(container, options = {}) {
   const geometryMessage = () => {
     if (!RUN_INFO || !planVisible) return '';
     const shown = vehicleId ? ROUTES.filter(route => route.vehicleId === vehicleId) : ROUTES;
-    return shown.some(route => route.active && !route.geometry)
-      ? 'Sin geometría para parte del recorrido. Se muestran las paradas; no se reconstruyen calles.' : '';
+    return [
+      RUN_INFO.network?.geometry_source === 'synthetic_haversine'
+        ? 'Aproximación por distancia: las líneas unen las paradas, no siguen calles.' : '',
+      shown.some(route => route.active && !route.geometry)
+        ? 'Sin trazado para parte del recorrido. Sus paradas siguen disponibles.' : ''
+    ].filter(Boolean).join(' ');
   };
   const renderStatus = () => {
     status.textContent = [
@@ -97,7 +101,9 @@ export async function createMap(container, options = {}) {
       : {...requestedPadding};
     // Attribution wraps on narrow maps; keep the full marker above that area.
     if (host.clientWidth < 700) padding.bottom = Math.max(padding.bottom || 0, 80);
-    map.fitBounds(bounds, {padding, maxZoom:14, duration:prefersReducedMotion() || !animate ? 0 : 450});
+    // A small test route can be only a few blocks long. Let fitBounds show
+    // that route clearly instead of keeping its stops in a tiny cluster.
+    map.fitBounds(bounds, {padding, maxZoom:17, duration:prefersReducedMotion() || !animate ? 0 : 450});
   }
   function update() {
     for (const {node,el} of markers) {
@@ -153,7 +159,10 @@ export async function createMap(container, options = {}) {
       map.addSource(sourceId, {type:'geojson', data:{type:'Feature', properties:{}, geometry:route.geometry}});
       const color = VEHICLES.find(v => v.id === route.vehicleId).color;
       map.addLayer({id:`${sourceId}-halo`,type:'line',source:sourceId,layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':'#ffffff','line-width':8}});
-      map.addLayer({id:`${sourceId}-line`,type:'line',source:sourceId,layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':color,'line-width':4}});
+      map.addLayer({id:`${sourceId}-line`,type:'line',source:sourceId,layout:{'line-cap':'round','line-join':'round'},paint:{
+        'line-color':color,'line-width':4,
+        ...(RUN_INFO?.network?.geometry_source === 'synthetic_haversine' ? {'line-dasharray':[2, 1.5]} : {})
+      }});
       map.on('click', `${sourceId}-line`, () => options.onVehicleSelect?.(route.vehicleId));
     }
     for (const node of mappedNodes) {
@@ -164,7 +173,7 @@ export async function createMap(container, options = {}) {
       el.type = 'button';
       el.className = `zmd-pin type-${node.type}`;
       el.title = node.label;
-      el.setAttribute('aria-label',`${node.label} (${node.id})`);
+      el.setAttribute('aria-label', node.label);
       if (node.type === 'visit') el.textContent = visitLabel(node.id);
       else if (node.type === 'junction') el.textContent = '·';
       else el.innerHTML = node.type === 'base' ? icon('base',19) : icon('plug',14);
