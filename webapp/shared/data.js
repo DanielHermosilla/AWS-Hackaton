@@ -10,7 +10,7 @@ if (execution?.runId) {
   const { adaptSolverResponse } = await import('./solver-adapter.js');
   fixture = adaptSolverResponse(raw);
   source = 'solver';
-} else if (execution?.mode !== 'example') {
+} else if (execution && execution.mode !== 'example') {
   source = 'pending';
   fixture = {SCENARIO: {id: 'pending', name: 'Sin resultado', location: 'Carga y calcula una instancia',
     initialSoc: null, demonstration: false}, VEHICLES: [], NODES: [], ROUTES: []};

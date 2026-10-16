@@ -310,6 +310,7 @@ def _cliente_bedrock(runtime=None):
     """
     try:
         from ev_routing.assist import ClienteBedrock, ConfigBedrock, ModeloNoDisponible
+        from ev_routing.assist.bedrock_chat import ErrorBedrock
     except Exception:
         return None
     conexion = getattr(runtime, "bedrock", None)
@@ -327,10 +328,32 @@ def _cliente_bedrock(runtime=None):
                 return None
             # API interna de BedrockSession: cliente cacheado por (region, timeout)
             # e invalidado al desconectar (epoch). Ver docs/assist/integracion.md.
-            cliente = conexion._client(config, conexion._epoch)
+            epoch = conexion._epoch
+            cliente = conexion._client(config, epoch)
         except Exception:  # desconectado, vencido o sin credenciales
             return None
-        return ClienteBedrock(
+
+        class ClienteSesion(ClienteBedrock):
+            def conversar(self, mensajes, *, sistema, tool_config=None):
+                # Share the same guard as tuning/history for every Converse
+                # round; a captured SDK client cannot outlive its session.
+                if not conexion._request_lock.acquire(blocking=False):
+                    raise ErrorBedrock("Hay una consulta a AWS en curso. Espera a que termine.")
+                try:
+                    self._cliente = conexion._client(config, epoch)
+                    return super().conversar(
+                        mensajes, sistema=sistema, tool_config=tool_config,
+                    )
+                except ErrorBedrock:
+                    raise
+                except Exception as error:
+                    raise ErrorBedrock(
+                        "La conexion de AWS cambio o vencio. Vuelve a conectar para continuar."
+                    ) from error
+                finally:
+                    conexion._request_lock.release()
+
+        return ClienteSesion(
             ConfigBedrock(model_id=config.model_id, region=config.region,
                           max_tokens=CHAT_MAX_TOKENS),
             cliente=cliente,

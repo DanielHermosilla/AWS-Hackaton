@@ -83,6 +83,39 @@ def upload(fetch, content=None):
     })
 
 
+def test_health_reports_history_upload_limits_by_format(history_server, monkeypatch):
+    # Capability limits do not depend on loading the native solver libraries.
+    monkeypatch.setattr("backend.daniel_adapter.provider_available", lambda: False)
+    _, fetch = history_server
+    code, envelope = fetch("/health")
+    assert code == 200, envelope
+    assert envelope["api_version"] == "3.0"
+    capabilities = envelope["capabilities"]
+    assert capabilities["historical_upload_max_bytes"] == 4 * 1024 ** 3
+    assert capabilities["historical_upload_max_bytes_by_format"] == {
+        "csv": 4 * 1024 ** 3,
+        "json": 256 * 1024 ** 2,
+    }
+
+
+@pytest.mark.parametrize("filename, length, error_code", [
+    ("big.csv", 4 * 1024 ** 3 + 1, "payload_too_large"),
+    ("big.json", 256 * 1024 ** 2 + 1, "history_too_large"),
+])
+def test_history_upload_rejects_format_limit_before_reading_body(
+    history_server, filename, length, error_code,
+):
+    server, fetch = history_server
+    code, envelope = fetch("/history/upload", b"", headers={
+        "Content-Type": "application/octet-stream",
+        "Content-Length": str(length),
+        "X-History-Filename": filename,
+    })
+    assert code == 413, envelope
+    assert envelope["error"]["code"] == error_code
+    assert not server.runtime.histories.entries
+
+
 def test_history_is_separate_and_synthetic_keeps_explicit_fallback(history_server):
     server, fetch = history_server
     code, envelope = upload(fetch)

@@ -488,6 +488,7 @@ def solve(payload, *, runtime=None):
 
 def health(*, runtime=None):
     from .daniel_adapter import provider_available
+    from .history_store import MAX_HISTORY_BYTES, MAX_HISTORY_JSON_BYTES
 
     return {
         "status": "ok",
@@ -502,7 +503,11 @@ def health(*, runtime=None):
             "search_policies": ["standard", "deterministic", "adaptive"],
             "energy_relative_gap": 0.005,
             "historical_energy": runtime is not None,
-            "historical_upload_max_bytes": 256 * 1024 * 1024,
+            "historical_upload_max_bytes": MAX_HISTORY_BYTES,
+            "historical_upload_max_bytes_by_format": {
+                "csv": MAX_HISTORY_BYTES,
+                "json": MAX_HISTORY_JSON_BYTES,
+            },
             "bedrock_session": runtime is not None,
         },
     }
