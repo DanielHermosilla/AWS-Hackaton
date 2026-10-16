@@ -13,7 +13,7 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 
 from .datos import Nodo, haversine_km
-from .energia import ModeloEnergia
+from .energia import ModeloEnergia, tiempo_arco_min
 
 log = logging.getLogger(__name__)
 
@@ -72,7 +72,10 @@ class RedOSM(Red):
 
     def __init__(self, margen_km: float = 2.0, cache: str = ".cache/osm", grafo: str | None = None,
                  max_acceso_m: float | None = None, permitir_descarga: bool = True,
-                 algoritmo_caminos: str | None = None, cache_adyacencia: bool = True):
+                 algoritmo_caminos: str | None = None, cache_adyacencia: bool = True,
+                 avisar_clamp: bool = False, snap_sentido: bool = False, tiempo_arco: bool = False,
+                 t_max_trayecto_min: float | None = None, caminos_alternativos: bool = False,
+                 penalizacion_subida: float = 1.0):
         self.margen_km = margen_km
         self.cache = Path(cache)
         self.grafo = grafo
@@ -81,12 +84,25 @@ class RedOSM(Red):
         # Algoritmo de caminos más cortos. None = el mejor medido (ver caminos.py).
         self.algoritmo_caminos = algoritmo_caminos
         self.cache_adyacencia = cache_adyacencia
+        # Extensiones (apagadas por defecto; no alteran el resultado v0.3.0).
+        self.avisar_clamp = avisar_clamp
+        self.snap_sentido = snap_sentido
+        self.tiempo_arco = tiempo_arco
+        self.t_max_trayecto_min = t_max_trayecto_min
+        self.caminos_alternativos = caminos_alternativos
+        self.penalizacion_subida = penalizacion_subida
+        self.clamp_info: dict[str, float] = {}    # F0: diagnóstico del recorte
+        self.pares_descartados_tmax: list[tuple[str, str]] = []
+        self.pares_rescatados: list[tuple[str, str]] = []
         self.origen_grafo = ""
         self.tiempos: dict[str, float] = {}       # etapas de preparar(), en segundos
         self._pos: dict[str, tuple[float, float]] = {}
         self._snap: dict[str, int] = {}
+        self._snap_entrada: dict[str, int] = {}   # F0 snap_sentido: nodo de acceso de entrada
         self._stub_km: dict[str, float] = {}
+        self._t_arco: dict[tuple[int, int], float] = {}   # F2: tiempo (min) por arco
         self._caminos: dict[tuple[str, str], list[int]] = {}
+        self._caminos_alt: dict[tuple[str, str], list[int]] = {}
         self.G = None
 
     def _bbox(self, nodos):
@@ -171,6 +187,50 @@ class RedOSM(Red):
         self._resolver_caminos(nodos, energia, pot)         # caminos entre pares
         self.tiempos["caminos"] = time.perf_counter() - t0
         self._energia = energia
+        self._aplicar_extensiones(nodos, energia)
+
+    def _aplicar_extensiones(self, nodos, energia):
+        """F2 (T_max) y F1-lite (rescate por camino alternativo). Apagadas por defecto."""
+        self._descartados_tmax: set[tuple[str, str]] = set()
+        if self.tiempo_arco and self.t_max_trayecto_min is not None:
+            T = float(self.t_max_trayecto_min)
+            for (i, j) in list(self._caminos):
+                if self.t_trayecto_min(i, j) > T:
+                    self._descartados_tmax.add((i, j))
+            self.pares_descartados_tmax = sorted(self._descartados_tmax)
+        if self.caminos_alternativos:
+            # Rescate: para pares infactibles por batería (π̂ alto) sustituye el camino
+            # por el alternativo de menor pico si reduce π̂. Se mide sobre toda la flota
+            # en la etapa 2; aquí dejamos disponible la ruta alternativa por par.
+            self.pares_rescatados = []
+            for (i, j) in list(self._caminos):
+                if (i, j) in self._descartados_tmax:
+                    continue
+                base_pi = self._pico(i, j, self._caminos[(i, j)], energia)
+                alt = self.camino_alternativo(i, j)
+                if alt is None:
+                    continue
+                alt_pi = self._pico(i, j, alt, energia)
+                if alt_pi < base_pi - 1e-9:
+                    self._caminos_alt[(i, j)] = alt
+                    self.pares_rescatados.append((i, j, round(base_pi, 4), round(alt_pi, 4)))
+
+    def _pico(self, i, j, cam, energia) -> float:
+        """π̂ (pico de consumo acumulado) de un camino, incluyendo stubs de acceso."""
+        s = acc = 0.0
+        stub_i = self._stub_km[i]
+        if stub_i > 0:
+            s += energia.tramo(stub_i, 0.0); acc = max(acc, s)
+        for u, v in zip(cam, cam[1:]):
+            km, dh = self._tramo_arco[(u, v)]
+            s += energia.tramo(km, dh); acc = max(acc, s)
+        stub_j = self._stub_km.get(j + "#ent", self._stub_km[j]) if self.snap_sentido else self._stub_km[j]
+        if stub_j > 0:
+            s += energia.tramo(stub_j, 0.0); acc = max(acc, s)
+        return acc
+
+    def par_descartado(self, i, j) -> bool:
+        return (i, j) in getattr(self, "_descartados_tmax", ())
 
     def _ajustar_calle(self, nodos, G):
         """Ajusta cada nodo clave a la calle (geometría vectorizada con numpy)."""
@@ -179,6 +239,9 @@ class RedOSM(Red):
         # Puntos de la geometría de cada calle: (lat, lon, nodo extremo más cercano por la calle,
         # km a lo largo de la calle hasta ese nodo). Así el acceso se mide a la calle, no al cruce.
         plat, plon, pnodo, pkm = [], [], [], []
+        # Para snap_sentido: extremos u (aguas arriba) y v (aguas abajo) del arco y
+        # km del punto proyectado a cada uno, para accesos según sentido.
+        pu, pv, pku, pkv = [], [], [], []
         for u, v, d in G.edges(data=True):
             geom = d.get("geometry")
             pts = list(geom.coords) if geom is not None else [(G.nodes[u]["x"], G.nodes[u]["y"]),
@@ -194,6 +257,7 @@ class RedOSM(Red):
                     pnodo.append(u); pkm.append(a)
                 else:
                     pnodo.append(v); pkm.append(total - a)
+                pu.append(u); pv.append(v); pku.append(a); pkv.append(total - a)
         ys, xs = np.radians(plat), np.radians(plon)
         pkm_arr = np.array(pkm)
         for n in nodos:
@@ -206,6 +270,13 @@ class RedOSM(Red):
                                  f"(máximo {self.max_acceso_m} m)")
             self._snap[n.id] = pnodo[k]
             self._stub_km[n.id] = float(d[k] + pkm_arr[k])
+            if self.snap_sentido:
+                # Acceso según sentido: salir hacia el extremo aguas abajo (v) del
+                # arco más cercano; entrar desde el extremo aguas arriba (u).
+                self._snap[n.id] = pv[k]
+                self._snap_entrada[n.id] = pu[k]
+                self._stub_km[n.id] = float(d[k] + pkv[k])
+                self._stub_km[n.id + "#ent"] = float(d[k] + pku[k])
 
     def _construir_adyacencia(self, G, elev, energia):
         """Adyacencia con el mejor arco paralelo por energía y costo reducido ≥ 0.
@@ -215,26 +286,57 @@ class RedOSM(Red):
         """
         import time
 
-        cacheado = self._cargar_adyacencia(energia)
+        cacheado = None if self.avisar_clamp else self._cargar_adyacencia(energia)
         if cacheado is not None:
             self._ady, self._tramo_arco, pot = cacheado
+            if self.tiempo_arco:
+                self._calcular_tiempos(G)
             return pot
         pot = {v: energia.kappa * energia.eta_regeneracion * elev[v] if energia.usar_pendiente else 0.0
                for v in G.nodes}
         self._ady: dict[int, list[tuple[int, float, float, float]]] = {}
         mejor: dict[tuple[int, int], tuple[float, float]] = {}
+        mejor_attr: dict[tuple[int, int], dict] = {}
         for u, v, d in G.edges(data=True):
             km = float(d.get("length", 0.0)) / 1000.0
             dh = elev[v] - elev[u]
             e = energia.tramo(km, dh)
             if (u, v) not in mejor or e < energia.tramo(*mejor[(u, v)]):
                 mejor[(u, v)] = (km, dh)
+                mejor_attr[(u, v)] = d
+        min_red = math.inf
+        n_clamp = 0
         for (u, v), (km, dh) in mejor.items():
             red = energia.tramo(km, dh) + pot[u] - pot[v]
+            min_red = min(min_red, red)
+            if red < 0.0:
+                n_clamp += 1
+            # F0: por defecto se recorta en silencio (comportamiento v0.3.0). Con
+            # avisar_clamp se registra el recorte y se avisa si es significativo.
             self._ady.setdefault(u, []).append((v, max(red, 0.0), km, dh))
+        if self.avisar_clamp:
+            self.clamp_info = {"min_reducido": float(min_red), "arcos_recortados": int(n_clamp),
+                               "arcos": len(mejor)}
+            if min_red < -1e-6:
+                log.warning("Costo reducido negativo (min=%.3e, %d arcos recortados): "
+                            "revisa el potencial o pesos negativos", min_red, n_clamp)
         self._tramo_arco = {(u, v): t for (u, v), t in mejor.items()}
+        if self.tiempo_arco:
+            self._t_arco = {uv: tiempo_arco_min(mejor[uv][0], d.get("highway"), d.get("maxspeed"))
+                            for uv, d in mejor_attr.items()}
         self._guardar_adyacencia(energia, pot)
         return pot
+
+    def _calcular_tiempos(self, G) -> None:
+        """F2: tiempo (min) por arco desde v_ef(highway, maxspeed). Usa el mejor
+        arco paralelo ya elegido (self._tramo_arco)."""
+        attr: dict[tuple[int, int], dict] = {}
+        for u, v, d in G.edges(data=True):
+            if (u, v) in self._tramo_arco and (u, v) not in attr:
+                attr[(u, v)] = d
+        self._t_arco = {uv: tiempo_arco_min(km, attr.get(uv, {}).get("highway"),
+                                            attr.get(uv, {}).get("maxspeed"))
+                        for uv, (km, _dh) in self._tramo_arco.items()}
 
     def _firma_adyacencia(self, energia) -> str:
         """Hash estable del grafo de origen + parámetros de energía relevantes."""
@@ -307,16 +409,38 @@ class RedOSM(Red):
     def _resolver_caminos(self, nodos, energia, pot):
         from .caminos import GrafoCaminos, resolver_caminos
 
-        orig = {n.id: self._snap[n.id] for n in nodos}
         lat_lon = {}
         for v in self._ady:
             lat_lon[v] = (self.G.nodes[v]["y"], self.G.nodes[v]["x"])
-        for n in nodos:                      # asegura coordenadas de los snaps
-            s = self._snap[n.id]
+        snaps = {self._snap[n.id] for n in nodos} | set(self._snap_entrada.values())
+        for s in snaps:
             lat_lon.setdefault(s, (self.G.nodes[s]["y"], self.G.nodes[s]["x"]))
         g = GrafoCaminos(self._ady, pot, lat_lon, energia.consumo_kwh_km)
         pares = [(n.id, m.id) for n in nodos for m in nodos if n.id != m.id]
-        self._caminos = resolver_caminos(g, orig, pares, self.algoritmo_caminos)
+        self._grafo = g
+        self._energia = energia
+        if not self.snap_sentido:
+            orig = {n.id: self._snap[n.id] for n in nodos}
+            self._caminos = resolver_caminos(g, orig, pares, self.algoritmo_caminos)
+            return
+        # snap_sentido: origen = snap de salida (v), destino = snap de entrada (u).
+        # Se resuelve por origen con Dijkstra multi-destino sobre nodos reales.
+        self._caminos = {}
+        por_origen: dict[int, list[tuple[str, str]]] = {}
+        for i, j in pares:
+            por_origen.setdefault(self._snap[i], []).append((i, j))
+        for s, lista in por_origen.items():
+            destinos = {self._snap_entrada[j] for _, j in lista}
+            pred = self._dijkstra(s, destinos)
+            for i, j in lista:
+                t = self._snap_entrada[j]
+                cam = [t]
+                while cam[-1] != s:
+                    p = pred.get(cam[-1])
+                    if p is None:
+                        raise RuntimeError(f"Sin camino {i}→{j}")
+                    cam.append(p)
+                self._caminos[(i, j)] = cam[::-1]
 
     def _dijkstra(self, origen, destinos):
         dist = {origen: 0.0}
@@ -342,11 +466,69 @@ class RedOSM(Red):
         out: list[Tramo] = []
         if self._stub_km[i] > 0:
             out.append((self._stub_km[i], 0.0))
-        cam = self._caminos[(i, j)]
+        cam = self._caminos_alt.get((i, j), self._caminos[(i, j)])
         out.extend(self._tramo_arco[(u, v)] for u, v in zip(cam, cam[1:]))
-        if self._stub_km[j] > 0:
-            out.append((self._stub_km[j], 0.0))
+        stub_j = self._stub_km.get(j + "#ent", self._stub_km[j]) if self.snap_sentido else self._stub_km[j]
+        if stub_j > 0:
+            out.append((stub_j, 0.0))
         return out
+
+    def t_trayecto_min(self, i, j) -> float:
+        """F2: tiempo total del trayecto i→j en minutos (requiere tiempo_arco).
+
+        Los stubs de acceso se tratan a V_EF_DEFECTO (vía desconocida)."""
+        if i == j or not self._t_arco:
+            return 0.0
+        from .energia import V_EF_DEFECTO
+        t = 0.0
+        if self._stub_km[i] > 0:
+            t += 60.0 * self._stub_km[i] / V_EF_DEFECTO
+        cam = self._caminos[(i, j)]
+        t += sum(self._t_arco.get((u, v), 0.0) for u, v in zip(cam, cam[1:]))
+        stub_j = self._stub_km.get(j + "#ent", self._stub_km[j]) if self.snap_sentido else self._stub_km[j]
+        if stub_j > 0:
+            t += 60.0 * stub_j / V_EF_DEFECTO
+        return t
+
+    def camino_alternativo(self, i, j):
+        """F1-lite: camino i→j que minimiza el pico de consumo, penalizando subidas.
+
+        Reemplaza el peso del arco por `energia_arco + penalizacion_subida·max(e,0)`
+        de modo que las subidas pesen más y se prefieran rutas más llanas (menor π̂).
+        Devuelve la secuencia de nodos reales o None si no hay camino.
+        """
+        if not self.caminos_alternativos or self.G is None:
+            return None
+        s = self._snap[i]
+        t = self._snap_entrada[j] if self.snap_sentido else self._snap[j]
+        energia = self._energia
+        pen = self.penalizacion_subida
+        dist = {s: 0.0}
+        pred: dict[int, int] = {}
+        h = [(0.0, s)]
+        while h:
+            d, u = heapq.heappop(h)
+            if u == t:
+                break
+            if d > dist.get(u, math.inf):
+                continue
+            for v, _w, km, dh in self._ady.get(u, []):
+                e = energia.tramo(km, dh)
+                peso = e + pen * max(e, 0.0)
+                nd = d + peso
+                if nd < dist.get(v, math.inf):
+                    dist[v] = nd
+                    pred[v] = u
+                    heapq.heappush(h, (nd, v))
+        if t not in dist and t != s:
+            return None
+        cam = [t]
+        while cam[-1] != s:
+            p = pred.get(cam[-1])
+            if p is None:
+                return None
+            cam.append(p)
+        return cam[::-1]
 
     def geometria(self, i, j):
         cam = self._caminos.get((i, j), [])
@@ -362,7 +544,13 @@ def crear_red(cfg: dict) -> Red:
         r = cfg["red"]
         red = RedOSM(r["osm_margen_km"], r["osm_cache"], r.get("osm_grafo"), r.get("max_acceso_m"),
                      bool(r.get("osm_permitir_descarga", True)),
-                     r.get("algoritmo_caminos"), bool(r.get("cache_adyacencia", True)))
+                     r.get("algoritmo_caminos"), bool(r.get("cache_adyacencia", True)),
+                     avisar_clamp=bool(r.get("avisar_clamp", False)),
+                     snap_sentido=bool(r.get("snap_sentido", False)),
+                     tiempo_arco=bool(r.get("tiempo_arco", False)),
+                     t_max_trayecto_min=r.get("t_max_trayecto_min"),
+                     caminos_alternativos=bool(r.get("caminos_alternativos", False)),
+                     penalizacion_subida=float(r.get("penalizacion_subida", 1.0)))
         red.elevacion = r.get("elevacion", "ninguna")
         red.elevacion_cfg = {"csv": r.get("elevacion_csv", "data/eVED_EV.csv"),
                              "radio_m": r.get("elevacion_radio_m", 120.0),

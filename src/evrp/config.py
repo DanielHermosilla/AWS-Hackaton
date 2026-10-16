@@ -40,6 +40,13 @@ DEFAULTS: dict[str, Any] = {
         "elevacion_csv": "data/eVED_EV.csv",
         "elevacion_radio_m": 120.0,
         "elevacion_interpolacion": "idw",
+        # --- extensiones Dijkstra (apagadas por defecto; ver docs/experimentos/dijkstra_extensiones.md) ---
+        "avisar_clamp": False,            # F0: avisar/contar recortes del costo reducido (en vez de recorte silencioso)
+        "snap_sentido": False,            # F0: acceso punto→calle con dos arcos según sentido de la calle
+        "tiempo_arco": False,             # F2: calcular t por arco (ℓ/v_ef) y propagarlo a tramos (esquema /2)
+        "t_max_trayecto_min": None,       # F2: descartar pares con t̂ > T_max minutos (requiere tiempo_arco)
+        "caminos_alternativos": False,    # F1-lite: para pares descartados por batería, buscar camino de menor pico
+        "penalizacion_subida": 1.0,       # F1-lite: peso extra sobre energía de subida en el camino alternativo
     },
     "escala": {
         "k_vecinos": "auto",              # arcos cliente→cliente por cliente; 0 = todos (exacto); "auto"
