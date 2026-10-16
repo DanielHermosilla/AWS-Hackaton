@@ -1,0 +1,523 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[spanish,es-nodecimaldot]{babel}
+\usepackage{lmodern,amsmath,amssymb,booktabs,tabularx,array}
+\usepackage[margin=2.1cm]{geometry}
+\usepackage{microtype,xcolor}
+\usepackage[colorlinks=true,linkcolor=blue!45!black,urlcolor=blue!45!black,hypertexnames=false]{hyperref}
+\newcommand{\Rminus}{R^{-}}
+\newcommand{\reserve}{\underline b}
+\newcommand{\code}[1]{\texttt{\small #1}}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt}
+\setlength{\tabcolsep}{5pt}
+\renewcommand{\arraystretch}{1.2}
+\title{\vspace{-1cm}Modelo de optimización de ruteo eléctrico\\
+\large Formulación base y extensiones operacionales configurables}
+\author{Proyecto AWS Breaking Barriers Chile 2026 --- CASE / FCFM}
+\date{Actualización: 15 de octubre de 2026}
+\begin{document}
+\maketitle
+
+\textbf{Objetivo.} Maximizar entregas factibles y, entre soluciones con igual
+cumplimiento, minimizar consumo neto efectivo de batería. El tiempo de cómputo
+se reporta; no es una expresión optimizada dentro del MILP.
+
+\textbf{Formulación vigente sin $H$.} El backend predeterminado
+\code{scip-routes} implementa (25)--(29), en la sección~7.
+Las ecuaciones posicionales (1)--(24) se conservan como referencia Pyomo.
+Sus condiciones físicas y operacionales se mantienen en las rutas factibles,
+pero no su cota artificial de movimientos.
+
+\textbf{Representaciones.} La base (1)--(16) describe calles elementales
+dirigidas, admite regeneración y cuenta movimientos viales. En el flujo sin
+$H$, \code{service-graph} usa Dijkstra si los consumos son no negativos y no hay
+plazos; en los demás casos compone perfiles de batería y conserva alternativas
+temporales e intersecciones cuando es necesario (sección~8).
+La referencia posicional conserva caminos fijos con $H$ en traslados entre
+servicios: no equivale al modelo con $H$ vial. Las extensiones (17)--(24)
+se añaden a la misma plantilla.
+
+\section{Parámetros y conjuntos}
+\begin{tabularx}{\textwidth}{@{}l X@{}}
+\toprule
+Símbolo & Significado\\\midrule
+$G=(V,A)$ & Grafo dirigido; $0\in V$ es el depósito. Se añade $(0,0)$ con energía y tiempo cero.\\
+$C,F\subseteq V$ & Clientes y cargadores. En los CSV son tipos de nodo distintos; $0\notin C\cup F$.\\
+$K$ & Vehículos disponibles, homogéneos. Escenario oficial: dos Nissan Leaf 2013.\\
+$F_k\subseteq F$ & Estaciones físicamente compatibles y habilitadas para $k$.\\
+$B>0$ & Capacidad útil, kWh; es configurable, no una medición del dataset.\\
+$\reserve$ & Reserva durante todo el recorrido, $0<\reserve\le b^{ini}$.\\
+$b^{ini}$ & Energía inicial: $0.6B$ en el escenario oficial.\\
+$e_{ij}$ & Energía nominal del arco, kWh: consumo positivo y regeneración potencial negativa.\\
+$H\in\mathbb N_{\ge1}$ & Máximo de movimientos por vehículo; limita la representación, no la jornada.\\
+$R,\Rminus$ & Posiciones $R=\{0,\ldots,H\}$ y posiciones con salida $\Rminus=\{0,\ldots,H-1\}$.\\
+$M_B$ & Cota de saturación $B+\max_{(i,j)\in A}|e_{ij}|$; con margen, usar $\widetilde e$ en su lugar.\\
+\bottomrule
+\end{tabularx}
+
+Los arcos elementales no pueden ocultar una descarga seguida de regeneración.
+En la reducción no negativa de Dijkstra, comprobar la reserva al final del
+camino basta para sus segmentos. Con regeneración se necesitan los perfiles
+(30)--(31), incluida la reserva interior. La auditoría siempre expande y
+comprueba las calles originales.
+
+\section{Variables y dominios}
+\begin{tabularx}{\textwidth}{@{}l X@{}}
+\toprule
+Variable & Significado y dominio\\\midrule
+$y_i\in\{0,1\}$ & Entrega cumplida a $i\in C$.\\
+$z_{ikr}\in\{0,1\}$ & Ubicación de $k$ en $i\in V$, posición $r\in R$.\\
+$x_{ijkr}\in\{0,1\}$ & Uso del arco $(i,j)\in A$, $r\in\Rminus$.\\
+$a_{ikr}\in\{0,1\}$ & Entrega a $i\in C$ en la posición $r\in\Rminus$. No se activa por pasar por el nodo.\\
+$q_{kr}\ge0$ & Energía que entra a la batería durante la parada, $r\in\Rminus$.\\
+$b_{kr}\in[\reserve,B]$ & Energía al llegar, $r\in R$.\\
+$\bar b_{kr}\in[\reserve,B]$ & Energía al salir, $r\in\Rminus$.\\
+$u_{kr},E_{kr}\in\mathbb R$ & Batería previa a saturación y energía efectiva del movimiento.\\
+$\gamma_{kr}\in\{0,1\}$ & Indicador de saturación, $r\in\Rminus$.\\
+$E_{\mathrm{total}}\in\mathbb R$ & Consumo neto efectivo total.\\
+\bottomrule
+\end{tabularx}
+
+\section{Formulación base}
+Las restricciones se imponen para todos los índices indicados.
+\begin{align}
+\sum_{i\in V} z_{ikr}&=1 && k\in K,\ r\in R, \tag{1}\\
+z_{0k0}=z_{0kH}&=1 && k\in K, \tag{2}\\
+\sum_{j:(i,j)\in A}x_{ijkr}&=z_{ikr} && i\in V,\ k\in K,\ r\in\Rminus, \tag{3}\\
+\sum_{i:(i,j)\in A}x_{ijkr}&=z_{jk,r+1} && j\in V,\ k\in K,\ r\in\Rminus, \tag{4}\\
+a_{ikr}&\le z_{ikr} && i\in C,\ k\in K,\ r\in\Rminus, \tag{5}\\
+\sum_{k\in K}\sum_{r\in\Rminus}a_{ikr}&=y_i && i\in C, \tag{6}\\
+b_{k0}=b^{ini},\quad q_{k0}&=0 && k\in K, \tag{7}\\
+\bar b_{kr}&=b_{kr}+q_{kr} && k\in K,\ r\in\Rminus, \tag{8}\\
+0\le q_{kr}&\le B-b_{kr} && k\in K,\ r\in\Rminus, \tag{9}\\
+q_{kr}&\le B\sum_{f\in F_k}z_{fkr} && k\in K,\ r\in\Rminus. \tag{10}
+\end{align}
+La continuidad permite revisitar calles, cargadores y depósito. No se impone
+permanencia tras un retorno intermedio. El arco $(0,0)$ permite inactividad
+y relleno de posiciones.
+\begin{align}
+u_{kr}&=\bar b_{kr}-\sum_{(i,j)\in A}e_{ij}x_{ijkr}, \tag{11}\\
+b_{k,r+1}&\le u_{kr},\qquad b_{k,r+1}\le B, \tag{12}\\
+b_{k,r+1}&\ge u_{kr}-M_B\gamma_{kr},\qquad
+b_{k,r+1}\ge B-M_B(1-\gamma_{kr}), \tag{13}\\
+E_{kr}&=\bar b_{kr}-b_{k,r+1}, \tag{14}\\
+E_{\mathrm{total}}&=\sum_{k\in K}\sum_{r\in\Rminus}E_{kr}. \tag{15}
+\end{align}
+Las ecuaciones (11)--(14) rigen para $k\in K,r\in\Rminus$.
+(12)--(13) representan exactamente $b_{k,r+1}=\min(B,u_{kr})$.
+La regeneración que excede capacidad no se almacena ni se acredita.
+Los dominios conservan reserva también al regreso.
+
+El problema base es:
+\begin{equation}
+\boxed{\operatorname{lexmin}\left(-\sum_{i\in C}y_i,\ E_{\mathrm{total}}\right)
+\quad\text{sujeto a dominios y (1)--(15).}} \tag{16}
+\end{equation}
+Se resuelven dos MILP: maximizar entregas y luego fijar el mejor cumplimiento
+encontrado para minimizar energía. Si la primera fase no prueba su máximo,
+la segunda es una mejora condicionada, no un óptimo lexicográfico demostrado.
+Se conservan cotas, gaps, estados y tiempos \emph{por fase}.
+
+\section{Extensiones opcionales sobre los caminos fijos}
+Los CSV no entregan tiempos de servicio, jornadas ni ventanas de recepción.
+Tampoco acreditan potencia efectiva aceptada por el vehículo, eficiencia o
+disponibilidad en tiempo real de los cargadores. Estos valores son entradas
+del cliente o supuestos explícitos del escenario, no reglas oficiales.
+
+\subsection{Margen energético, estaciones y reserva final}
+Sean $\rho\ge0$ el margen de consumo y $D\subseteq F$ las estaciones
+deshabilitadas. Se utiliza:
+\begin{equation}
+\widetilde e_{ij}=e_{ij}+\rho\max(e_{ij},0),\qquad
+F_k^{\mathrm{activo}}=F_k\setminus D. \tag{17}
+\end{equation}
+El máximo es sobre un parámetro, no sobre una variable. Se sustituye $e$
+por $\widetilde e$ en (11) y en $M_B$, y $F_k$ por
+$F_k^{\mathrm{activo}}$ en (10). La energía nominal permanece en el snapshot.
+El margen se aplica una sola vez, también en el validador y la expansión vial.
+En la variante no negativa equivale a multiplicar toda energía por $1+\rho$,
+sin cambiar los caminos de Dijkstra. No es una garantía probabilística.
+
+Si se configura una fracción final $\beta\in[0,1]$:
+\begin{equation}
+b_{kH}\ge\beta B\qquad k\in K. \tag{18}
+\end{equation}
+La reserva original $\reserve$ sigue vigente. (18) no se impone en posiciones
+intermedias. Si $\beta B>b^{ini}$, incluso un vehículo sin entregas necesita
+un recorrido factible con recarga; no se debilita (18) para permitir inactividad.
+Deshabilitar una estación prohíbe recargar allí, no atravesar su ubicación.
+
+\subsection{Viaje, servicio y recarga}
+Todos los tiempos se expresan en segundos desde una salida común en $t=0$.
+$\tau_{ij}\ge0$ es el tiempo del camino seleccionado y $\tau_{00}=0$.
+Se suman los tiempos explícitos de sus calles; donde faltan, solo se permite
+una velocidad asumida $v>0$ declarada:
+$\tau_{\mathrm{calle}}=3.6\,d_{\mathrm{calle}}/v$, con distancia en metros y
+$v$ en km/h. No se interpreta el límite legal como velocidad real.
+$s_i\ge0$ es el tiempo de servicio, común o particular por cliente.
+
+Para incluir tiempo de recarga se añaden variables continuas $q_{fkr}\ge0$,
+solo para $f\in F_k^{\mathrm{activo}}, k\in K,r\in\Rminus$:
+\begin{equation}
+q_{kr}=\sum_{f\in F_k^{\mathrm{activo}}}q_{fkr},\qquad
+0\le q_{fkr}\le Bz_{fkr}. \tag{19}
+\end{equation}
+Sea $P_f>0$ la potencia efectiva compatible, del lado de la red, y
+$0<\eta\le1$ su eficiencia constante. Esta versión usa la misma potencia
+configurada por estación para los vehículos homogéneos. No se toma
+\code{max\_power\_kw} como potencia por conector ni como potencia aceptada.
+Se calculan expresiones lineales:
+\begin{equation}
+S_{kr}^{\mathrm{dur}}=\sum_{i\in C}s_i a_{ikr},\quad
+C_{kr}^{\mathrm{dur}}=\sum_{f\in F_k^{\mathrm{activo}}}
+\frac{3600q_{fkr}}{\eta P_f},\quad
+V_{kr}^{\mathrm{dur}}=\sum_{(i,j)\in A}\tau_{ij}x_{ijkr}. \tag{20}
+\end{equation}
+Cuando no se activa tiempo de recarga, $C_{kr}^{\mathrm{dur}}=0$ y (19) no
+se construye. Para cualquier escenario temporal con cargadores habilitados,
+la configuración exige activarlo y proporcionar las potencias efectivas.
+Así no se permiten recargas instantáneas dentro de una jornada.
+
+Sin ventanas no se necesitan relojes ni espera. Si se configura una duración
+máxima $T>0$:
+\begin{equation}
+\sum_{r\in\Rminus}
+\left(V_{kr}^{\mathrm{dur}}+S_{kr}^{\mathrm{dur}}+C_{kr}^{\mathrm{dur}}\right)
+\le T \qquad k\in K. \tag{21}
+\end{equation}
+El límite es común a la flota actual. El tiempo de servicio aislado, sin
+plazo ni ventanas, afecta al reporte pero no a los objetivos de (16).
+
+\subsection{Ventanas de recepción completas y espera}
+Al activarse ventanas se exige también un $T$ finito. Sea $C_W\subseteq C$
+el subconjunto configurado y $[L_i,U_i]$ su ventana, con $0\le L_i\le U_i$.
+Se añaden llegadas $t_{kr}\in[0,T]$, $r\in R$, e inicios de actividad
+$S_{kr}\in[0,T]$, $r\in\Rminus$:
+\begin{equation}
+\begin{aligned}
+t_{k0}&=0,\\
+S_{kr}&\ge t_{kr},\\
+t_{k,r+1}&=S_{kr}+S_{kr}^{\mathrm{dur}}
++C_{kr}^{\mathrm{dur}}+V_{kr}^{\mathrm{dur}}
+&& k\in K,\ r\in\Rminus.
+\end{aligned} \tag{22}
+\end{equation}
+La espera es $S_{kr}-t_{kr}$. No hay un consumo auxiliar de espera o servicio
+en esta extensión; permanece como supuesto explícito.
+\begin{equation}
+\begin{aligned}
+S_{kr}&\ge L_i a_{ikr},\\
+S_{kr}+s_i a_{ikr}
+&\le U_i+\max(0,T-U_i)(1-a_{ikr})
+&& i\in C_W,\ k\in K,\ r\in\Rminus.
+\end{aligned} \tag{23}
+\end{equation}
+Si $a_{ikr}=1$, la entrega empieza después de abrir y termina antes de
+cerrar. Si $a_{ikr}=0$, las cotas $0\le S_{kr}\le T$ hacen ambas condiciones
+redundantes. Estos coeficientes temporales no reutilizan $M_B$. Los clientes
+sin ventana permanecen sujetos a la jornada, pero no a (23).
+Pasar por un cliente, incluso dentro de un camino agregado, no activa servicio.
+
+Con las opciones habilitadas, el problema resuelto es:
+\begin{equation}
+\boxed{\operatorname{lexmin}\left(-\sum_{i\in C}y_i,\ E_{\mathrm{total}}\right)
+\quad\text{sujeto a (1)--(15) y las extensiones activas (17)--(23).}} \tag{24}
+\end{equation}
+No se añade un objetivo de puntualidad, duración ni costo que altere la
+prioridad oficial. Se reporta el calendario más temprano de las mismas
+rutas y recargas; bajo los supuestos constantes de esta sección, quitar
+espera sobrante no altera energía ni entregas y no empeora factibilidad.
+
+\section{Configuración e interpretación}
+\small
+\begin{tabularx}{\textwidth}{@{}>{\ttfamily}l X@{}}
+\toprule
+\normalfont Campo de \code{operations} & Desactivación y significado\\\midrule
+service\_seconds & 0: sin servicio. Segundos comunes por entrega.\\
+service\_seconds\_by\_customer & \{\}: sin excepciones. Un valor por cliente reemplaza al común.\\
+max\_route\_seconds & null: sin jornada máxima adicional.\\
+assumed\_speed\_kph & null: exigir tiempos explícitos si se activa el bloque temporal.\\
+include\_charging\_time & false: sin bloque temporal de recarga; condicionado como se indica antes.\\
+charging\_power\_kw & null: sin potencia común; aportar potencias por estación si se necesita cargar.\\
+charging\_power\_kw\_by\_station & \{\}: usar potencia común. Un valor particular la reemplaza.\\
+charging\_efficiency & 1: hipótesis de recarga sin pérdidas. Se configura en $(0,1]$.\\
+final\_reserve\_soc & null: solo la reserva de la base.\\
+energy\_margin\_fraction & 0: energía nominal.\\
+disabled\_charger\_ids & []: no excluir estaciones adicionales.\\
+use\_customer\_time\_windows & false: no construir relojes ni ventanas.\\
+customer\_time\_windows & \{\}: sin ventanas. Cada entrada contiene open\_seconds y close\_seconds.\\
+\bottomrule
+\end{tabularx}
+\normalsize
+
+Todos los valores por defecto son neutros. Se validan referencias, unidades,
+finitud, dependencias y potencias configuradas. Un booleano no sustituye datos
+faltantes. El ejemplo de configuración usa valores ilustrativos, no parámetros
+medidos ni exigencias del PPTX.
+
+\section{H y arranque de la referencia posicional}
+La prueba existente de $H=|C|+1$ necesita energías no negativas, desigualdad
+triangular dirigida y un testigo completo cuya energía cabe entre batería
+inicial y reserva, además de ausencia de restricciones que impidan eliminar
+paradas. Una jornada, ventanas o reserva final mayor que la reserva base
+desactivan esta prueba y su cota estructural en la implementación actual.
+\textbf{Esto no prueba que $|C|+1$ sea insuficiente}: significa que el programa
+no tiene un certificado válido para esa extensión.
+
+En esos casos, \code{auto} se detiene y solicita un $H$ explícito. No se
+construye un MILP enorme automáticamente. Se conserva el alcance condicionado
+al $H$ elegido. El margen energético y las estaciones deshabilitadas se
+incorporan al análisis cuando sus restantes hipótesis siguen siendo válidas.
+
+Una heurística greedy acotada puede repartir entregas entre vehículos sin
+recargar y producir un incumbente parcial; no certifica $H$ ni optimalidad.
+Se comprueban batería, retorno, jornada, ventanas y las calles expandidas antes
+de enviar cualquier arranque. No se fija ninguna variable del solver. Las
+huellas del snapshot incluyen todas las opciones: cambiar de escenario invalida
+el arranque y los hashes anteriores.
+
+La auditoría independiente reproduce las transiciones y los intervalos
+reportados. La duración operacional es el máximo de las duraciones de los
+vehículos, con salida común; su suma se reporta por separado como tiempo de
+vehículos. La electricidad comprada es $\sum q/\eta$ solo cuando la eficiencia
+ha sido configurada en el bloque correspondiente.
+
+No se modelan colas, puertos ocupados, apertura de estaciones, carga no lineal,
+capacidad de paquetes, reabastecimiento, tarifa eléctrica, climatización
+durante paradas ni tráfico variable con la hora. El depósito sigue sin recarga.
+Los caminos de energía mínima pueden ser más lentos que otras alternativas:
+las ventanas y jornadas se optimizan sobre los caminos fijos disponibles,
+sin afirmar equivalencia con la red vial completa.
+
+\clearpage
+\section{Reformulación vigente por rutas sin $H$}
+Sea $\mathcal R_k$ el conjunto de recorridos finitos físicamente factibles del
+vehículo $k$, sin una cota de longitud. Cada recorrido parte y termina en el
+depósito, puede revisitar calles, cargadores y depósito, y distingue tránsito
+de servicio. Conserva reserva, capacidad, recarga parcial continua, compatibilidad,
+saturación de regeneración y las opciones (17)--(24).
+La ruta inactiva solo se incluye si satisface también la reserva final.
+
+Para $r\in\mathcal R_k$, sean $a_{ir}\in\{0,1\}$ el indicador de entrega,
+$Q_r$ la carga acumulada y $c_r=b^{ini}+Q_r-b_r^{final}$ la energía neta efectiva.
+La asignación $w_{ki}$ es binaria; los pesos de rutas $\lambda_{kr}$ son continuos.
+\begin{align}
+\sum_{r\in\mathcal R_k}\lambda_{kr}&=1 && k\in K, \tag{25}\\
+\sum_{r\in\mathcal R_k}a_{ir}\lambda_{kr}&=w_{ki} && k\in K,\ i\in C, \tag{26}\\
+\sum_{k\in K}w_{ki}&\le1,\quad w_{ki}\in\{0,1\},\quad\lambda_{kr}\ge0, \tag{27}\\
+\operatorname{lexmin}\Bigl(-\sum_{ki}w_{ki},&
+\ \sum_{kr}c_r\lambda_{kr}\Bigr). \tag{28}
+\end{align}
+Se ramifica sobre $w$, no sobre columnas desconocidas. Si $w_k$ es entero,
+una combinación convexa de vectores binarios $a_r$ solo puede mezclar vectores
+idénticos. Por tanto todas las columnas positivas de $k$ atienden el mismo
+subconjunto; seleccionar la más barata recupera una ruta entera físicamente
+factible sin empeorar el objetivo. Esto demuestra equivalencia entera.
+
+El maestro completo convexifica la proyección local de cada vehículo sobre
+entregas y coste. \textbf{No demuestra idealidad global}: el acoplamiento entre
+vehículos puede originar puntos fraccionarios. Para una terna $S\subseteq C$ se
+puede reforzar la relajación con el corte válido:
+\begin{equation}
+\sum_{kr}\left\lfloor\frac{\sum_{i\in S}a_{ir}}{2}\right\rfloor\lambda_{kr}
+\le1,\qquad |S|=3. \tag{29}
+\end{equation}
+Toda columna futura recibe su coeficiente en (29), y el pricing incorpora
+el multiplicador dual correspondiente.
+
+\subsection{Pricing continuo y criterio de parada}
+Las etiquetas conservan nodo, conjunto atendido y un poliedro de recursos
+$(b,t,Q)$. El reloj se necesita en el pricing cuando existe una jornada física.
+Las cargas cubren $0\le q\le B-b$ sin discretización de SoC. Las regiones de
+saturación y espera se separan antes de usar transformaciones afines y cascos
+convexos. Se guardan testigos de cargas para reproducir cada ruta.
+
+Solo se descarta un estado cuando otro, en el mismo nodo y con el mismo
+conjunto atendido, tiene al menos tanta batería, no más tiempo y no más carga
+acumulada. Esta última componente es necesaria para comparar correctamente
+energía efectiva con regeneración. No se impone máximo de etiquetas ni visitas.
+La enumeración puede ser costosa; un timeout no prueba pricing completo.
+
+SCIP ejecuta pricing de coste reducido y Farkas. Si el oráculo se interrumpe,
+el LP restringido no acredita una cota global. Se conservan cotas analíticas:
+entregas $\le |C|$, energía $\ge0$ con costes no negativos y
+energía $\ge |K|(b^{ini}-B)$ en general. Una solución se valida independientemente;
+la optimalidad exige cotas válidas que cierren ambas fases.
+
+\subsection{Reducción certificada a un tour}
+Con costes no negativos, métrica dirigida, ausencia de jornada, ventanas y
+reserva final adicional, supóngase un tour completo de coste
+$U\le b^{ini}-\reserve$. Un óptimo de flota cuesta a lo sumo $U$.
+Concatenar sus rutas y quitar paradas sin entrega no aumenta el consumo por
+desigualdad triangular. El tour obtenido cabe en la batería inicial.
+Existe por tanto un óptimo sin recargas con un solo vehículo activo.
+
+La implementación verifica esas hipótesis antes de usar un modelo dirigido
+de grados y cortes DFJ de subtours. No usa posiciones, MTZ ni Big-M de batería.
+El testigo heurístico no queda probado óptimo; la resolución DFJ determina
+coste y cota. Esta reducción conserva el óptimo, no todas las rutas factibles.
+
+\subsection{Incumbentes y relajación energética}
+Se generan incumbentes mediante inserción, búsqueda local, partición de un
+orden de entregas y una vecindad de recarga parcial. Cada resultado se valida
+independientemente. Estas heurísticas no restringen $\mathcal R_k$: el pricing
+exacto conserva múltiples recargas, revisitas y recursos continuos.
+Un maestro con un conjunto finito de columnas conocidas sirve como heurística
+primal; su cota nativa no certifica el maestro completo.
+
+Con servicio completo y energías no negativas, sea $d_{ij}$ el coste de un
+camino mínimo dirigido en el grafo de entrada. Concatenar los recorridos de
+la flota en el depósito y atajar entre eventos de entrega usando $d$ produce
+un tour cuyo coste no supera la energía de la flota. Así, una asignación
+dirigida y las relajaciones con cortes de subtours proporcionan cotas inferiores
+válidas al eliminar batería, recargas, tiempos y reparto entre vehículos.
+La implementación resta un margen conservador de acumulación numérica.
+Este argumento no requiere que los arcos directos ya satisfagan exactamente
+la desigualdad triangular, pues se construye su clausura por caminos mínimos.
+No se aplica con regeneración ni cuando quedan clientes sin atender.
+Un tour relajado solo se incorpora como solución después de repararlo y validar
+su factibilidad física. Se conserva la formulación (25)--(29).
+
+\subsection{Orquestación del LLM y alcance}
+Por autorización del usuario, Bedrock puede tomar decisiones en eventos
+explícitos: antes de buscar, después del arranque, ante estancamiento y desde
+callbacks de árbol, LP, pricing, separación e incumbentes.
+La inferencia es asíncrona: otro hilo recibe solo JSON y los objetos nativos
+permanecen en el hilo de SCIP. El límite predeterminado es cuatro llamadas y una
+asignación de inferencia del 25\,\% del presupuesto global, ambos configurables.
+La frecuencia está acotada; no se consulta remotamente por cada nodo.
+Una decisión vencida no se aplica ni bloquea nuevas consultas presupuestadas.
+No se presupone cancelada la solicitud remota: su uso queda desconocido hasta
+recibir respuesta. Tiempo, tokens y cambios efectivos se registran por decisión.
+
+El LLM controla heurísticas, operadores, reparto interno de tiempo, relajaciones,
+pricing, cortes compatibles y parámetros nativos verificados. Los campos de
+etapas terminadas quedan inactivos. No cambia datos, física, tolerancias,
+presupuesto global ni criterios de prueba. Los callbacks ejecutan políticas
+locales mientras avanza la inferencia; una propuesta inválida conserva la última política
+válida y se registra como rechazo. El motor mantiene el pricing exacto ante
+fallos de AWS.
+El contexto incluye características y recursos de la instancia, duales, progreso,
+rutas incumbentes y APIs implementadas. Se exportan el grafo físico y el MPS del
+maestro restringido. Este último no contiene las columnas futuras ni representa
+por sí solo el problema completo; cualquier recorte enviado se declara.
+En snapshots antiguos, \code{movement\_limit} es metadato heredado y no interviene
+en esta formulación. Las rutas resultantes tienen longitud variable.
+
+El certificado sigue referido al grafo de entrada y al modelo energético.
+La nueva preparación comprueba cuándo conserva el óptimo vial sin $H$; eso
+no sustituye la prueba de optimalidad de ambas fases. Un catálogo heredado de
+Dijkstra con plazos solo certifica sus caminos disponibles. Detalles y fuentes:
+\code{docs/dantzig-wolfe.md} y \code{docs/resource-paths.md}.
+
+\subsection{Búsqueda especializada y pricing por coste reducido}
+ALNS destruye grupos aleatorios, relacionados, de alto desvío o de una ruta,
+y repara mediante inserción greedy o regret. Una población memética combina
+órdenes de entrega con elitismo y diversidad de aristas. Cada orden se repara
+sobre el multigrafo físico, conservando alternativas de calles, recarga continua,
+ventanas y revisitas. Un sub-SCIP combina columnas conocidas como heurística
+primal; su cota no se transfiere al maestro completo.
+
+La consulta exacta se reinicia con cada dual: sus podas nunca se reutilizan
+con otro dual. Para una etiqueta en $v$ con clientes servidos $M$ y poliedro
+$\mathcal P$ de batería $b$, tiempo y carga acumulada $Q$, una cota de la
+energía final es
+\[
+\underline E=
+\begin{cases}
+b^{ini}+\min_{\mathcal P}(Q-b)+d(v,0),&\text{si no hay regeneración},\\
+b^{ini}+\min_{\mathcal P}Q-B,&\text{en general}.
+\end{cases}
+\]
+El primer caso usa una distancia mínima no negativa al depósito; el segundo
+usa que la recarga acumulada no decrece y la batería final no supera $B$.
+Para los premios duales $\pi_i$, una cota superior del premio de una continuación
+es $\sum_{i\in M}\pi_i+\sum_{i\notin M}\max(0,\pi_i)$.
+Para cada corte subset-row $S$, se usa su máximo coeficiente posible si su
+dual es positivo y el coeficiente ya acumulado si es negativo.
+Restar estos premios y el dual de convexidad de la cota energética produce
+una cota inferior conservadora de coste reducido. En Farkas el peso de energía
+es cero. Solo se poda si no puede existir una columna mejorante, incluyendo
+un margen numérico conservador. No hay límites de movimientos ni etiquetas.
+
+El branching actúa sobre asignaciones binarias de clientes, la selección de
+nodos sigue políticas locales y el separador agrega triples subset-row como
+restricciones modificables. Todas las columnas posteriores reciben sus
+coeficientes. Las columnas complementarias de coste reducido no negativo
+pueden admitirse como ayuda primal, pero no acreditan completitud del pricing.
+La interrupción descarta la cota del LP restringido.
+
+\clearpage
+\section{Preprocesamiento de caminos con recursos}
+
+El maestro (25)--(29) se mantiene. Se prepara por separado un multigrafo que
+conserva depósito, clientes, cargadores y las intersecciones que no resulte
+conveniente eliminar. Las conexiones tienen identificadores propios y testigos
+de calles; el pricing selecciona entre ellas y propaga recursos continuos.
+No se agrega un límite de movimientos, etiquetas, recargas o caminos por par.
+
+\subsection{Perfil físico y composición}
+
+Sea $P$ un camino sin actividades interiores y sean $e_1,\ldots,e_n$ sus consumos
+después de aplicar (17) a cada descarga. Defínanse $S_0=0$,
+$S_j=\sum_{\ell=1}^j e_\ell$, $m=\min_j S_j$, $M=\max_j S_j$ y
+$D=\max_{0\le i\le j\le n}(S_j-S_i)$. El camino tiene algún estado inicial
+factible si $M\le B-\reserve$ y $D\le B-\reserve$. Su perfil es
+\begin{equation}
+ L_P=\reserve+M,\quad E_P=S_n,\quad U_P=B-E_P+m,\qquad
+ F_P(b)=\min\{b-E_P,U_P\},\quad b\in[L_P,B]. \tag{30}
+\end{equation}
+El consumo efectivo es $b-F_P(b)$; no se sustituye por la suma firmada $E_P$.
+El dominio captura déficits interiores y $U_P$ captura saturación.
+Para concatenar $P$ y $Q$, sin actividad en su unión:
+\begin{equation}
+\begin{split}
+E_{PQ}&=E_P+E_Q,\\
+L_{PQ}&=\max\{L_P,L_Q+E_P\},\\
+U_{PQ}&=\min\{U_P-E_Q,U_Q\}.
+\end{split} \tag{31}
+\end{equation}
+La concatenación es inviable si $U_P<L_Q$ o $L_{PQ}>B$.
+Los tiempos y distancias se suman. El margen ya incorporado al perfil no se
+aplica nuevamente en el pricing.
+
+\subsection{Dominancia y eliminación parcial}
+
+Entre conexiones con iguales extremos, $P$ domina $Q$ si
+$L_P\le L_Q$, $F_P(b)\ge F_Q(b)$ para todo $b\in[L_Q,B]$ y, cuando hay jornada,
+$T_P\le T_Q$. La diferencia entre dos funciones de (30) es monótona; basta
+comprobar ambos extremos del intervalo. Las comparaciones de dominancia no
+relajan tolerancias.
+
+Eliminar una intersección sin actividades consiste en componer cada entrada
+con cada salida. Todo recorrido por ella tiene esa representación y cada
+conexión nueva se expande al mismo recorrido vial. Una conexión dominante
+permite llegar antes y con más batería; puede esperarse y reducir una carga
+parcial posterior. Por $c_r=b^{ini}+Q_r-b_r^{final}$, la sustitución no empeora
+el consumo efectivo. Esto conserva el óptimo, aunque quite recorridos dominados.
+
+Un autoarco dominado por permanecer en el nodo se elimina. Los ciclos que
+recuperan energía se conservan y una intersección con un autoarco útil no se
+elimina. Por tanto, no se supone ausencia de ciclos energéticos negativos.
+Si una eliminación genera demasiadas combinaciones o se agota el presupuesto
+de preparación, se conserva la intersección para que la explore el pricing.
+Detener la compresión no descarta caminos pendientes.
+
+\subsection{Alcance y auditoría}
+
+La reducción preserva el óptimo vial sin $H$ bajo tiempos constantes, espera
+sin consumo, recargas parciales y actividades solo en servicios. No cubre
+tráfico dependiente de hora, consumo por carga transportada, objetivos de
+distancia ni consumo auxiliar durante espera.
+Con energías no negativas y sin plazos, Dijkstra sigue siendo suficiente por
+monotonicidad de batería y objetivo energético.
+
+Se comprueban perfiles contra prefijos viales y se expanden todas las calles
+de la solución para validarlas independientemente. Ventanas, jornadas, recargas,
+reserva final y clientes atendidos se comprueban sobre esa expansión.
+La caché depende de la red, escenario, parámetros y versión. Las alternativas
+y el pricing pueden crecer mucho: no hay una garantía de tiempo polinomial.
+El presupuesto de preparación y el de resolución se registran por separado.
+\end{document}

@@ -1,0 +1,25 @@
+{
+  "operations": {
+    "service_seconds": 300,
+    "service_seconds_by_customer": {},
+    "max_route_seconds": 14400,
+    "assumed_speed_kph": 30,
+    "include_charging_time": true,
+    "charging_power_kw": 3,
+    "charging_power_kw_by_station": {},
+    "charging_efficiency": 0.9,
+    "final_reserve_soc": 0.15,
+    "energy_margin_fraction": 0.1,
+    "disabled_charger_ids": [],
+    "use_customer_time_windows": false,
+    "customer_time_windows": {}
+  },
+  "solver": {
+    "solver": "scip-routes",
+    "time_limit_seconds": 60,
+    "relative_gap": 0,
+    "threads": 2,
+    "seed": 0,
+    "tee": false
+  }
+}
