@@ -27,6 +27,44 @@ log = logging.getLogger(__name__)
 FACTIBLE = 2
 
 
+class _ParadaEstancamiento:
+    """Regla de parada por estancamiento vía callbacks de highspy.
+
+    Se registra en `kCallbackMipImprovingSolution` (para seguir la mejor incumbente) y en
+    `kCallbackMipInterrupt` (consultado por el solver con periodicidad). Pide interrumpir
+    (`user_interrupt = True`) cuando se cumplen a la vez:
+      - han pasado al menos `t_min_s` segundos desde el arranque del `run()`, y
+      - la mejor solución lleva al menos `sin_mejora_s` segundos sin mejorar.
+    No se activa si el solver ya demostró el óptimo (ese caso termina solo antes).
+    """
+
+    def __init__(self, t_min_s: float, sin_mejora_s: float, minimiza: bool = True):
+        self.t_min_s = float(t_min_s)
+        self.sin_mejora_s = float(sin_mejora_s)
+        self.signo = 1.0 if minimiza else -1.0
+        self.mejor = None            # mejor valor normalizado a "menor es mejor"
+        self.t_ultima_mejora = None  # running_time de la última mejora
+        self.interrumpido = False
+
+    def _registrar(self, valor: float, t: float):
+        v = self.signo * valor
+        if self.mejor is None or v < self.mejor - 1e-9:
+            self.mejor = v
+            self.t_ultima_mejora = t
+
+    def __call__(self, ctype, msg, out, inp, user):
+        t = float(out.running_time)
+        valor = out.mip_primal_bound
+        if valor is not None and abs(valor) < 1e30:
+            self._registrar(valor, t)
+        if self.mejor is None or self.t_ultima_mejora is None:
+            return
+        if t >= self.t_min_s and (t - self.t_ultima_mejora) >= self.sin_mejora_s:
+            inp.user_interrupt = True
+            self.interrumpido = True
+
+
+
 def _presupuesto_adaptativo(limite: float, n_clientes: int, columnas: int, esc: dict) -> float:
     """Ajusta el presupuesto del MILP para acotar el tiempo TOTAL del pipeline.
 
@@ -189,10 +227,21 @@ class ModeloCompacto:
         h.changeColsCost(len(idx), idx, np.array(expr.vals, dtype=float))
         h.changeObjectiveSense(highspy.ObjSense.kMaximize if sentido == "max" else highspy.ObjSense.kMinimize)
 
-    def _resolver(self, limite):
+    def _resolver(self, limite, parada: "_ParadaEstancamiento | None" = None):
         h = self.h
         h.setOptionValue("time_limit", max(0.5, float(limite)))
-        h.run()
+        if parada is not None:
+            import highspy as _hs
+            h.setCallback(parada, None)
+            h.startCallback(_hs.cb.HighsCallbackType.kCallbackMipImprovingSolution)
+            h.startCallback(_hs.cb.HighsCallbackType.kCallbackMipInterrupt)
+        try:
+            h.run()
+        finally:
+            if parada is not None:
+                import highspy as _hs
+                h.stopCallback(_hs.cb.HighsCallbackType.kCallbackMipImprovingSolution)
+                h.stopCallback(_hs.cb.HighsCallbackType.kCallbackMipInterrupt)
         info = h.getInfo()
         return h.modelStatusToString(h.getModelStatus()), info.primal_solution_status == FACTIBLE, info
 
@@ -260,9 +309,17 @@ class ModeloCompacto:
         self._objetivo("min", self.E)
         if vec0:
             self._iniciar_con(vec0)
-        estado, hay, info = self._resolver(limite - (time.perf_counter() - t0))
+        parada_cfg = self.cfg.get("parada") or {}
+        parada = None
+        if parada_cfg.get("activar"):
+            parada = _ParadaEstancamiento(parada_cfg.get("t_min_s", 15.0),
+                                          parada_cfg.get("sin_mejora_s", 8.0), minimiza=True)
+        estado, hay, info = self._resolver(limite - (time.perf_counter() - t0), parada)
         traza["fase2"] = {"estado": estado, "energia": info.objective_function_value if hay else None,
                           "cota": info.mip_dual_bound, "gap": info.mip_gap if hay else None}
+        if parada is not None:
+            traza["parada"] = {"activa": True, "interrumpida": parada.interrumpido,
+                               "t_min_s": parada.t_min_s, "sin_mejora_s": parada.sin_mejora_s}
         traza["N*"] = n_est
         traza["tiempo_s"] = round(time.perf_counter() - t0, 3)
         if not hay:

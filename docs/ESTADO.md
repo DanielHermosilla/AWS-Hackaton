@@ -16,6 +16,7 @@ Cada rama `exp/*` mantiene su propio `docs/ESTADO.md` con uno de estos estados p
 | Elevación (eved / usgs / copernicus) | EVALUACIÓN (apagada) | `docs/experimentos/elevacion_*.md` |
 | MILP compacto con HiGHS, dos fases | DEFINITIVA-EVIDENCIA | Óptimo con gap 0 en 20 clientes |
 | Poda top-k (`escala.k_vecinos`) | EVALUACIÓN (`auto` activa k=10 sobre 25 clientes; se propone 0) | `experimentos/topk/` (26 clientes: +1 % de energía) |
-| Regla de parada por estancamiento | DESARROLLO (pendiente) | Simulación en `experimentos/topk/regla_parada.py` |
+| Regla de parada por estancamiento | EVALUACIÓN (apagada por defecto; callbacks highspy 1.11, implementada en vivo) | `tests/test_parada.py`; `docs/experimentos/versiones_parada.md`; `benchmarks/resultados/parada.jsonl` |
+| Arnés de benchmarks de versiones (`benchmarks/correr.py`, `comparar.py`) | DEFINITIVA-EVIDENCIA (v0.3.0 vs rama: 200/200 entregas, Δenergía 0, hashes idénticos) | `benchmarks/resultados/v0.3.0.jsonl`, `WT.jsonl`; `docs/experimentos/_tabla_versiones.md` |
 | IA generativa: asistente, ingesta, explicación, contexto | EVALUACIÓN (opcional) | `docs/experimentos/ia_*.md` |
 | IA: ajuste del solver | EVALUACIÓN, sin beneficio demostrado (benchmark con bug en los ajustes de escala) | `docs/experimentos/ia_tuning.md`, `curvas.py` |
