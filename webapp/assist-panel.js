@@ -102,11 +102,18 @@ async function initAssistPanel() {
     return burbuja(rol, texto, meta);
   }
   function chipAdjuntar() {
-    const b = el('button', 'assist-chip', '📎 Adjuntar archivo de nodos');
-    b.type = 'button';
-    b.addEventListener('click', () => archivo.click());
     const wrap = el('div', 'assist-msg assist-bot assist-chip-wrap');
-    wrap.append(b);
+    const adjuntar = el('button', 'assist-chip', '📎 Adjuntar archivo de nodos');
+    adjuntar.type = 'button';
+    adjuntar.addEventListener('click', () => archivo.click());
+    const caso = el('button', 'assist-chip', 'Usar caso de competencia');
+    caso.type = 'button';
+    caso.addEventListener('click', () => {
+      const texto = 'Usa el caso de competencia de la hackatón y calcula';
+      decir('user', texto);
+      turno({ message: texto });
+    });
+    wrap.append(adjuntar, caso);
     log.append(wrap);
     log.scrollTop = log.scrollHeight;
   }
@@ -136,7 +143,7 @@ async function initAssistPanel() {
     const hayPlan = Boolean(readExecution()?.runId);
     decir('bot', hayPlan
       ? 'Hola. Veo un plan en pantalla: puedo recalcularlo con otros ajustes ("que sean 3 autos", "al 70 %") o explicártelo.'
-      : 'Hola, soy el asistente de flota. Armo planes de reparto y los ajusto cuando me lo pidas. Cuando quieras calcular, adjunta tu archivo de nodos con el clip; lo demás lo tomo del estándar del escenario.');
+      : 'Hola, soy el asistente de flota. Armo planes de reparto y los ajusto cuando me lo pidas. Puedo usar el caso de la hackatón (competencia o evaluación) o tu propio archivo de nodos con el clip; lo demás lo tomo del estándar del escenario.');
   }
 
   // --- conversacion ---

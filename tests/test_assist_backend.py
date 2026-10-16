@@ -128,3 +128,16 @@ def test_chat_reutiliza_la_conexion_bedrock_del_servidor():
     assert cliente._asegurar_cliente() is boto_falso
     assert cliente.config.model_id == "us.openai.gpt-5.6-luna"
     assert real(_Runtime(False)) is None
+
+
+@pytest.mark.solver
+@pytest.mark.real_data
+def test_caso_de_competencia_sin_archivo():
+    if not (ROOT / "data" / "competition_routing_nodes.csv").is_file():
+        pytest.skip("faltan los CSV locales de la hackaton en data/")
+    runs = _Runs()
+    r = assist_service.chat(
+        {"message": "corre sobre los datos de competencia con red geodesica y sin gpt"}, runs=runs)
+    assert r["datos"].startswith("caso de la hackaton · competencia"), r["respuesta"]
+    assert r["resolvio"] and r["run_id"] in runs.datos, r["respuesta"]
+    assert r["resumen"]["destinos"] == 20

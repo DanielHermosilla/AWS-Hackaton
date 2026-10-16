@@ -88,6 +88,10 @@ class Sesion:
     pendiente_calcular: bool = False
     # Historial Converse; vive aqui para sobrevivir entre requests.
     mensajes: list[dict] = field(default_factory=list)
+    # Opcional: carga un caso de la hackaton como datos (lo inyecta el servidor
+    # web). Recibe {dataset, clientes?, cargadores?, semilla?} y devuelve la
+    # descripcion de los datos cargados.
+    cargar_caso: Callable[[dict], str] | None = field(default=None, repr=False)
 
     def __post_init__(self) -> None:
         base = valores_estandar()

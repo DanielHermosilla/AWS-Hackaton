@@ -21,7 +21,7 @@ _VEHICULO = r"(?:vehiculos?|autos?|coches?|carros?|camion(?:es)?|camionetas?|fur
 _NUM = r"\b(\d+(?:[.,]\d+)?|" + "|".join(_NUMEROS) + r")"
 
 _CALCULAR = re.compile(
-    r"\b(calcula\w*|resuelv\w*|resolver|optimiz\w*|planific\w*|corre(?:lo)?|ejecut\w*|"
+    r"\b(calcula\w*|resuelv\w*|resolver|optimiz\w*|planific\w*|corre(?:r|lo)?|ejecut\w*|"
     r"dale|procede\w*|hazlo|adelante|recalcul\w*|arma\w*)\b"
 )
 _AFIRMACION = re.compile(r"^\s*(si|ok|okay|listo|de acuerdo|perfecto|vamos)\b[\s!.]*$")
@@ -42,6 +42,28 @@ class Interpretacion:
     explicar: bool = False
     saludo: bool = False
     ver_config: bool = False
+    # Caso de la hackaton pedido: {"dataset", "clientes"?, "cargadores"?, "semilla"?}
+    caso: dict[str, Any] | None = None
+
+
+def _caso(t: str) -> dict[str, Any] | None:
+    if re.search(r"\bevaluac|\bevaluation\b", t):
+        caso: dict[str, Any] = {"dataset": "evaluation"}
+    elif re.search(r"\bcompeten|\bcompetic|\bcompetition\b|\bhackat|\bcaso oficial\b|\bdatos oficiales\b", t):
+        caso = {"dataset": "competition"}
+    else:
+        return None
+    if re.search(r"\bsimul", t):
+        m = re.search(r"(\d+)\s*(?:clientes|destinos|entregas|locales)", t)
+        if m:
+            caso["clientes"] = int(m.group(1))
+        m = re.search(r"(\d+)\s*cargadores", t)
+        if m:
+            caso["cargadores"] = int(m.group(1))
+        m = re.search(r"semilla\s*(\d+)", t)
+        if m:
+            caso["semilla"] = int(m.group(1))
+    return caso
 
 
 def _normalizar(texto: str) -> str:
@@ -93,4 +115,5 @@ def interpretar(texto: str) -> Interpretacion:
     r.explicar = bool(_EXPLICAR.search(t))
     r.saludo = bool(_SALUDO.search(t))
     r.ver_config = bool(_CONFIG.search(t))
+    r.caso = _caso(t)
     return r

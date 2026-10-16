@@ -115,7 +115,10 @@ def _hacer_resolutor(web: _SesionWeb, fuente: dict, *, runtime, runs, lock):
                           "network_mode": cfg["red"], "fleet": fleet}
                 if fuente.get("operations"):
                     pedido["operations"] = copy.deepcopy(fuente["operations"])
-                pedido.update(copy.deepcopy(fuente.get("extra") or {}))
+                extra = copy.deepcopy(fuente.get("extra") or {})
+                if cfg["red"] != "road":
+                    extra.pop("energy_profile_id", None)  # el historico es por calle
+                pedido.update(extra)
                 preparada = service.prepare(pedido, **opciones)
                 instancia = preparada["instance"]
                 preparada_id = preparada.get("prepared_instance_id")
@@ -177,6 +180,57 @@ def _cargar_archivo(web: _SesionWeb, fuente: Any, nombre: str, **entorno) -> Non
         config=config, no_aplicables=no_aplicables,
     )
     web.run_id = web.ultima = None
+
+
+def _cargar_caso(web: _SesionWeb, entrada: dict, *, runtime, runs, lock) -> str:
+    """Carga el caso oficial de la hackaton como datos de la sesion.
+
+    Mismo origen que la UI (``scenarios.hackathon_scenario`` / ``simulate_hackathon``)
+    y, si esta disponible, el historico electrico de ejemplo (eVED) para la
+    energia por calle. Devuelve la descripcion de los datos cargados.
+    """
+    from .scenarios import hackathon_scenario, simulate_hackathon
+
+    if not isinstance(entrada, dict):
+        raise AssistRequestError("Indica el dataset del caso de la hackaton.")
+    dataset = entrada.get("dataset") or "competition"
+    escenario = hackathon_scenario(dataset)
+    base = escenario["nodes"]
+    destinos = sum(1 for n in base if n.get("node_type") == "visit")
+    cargadores = sum(1 for n in base if n.get("node_type") == "charger")
+    simulacion = None
+    if entrada.get("clientes") is not None or entrada.get("cargadores") is not None:
+        simulacion = {
+            "customers": entrada.get("clientes") or destinos,
+            "chargers": cargadores if entrada.get("cargadores") is None else entrada["cargadores"],
+            "seed": entrada.get("semilla") or 0,
+        }
+        if runtime is None:
+            raise AssistRequestError("La simulacion de ubicaciones requiere el servidor web.")
+        escenario = simulate_hackathon(escenario, simulacion, runtime)
+    perfil = None
+    historiales = getattr(runtime, "histories", None)
+    if historiales is not None:
+        try:
+            perfil = historiales.load_example()
+            if perfil.get("status") != "ready":
+                perfil = None
+        except Exception:  # sin historico de ejemplo: energia por consumo supuesto
+            perfil = None
+    extra: dict[str, Any] = {"scenario": escenario["scenario"]}
+    if perfil is not None:
+        extra["energy_profile_id"] = perfil["profile_id"]
+    nodos = escenario["nodes"]
+    etiqueta = "evaluacion" if dataset == "evaluation" else "competencia"
+    descripcion = f"caso de la hackaton · {etiqueta}{' simulado' if simulacion else ''} ({_resumen_nodos(nodos)}"
+    descripcion += ", con historico electrico eVED)" if perfil else ")"
+    datos = {"nodes": nodos, "operations": None, "connectors": None, "extra": extra}
+    web.sesion.cargar_datos(
+        _hacer_resolutor(web, datos, runtime=runtime, runs=runs, lock=lock),
+        descripcion=descripcion, config={"red": "road"},
+    )
+    web.run_id = web.ultima = None
+    return descripcion
 
 
 def _cargar_desde_run(web: _SesionWeb, run_id: str, *, runtime, runs, lock) -> bool:
@@ -332,6 +386,9 @@ def chat(payload: dict, *, solve_lock=None, runtime=None, runs=None) -> dict:
                 _sesiones.popitem(last=False)
         else:
             _sesiones.move_to_end(session_id)
+
+    # El caso de la hackaton siempre esta disponible como fuente desde el servidor.
+    web.sesion.cargar_caso = lambda entrada: _cargar_caso(web, entrada, **entorno)
 
     if fuente is not None:
         nombre = str(payload.get("archivo") or "archivo")[:120]

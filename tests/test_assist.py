@@ -258,3 +258,44 @@ def test_turno_llm_cae_a_local_si_bedrock_falla():
     r = Asistente(ses, _Roto()).turno("hola")
     assert r.modo == "local" and r.respuesta
     assert ses.mensajes == []  # no queda historial a medias
+
+
+# --- caso de la hackaton como fuente de datos (sin archivo) -------------------
+@pytest.mark.parametrize("texto, caso", [
+    ("Puedes correr sobre los datos de competencia?", {"dataset": "competition"}),
+    ("usa el caso de evaluación", {"dataset": "evaluation"}),
+    ("simula 50 clientes y 10 cargadores con la hackatón",
+     {"dataset": "competition", "clientes": 50, "cargadores": 10}),
+    ("que sean 3 autos", None),
+])
+def test_interprete_detecta_caso(texto, caso):
+    from ev_routing.assist import interpretar
+
+    assert interpretar(texto).caso == caso
+
+
+def test_turno_local_usa_caso_y_calcula_sin_pedir_archivo():
+    from ev_routing.assist import Asistente, Sesion
+
+    ses = Sesion()
+    pedidos = []
+
+    def cargar_caso(entrada):
+        pedidos.append(entrada)
+        ses.cargar_datos(lambda cfg: RESULTADO, descripcion="caso de la hackaton · competencia")
+        return "caso de la hackaton · competencia"
+
+    ses.cargar_caso = cargar_caso
+    r = Asistente(ses, confirmar_importantes=False).turno(
+        "Puedes correr sobre los datos de competencia?")
+    assert pedidos == [{"dataset": "competition"}]
+    assert r.resolvio and not r.necesita_datos
+    assert "competencia" in r.respuesta and "2 entregas" in r.respuesta
+
+
+def test_herramienta_caso_solo_si_esta_disponible():
+    from ev_routing.assist.tools import tool_specs
+
+    nombres = lambda specs: {t["toolSpec"]["name"] for t in specs["tools"]}  # noqa: E731
+    assert "usar_caso_hackaton" not in nombres(tool_specs())
+    assert "usar_caso_hackaton" in nombres(tool_specs(casos=True))

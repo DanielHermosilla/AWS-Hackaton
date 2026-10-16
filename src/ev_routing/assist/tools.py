@@ -131,14 +131,17 @@ def valores_estandar() -> dict[str, Any]:
     return {clave: spec.estandar for clave, spec in PARAMETROS.items()}
 
 
-def tool_specs() -> dict:
-    """toolConfig de Bedrock. Ninguna herramienta produce rutas por si misma."""
+def tool_specs(*, casos: bool = False) -> dict:
+    """toolConfig de Bedrock. Ninguna herramienta produce rutas por si misma.
+
+    ``casos``: incluir ``usar_caso_hackaton`` (solo si quien expone el chat puede
+    cargar los datasets de la hackaton, p. ej. el servidor web).
+    """
     vacio = {"json": {"type": "object", "properties": {}}}
     descripcion_claves = "; ".join(
         f"{s.clave}: {s.descripcion}" for s in PARAMETROS.values()
     )
-    return {
-        "tools": [
+    herramientas = [
             {"toolSpec": {
                 "name": "resolver",
                 "description": (
@@ -175,8 +178,28 @@ def tool_specs() -> dict:
                 "description": "Muestra la configuracion inicial, la vigente y los cambios.",
                 "inputSchema": vacio,
             }},
-        ]
-    }
+    ]
+    if casos:
+        herramientas.append({"toolSpec": {
+            "name": "usar_caso_hackaton",
+            "description": (
+                "Carga como datos de la sesion el caso oficial de la hackaton (Ann Arbor), "
+                "sin pedir archivo: dataset 'competition' (competencia) o 'evaluation' "
+                "(evaluacion), con el historico electrico eVED si esta disponible. "
+                "Opcional: simular otra cantidad de clientes/cargadores."
+            ),
+            "inputSchema": {"json": {
+                "type": "object",
+                "properties": {
+                    "dataset": {"type": "string", "enum": ["competition", "evaluation"]},
+                    "clientes": {"type": "integer", "minimum": 1, "maximum": 199},
+                    "cargadores": {"type": "integer", "minimum": 0, "maximum": 198},
+                    "semilla": {"type": "integer", "minimum": 0},
+                },
+                "required": ["dataset"],
+            }},
+        }})
+    return {"tools": herramientas}
 
 
 # --- esquema para el frontend ---------------------------------------------
