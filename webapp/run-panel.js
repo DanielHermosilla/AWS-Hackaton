@@ -207,6 +207,7 @@ export function initRunPanel() {
   function setInput(value, name) {
     locationEditor.close();
     input = value;
+    lastPrepareRequest = value.prepareRequest || null;
     inputName = name;
     const native = !!value.instance;
     renderInputSummary();
@@ -356,7 +357,9 @@ export function initRunPanel() {
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
   $('export-instance').addEventListener('click', () => {
-    const preparation = lastPrepareRequest || rawResponse?.result?.raw?.prepare_request;
+    // The previous result may remain visible after a new native calculation fails.
+    // Its road preparation must never replace the currently loaded instance.
+    const preparation = lastPrepareRequest;
     if (canonicalInstance && preparation?.network_mode === 'road') download(preparation, 'entrada-vial.json');
     else if (canonicalInstance) download(canonicalInstance, 'instancia-nativa.json');
     else message('Prepara o carga una instancia nativa antes de descargarla.', true);
