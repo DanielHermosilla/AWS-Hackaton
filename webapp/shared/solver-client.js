@@ -1,6 +1,7 @@
 // Same-origin transport. Aborting the browser wait does not cancel the solver.
 export const API_VERSION = '3.0';
 export const EXECUTION_KEY = 'zmd.webapp.execution.v1';
+export const MAX_FILE_BYTES = 64 * 1024 * 1024;
 
 async function readResponse(response) {
   let body;
@@ -55,10 +56,15 @@ export function createSolverClient({fetchImpl = fetch, onChange = () => {}, onPr
       const current = revision;
       controller = new AbortController();
       let stage = prepareRequest ? 'preparing' : 'solving';
-      const post = async (url, body) => readResponse(await fetchImpl(url, {
-        method: 'POST', headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify(body), signal: controller.signal,
-      }));
+      const post = async (url, body) => {
+        const serialized = JSON.stringify(body);
+        if (new TextEncoder().encode(serialized).byteLength > MAX_FILE_BYTES)
+          throw new Error('La instancia supera los 64 MiB admitidos. Reduce el archivo o utiliza la ejecución por consola para esta red.');
+        return readResponse(await fetchImpl(url, {
+          method: 'POST', headers: {'Content-Type': 'application/json'},
+          body: serialized, signal: controller.signal,
+        }));
+      };
       onChange({status: 'running', stage, message: prepareRequest ? 'Preparando la instancia en el servidor…' : 'Resolviendo la instancia nativa…'});
       try {
         let solveRequest = request;
@@ -83,7 +89,7 @@ export function createSolverClient({fetchImpl = fetch, onChange = () => {}, onPr
       } catch (error) {
         if (current !== revision) return null;
         onChange({status: 'error', stage, response: error.response ?? null, message: error instanceof TypeError
-          ? 'No se pudo conectar con el motor. Comprueba que el servidor beta esté ejecutándose y vuelve a intentar.'
+          ? 'No se pudo conectar con el motor. Comprueba que el servidor esté ejecutándose y vuelve a intentar.'
           : error.message || 'No se pudo completar la ejecución.'});
         return null;
       } finally {

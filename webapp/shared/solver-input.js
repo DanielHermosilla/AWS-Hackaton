@@ -61,6 +61,7 @@ export function validateNodes(nodes) {
 
 const record = value => value !== null && typeof value === 'object' && !Array.isArray(value);
 const nativeFields = ['schema_version', 'name', 'nodes', 'arcs', 'parameters', 'operations', 'compatible_chargers', 'provenance'];
+const solverFields = ['time_limit_seconds', 'search_policy', 'energy_relative_gap', 'random_seed'];
 const requireFields = (value, allowed, name) => {
   if (!record(value)) throw new Error(`Falta el objeto ${name}.`);
   const unknown = Object.keys(value).filter(key => !allowed.includes(key));
@@ -142,6 +143,7 @@ export function parseInstanceFile(text, filename = '') {
   let value, preparationAttempt;
   const cleaned = text.replace(/^\ufeff/, '');
   if (/\.csv$/i.test(filename) || !cleaned.trimStart().startsWith('{')) {
+    validateInstanceFileHeader(cleaned);
     const rows = csvRows(cleaned);
     const headers = rows.shift();
     if (!headers || headers.some(key => !columns.includes(key)) || new Set(headers).size !== headers.length
@@ -165,7 +167,7 @@ export function parseInstanceFile(text, filename = '') {
         preparationAttempt = value.request;
         requireFields(preparationAttempt, ['api_version', 'solver'], 'request');
         if (preparationAttempt.api_version !== API_VERSION) throw new Error('Versión del intento no admitida; se requiere API 3.0.');
-        if (preparationAttempt.solver !== undefined) requireFields(preparationAttempt.solver, ['time_limit_seconds', 'search_policy'], 'solver');
+        if (preparationAttempt.solver !== undefined) requireFields(preparationAttempt.solver, solverFields, 'solver');
       }
       value = value.request?.instance ? value.request : value.prepare_request || value.request;
     }
@@ -183,7 +185,7 @@ export function parseInstanceFile(text, filename = '') {
     else if (value.api_version === API_VERSION && value.instance) {
       const request = value;
       requireFields(request, ['api_version', 'instance', 'solver', 'prepared_instance_id'], 'request');
-      if (request.solver !== undefined) requireFields(request.solver, ['time_limit_seconds', 'search_policy'], 'solver');
+      if (request.solver !== undefined) requireFields(request.solver, solverFields, 'solver');
       if (request.prepared_instance_id) throw new Error('Carga la ejecución completa o la entrada de preparación para reconstruir los caminos; este identificador es temporal.');
       value = {instance: validateNativeInstance(request.instance), request};
     } else if (value.api_version === API_VERSION && value.nodes) {
@@ -203,16 +205,25 @@ function positive(value, name) {
   return Number(value);
 }
 
-export function solverSettings(timeLimit, policy) {
+export function solverSettings(timeLimit, policy, energyGap, seed) {
   const seconds = positive(timeLimit, 'El tiempo límite');
   if (seconds < 1 || seconds > 120) throw new Error('El tiempo límite debe estar entre 1 y 120 segundos.');
   if (policy !== undefined && !['standard', 'adaptive', 'deterministic'].includes(policy)) throw new Error('Política de búsqueda inválida.');
-  return {time_limit_seconds: seconds, ...(policy ? {search_policy: policy} : {})};
+  const gap = energyGap === undefined ? .005 : inputNumber(energyGap);
+  const randomSeed = seed === undefined ? 0 : inputNumber(seed);
+  if (!Number.isFinite(gap) || gap < 0 || gap > 1)
+    throw new Error('El gap de optimalidad debe estar entre 0 y 100 %.');
+  if (!Number.isInteger(randomSeed) || randomSeed < 0 || randomSeed > 2_000_000_000)
+    throw new Error('La semilla debe ser un entero entre 0 y 2.000.000.000.');
+  return {time_limit_seconds: seconds, ...(policy ? {search_policy: policy} : {}),
+    ...(energyGap !== undefined ? {energy_relative_gap: gap} : {}),
+    ...(seed !== undefined ? {random_seed: randomSeed} : {})};
 }
 
-export function makeSolveRequest(input, timeLimit, policy) {
+export function makeSolveRequest(input, timeLimit, policy, energyGap, seed) {
   if (!input.instance) throw new Error('Primero prepara los nodos en el servidor para obtener una instancia nativa.');
-  return {api_version: API_VERSION, instance: validateNativeInstance(input.instance), solver: solverSettings(timeLimit, policy)};
+  return {api_version: API_VERSION, instance: validateNativeInstance(input.instance),
+    solver: solverSettings(timeLimit, policy, energyGap, seed)};
 }
 
 export function makePrepareRequest(input, values) {
@@ -236,13 +247,61 @@ export function makePrepareRequest(input, values) {
       ...(connectors ? {vehicle_connector_types: [...connectors]} : {})}};
 }
 
-export const SYNTHETIC_PREPARATION = {
-  api_version: API_VERSION,
-  network_mode: 'haversine',
-  nodes: [
-    {node_id: 'BASE#fin', node_type: 'base', latitude: -33.45, longitude: -70.66, address: 'Depósito sintético'},
-    {node_id: 'Visita|ñ', node_type: 'visit', latitude: -33.451, longitude: -70.661, address: 'Destino sintético'},
-    {node_id: 'V2', node_type: 'visit', latitude: -33.452, longitude: -70.659, address: 'Segundo destino sintético'},
-  ],
-  fleet: {num_vehicles: 2, battery_capacity_kwh: 10, reserve_kwh: 1, initial_soc: .6, consumption_kwh_km: 1},
-};
+// A short preview is enough to reject telemetry without reading a multi-GB file.
+export function validateInstanceFileHeader(text) {
+  const firstLine = text.replace(/^\ufeff/, '').split(/\r?\n/, 1)[0];
+  if (firstLine.trimStart().startsWith('{')) return;
+  const headers = firstLine.split(',').map(value => value.replace(/^"|"$/g, '').trim().toLowerCase());
+  if (headers.includes('vehid') && headers.includes('trip'))
+    throw new Error('Este archivo es un histórico eVED de mediciones. Para calcular rutas, carga un CSV de nodos o un JSON con la instancia y sus parámetros.');
+}
+
+export function inputFormValues(input) {
+  const instance = input.instance;
+  const parameters = instance?.parameters || {};
+  const fleet = input.prepareRequest?.fleet || {};
+  const solver = input.request?.solver || {};
+  const native = !!instance;
+  const network = instance?.provenance?.network || {};
+  return {
+    num_vehicles: native ? parameters.vehicle_count ?? 2 : fleet.num_vehicles ?? 2,
+    initial_soc: native ? parameters.initial_soc ?? .6 : fleet.initial_soc ?? .6,
+    battery_capacity_kwh: native ? parameters.battery_capacity_kwh ?? 24 : fleet.battery_capacity_kwh ?? '',
+    reserve_kwh: native ? parameters.reserve_kwh ?? 2.4 : fleet.reserve_kwh ?? '',
+    consumption_kwh_km: native
+      ? instance.provenance?.consumption_kwh_km ?? instance.provenance?.energy_model?.kwh_per_km ?? ''
+      : fleet.consumption_kwh_km ?? '',
+    time_limit_seconds: solver.time_limit_seconds ?? 120,
+    search_policy: solver.search_policy ?? (input.request ? 'standard' : 'adaptive'),
+    energy_relative_gap: solver.energy_relative_gap ?? .005,
+    random_seed: solver.random_seed ?? 0,
+    network_mode: input.prepareRequest?.network_mode || (network.kind === 'haversine' ? 'haversine' : 'road'),
+  };
+}
+
+export function createSyntheticPreparation({clients = 2, chargers = 1} = {}) {
+  if (!Number.isInteger(clients) || clients < 1 || !Number.isInteger(chargers) || chargers < 0)
+    throw new Error('Elige un número entero de clientes (al menos 1) y estaciones (puede ser 0).');
+  if (1 + clients + chargers > 200)
+    throw new Error('El ejemplo admite hasta 200 ubicaciones, incluido el depósito.');
+  const nodes = [{node_id: 'BASE', node_type: 'base', latitude: -33.45, longitude: -70.66, address: 'Depósito'}];
+  // Deterministic nearby coordinates keep small examples feasible with the
+  // user's 7 kWh / 2 kWh reserve scenario. No street coverage is implied.
+  for (let index = 0; index < clients + chargers; index++) {
+    const isClient = index < clients;
+    const number = isClient ? index + 1 : index - clients + 1;
+    const angle = index * 2.399963229728653;
+    const radius = .0012 + .00018 * Math.sqrt(index);
+    nodes.push({
+      node_id: `${isClient ? 'C' : 'F'}${number}`, node_type: isClient ? 'visit' : 'charger',
+      latitude: Number((-33.45 + Math.sin(angle) * radius).toFixed(7)),
+      longitude: Number((-70.66 + Math.cos(angle) * radius).toFixed(7)),
+      address: `${isClient ? 'Cliente' : 'Estación'} ${number}`,
+      ...(!isClient ? {connector_types: 'J1772;CHAdeMO', total_ports: 2, dc_fast_ports: 1, level2_ports: 1} : {}),
+    });
+  }
+  return {api_version: API_VERSION, network_mode: 'haversine', nodes,
+    fleet: {num_vehicles: 2, battery_capacity_kwh: 10, reserve_kwh: 1, initial_soc: .6, consumption_kwh_km: 1}};
+}
+
+export const SYNTHETIC_PREPARATION = createSyntheticPreparation({clients: 2, chargers: 0});
