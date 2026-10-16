@@ -1,0 +1,186 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  ZMD Mobility - Web completa (webapp + solver + IA + login) en UN contenedor
+  ECS Fargate. Crea las tablas DynamoDB de usuarios/sesiones, el cluster, la
+  task y el servicio. La imagen debe estar previamente en ECR. IP publica
+  directa (sin ALB) para minimizar piezas; el API Gateway apunta a esa IP.
+
+Parameters:
+  ImageUri:
+    Type: String
+    Description: URI de la imagen en ECR (p.ej. 831851703432.dkr.ecr.us-east-1.amazonaws.com/zmd-web:latest)
+  SubnetId:
+    Type: AWS::EC2::Subnet::Id
+    Description: Subred publica (de la VPC por defecto) con acceso a Internet.
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+    Description: VPC donde se crea el Security Group.
+  BedrockModelId:
+    Type: String
+    Default: amazon.nova-lite-v1:0
+    Description: Modelo de Bedrock para el asistente IA.
+
+Resources:
+  # ── Base de datos de cuentas ──────────────────────────────────────────────
+  UsersTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: zmd_users
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: email
+          AttributeType: S
+      KeySchema:
+        - AttributeName: email
+          KeyType: HASH
+
+  SessionsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: zmd_sessions
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: token_hash
+          AttributeType: S
+      KeySchema:
+        - AttributeName: token_hash
+          KeyType: HASH
+      TimeToLiveSpecification:
+        AttributeName: expires_at
+        Enabled: true
+
+  # ── Red ───────────────────────────────────────────────────────────────────
+  SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Acceso HTTP al gateway de ZMD Mobility (puerto 8080)
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 8080
+          ToPort: 8080
+          CidrIp: 0.0.0.0/0   # publico; el contenido exige login (cookie de sesion)
+
+  # ── Roles ───────────────────────────────────────────────────────────────────
+  TaskExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: { Service: ecs-tasks.amazonaws.com }
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+
+  TaskRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: { Service: ecs-tasks.amazonaws.com }
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: ddb-y-bedrock
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              # Acceso a las dos tablas de cuentas.
+              - Effect: Allow
+                Action:
+                  - dynamodb:GetItem
+                  - dynamodb:PutItem
+                  - dynamodb:DeleteItem
+                  - dynamodb:Query
+                Resource:
+                  - !GetAtt UsersTable.Arn
+                  - !GetAtt SessionsTable.Arn
+              # Bedrock para el asistente IA (amplio; restringir en produccion).
+              - Effect: Allow
+                Action: [bedrock:InvokeModel, bedrock:InvokeModelWithResponseStream, bedrock:Converse, bedrock:ConverseStream]
+                Resource: "*"
+
+  LogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: /ecs/zmd-web
+      RetentionInDays: 7
+
+  Cluster:
+    Type: AWS::ECS::Cluster
+    Properties:
+      ClusterName: zmd-web-cluster
+
+  TaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: zmd-web
+      # El solver (SCIP) + el grafo vial + Bedrock piden memoria holgada.
+      Cpu: "4096"       # 4 vCPU
+      Memory: "16384"   # 16 GB
+      NetworkMode: awsvpc
+      RequiresCompatibilities: [FARGATE]
+      ExecutionRoleArn: !GetAtt TaskExecutionRole.Arn
+      TaskRoleArn: !GetAtt TaskRole.Arn
+      ContainerDefinitions:
+        - Name: web
+          Image: !Ref ImageUri
+          PortMappings:
+            - ContainerPort: 8080
+          Environment:
+            - Name: PORT
+              Value: "8080"
+            - Name: BACKEND_PORT
+              Value: "8000"
+            - Name: COOKIE_SECURE
+              Value: "1"
+            - Name: BEDROCK_MODEL_ID
+              Value: !Ref BedrockModelId
+            - Name: AWS_DEFAULT_REGION
+              Value: !Ref AWS::Region
+          HealthCheck:
+            Command:
+              - CMD-SHELL
+              - python -c "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8080/salud-gateway',timeout=5).status==200 else 1)"
+            Interval: 30
+            Timeout: 5
+            Retries: 3
+            StartPeriod: 120
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref LogGroup
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: web
+
+  Service:
+    Type: AWS::ECS::Service
+    Properties:
+      ServiceName: zmd-web
+      Cluster: !Ref Cluster
+      LaunchType: FARGATE
+      DesiredCount: 1
+      TaskDefinition: !Ref TaskDefinition
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: ENABLED
+          Subnets: [!Ref SubnetId]
+          SecurityGroups: [!Ref SecurityGroup]
+
+Outputs:
+  ClusterName:
+    Value: !Ref Cluster
+  ServiceName:
+    Value: zmd-web
+  ComoObtenerIP:
+    Description: Pasos para obtener la IP publica de la tarea (para el API Gateway)
+    Value: !Sub >
+      1) aws ecs list-tasks --cluster ${Cluster} --service-name zmd-web
+      2) aws ecs describe-tasks --cluster ${Cluster} --tasks <taskArn>
+         (lee attachments[].details -> networkInterfaceId)
+      3) aws ec2 describe-network-interfaces --network-interface-ids <eni>
+         --query 'NetworkInterfaces[0].Association.PublicIp'
+      La web queda en http://IP_PUBLICA:8080/login.html

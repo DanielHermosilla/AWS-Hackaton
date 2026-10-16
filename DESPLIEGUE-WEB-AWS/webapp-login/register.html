@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <link rel="icon" href="./assets/brand/icons/favicon.ico" sizes="16x16 32x32 48x48">
+  <link rel="icon" href="./assets/brand/icons/favicon.svg" type="image/svg+xml" sizes="any">
+  <link rel="apple-touch-icon" href="./assets/brand/icons/apple-touch-icon.png" sizes="180x180">
+  <title>Crear cuenta · ZMD Mobility</title>
+  <link rel="stylesheet" href="./shared/base.css">
+  <link rel="stylesheet" href="material.css">
+  <link rel="stylesheet" href="app.css?v=brand-v1">
+  <link rel="stylesheet" href="login.css">
+</head>
+<body class="page-login">
+  <header class="topbar">
+    <a class="zmd-brand" href="login.html" aria-label="ZMD Mobility, acceso">
+      <img class="zmd-brand__logo" src="./assets/brand/svg/logo.svg" width="272" height="64" alt="">
+    </a>
+    <div class="top-actions">
+      <span class="demo-tag"><span class="sr-only">Demostración</span><span aria-hidden="true">Demostración</span></span>
+    </div>
+  </header>
+
+  <main class="login-main" id="register-main" tabindex="-1">
+    <section class="login-aside" aria-hidden="true">
+      <p class="eyebrow">Planificación de flota eléctrica</p>
+      <h1>Crea la cuenta<br>de tu operación.</h1>
+      <p class="aside-lead">Una cuenta para planificar entregas, revisar energía y recargas de tu flota.</p>
+      <ul class="login-points">
+        <li><span class="pt base"></span>Un espacio por operador de flota</li>
+        <li><span class="pt charge"></span>Tus escenarios y preferencias</li>
+        <li><span class="pt check"></span>Acceso al plan y sus resultados</li>
+      </ul>
+    </section>
+
+    <section class="login-panel" aria-labelledby="register-title">
+      <div class="login-card">
+        <p class="eyebrow">Nueva cuenta</p>
+        <h2 id="register-title">Crear cuenta</h2>
+        <p class="card-lead">Regístrate para acceder al panel de planificación.</p>
+
+        <form id="register-form" novalidate>
+          <div class="field">
+            <label for="nombre">Nombre o equipo</label>
+            <input type="text" id="nombre" name="nombre" autocomplete="name"
+                   placeholder="Operación CASE" required maxlength="80" aria-describedby="nombre-error">
+            <small class="field-error" id="nombre-error" hidden></small>
+          </div>
+
+          <div class="field">
+            <label for="email">Correo de la cuenta</label>
+            <input type="email" id="email" name="email" autocomplete="username"
+                   placeholder="nombre@case.cl" required aria-describedby="email-error">
+            <small class="field-error" id="email-error" hidden></small>
+          </div>
+
+          <div class="field">
+            <div class="label-row">
+              <label for="password">Contraseña</label>
+              <button type="button" class="link-quiet" id="toggle-pass" aria-pressed="false">Mostrar</button>
+            </div>
+            <input type="password" id="password" name="password" autocomplete="new-password"
+                   placeholder="Mínimo 10 caracteres" required aria-describedby="password-reqs">
+            <div class="strength" aria-hidden="true"><span id="strength-bar"></span></div>
+            <small class="strength-label" id="strength-label"></small>
+            <ul class="reqs" id="password-reqs"></ul>
+          </div>
+
+          <div class="field">
+            <label for="confirm">Repite la contraseña</label>
+            <input type="password" id="confirm" name="confirm" autocomplete="new-password"
+                   placeholder="········" required aria-describedby="confirm-error">
+            <small class="field-error" id="confirm-error" hidden></small>
+          </div>
+
+          <label class="check terms">
+            <input type="checkbox" id="terms" name="terms">
+            <span>Acepto los términos de uso y el tratamiento de datos de la demostración.</span>
+          </label>
+          <small class="field-error" id="terms-error" hidden></small>
+
+          <button type="submit" class="primary block" id="submit">Crear cuenta</button>
+          <p class="form-note" id="form-note" role="status" aria-live="polite" hidden></p>
+        </form>
+
+        <p class="switch">¿Ya tienes cuenta? <a href="login.html" id="to-login">Inicia sesión</a></p>
+        <p class="demo-hint">Demostración: la cuenta se guarda solo en este navegador. La verificación real ocurre en el servidor.</p>
+      </div>
+    </section>
+  </main>
+
+  <noscript><p class="load-error">Esta demostración necesita JavaScript para crear la cuenta.</p></noscript>
+  <script type="module" src="register.js"></script>
+</body>
+</html>
