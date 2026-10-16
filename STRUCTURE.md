@@ -39,6 +39,8 @@ Pyomo/Gurobi/SCIP y GCG posicional se conservan como referencias explícitas.
 | `src/ev_routing/search_policy.py` | Contratos, política determinista y controlador adaptativo acotado. |
 | `src/ev_routing/llm/bedrock.py` | Bedrock Converse, esfuerzo específico de GPT/Anthropic, perfil externo y respuestas JSON. |
 | `src/ev_routing/benchmark.py` | Procesos pareados, hashes, reanudación y resúmenes CSV/JSON. |
+| `src/ev_routing/synthetic_instances.py` | Redes por zonas con energía/tiempo, ventanas y testigo factible separado del solver. |
+| `src/ev_routing/synthetic_benchmark.py` | Piloto sin LLM, política congelada y comparación de cuatro modos en instancias nuevas. |
 | `src/ev_routing/validation.py` | `validate_solution`: reproduce recorridos y batería sin usar Pyomo. |
 | `src/ev_routing/metrics.py` | `compute_metrics`: entregas, energía, recargas y distancia verificadas. |
 | `src/ev_routing/pipeline.py` | `run_instance`: une resolución, validación y salida JSON. |
@@ -47,6 +49,7 @@ Pyomo/Gurobi/SCIP y GCG posicional se conservan como referencias explícitas.
 | `scripts/prepare_hackathon.sh` | Prepara los datos completos; conserva el error original y no lanza el solver. |
 | `scripts/run_pptx.sh` | Ejecuta todos los servicios con caminos precalculados; dos fases y auditoría vial. |
 | `scripts/benchmark_dw.sh` | Benchmark sin H: estándar, determinista y adaptativo mediante Bedrock. |
+| `scripts/benchmark_llm.sh` | Entrada reproducible al generador, piloto y comparación sintética. |
 | `scripts/test_clients.sh`, `scripts/test_routing_verbose.py` | Corrida con SCIP en vivo y decisiones LLM registradas; `--simulate-customers` permite aumentar la demanda. `test_20_clients.sh` conserva el alias original. |
 | `examples/` | Dos instancias sintéticas pequeñas con óptimo conocido. |
 | `tests/` | Pruebas de datos, modelo, solvers, auditoría y flujo completo. |
@@ -62,6 +65,7 @@ Pyomo/Gurobi/SCIP y GCG posicional se conservan como referencias explícitas.
 | `docs/llm-head-search.md` | Integración actual, API de SCIP, trazabilidad, validación y mediciones. |
 | `docs/webapp-integration.md` | Gap energético 0,5 %, GPT-5.6 Luna probado en AWS, API Python y cambios para el futuro merge con webapp. |
 | `docs/performance-orchestrator.md` | Comparación medida, acceso real a modelos Bedrock, hashes y límites de la evidencia. |
+| `docs/benchmark-llm.md` | Comandos, familias sintéticas, métricas y controles de la evaluación del LLM. |
 | `docs/llm4mip-adaptation.md` | Material reutilizado, cambios, licencia y alcance. |
 | `docs/contracts.md` | Campos de entrada/salida y sus límites. |
 | `docs/validation.md` | Pruebas ejecutadas, resultados y límites de los ensayos. |

@@ -252,6 +252,13 @@ y [procedencia de la adaptación de LLM4MIP](docs/llm4mip-adaptation.md).
 El adaptador Gurobi/SCIP y el antiguo `llm/tuning.py::propose_tuning` permanecen
 sin llamadas a AWS.
 
+El [benchmark sintético del LLM](docs/benchmark-llm.md) genera redes con recarga,
+ventanas y alternativas de energía/tiempo. `bash scripts/benchmark_llm.sh pilot`
+elige una política fija sin AWS; `compare` la enfrenta a la configuración
+estándar, reglas locales y el LLM en instancias distintas. Ambos requieren
+`--output-dir`; `compare` toma además `--fixed-policy` del piloto. La guía incluye
+un ensayo corto, límites de llamadas, logs y reanudación.
+
 ### Ensayo visible con clientes y 60 estaciones
 
 Con los archivos de `artifacts/hackathon/` ya preparados:

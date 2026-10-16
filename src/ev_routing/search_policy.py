@@ -65,9 +65,15 @@ class SearchConfig(Contract):
     instance_context_bytes: int = Field(default=45_000, ge=2000, le=1_000_000, strict=True)
     export_mps: bool = True
     tree_control: bool = True
+    # Políticas locales del mismo motor; no simulan respuestas ni llamadas AWS.
+    # RoutePolicy y su catálogo nativo las validan al iniciar scip-routes.
+    route_policy_overrides: dict[str, Any] = Field(default_factory=dict)
+    local_rule_control: bool = False
 
     @model_validator(mode="after")
     def adaptive_requires_model(self):
+        if self.local_rule_control and self.policy != "standard":
+            raise ValueError("Las reglas locales requieren policy=standard, sin LLM simultáneo.")
         if self.policy == "adaptive" and not self.bedrock.model_id:
             raise ValueError(
                 "Falta el modelo de Bedrock: --bedrock-model o BEDROCK_MODEL_ID "
