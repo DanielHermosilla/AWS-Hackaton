@@ -63,7 +63,8 @@ class RoutePolicy(Contract):
     population_size: int = Field(default=12, ge=2, le=100, strict=True)
     focus_customers: list[str] = Field(default_factory=list, max_length=200)
     route_orders: dict[str, list[StrictStr]] = Field(default_factory=dict, max_length=100)
-    rebuild_strategy: Literal["none", "nearest", "deadline", "energy_blocks", "window_blocks"] = "none"
+    rebuild_strategy: Literal["none", "nearest", "deadline", "energy_blocks", "window_blocks",
+                              "electric_local"] = "none"
     rebuild_clusters: int = Field(default=4, ge=2, le=8, strict=True)
     rebuild_seconds: float = Field(default=4, gt=0, le=30)
     tree_branching: Literal["native", "fractional", "resource", "llm_priority"] = "resource"
@@ -104,6 +105,12 @@ rebuild_clusters (2..8) and rebuild_seconds (<=30) control optional primal work
 within the SAME remaining wall budget. Select a strategy explicitly when current
 incremental insertion is slow or stagnates. Portfolio telemetry reports attempted,
 feasible and improving candidates. Do not claim a win from a proposal alone.
+electric_local starts from the current feasible incumbent and ranks directed
+2-opt reversals, relocations and inter-vehicle tail exchanges by energy, then
+repairs and validates promising moves with continuous battery/charging/windows.
+Prefer this when service is already complete and energy stagnates, especially
+when full-zone reconstruction produced zero feasible candidates. It preserves
+the incumbent and can be activated at the coverage/energy transition.
 Do not include introductory or concluding prose, comments, schema or markdown.
 Example: {"route_cuts":"subset_row_triples","columns_per_round":50,
 "max_subset_rows":100,"subtour_batch_size":100,"branching":"relpscost",

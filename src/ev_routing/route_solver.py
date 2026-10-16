@@ -690,6 +690,17 @@ def solve_routes(instance, config: SolverConfig, search_config=None, *, initial_
         if improved is not best:
             best = heuristic_incumbent = improved
         record_full_service()
+        if best is not None and len(best.served_visit_ids) == len(instance.customer_ids):
+            policy = controller.decide("first_full_service", {
+                "phase": "energy", "deliveries": len(best.served_visit_ids),
+                "energy_kwh": best.net_energy_kwh, "delivery_optimum_proven": True,
+                "orders": {
+                    route.vehicle_id: [i for step in route.steps for i in step.delivered_visit_ids]
+                    for route in best.routes
+                },
+                "hybrid_search": construction.telemetry(),
+                "first_full_delivery_seconds": first_full_seconds,
+            })
         controller.locked_settings.add("share_vehicle_oracles")
         oracles, shared = {}, {}
         for vehicle in instance.vehicle_ids:

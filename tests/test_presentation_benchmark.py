@@ -69,7 +69,7 @@ def test_plan_counts_calls_without_contacting_aws_and_rejects_seed_leakage():
     args = parser().parse_args(["plan", "--customers", "16", "--families", "dispatch",
                                "--test-seeds", "100", "--ablation"])
     p = plan(args)
-    assert p["pilot_runs_without_aws"] == 6
+    assert p["pilot_runs_without_aws"] == 7
     assert p["comparison_runs"] == 5
     assert p["max_real_aws_calls"] == 4
     args.test_seeds = args.development_seeds
@@ -128,3 +128,56 @@ def test_targeted_dispatch_witness_is_independently_feasible(size, seed):
     case = make_case(size, seed, "dispatch")
     assert validate_solution(case.road, case.witness, enforce_movement_limit=False).feasible
     assert len(case.witness.served_visit_ids) == size
+
+
+def test_electric_local_moves_preserve_deliveries_and_improve_crossed_routes():
+    from test_model import _instance
+    from ev_routing.route_electric_local import improve_electric
+
+    locations = {"0": (0, 0), "A": (2, 1), "B": (-2, 1),
+                 "C": (2, -1), "D": (-2, -1)}
+    instance = _instance(
+        nodes=[(i, "base" if i == "0" else "visit") for i in locations],
+        arcs=[(a, b, .1 * ((locations[a][0] - locations[b][0]) ** 2
+                           + (locations[a][1] - locations[b][1]) ** 2) ** .5)
+              for a in locations for b in locations if a != b],
+        movements=1, vehicles=2,
+    )
+    search = HybridRoutes(instance)
+    original = search.solution([["A", "B"], ["C", "D"]], monotonic() + 2)
+    improved = improve_electric(search, original, monotonic() + 2)
+    assert improved.served_visit_ids == original.served_visit_ids
+    assert improved.net_energy_kwh < original.net_energy_kwh
+    assert search.stats["electric_local_improvements"] > 0
+    assert validate_solution(instance, improved, enforce_movement_limit=False).feasible
+
+
+def test_head_keeps_best_observed_route_context_after_weaker_seed():
+    from ev_routing.llm_head import LLMHead
+    from ev_routing.search_policy import SearchConfig
+
+    head = LLMHead(SearchConfig(policy="standard"), {}, monotonic() + 3, 3,
+                   instance=pairs())
+    best = {"deliveries": 3, "energy_kwh": 9, "orders": {"vehicle_1": ["A", "B"]}}
+    head.decide("heuristic_incumbent", best)
+    head.decide("heuristic_incumbent",
+                {"deliveries": 1, "energy_kwh": 4, "orders": {"vehicle_1": ["C"]}})
+    assert head.incumbent_orders == best["orders"]
+    head.decide("heuristic_incumbent",
+                {"deliveries": 3, "energy_kwh": 10, "orders": {"vehicle_1": ["C", "A"]}})
+    assert head.incumbent_orders == best["orders"]
+    head.close()
+
+
+def test_unattended_pilot_retains_failures_and_excludes_failed_presets():
+    from ev_routing.synthetic_benchmark import select_fixed
+
+    rows = [summary(policy="standard"), summary(policy="electric")]
+    rows[0]["returncode"] = 124
+    selected = select_fixed(rows, [], "code", allow_failures=True)
+    assert selected["selected_preset"] == "electric"
+    assert selected["excluded_presets_with_execution_failures"] == {"standard": 1}
+    assert selected["pilot_runs_including_failures"] == 2
+    rows[1]["returncode"] = 124
+    with pytest.raises(ValueError, match="Todos los presets"):
+        select_fixed(rows, [], "code", allow_failures=True)

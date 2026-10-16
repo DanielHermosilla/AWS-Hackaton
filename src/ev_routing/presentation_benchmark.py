@@ -38,6 +38,8 @@ def parser():
     p.add_argument("--aws-profile", default=os.getenv("AWS_PROFILE", "hackathon"))
     p.add_argument("--aws-region", default=os.getenv("AWS_DEFAULT_REGION", "us-east-1"))
     p.add_argument("--ablation", action="store_true", help="Añadir AWS solo tuning, sin propuestas de rutas.")
+    p.add_argument("--adaptive-start", choices=["standard", "fixed"], default="standard",
+                   help="AWS parte por defecto de standard; fixed conserva el mejor piloto como referencia.")
     p.add_argument("--without-bedrock", action="store_true", help="Probar el pipeline con políticas locales.")
     p.add_argument("--tee", action="store_true", help="Mostrar SCIP, prompts, respuestas y decisiones.")
     p.add_argument("--resume", action="store_true", help="Reusar solo corridas de idéntico código y plan.")
@@ -79,6 +81,7 @@ def plan(args):
         "development_seeds": args.development_seeds, "test_seeds": args.test_seeds,
         "solver_seeds": args.solver_seeds, "energy_relative_gap": args.energy_relative_gap,
         "bedrock_model": args.bedrock_model if calls else None,
+        "adaptive_start": args.adaptive_start,
         "factor_sha256": _sha(args.impact), "dataset_scope": "targeted_synthetic_demonstration",
     }
 
@@ -114,7 +117,8 @@ def run(args):
         common += ["--tee"]
     prefix = [sys.executable, "-m", "ev_routing.synthetic_benchmark"]
     pilot = prefix + [
-        "pilot", *common, "--instance-seeds", *map(str, args.development_seeds),
+        "pilot", *common, "--allow-pilot-failures",
+        "--instance-seeds", *map(str, args.development_seeds),
         "--time-limit-seconds", str(args.pilot_seconds),
         "--output-dir", str(args.output_dir / "pilot"),
     ]
@@ -124,6 +128,7 @@ def run(args):
         "compare", *common, "--instance-seeds", *map(str, args.test_seeds),
         "--time-limit-seconds", str(args.time_limit_seconds),
         "--fixed-policy", str(args.output_dir / "pilot/selected-policy.json"),
+        "--adaptive-start", args.adaptive_start,
         "--policies", *specification["policies"],
         "--output-dir", str(args.output_dir / "comparison"),
         "--llm-max-calls", str(args.llm_max_calls),

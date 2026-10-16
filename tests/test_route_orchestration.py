@@ -55,10 +55,10 @@ def test_two_real_decision_stages_change_executed_native_parameters(monkeypatch)
         policy="adaptive", max_llm_calls=3,
         bedrock={"model_id": "double", "timeout_seconds": 1},
     ), policy_provider=provider)
-    assert [r["event"] for r in calls] == ["before_search", "after_seed"]
+    assert [r["event"] for r in calls] == ["before_search", "after_seed", "first_full_service"]
     assert calls[1]["state"]["deliveries"] == 3
-    assert result.search["controller"]["calls"] == 2
-    assert result.search["controller"]["applied_decisions"] == 2
+    assert result.search["controller"]["calls"] == 3
+    assert result.search["controller"]["applied_decisions"] == 3
     assert result.search["controller"]["callback_calls"] > 0
     assert instance.model_dump_json() == original
     assert result.lexicographic_optimal

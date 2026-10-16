@@ -52,6 +52,8 @@ PRESETS = {
                 "improvement_time_fraction": .3},
     "deadlines": {"rebuild_strategy": "deadline", "rebuild_seconds": 8,
                   "improvement_time_fraction": .3},
+    "electric": {"rebuild_strategy": "electric_local", "rebuild_seconds": 8,
+                 "improvement_time_fraction": .3},
 }
 MODES = (*PRESETS, "fixed", "rules", "adaptive", "adaptive_knobs")
 
@@ -93,7 +95,11 @@ def parser() -> argparse.ArgumentParser:
     root.add_argument("--solver-seeds", type=int, nargs="+", default=[0])
     root.add_argument("--policies", choices=MODES, nargs="+")
     root.add_argument("--fixed-policy", type=Path)
+    root.add_argument("--adaptive-start", choices=["fixed", "standard"], default="fixed",
+                      help="Política inicial común de AWS y su ablación.")
     root.add_argument("--pilot-objective", choices=["coverage", "lexicographic"], default="coverage")
+    root.add_argument("--allow-pilot-failures", action="store_true",
+                      help="Conservar fallos y elegir solo entre presets que completaron todos los casos.")
     root.add_argument("--time-limit-seconds", type=float)
     root.add_argument("--energy-relative-gap", type=float, default=.005)
     root.add_argument("--threads", type=int, default=1)
@@ -116,6 +122,8 @@ def parser() -> argparse.ArgumentParser:
 
 def _search(args, mode, fixed):
     overrides = PRESETS.get(mode, fixed)
+    if mode in {"adaptive", "adaptive_knobs"} and args.adaptive_start == "standard":
+        overrides = {}
     return SearchConfig(
         policy="adaptive" if mode in {"adaptive", "adaptive_knobs"} else "standard",
         route_policy_overrides=overrides, local_rule_control=mode == "rules",
@@ -247,17 +255,24 @@ def summarize(item, case, execution, result, budget, gap):
     }
 
 
-def select_fixed(rows, cases, source_hash, objective="coverage"):
+def select_fixed(rows, cases, source_hash, objective="coverage", *, allow_failures=False):
     by_mode = defaultdict(list)
     for row in rows:
         by_mode[row["policy"]].append(row)
-    if not by_mode or any(r["returncode"] != 0 for r in rows):
+    failed = {mode: sum(r["returncode"] != 0 for r in values)
+              for mode, values in by_mode.items() if any(r["returncode"] != 0 for r in values)}
+    if not by_mode or (failed and not allow_failures):
         raise ValueError("El piloto tiene errores de ejecución; no se congela un ganador.")
+    if len({len(values) for values in by_mode.values()}) != 1:
+        raise ValueError("Piloto desbalanceado: todos los presets deben probar los mismos casos.")
+    eligible = {mode: values for mode, values in by_mode.items() if mode not in failed}
+    if not eligible:
+        raise ValueError("Todos los presets tuvieron errores de ejecución; no hay política elegible.")
     if any(r["full_service"] and r["first_full_delivery_solver_seconds"] is None for r in rows):
         raise ValueError("Falta el tiempo de servicio completo; no se congela una política "
                          "con telemetría incompleta.")
     scores = {}
-    for mode, values in by_mode.items():
+    for mode, values in eligible.items():
         scores[mode] = (
             -mean(float(r["first_full_within_solver_budget"]) for r in values),
             mean(1 - (r["deliveries"] or 0) / r["customers"] for r in values),
@@ -276,6 +291,8 @@ def select_fixed(rows, cases, source_hash, objective="coverage"):
                       if objective == "lexicographic" else
                       "Lexicographic: full-service rate, unserved fraction, PAR2 full-service time."),
         "selection_scores": scores,
+        "excluded_presets_with_execution_failures": failed,
+        "pilot_runs_including_failures": len(rows),
         "development_physical_hashes": sorted(c["physical_sha256"] for c in cases),
         "development_instance_seeds": sorted({c["instance_seed"] for c in cases}),
         "development_cases": [
@@ -597,18 +614,23 @@ def run(args):
             "process_wall_seconds", "llm_applied", "llm_algorithm_changes", "local_rule_updates",
         )}, ensure_ascii=False), flush=True)
     if args.stage == "pilot":
-        if all(r["returncode"] == 0 for r in rows):
-            selected = select_fixed(rows, cases, source_hash, args.pilot_objective)
+        if all(r["returncode"] == 0 for r in rows) or args.allow_pilot_failures:
+            selected = select_fixed(rows, cases, source_hash, args.pilot_objective,
+                                    allow_failures=args.allow_pilot_failures)
             _save(output / "selected-policy.json", selected)
             print(f"Política congelada: {selected['selected_preset']} → {output / 'selected-policy.json'}",
                   flush=True)
             if not selected["any_development_run_reached_full_service"]:
                 print("Ninguna corrida del piloto completó las entregas. Revise el presupuesto "
                       "y las métricas antes de interpretar la comparación.", flush=True)
+            if selected["excluded_presets_with_execution_failures"]:
+                print("Presets excluidos por fallos, conservados en summary.json: "
+                      + json.dumps(selected["excluded_presets_with_execution_failures"]), flush=True)
         else:
             print("Piloto incompleto: no se congeló una política con errores de ejecución.", flush=True)
     print(f"Resumen: {output / 'report.md'}", flush=True)
-    return 2 if any(r["returncode"] != 0 for r in rows) else 0
+    return 2 if (any(r["returncode"] != 0 for r in rows)
+                 and not (args.stage == "pilot" and args.allow_pilot_failures)) else 0
 
 
 def main(argv=None):

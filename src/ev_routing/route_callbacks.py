@@ -251,6 +251,11 @@ class RouteRecombination(Heur):
             sub.setIntParam("parallel/maxnthreads", 1)
             sub.setIntParam("lp/threads", 1)
             sub.setRealParam("limits/time", seconds)
+            # A 200-customer pool spent minutes flattening its multi-aggregation
+            # graph inside presolve, beyond this heuristic's subsecond budget.
+            # This optional primal subproblem needs predictable latency.
+            sub.setBoolParam("presolving/donotmultaggr", True)
+            sub.setIntParam("presolving/maxrounds", 0)
             choices = []
             for k, mask, route, var in pricer.columns[-policy.pricing_pool_limit:]:
                 if var.getUbLocal() <= 0:

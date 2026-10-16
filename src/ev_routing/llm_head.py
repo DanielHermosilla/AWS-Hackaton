@@ -130,6 +130,7 @@ class LLMHead:
         self.routing_digest = (routing_digest(instance, config.instance_context_bytes)
                                if instance is not None and config.policy == "adaptive" else {})
         self.incumbent_orders = None
+        self.incumbent_quality = (-1, -float("inf"))
         if not config.llm_route_hints or profile.get("single_tour_certificate", {}).get("applicable"):
             self.unsupported_settings.update({
                 "route_orders", "rebuild_strategy", "rebuild_clusters", "rebuild_seconds",
@@ -299,10 +300,13 @@ class LLMHead:
         return record["status"] == "applied"
 
     def decide(self, event, state):
-        if event == "heuristic_incumbent" and "orders" in state:
-            self.incumbent_orders = state["orders"]
+        if "orders" in state:
+            quality = (state.get("deliveries", -1), -(state.get("energy_kwh") or 0))
+            if quality > self.incumbent_quality:
+                self.incumbent_quality = quality
+                self.incumbent_orders = state["orders"]
         self.current_phase = state.get("phase", self.current_phase)
-        if event == "after_seed" or self.current_phase != "planning":
+        if event in {"after_seed", "first_full_service"} or self.current_phase != "planning":
             self.finished_stages.add("seeding")
         self.events[event] = self.events.get(event, 0) + 1
         self.collect()
@@ -311,14 +315,14 @@ class LLMHead:
         now = monotonic()
         if (self.closed or self.config.policy != "adaptive" or self.pending is not None
             or self.calls >= self.config.max_llm_calls
-            or (event not in {"before_search", "after_seed"}
+            or (event not in {"before_search", "after_seed", "first_full_service"}
                 and now - self.last_request < self.config.decision_interval_seconds)):
             return self.policy
         # Con dos consultas, conservar una para observar pricing real. No
         # consumirla en otro callback inmediato de la preparación o de la raíz.
         if (self.config.max_llm_calls > 1 and self.calls == self.config.max_llm_calls - 1
                 and any(r["status"] == "applied" for r in self.records)
-                and event != "search_stagnation"):
+                and event not in {"search_stagnation", "first_full_service"}):
             if not any(r["reason"] == "reserved_for_search_feedback" for r in self.skipped):
                 self.skipped.append({"event": event, "reason": "reserved_for_search_feedback"})
             return self.policy
@@ -468,7 +472,8 @@ class LLMHead:
             "unsupported_policy_fields": sorted(self.unsupported_settings),
             "callback_calls": sum(value for name, value in self.events.items()
                                   if name not in {"before_search", "after_seed", "search_stagnation",
-                                                  "heuristic_progress", "heuristic_incumbent"}),
+                                                  "heuristic_progress", "heuristic_incumbent",
+                                                  "first_full_service"}),
             "policy": self.policy.model_dump(), "skipped": self.skipped,
             "instance_scope": self.context.get("scope"), "model_id": self.config.bedrock.model_id,
             "local_policy_mode": (

@@ -6,6 +6,9 @@ política. Después compara nuevas semillas con `standard`, `fixed`, `rules` y
 `adaptive` (Bedrock). `--ablation` añade AWS sin propuestas de rutas ni cambios al
 portafolio nuevo. Todas usan la misma física, presupuesto y gap energético 0,5%.
 En macOS el script mantiene el computador despierto con `caffeinate`.
+AWS y su ablación parten de `standard`; `fixed` y `rules` conservan la política
+seleccionada por el piloto. `--adaptive-start fixed` permite medir la adaptación
+sobre esa política ya ajustada. La configuración inicial queda en el manifiesto.
 
 ```bash
 bash scripts/benchmark_presentation.sh plan
@@ -49,9 +52,19 @@ de expansión mínima de energía, ensayan órdenes de grupos y particiones de f
 consume el presupuesto existente. Los límites de candidatos pertenecen a la
 heurística; el pricing exacto conserva su espacio.
 
+`electric_local` parte del incumbente factible: invierte segmentos con costes
+dirigidos, recoloca clientes e intercambia colas entre vehículos. Cada cambio
+se repara y valida; nunca reduce las entregas para aparentar ahorro. El callback
+`first_full_service` permite dedicar una consulta reservada a la fase energética.
+El contexto conserva el mejor incumbente observado aunque otro arranque sea peor.
+
 Los presets locales `blocks` y `windows` ofrecen las mismas reconstrucciones
 sin LLM, y participan en el piloto. Esto permite medir cuánto de la mejora viene
 de disponer de la heurística y cuánto de seleccionarla mediante AWS.
+El preset `electric` ofrece también la búsqueda local eléctrica sin LLM.
+En campañas desatendidas, un preset que falle en cualquier caso queda excluido
+de la selección fija. Sus corridas y fallos se conservan; no se eliminan de las
+tablas ni del denominador. Si todos fallan, la campaña se detiene.
 
 ## Archivos
 
