@@ -69,6 +69,8 @@ class SearchConfig(Contract):
     # RoutePolicy y su catálogo nativo las validan al iniciar scip-routes.
     route_policy_overrides: dict[str, Any] = Field(default_factory=dict)
     local_rule_control: bool = False
+    # Ablación: conservar tuning remoto pero desactivar propuestas de recorridos.
+    llm_route_hints: bool = True
 
     @model_validator(mode="after")
     def adaptive_requires_model(self):

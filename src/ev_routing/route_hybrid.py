@@ -11,6 +11,7 @@ from ev_routing.route_heuristics import InsertionRoutes
 from ev_routing.route_pricing import PricingNetwork, SequenceOracle
 from ev_routing.route_resources import assemble_solution
 from ev_routing.route_schedule import FixedPathRepair
+from ev_routing.route_hints import validate_orders
 from ev_routing.validation import validate_solution
 
 
@@ -46,6 +47,8 @@ class HybridRoutes:
         self.policy = None
         self.observer = None
         self.last_observation = -inf
+        self.consumed_orders = set()
+        self.portfolio_groups, self.consumed_rebuilds = {}, set()
 
     def _observe(self):
         if self.observer is None:
@@ -64,7 +67,8 @@ class HybridRoutes:
 
     def _record(self, event, solution, **details):
         state = {"event": event, "deliveries": len(solution.served_visit_ids),
-                 "energy_kwh": solution.net_energy_kwh, **details}
+                 "energy_kwh": solution.net_energy_kwh,
+                 "orders": dict(zip(self.instance.vehicle_ids, sequences(solution))), **details}
         self.trace.append(state)
         if self.observer is not None:
             self.observer("heuristic_incumbent", state)
@@ -368,6 +372,10 @@ class HybridRoutes:
             best = self.seed(policy.seed_strategy, policy.seed_starts, deadline, seed)
         if best is None:
             return None
+        self._observe()
+        best = self.apply_order_hint(best, policy, deadline)
+        from ev_routing.route_portfolio import rebuild
+        best = rebuild(self, best, policy, deadline, seed)
         if self.fast.supported:
             legacy_deadline = min(deadline, monotonic() + max(0, deadline-monotonic())*.25)
             best = self.fast.improve(best, policy, legacy_deadline, seed)
@@ -385,6 +393,12 @@ class HybridRoutes:
             if monotonic() >= deadline:
                 break
             self._observe()
+            rebuilt = rebuild(self, best, policy, deadline, seed + iteration)
+            if quality(rebuilt) > quality(best):
+                best = current = rebuilt
+            hinted = self.apply_order_hint(best, policy, deadline)
+            if quality(hinted) > quality(best):
+                best = current = hinted
             operators = policy.destroy_operators
             weights = [1 + self.operator_scores[op] / (1 + self.operator_counts[op]) for op in operators]
             operator = rng.choices(operators, weights=weights)[0]
@@ -421,6 +435,37 @@ class HybridRoutes:
                     best = candidate
                     self.operator_scores[operator] += 10
                     self._record("hybrid_improvement", best, operator=operator)
+        return best
+
+    def apply_order_hint(self, best, policy, deadline):
+        """Consume a new hint once, on the solver thread and inside its budget."""
+        if not policy.route_orders or monotonic() >= deadline:
+            return best
+        validate_orders(policy.route_orders, self.instance.customer_ids, self.instance.vehicle_ids)
+        orders = [list(policy.route_orders.get(k, [])) for k in self.instance.vehicle_ids]
+        signature = tuple(tuple(order) for order in orders)
+        if signature in self.consumed_orders:
+            return best
+        self.consumed_orders.add(signature)
+        self.stats["order_hints_attempted"] += 1
+        candidate = self.solution(orders, deadline)
+        if candidate is None:
+            self.stats["order_hints_rejected"] += 1
+            return best
+        self.stats["order_hints_feasible"] += 1
+        self._survive(candidate, policy.population_size)
+        improved = quality(candidate) > quality(best)
+        self.trace.append({
+            "event": "order_hint_evaluated", "orders": policy.route_orders,
+            "deliveries": len(candidate.served_visit_ids), "energy_kwh": candidate.net_energy_kwh,
+            "improved": improved,
+            "previous_deliveries": len(best.served_visit_ids) if best else None,
+            "previous_energy_kwh": best.net_energy_kwh if best else None,
+        })
+        if improved:
+            self.stats["order_hints_improved"] += 1
+            self._record("order_hint_incumbent", candidate)
+            return candidate
         return best
 
     def price(self, vehicle, prizes, cuts, energy_weight, starts, deadline):

@@ -46,8 +46,14 @@ PRESETS = {
         "epoch_seconds": 8, "node_selection": "best_bound",
         "restricted_master_seconds": .5,
     },
+    "blocks": {"rebuild_strategy": "energy_blocks", "rebuild_seconds": 8,
+               "improvement_time_fraction": .3},
+    "windows": {"rebuild_strategy": "window_blocks", "rebuild_seconds": 8,
+                "improvement_time_fraction": .3},
+    "deadlines": {"rebuild_strategy": "deadline", "rebuild_seconds": 8,
+                  "improvement_time_fraction": .3},
 }
-MODES = (*PRESETS, "fixed", "rules", "adaptive")
+MODES = (*PRESETS, "fixed", "rules", "adaptive", "adaptive_knobs")
 
 
 def code_hash() -> str:
@@ -87,6 +93,7 @@ def parser() -> argparse.ArgumentParser:
     root.add_argument("--solver-seeds", type=int, nargs="+", default=[0])
     root.add_argument("--policies", choices=MODES, nargs="+")
     root.add_argument("--fixed-policy", type=Path)
+    root.add_argument("--pilot-objective", choices=["coverage", "lexicographic"], default="coverage")
     root.add_argument("--time-limit-seconds", type=float)
     root.add_argument("--energy-relative-gap", type=float, default=.005)
     root.add_argument("--threads", type=int, default=1)
@@ -110,8 +117,9 @@ def parser() -> argparse.ArgumentParser:
 def _search(args, mode, fixed):
     overrides = PRESETS.get(mode, fixed)
     return SearchConfig(
-        policy="adaptive" if mode == "adaptive" else "standard",
+        policy="adaptive" if mode in {"adaptive", "adaptive_knobs"} else "standard",
         route_policy_overrides=overrides, local_rule_control=mode == "rules",
+        llm_route_hints=mode != "adaptive_knobs",
         bedrock=BedrockConfig(
             model_id=args.bedrock_model, profile=args.aws_profile or None,
             region=args.aws_region, timeout_seconds=args.llm_timeout_seconds,
@@ -210,6 +218,11 @@ def summarize(item, case, execution, result, budget, gap):
         "instance_seed": case["instance_seed"], "returncode": execution["returncode"],
         "status": result.get("status", "execution_error"),
         "feasible": valid, "deliveries": deliveries, "energy_kwh": energy,
+        "served_visit_ids": sorted((result.get("solve", {}).get("solution") or {}).get("served_visit_ids", [])) if valid else None,
+        "distance_km": kpis.get("distance_km") if valid else None,
+        "charging_stops": kpis.get("charging_stops") if valid else None,
+        "minimum_battery_kwh": kpis.get("minimum_battery_kwh") if valid else None,
+        "operational_duration_seconds": kpis.get("operational_duration_seconds") if valid else None,
         "full_service": full, "energy_gap_reached": gap_hit,
         "energy_bound_kwh": bound, "energy_relative_gap": relative_gap,
         "deliveries_proven": phases.get("deliveries", {}).get("proven_optimal", False),
@@ -223,13 +236,18 @@ def summarize(item, case, execution, result, budget, gap):
         "llm_applied": tuning.get("applied_decisions", 0),
         "llm_algorithm_changes": tuning.get("decisions_changing_algorithm", 0),
         "llm_total_tokens": sum(usages) if tokens_known else None,
+        "llm_input_tokens": sum((d.get("usage") or {}).get("inputTokens", 0) for d in records) if tokens_known else None,
+        "llm_output_tokens": sum((d.get("usage") or {}).get("outputTokens", 0) for d in records) if tokens_known else None,
+        "llm_model": tuning.get("model_id"),
+        "order_hints": [entry for entry in search.get("heuristic_progress", [])
+                        if entry.get("event") == "order_hint_evaluated"],
         "llm_inference_seconds_overlapping": tuning.get("runtime_seconds", 0),
         "local_rule_updates": len(tuning.get("local_decisions", [])),
         "physical_sha256": case["physical_sha256"],
     }
 
 
-def select_fixed(rows, cases, source_hash):
+def select_fixed(rows, cases, source_hash, objective="coverage"):
     by_mode = defaultdict(list)
     for row in rows:
         by_mode[row["policy"]].append(row)
@@ -246,12 +264,17 @@ def select_fixed(rows, cases, source_hash):
             mean(r["first_full_delivery_solver_seconds"] if r["first_full_within_solver_budget"]
                  else 2 * r["budget_seconds"] for r in values),
         )
+        if objective == "lexicographic":
+            scores[mode] = (*scores[mode][:-1],
+                            mean(r["energy_kwh"] or 0 for r in values), scores[mode][-1])
     chosen = min(scores, key=lambda name: (scores[name], name != "standard", name))
     return {
         "schema_version": "1.0", "source": "synthetic_pilot",
         "code_sha256": source_hash, "generator_version": GENERATOR_VERSION,
         "selected_preset": chosen, "route_policy_overrides": PRESETS[chosen],
-        "selection": "Lexicographic: full-service rate, unserved fraction, PAR2 full-service time.",
+        "selection": ("Full-service rate, unserved fraction, mean energy, PAR2 time."
+                      if objective == "lexicographic" else
+                      "Lexicographic: full-service rate, unserved fraction, PAR2 full-service time."),
         "selection_scores": scores,
         "development_physical_hashes": sorted(c["physical_sha256"] for c in cases),
         "development_instance_seeds": sorted({c["instance_seed"] for c in cases}),
@@ -448,14 +471,14 @@ def run(args):
     if any(n < 4 or n > 200 for n in args.customers) or min(args.instance_seeds) < 0:
         raise ValueError("Use 4..200 clientes y semillas de instancia no negativas.")
     if args.stage == "pilot" and any(p not in PRESETS for p in args.policies):
-        raise ValueError("El piloto usa únicamente standard, primal y pricing; nunca llama AWS.")
+        raise ValueError("El piloto usa únicamente presets locales; nunca llama AWS.")
     if not math.isfinite(args.process_grace_seconds) or args.process_grace_seconds < 0:
         raise ValueError("El margen de proceso debe ser finito y no negativo.")
     if not math.isfinite(args.preprocessing_seconds) or args.preprocessing_seconds < 0:
         raise ValueError("El presupuesto de preparación debe ser finito y no negativo.")
     source_hash = code_hash()
     selected = None
-    if args.stage == "compare" and any(p in {"fixed", "rules", "adaptive"} for p in args.policies):
+    if args.stage == "compare" and any(p in {"fixed", "rules", "adaptive", "adaptive_knobs"} for p in args.policies):
         selected = load_fixed(args.fixed_policy, source_hash)
         if set(args.instance_seeds) & set(selected["development_instance_seeds"]):
             raise ValueError("Las semillas de prueba deben ser distintas de las del piloto.")
@@ -476,6 +499,7 @@ def run(args):
         "policies": args.policies, "solver_config": solver.model_dump(mode="json"),
         "search_configs": {p: s.model_dump(mode="json") for p, s in searches.items()},
         "preprocessing_seconds": args.preprocessing_seconds,
+        "pilot_objective": args.pilot_objective,
         "process_grace_seconds": args.process_grace_seconds,
         "fixed_policy_sha256": _sha(args.fixed_policy) if selected else None,
         "versions": {name: importlib.metadata.version(name)
@@ -521,7 +545,7 @@ def run(args):
     print(json.dumps({
         "runs": len(plan), "policies": args.policies, "seconds_per_run": args.time_limit_seconds,
         "solver_budget_minutes": len(plan) * args.time_limit_seconds / 60,
-        "max_real_llm_calls": sum(p["policy"] == "adaptive" for p in plan) * args.llm_max_calls,
+        "max_real_llm_calls": sum(p["policy"] in {"adaptive", "adaptive_knobs"} for p in plan) * args.llm_max_calls,
         "dry_run": args.dry_run, "output_directory": str(output),
     }, ensure_ascii=False), flush=True)
     if args.dry_run:
@@ -574,7 +598,7 @@ def run(args):
         )}, ensure_ascii=False), flush=True)
     if args.stage == "pilot":
         if all(r["returncode"] == 0 for r in rows):
-            selected = select_fixed(rows, cases, source_hash)
+            selected = select_fixed(rows, cases, source_hash, args.pilot_objective)
             _save(output / "selected-policy.json", selected)
             print(f"Política congelada: {selected['selected_preset']} → {output / 'selected-policy.json'}",
                   flush=True)

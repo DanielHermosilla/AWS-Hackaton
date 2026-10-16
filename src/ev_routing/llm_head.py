@@ -13,6 +13,7 @@ from time import monotonic
 from pyscipopt import Model
 
 from ev_routing.route_policy import ROUTE_PROMPT, RoutePolicy, _save_decision
+from ev_routing.route_hints import routing_digest, validate_orders
 from ev_routing.scip_tuning import parameter_catalog, validate_parameters
 
 API_GROUPS = {
@@ -124,6 +125,15 @@ class LLMHead:
         self.context = (instance_context(instance, config.instance_context_bytes, config.log_directory)
                         if instance is not None and config.policy == "adaptive" else {})
         self.customer_ids = set(instance.customer_ids) if instance is not None else set()
+        self.vehicle_ids = set(instance.vehicle_ids) if instance is not None else set()
+        validate_orders(self.policy.route_orders, self.customer_ids, self.vehicle_ids)
+        self.routing_digest = (routing_digest(instance, config.instance_context_bytes)
+                               if instance is not None and config.policy == "adaptive" else {})
+        self.incumbent_orders = None
+        if not config.llm_route_hints or profile.get("single_tour_certificate", {}).get("applicable"):
+            self.unsupported_settings.update({
+                "route_orders", "rebuild_strategy", "rebuild_clusters", "rebuild_seconds",
+            })
         self.mps = None
         self.closed = False
         self.bedrock_clients, self.provider_setup_error = {}, None
@@ -253,6 +263,7 @@ class LLMHead:
                 proposal = RoutePolicy.model_validate({**before, **reply["policy"]})
                 if set(proposal.focus_customers) - self.customer_ids:
                     raise ValueError("unknown_customer")
+                validate_orders(proposal.route_orders, self.customer_ids, self.vehicle_ids)
                 proposal.scip_parameters = validate_parameters(
                     proposal.scip_parameters,
                     bool(self.profile.get("single_tour_certificate", {}).get("applicable")),
@@ -288,6 +299,8 @@ class LLMHead:
         return record["status"] == "applied"
 
     def decide(self, event, state):
+        if event == "heuristic_incumbent" and "orders" in state:
+            self.incumbent_orders = state["orders"]
         self.current_phase = state.get("phase", self.current_phase)
         if event == "after_seed" or self.current_phase != "planning":
             self.finished_stages.add("seeding")
@@ -332,6 +345,7 @@ class LLMHead:
         request = {
             "event": event, "phase": self.current_phase, "structure": self.profile,
             "instance_context": self.context, "restricted_master": self.mps,
+            "routing_digest": self.routing_digest, "incumbent_orders": self.incumbent_orders,
             "state": state, "current_policy": self.policy.model_dump(),
             "allowed_policy_schema": RoutePolicy.model_json_schema(),
             "scip_api": api_catalog(),

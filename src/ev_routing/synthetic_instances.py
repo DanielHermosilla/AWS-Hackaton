@@ -25,8 +25,8 @@ from ev_routing.contracts import (
 from ev_routing.operations import schedule_solution
 from ev_routing.validation import validate_solution
 
-GENERATOR_VERSION = 1
-FAMILIES = ("loose", "clustered", "crossed")
+GENERATOR_VERSION = 2
+FAMILIES = ("loose", "clustered", "crossed", "dispatch")
 
 
 @dataclass
@@ -84,6 +84,12 @@ def make_case(customers: int, seed: int, family: str = "clustered") -> Synthetic
     nodes = [Node(node_id=depot, node_type="base")]
     arcs, coordinates, corridors = [], {depot: (0.0, 0.0)}, {}
     centers = [(-8.0, 7.0), (8.0, 7.0), (-8.0, -7.0), (8.0, -7.0)]
+    if family == "dispatch":
+        # Caso dirigido a planificación global: cuatro sectores separados por
+        # un corredor caro, dos oleadas temporales y potencias heterogéneas.
+        # No es demanda real ni un test representativo de todas las instancias.
+        stretch = rng.uniform(9.0, 11.0)
+        centers = [(-stretch, 3), (stretch, 3), (-stretch, -3), (stretch, -3)]
     ids = [f"customer_{i:03d}" for i in range(customers)]
     rng.shuffle(ids)  # Los IDs no codifican el orden testigo ni las zonas.
     groups = [ids[z::4] for z in range(4)]
@@ -94,6 +100,8 @@ def make_case(customers: int, seed: int, family: str = "clustered") -> Synthetic
             coordinates[station] = (center[0] + index * .8, center[1])
             nodes.append(Node(node_id=station, node_type="charger", connector_types=["CHAdeMO"]))
             powers[station] = 12.0 if index else 24.0
+            if family == "dispatch":
+                powers[station] = 7.0 if index else 36.0
         for customer in groups[zone]:
             coordinates[customer] = (center[0] + rng.uniform(-1, 1),
                                      center[1] + rng.uniform(-1, 1))
@@ -145,7 +153,7 @@ def make_case(customers: int, seed: int, family: str = "clustered") -> Synthetic
         },
     )
     walks = []
-    for zones in ((0, 1), (2, 3)):
+    for zones in (((0, 2), (1, 3)) if family == "dispatch" else ((0, 1), (2, 3))):
         walk, current = [depot], depot
         visits = [(z, groups[z]) for z in zones]
         if family == "crossed":
@@ -168,7 +176,9 @@ def make_case(customers: int, seed: int, family: str = "clustered") -> Synthetic
     for route in witness.routes:
         for step in route.steps:
             for customer in step.delivered_visit_ids:
-                tight = family != "loose" and rng.random() < (.5 if family == "crossed" else .3)
+                tight = family != "loose" and rng.random() < (
+                    .75 if family == "dispatch" else .5 if family == "crossed" else .3
+                )
                 slack = rng.uniform(240, 480) if tight else horizon
                 windows[customer] = TimeWindow(
                     open_seconds=max(0, step.service_start_seconds - slack),

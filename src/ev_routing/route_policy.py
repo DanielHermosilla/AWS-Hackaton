@@ -62,6 +62,10 @@ class RoutePolicy(Contract):
     memetic_enabled: bool = True
     population_size: int = Field(default=12, ge=2, le=100, strict=True)
     focus_customers: list[str] = Field(default_factory=list, max_length=200)
+    route_orders: dict[str, list[StrictStr]] = Field(default_factory=dict, max_length=100)
+    rebuild_strategy: Literal["none", "nearest", "deadline", "energy_blocks", "window_blocks"] = "none"
+    rebuild_clusters: int = Field(default=4, ge=2, le=8, strict=True)
+    rebuild_seconds: float = Field(default=4, gt=0, le=30)
     tree_branching: Literal["native", "fractional", "resource", "llm_priority"] = "resource"
     node_selection: Literal["best_bound", "depth_first", "hybrid"] = "hybrid"
     cut_candidates: int = Field(default=100, ge=1, le=2000, strict=True)
@@ -74,6 +78,32 @@ class RoutePolicy(Contract):
 
 ROUTE_PROMPT = """You orchestrate the ENTIRE search for an H-free electric
 vehicle routing solve. Return ONLY a JSON object with VALUES allowed by the schema.
+When routing_digest is available, also propose route_orders: an object mapping
+real vehicle IDs to ordered lists of customer IDs. This is your direct primal
+intervention: think globally about geography/cost clusters, overlapping windows
+and fleet allocation. Each customer may appear at most once across vehicles.
+Omit depot and chargers: native repair chooses physical paths and continuous
+charging, then independently validates the routes. Empty lists mean idle vehicles.
+Prefer a complete low-energy fleet order. Partial hints are allowed but cannot
+replace a better incumbent. Use incumbent_orders to avoid repeating its mistakes.
+The two shortest-path matrices are independent relaxations, not feasible routes.
+These hints never fix decisions, remove columns or change any proof. Propose
+orders as well as a few useful policy changes, rather than only tuning parameters.
+For LARGE instances prefer selecting a whole-fleet rebuild_strategy rather than
+writing hundreds of IDs. This is an implemented primal portfolio:
+nearest: cheap giant tour with fleet splits; deadline: globally ordered deadlines
+and cyclic/contiguous fleet assignment; energy_blocks: MST energy clusters,
+nearest-neighbor within clusters and block permutations/fleet splits;
+window_blocks: energy clusters with deadline ordering and flexible-window
+insertion before block permutations/fleet splits. All candidates undergo full
+continuous-resource repair and independent validation. None means no rebuild.
+Use energy_blocks for well-separated zones with broad windows. Use window_blocks
+when zones have tight and flexible deadlines; deadline can help overlapping
+waves where serving an entire geographic zone first is inappropriate.
+rebuild_clusters (2..8) and rebuild_seconds (<=30) control optional primal work
+within the SAME remaining wall budget. Select a strategy explicitly when current
+incremental insertion is slow or stagnates. Portfolio telemetry reports attempted,
+feasible and improving candidates. Do not claim a win from a proposal alone.
 Do not include introductory or concluding prose, comments, schema or markdown.
 Example: {"route_cuts":"subset_row_triples","columns_per_round":50,
 "max_subset_rows":100,"subtour_batch_size":100,"branching":"relpscost",
