@@ -30,8 +30,8 @@ class RoutePolicy(Contract):
     seed_starts: int = Field(default=8, ge=1, le=64, strict=True)
     seed_charging: bool = True
     charging_seed_starts: int = Field(default=6, ge=1, le=64, strict=True)
-    seed_time_fraction: float = Field(default=.06, ge=0, le=.3)
-    improvement_time_fraction: float = Field(default=.12, ge=0, le=.4)
+    seed_time_fraction: float = Field(default=.15, ge=0, le=.3)
+    improvement_time_fraction: float = Field(default=.2, ge=0, le=.4)
     local_search: list[Literal["two_opt", "relocate", "swap"]] = Field(
         default_factory=lambda: ["two_opt", "relocate", "swap"], max_length=3,
     )
@@ -111,6 +111,21 @@ after_seed and search_stagnation provide measured feedback. You may revise your
 earlier plan. Return only fields you want to change; unspecified values persist.
 finished_stages identifies completed stages. Do not retune
 completed seeding or a completed bound relaxation; those changes have no effect.
+locked_policy_fields identifies settings already consumed by an active stage;
+those changes are also inactive. unsupported_policy_fields lists controls of
+adapters unavailable for this instance (legacy local search on resource graphs).
+Do not propose those settings. The resource seed uses window-aware fleet
+insertion before distance-only starts; repair has admissible time-window bounds.
+Do not diagnose breadth-first starvation when current_policy already says
+reduced_cost. Use measured repair/pricing counters to distinguish bottlenecks.
+The resource repair first tries physical candidate paths with continuous-charge
+LP scheduling, then the general resource oracle; LP failure is never a proof.
+Window-deadline fleet insertion and completion before destruction are already
+implemented. Use fixed_path_successes, sequence_time_rejections, repair_timeouts,
+dual_pricing_labels and completed_dual_queries to identify remaining work.
+Prefer a few testable changes to increasing every budget or parameter. An epoch
+stuck at the root with incomplete pricing has no deep tree for node selection
+to improve. Calls may be reserved for measured search_stagnation feedback.
 restricted_master_seconds allocates a small finite-pool primal solve before exact
 pricing. Its native bound NEVER certifies the full route master.
 bound_strategy selects an energy lower-bound relaxation after complete service.

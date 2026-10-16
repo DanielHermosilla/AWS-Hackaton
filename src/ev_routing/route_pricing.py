@@ -6,6 +6,7 @@ Cada consulta dual usa su propio oráculo: una poda nunca se reutiliza con otro 
 
 from __future__ import annotations
 
+from bisect import bisect_left
 from collections import defaultdict
 from heapq import heappop, heappush
 from itertools import count
@@ -57,6 +58,7 @@ class PricingNetwork:
                                 time=min(time, previous.get("time", inf)))
         self.reverse = self.graph.reverse(copy=False)
         self.cache = {}
+        self.escape_cache = {}
 
     def distances(self, target, weight="energy"):
         key = target, weight
@@ -65,6 +67,32 @@ class PricingNetwork:
                 self.reverse, target, weight=weight,
             )
         return self.cache[key]
+
+    def escape_energy(self, vehicle):
+        """Cota hasta la próxima carga o el retorno; no fija caminos ni estaciones."""
+        stations = tuple(sorted(self.instance.chargers_for(vehicle)))
+        if stations not in self.escape_cache:
+            targets = (*stations, self.instance.depot_id)
+            self.escape_cache[stations] = {
+                node: min(self.distances(target).get(node, inf) for target in targets)
+                for node in self.graph
+            }
+        return self.escape_cache[stations]
+
+    def sequence_time_possible(self, sequence):
+        """Calendario optimista sin batería/recarga: rechazo necesario, no certificado."""
+        ops, node, time = self.instance.operations, self.instance.depot_id, 0.0
+        if not ops.timing_enabled:
+            return True
+        for target in sequence:
+            time += self.distances(target, "time").get(node, inf)
+            window = ops.customer_time_windows.get(target) if ops.use_customer_time_windows else None
+            time = max(time, window.open_seconds if window else 0) + ops.service_duration(target)
+            if window and time > window.close_seconds + 1e-8:
+                return False
+            node = target
+        return (time + self.distances(self.instance.depot_id, "time").get(node, inf)
+                <= (ops.max_route_seconds if ops.max_route_seconds is not None else inf) + 1e-8)
 
 
 class SequenceOracle(RouteOracle):
@@ -75,9 +103,50 @@ class SequenceOracle(RouteOracle):
         self.sequence, self.network = tuple(sequence), network
         self.path_order = path_order
         self.target_mask = sum(self.bits[i] for i in sequence)
+        self.pruned_time = self.pruned_energy = 0
+        self.escape_energy = network.escape_energy(vehicle) if network.nonnegative else {}
+        # Última llegada posible a cada servicio bajo tiempos mínimos sin
+        # batería ni recarga. Es una relajación: solo descarta imposibilidades.
+        self.latest = [inf] * len(self.sequence)
+        if self.timed:
+            ops = instance.operations
+            following, latest = instance.depot_id, ops.max_route_seconds
+            for i in reversed(range(len(self.sequence))):
+                node = self.sequence[i]
+                window = ops.customer_time_windows.get(node) if ops.use_customer_time_windows else None
+                latest = min(
+                    latest - network.distances(following, "time").get(node, inf),
+                    window.close_seconds if window else inf,
+                ) - ops.service_duration(node)
+                if window and latest < window.open_seconds - 1e-8:
+                    latest = -inf
+                self.latest[i] = latest
+                following = node
         initial = self.queue.popleft()
         self.queue = LabelQueue(self.priority)
-        self.queue.append(initial)
+        self._insert(initial, initial=True)
+        self.complete = not self.queue
+
+    def _insert(self, label, *, initial=False):
+        done, node = label.mask.bit_count(), label.walk[-1]
+        if self.timed:
+            target = self.sequence[done] if done < len(self.sequence) else self.instance.depot_id
+            latest = (self.latest[done] if done < len(self.sequence)
+                      else self.instance.operations.max_route_seconds)
+            earliest = float(label.resources.points[:, 1].min())
+            if earliest + self.network.distances(target, "time").get(node, inf) > latest + 1e-8:
+                self.pruned_time += 1
+                return
+        if self.escape_energy and (
+            float(label.resources.points[:, 0].max()) - self.instance.parameters.reserve_kwh
+            < self.escape_energy.get(node, inf) - 1e-8
+        ):
+            self.pruned_energy += 1
+            return
+        if initial:
+            self.queue.append(label)
+        else:
+            super()._insert(label)
 
     def priority(self, label):
         done = label.mask.bit_count()
@@ -112,6 +181,28 @@ class ReducedCostOracle(RouteOracle):
         self.pruned_bound = self.pruned_return = 0
         self.return_energy = network.distances(instance.depot_id)
         self.return_time = network.distances(instance.depot_id, "time") if self.timed else {}
+        self.escape_energy = network.escape_energy(vehicle) if network.nonnegative else {}
+        self.reachable_times = {}
+        if self.timed:
+            ops = instance.operations
+            # Un premio de un cliente que ya no puede alcanzarse antes de su
+            # cierre no pertenece a ninguna continuación. Viaje mínimo y sin
+            # recarga siguen siendo una relajación, incluso con regeneración.
+            for node in network.graph:
+                deadlines = []
+                for customer, bit in self.bits.items():
+                    window = ops.customer_time_windows.get(customer) if ops.use_customer_time_windows else None
+                    latest = min(
+                        window.close_seconds if window else inf,
+                        ops.max_route_seconds - self.return_time.get(customer, inf),
+                    ) - ops.service_duration(customer)
+                    latest -= network.distances(customer, "time").get(node, inf)
+                    deadlines.append((latest, bit))
+                deadlines.sort()
+                masks = [sum(bit for _, bit in deadlines)]
+                for _, bit in deadlines:
+                    masks.append(masks[-1] ^ bit)
+                self.reachable_times[node] = ([t for t, _ in deadlines], masks)
         self.mask_cost = {}
         initial = self.queue.popleft()
         self.queue = LabelQueue(self.lower_bound)
@@ -121,15 +212,21 @@ class ReducedCostOracle(RouteOracle):
         node, params = label.walk[-1], self.instance.parameters
         if node not in self.return_energy:
             return inf
-        if label.mask not in self.mask_cost:
+        reachable = (1 << len(self.rewards)) - 1
+        if self.timed:
+            times, masks = self.reachable_times[node]
+            reachable = masks[bisect_left(times, float(label.resources.points[:, 1].min()) - 1e-8)]
+        key = label.mask, reachable
+        if key not in self.mask_cost:
             reward = sum(value if label.mask & (1 << i) else max(0, value)
+                         if reachable & (1 << i) else 0
                          for i, value in enumerate(self.rewards))
             reward += sum(
-                value * ((subset.bit_count() // 2) if value > 0
+                value * (((subset & (reachable | label.mask)).bit_count() // 2) if value > 0
                          else ((label.mask & subset).bit_count() // 2))
                 for subset, value in self.cuts
             )
-            self.mask_cost[label.mask] = -self.convex_dual - reward
+            self.mask_cost[key] = -self.convex_dual - reward
         energy = 0.0
         if self.energy_weight:
             points = label.resources.points
@@ -141,7 +238,7 @@ class ReducedCostOracle(RouteOracle):
                 # Q no disminuye y b_final <= B, incluso en ciclos regenerativos.
                 energy = (params.initial_energy_kwh + float(points[:, 2].min())
                           - params.battery_capacity_kwh)
-        bound = self.mask_cost[label.mask] + self.energy_weight * energy
+        bound = self.mask_cost[key] + self.energy_weight * energy
         # Margen conservador SOLO de cota numérica; no relaja la física.
         scale = 1 + abs(energy) + abs(self.convex_dual) + sum(abs(self.rewards))
         scale += sum(abs(value) * subset.bit_count() for subset, value in self.cuts)
@@ -152,6 +249,12 @@ class ReducedCostOracle(RouteOracle):
         if self.timed and (
             label.resources.points[:, 1].min() + self.return_time.get(node, inf)
             > self.instance.operations.max_route_seconds + 1e-9
+        ):
+            self.pruned_return += 1
+            return
+        if self.escape_energy and (
+            float(label.resources.points[:, 0].max()) - self.instance.parameters.reserve_kwh
+            < self.escape_energy.get(node, inf) - 1e-8
         ):
             self.pruned_return += 1
             return

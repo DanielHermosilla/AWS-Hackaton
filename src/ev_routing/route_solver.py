@@ -118,6 +118,13 @@ def _phase(name, best, bound, termination, seconds, *, valid_bound=True, message
         float(len(best.served_visit_ids)) if name == "deliveries" else best.net_energy_kwh
     )
     bound = bound if valid_bound else None
+    if value is not None and bound is not None and (
+        (name == "energy" and bound > value + 1e-7)
+        or (name == "deliveries" and bound < value - 1e-7)
+    ):
+        bound = None
+        termination = "inconsistent_bound"
+        message = "Cota incompatible con el incumbente validado; se conserva la solución sin certificado."
     proven = value is not None and bound is not None and abs(value - bound) <= 1e-7
     gap = None if value is None or bound is None else abs(value - bound)
     return PhaseResult(
@@ -609,16 +616,26 @@ def solve_routes(instance, config: SolverConfig, search_config=None, *, initial_
         ["initial_routes", "local_search", "stage_allocation", "route_cuts",
          "pricing", "branching", "heuristics", "scip_parameters"],
     }
+    construction = HybridRoutes(instance) if witness is None else None
     controller = LLMHead(
         search_config, profile, deadline, config.time_limit_seconds, policy_provider,
         instance=instance,
     )
+    if construction is not None and not construction.fast.supported:
+        controller.unsupported_settings.update({
+            "local_search", "local_search_passes", "ruin_rounds",
+        })
     policy = controller.decide("before_search", {"phase": "planning"})
     phases, stats = [], []
     heuristic_trace = []
     relaxation = None
     heuristic_incumbent = witness
     first_full_seconds = monotonic() - started if best and len(best.served_visit_ids) == len(instance.customer_ids) else None
+    def record_full_service():
+        nonlocal first_full_seconds
+        if first_full_seconds is None and best and len(best.served_visit_ids) == len(instance.customer_ids):
+            first_full_seconds = monotonic() - started
+
     if witness is not None:
         phases.append(_phase(
             "deliveries", best, float(len(instance.customer_ids)), "witness_and_cardinality_bound",
@@ -630,15 +647,24 @@ def solve_routes(instance, config: SolverConfig, search_config=None, *, initial_
         phases.append(phase)
         stats.append(stat)
     else:
-        construction = HybridRoutes(instance)
-        construction.observer = lambda event, state: controller.decide(
-            event, {"phase": controller.current_phase, **state},
-        )
+        construction.policy = policy
+        construction.evaluation_seconds = policy.resource_repair_seconds
+        def observe_construction(event, state):
+            nonlocal first_full_seconds
+            if (event == "heuristic_incumbent" and first_full_seconds is None
+                    and state.get("deliveries") == len(instance.customer_ids)):
+                first_full_seconds = monotonic() - started
+            return controller.decide(event, {"phase": controller.current_phase, **state})
+        construction.observer = observe_construction
         construction.pool_limit = policy.pricing_pool_limit
         seed_started = monotonic()
         seed_deadline = min(deadline, seed_started + config.time_limit_seconds*policy.seed_time_fraction)
+        controller.locked_settings.update({
+            "seed_strategy", "seed_starts", "seed_time_fraction",
+        })
         seed = construction.seed(policy.seed_strategy, policy.seed_starts, seed_deadline, config.seed)
         if policy.seed_charging and monotonic() < seed_deadline:
+            controller.locked_settings.update({"seed_charging", "charging_seed_starts"})
             charged = construction.charging_seed(policy.charging_seed_starts, seed_deadline)
             if charged is not None and (seed is None or (
                 len(charged.served_visit_ids), -charged.net_energy_kwh
@@ -648,8 +674,7 @@ def solve_routes(instance, config: SolverConfig, search_config=None, *, initial_
             len(seed.served_visit_ids), -seed.net_energy_kwh
         ) > (len(best.served_visit_ids), -best.net_energy_kwh)):
             best = heuristic_incumbent = seed
-        if best and len(best.served_visit_ids) == len(instance.customer_ids):
-            first_full_seconds = monotonic() - started
+        record_full_service()
         policy = controller.decide("after_seed", {
             "phase": "planning", "deliveries": len(best.served_visit_ids) if best else 0,
             "energy_kwh": best.net_energy_kwh if best else None,
@@ -664,6 +689,8 @@ def solve_routes(instance, config: SolverConfig, search_config=None, *, initial_
         improved = construction.improve(best, policy, improvement_deadline, config.seed)
         if improved is not best:
             best = heuristic_incumbent = improved
+        record_full_service()
+        controller.locked_settings.add("share_vehicle_oracles")
         oracles, shared = {}, {}
         for vehicle in instance.vehicle_ids:
             key = tuple(sorted(instance.chargers_for(vehicle))) if policy.share_vehicle_oracles else vehicle
@@ -687,16 +714,20 @@ def solve_routes(instance, config: SolverConfig, search_config=None, *, initial_
             phase_started = monotonic()
             phase_deadline = (monotonic() + policy.deliveries_time_fraction * max(0, deadline - monotonic())
                               if name == "deliveries" else deadline)
+            if name == "deliveries":
+                controller.locked_settings.add("deliveries_time_fraction")
             bound = float(len(instance.customer_ids)) if name == "deliveries" else (
                 0.0 if all(arc_energy(a, instance.operations) >= 0 for a in instance.arcs)
                 else len(instance.vehicle_ids)*(instance.parameters.initial_energy_kwh-instance.parameters.battery_capacity_kwh)
             )
             if name == "energy":
+                controller.locked_settings.update({"bound_strategy", "bound_time_fraction"})
                 relaxation = energy_relaxation(
                     instance, config, policy,
                     min(phase_deadline, monotonic()+config.time_limit_seconds*policy.bound_time_fraction),
                     complete_service=len(best.served_visit_ids) == len(instance.customer_ids),
                 )
+                controller.finished_stages.add("bound_relaxation")
                 if relaxation["applicable"]:
                     bound = max(bound, relaxation["bound_kwh"])
                 if relaxation.get("tour") is not None:
@@ -704,12 +735,14 @@ def solve_routes(instance, config: SolverConfig, search_config=None, *, initial_
                     candidates = [
                         construction.split_tour(relaxation["tour"], repair_deadline),
                     ]
-                    if policy.seed_charging:
+                    if policy.seed_charging and construction.fast.supported:
                         candidates.append(construction.charging_seed(
                             1, repair_deadline, tours=[relaxation["tour"]],
                         ))
                     for candidate in candidates:
-                        if candidate is not None and candidate.net_energy_kwh < best.net_energy_kwh:
+                        if (candidate is not None
+                                and len(candidate.served_visit_ids) == len(best.served_visit_ids)
+                                and candidate.net_energy_kwh < best.net_energy_kwh):
                             best = heuristic_incumbent = candidate
             epoch, termination, message = 0, "budget_exhausted", ""
             while monotonic() < phase_deadline:
@@ -731,6 +764,10 @@ def solve_routes(instance, config: SolverConfig, search_config=None, *, initial_
                         controller=controller,
                     )
                     stats.append(pool_stat)
+                    record_full_service()
+                    if name == "deliveries" and first_full_seconds is not None:
+                        termination = "witness_and_cardinality_bound"
+                        break
                     if name == "energy" and _energy_gap_reached(best, bound, config.energy_relative_gap):
                         termination = "energy_gap_limit"
                         break
@@ -743,6 +780,7 @@ def solve_routes(instance, config: SolverConfig, search_config=None, *, initial_
                     controller=controller,
                 )
                 stats.append(stat)
+                record_full_service()
                 if phase.best_bound is not None:
                     bound = min(bound, phase.best_bound) if name == "deliveries" else max(bound, phase.best_bound)
                 termination, message = phase.termination_condition, phase.message
@@ -762,14 +800,41 @@ def solve_routes(instance, config: SolverConfig, search_config=None, *, initial_
                         "exact_pricing_seconds": stat["exact_pricing_seconds"],
                         "heuristic_pricing_seconds": stat["heuristic_pricing_seconds"],
                         "labels_expanded": stat["labels_expanded"],
+                        "dual_pricing_labels": stat["dual_pricing_labels"],
+                        "exact_dual_queries": stat["exact_dual_queries"],
+                        "completed_dual_queries": stat["completed_dual_queries"],
+                        "completion_bound_prunes": stat["completion_bound_prunes"],
+                        "return_time_prunes": stat["return_time_prunes"],
                         "pricing_interrupted": stat["pricing_interrupted"],
+                        "hybrid_search": construction.telemetry(),
+                        "first_full_delivery_seconds": first_full_seconds,
                     })
                 improved = construction.improve(
                     best, policy, min(phase_deadline, monotonic()+policy.epoch_seconds*policy.improvement_time_fraction),
                     config.seed+epoch,
                 )
                 if improved is not best:
+                    if (name == "energy" and improved is not None and best is not None
+                            and len(improved.served_visit_ids) > len(best.served_visit_ids)):
+                        # Cambió el cumplimiento condicionado: las cotas de la
+                        # fase energética anterior ya no certifican este problema.
+                        bound = (
+                            0.0 if all(arc_energy(a, instance.operations) >= 0 for a in instance.arcs)
+                            else len(instance.vehicle_ids) * (
+                                instance.parameters.initial_energy_kwh
+                                - instance.parameters.battery_capacity_kwh
+                            )
+                        )
+                        if relaxation is not None:
+                            relaxation = {**relaxation, "applicable": False,
+                                          "invalidated_by": "increased_deliveries"}
+                        phases[0] = _phase(
+                            "deliveries", improved, float(len(instance.customer_ids)),
+                            "coverage_improved_during_energy", phases[0].runtime_seconds,
+                            message="Una heurística posterior aumentó el cumplimiento; cota cardinal.",
+                        )
                     best = heuristic_incumbent = improved
+                record_full_service()
                 if name == "deliveries" and best and len(best.served_visit_ids) == len(instance.customer_ids):
                     first_full_seconds = first_full_seconds or monotonic()-started
                     termination = "witness_and_cardinality_bound"

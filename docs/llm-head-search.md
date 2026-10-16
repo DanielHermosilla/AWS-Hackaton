@@ -38,9 +38,14 @@ Esta simplificación solo pertenece a la relajación, nunca a la física.
 ## Motor implementado
 
 1. **Construcción y reparación física.** La inserción directa rápida permanece
-   para el caso simple. Con recursos, `SequenceOracle` fija el orden de entregas,
-   pero elige caminos y recargas sobre el multigrafo. Su presupuesto es heurístico;
-   un timeout nunca se memoriza como infactibilidad.
+   para el caso simple. Con ventanas, se insertan primero los clientes con cierre
+   próximo, considerando todos los vehículos. `FixedPathRepair` prueba caminos
+   candidatos y ajusta recargas continuas mediante un LP pequeño. Si falla,
+   `SequenceOracle` fija el orden de entregas, pero elige caminos y recargas sobre
+   el multigrafo completo. Sus presupuestos son heurísticos; un timeout nunca se
+   memoriza como infactibilidad. Antes de destruir rutas se intenta completar
+   el incumbente. Los presupuestos iniciales predeterminados son 15 % para
+   construcción y 20 % para mejora; se respetan las opciones explícitas.
 2. **ALNS.** Destrucción aleatoria, relacionada, por desvío o por ruta; reparación
    greedy/regret, selección adaptativa de operadores y aceptación diversificada.
 3. **Búsqueda memética eléctrica.** Población de soluciones factibles, cruce de
@@ -65,6 +70,13 @@ conservador. Los duales de subset-row se acotan según su signo. No encontrar
 columnas heurísticas no prueba nada; agotar la consulta exacta sí tiene alcance
 de pricing completo para ese dual. Al interrumpirla se descarta la cota nativa
 del maestro restringido.
+
+Las cotas de completación también excluyen premios duales de clientes cuyo
+cierre ya es inalcanzable, usando tiempos mínimos sin recarga. Con energía no
+negativa se descartan etiquetas sin batería para alcanzar ninguna recarga
+compatible ni el depósito. Son condiciones necesarias; no fijan un camino ni
+recortan etiquetas por cantidad. La reparación LP solo explora una parte del
+espacio físico y produce incumbentes: nunca proporciona una cota del maestro.
 
 No se implementa todavía pricing bidireccional ni ng-routes. No se reemplaza el
 oráculo de poliedros continuos por una aproximación de recargas. El LLM no
@@ -122,6 +134,18 @@ afecta directamente los adaptadores; se registran revisiones observadas,
 cambios efectivos, campos de etapas terminadas y cambios nativos ejecutados.
 Una propuesta recibida pero sin campos efectivos no demuestra mejora.
 `decisions_changing_algorithm` excluye respuestas que solo cambian `rationale`.
+
+Los campos consumidos quedan bloqueados aunque su etapa siga en curso; una
+respuesta tardía no cambia retroactivamente el presupuesto del arranque.
+La solicitud indica `finished_stages` y `locked_policy_fields`. Con dos
+consultas, tras una primera respuesta aplicada se reserva la última para
+`search_stagnation`. Ese evento incluye etiquetas del pricing por dual,
+consultas completadas, descartes, reparaciones y tiempo hasta servicio completo.
+No se promete una segunda consulta si el solver termina o no queda presupuesto.
+`unsupported_policy_fields` identifica controles de adaptadores no disponibles
+para esa instancia. Por ejemplo, `local_search_passes` y `ruin_rounds` pertenecen
+a la inserción heredada; el motor con recursos usa sus controles ALNS. Cambiar
+aquellos campos no cuenta como acción efectiva en ese motor.
 
 Los límites incluyen llamadas, tokens de salida, bytes de entrada, intervalo,
 timeout y fracción del presupuesto global. El vencimiento de una decisión se
