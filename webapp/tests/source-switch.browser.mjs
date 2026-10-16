@@ -81,8 +81,8 @@ async function run(name, check) {
     },
     async open() {
       await page.goto(origin);
-      await page.locator('#scenario-counts').filter({hasText: '1 clientes · 0 cargadores'}).waitFor();
       await page.locator('#open-run').click();
+      await page.locator('#input-summary').filter({hasText: 'Initial map'}).waitFor();
     },
     async synthetic() {
       await page.locator('.run-synthetic summary').click();
@@ -142,8 +142,8 @@ await run('abandoned-autoload-submit', async ({page, context, requests, observat
   });
   await context.route('**/history/upload', route => reply(route, {profile}));
   await page.goto(origin);
-  await page.locator('#scenario-message').filter({hasText: 'SCENARIO FAILURE 1'}).waitFor();
   await page.locator('#open-run').click();
+  await page.locator('#run-message').filter({hasText: 'SCENARIO FAILURE 1'}).waitFor();
   await page.locator('#history-file').setInputFiles({name: 'EV.csv', mimeType: 'text/csv', buffer: Buffer.from('VehId,Trip\n1,1')});
   await page.locator('#run-message').filter({hasText: 'SCENARIO FAILURE 2'}).waitFor();
   await page.locator('#solve-run').click(); await hit.promise;
