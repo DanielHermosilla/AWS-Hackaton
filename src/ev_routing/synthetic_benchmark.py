@@ -235,6 +235,9 @@ def select_fixed(rows, cases, source_hash):
         by_mode[row["policy"]].append(row)
     if not by_mode or any(r["returncode"] != 0 for r in rows):
         raise ValueError("El piloto tiene errores de ejecución; no se congela un ganador.")
+    if any(r["full_service"] and r["first_full_delivery_solver_seconds"] is None for r in rows):
+        raise ValueError("Falta el tiempo de servicio completo; no se congela una política "
+                         "con telemetría incompleta.")
     scores = {}
     for mode, values in by_mode.items():
         scores[mode] = (
@@ -291,6 +294,9 @@ def comparisons(rows):
             interval = [samples[49], samples[1949]]
         times = [r["first_full_delivery_solver_seconds"] for r in values
                  if r["first_full_delivery_solver_seconds"] is not None]
+        missing_times = sum(
+            r["full_service"] and r["first_full_delivery_solver_seconds"] is None for r in values
+        )
         energy_pairs = [(a, b) for a, b in matched if
                         a["feasible"] and b["feasible"] and a["deliveries"] == b["deliveries"]]
         result["modes"][mode] = {
@@ -303,7 +309,8 @@ def comparisons(rows):
             "execution_failures": sum(r["returncode"] != 0 for r in values),
             "mean_delivery_fraction": mean((r["deliveries"] or 0) / r["customers"] for r in values),
             "median_full_seconds_when_reached": median(times) if times else None,
-            "full_service_par2_mean_solver_seconds": mean(
+            "full_service_runs_missing_time": missing_times,
+            "full_service_par2_mean_solver_seconds": None if missing_times else mean(
                 r["first_full_delivery_solver_seconds"] if r["first_full_within_solver_budget"]
                 else 2 * r["budget_seconds"] for r in values
             ),

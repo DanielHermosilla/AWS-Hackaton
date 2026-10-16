@@ -10,6 +10,7 @@ from time import monotonic
 from ev_routing.route_heuristics import InsertionRoutes
 from ev_routing.route_pricing import PricingNetwork, SequenceOracle
 from ev_routing.route_resources import assemble_solution
+from ev_routing.route_schedule import FixedPathRepair
 from ev_routing.validation import validate_solution
 
 
@@ -29,6 +30,7 @@ class HybridRoutes:
 
     def __init__(self, instance):
         self.instance, self.network = instance, PricingNetwork(instance)
+        self.fixed_paths = FixedPathRepair(instance, self.network)
         self.fast = InsertionRoutes(instance)
         self.fast.supported &= not any(
             a.battery_profile is not None or a.arc_id is not None for a in instance.arcs
@@ -60,6 +62,32 @@ class HybridRoutes:
         self.fast.pool_limit = self.pool_limit
         self.fast.remember(route)
 
+    def _record(self, event, solution, **details):
+        state = {"event": event, "deliveries": len(solution.served_visit_ids),
+                 "energy_kwh": solution.net_energy_kwh, **details}
+        self.trace.append(state)
+        if self.observer is not None:
+            self.observer("heuristic_incumbent", state)
+
+    def _insert_remaining(self, orders, pending, deadline):
+        """Completar primero el incumbente; no destruirlo por acabar el arranque."""
+        pending = set(pending)
+        ops = self.instance.operations
+        windows = ops.customer_time_windows if ops.use_customer_time_windows else {}
+        while pending and monotonic() < deadline:
+            customer = min(pending, key=lambda node: (
+                windows[node].close_seconds if node in windows else inf,
+                min(self.network.distances(node).get(old, inf)
+                    for order in orders for old in [self.instance.depot_id, *order]),
+                node,
+            ))
+            options = self._options(orders, customer, deadline)
+            if options:
+                _, k, pos = options[0]
+                orders[k].insert(pos, customer)
+            pending.remove(customer)
+        return orders
+
     def evaluate(self, vehicle, order, deadline):
         path_order = self.policy.resource_path_order if self.policy else "energy"
         key = vehicle, tuple(order), path_order
@@ -68,12 +96,21 @@ class HybridRoutes:
             return self.cache[key]
         if len(set(order)) != len(order) or monotonic() >= deadline:
             return None
+        if not self.network.sequence_time_possible(order):
+            self.stats["sequence_time_rejections"] += 1
+            return None
         started = monotonic()
         route = None
         if self.fast.supported:
             walk = [self.instance.depot_id, *order, self.instance.depot_id]
             if self.fast.cost(walk) <= self.fast.usable:
                 route = self.fast.route(vehicle, walk)
+        if route is None:
+            route = self.fixed_paths.route(
+                vehicle, order, min(deadline, started + self.evaluation_seconds * .5),
+                path_order=path_order,
+            )
+            self.stats["fixed_path_successes"] += int(route is not None)
         if route is None:
             oracle = SequenceOracle(self.instance, vehicle, order, self.network, path_order=path_order)
             stop = min(deadline, started + self.evaluation_seconds)
@@ -83,6 +120,10 @@ class HybridRoutes:
                     route = found[oracle.target_mask]
                     break
             self.stats["repair_labels"] += oracle.expanded
+            self.stats["repair_time_prunes"] += oracle.pruned_time
+            self.stats["repair_energy_prunes"] += oracle.pruned_energy
+            self.stats["repair_timeouts"] += int(route is None and not oracle.complete)
+            self.stats["repair_infeasible_sequences"] += int(route is None and oracle.complete)
         self.stats["route_evaluations"] += 1
         self.stats["route_evaluation_seconds"] += monotonic() - started
         if route is not None:
@@ -175,9 +216,23 @@ class HybridRoutes:
         for attempt in range(starts):
             if monotonic() >= deadline:
                 break
+            self._observe()
             orders = [[] for _ in self.instance.vehicle_ids]
             pending = list(self.instance.customer_ids)
             rng.shuffle(pending)
+            if self.instance.operations.use_customer_time_windows and attempt % 2 == 0:
+                # Asignar primero plazos próximos a TODA la flota. El antiguo
+                # vecino más cercano llenaba ambas rutas de clientes flexibles
+                # y dejaba para el final entregas cuyo cierre ya había pasado.
+                self._insert_remaining(orders, pending, deadline)
+                candidate = self.solution(orders, deadline)
+                if quality(candidate) > quality(best):
+                    best = candidate
+                    self._survive(best, 12)
+                    self._record("window_insertion_seed", best)
+                if best is not None and len(best.served_visit_ids) == len(self.instance.customer_ids):
+                    break
+                continue
             # Construcción por extensiones para no gastar todo el arranque en
             # evaluar n^3 inserciones con recursos.
             while pending and monotonic() < deadline:
@@ -188,6 +243,7 @@ class HybridRoutes:
                     if attempt and len(ranked) > 2:
                         ranked[:3] = rng.sample(ranked[:3], 3)
                     for customer in ranked:
+                        self._observe()
                         route = self.evaluate(self.instance.vehicle_ids[k], order + [customer], deadline)
                         if route is not None:
                             order.append(customer)
@@ -202,13 +258,23 @@ class HybridRoutes:
             if quality(candidate) > quality(best):
                 best = candidate
                 self._survive(best, 12)
-                self.trace.append({"event": "resource_seed", "deliveries": quality(best)[0],
-                                   "energy_kwh": best.net_energy_kwh})
+                self._record("resource_seed", best)
+            if best is not None and len(best.served_visit_ids) == len(self.instance.customer_ids):
+                break
         return best
 
     def charging_seed(self, starts, deadline, tours=None):
         if self.fast.supported:
             return self.fast.charging_seed(starts, deadline, tours=tours)
+        if tours is not None:
+            best = None
+            for tour in tours[:starts]:
+                candidate = self.split_tour(tour, deadline)
+                if quality(candidate) > quality(best):
+                    best = candidate
+                if monotonic() >= deadline:
+                    break
+            return best
         return self.seed("regret_insertion", starts, deadline)
 
     def split_tour(self, tour, deadline):
@@ -219,14 +285,31 @@ class HybridRoutes:
         self.evaluation_seconds = min(1.0, max(old, deadline-monotonic()))
         best = None
         try:
-            for k in range(len(self.instance.vehicle_ids)):
-                orders = [[] for _ in self.instance.vehicle_ids]
-                orders[k] = customers
-                candidate = self.solution(orders, deadline)
-                if quality(candidate) > quality(best):
-                    best = candidate
-                if monotonic() >= deadline:
+            # Partir el orden entre vehículos. La versión anterior intentaba
+            # ponerlo entero en uno solo, aunque la jornada exigiera repartirlo.
+            states = {0: (0.0, [])}
+            fleet = self.instance.vehicle_ids
+            for k, vehicle in enumerate(fleet):
+                following = {}
+                for start, (energy, routes) in states.items():
+                    ends = ([len(customers)] if k == len(fleet)-1
+                            else range(start, len(customers)+1))
+                    for end in ends:
+                        if monotonic() >= deadline:
+                            break
+                        route = self.evaluate(vehicle, customers[start:end], deadline)
+                        if route is None:
+                            continue
+                        value = energy + route.net_energy_kwh
+                        if end not in following or value < following[end][0]:
+                            following[end] = (value, [*routes, route])
+                states = following
+                if not states:
                     break
+            if len(customers) in states and len(states[len(customers)][1]) == len(fleet):
+                candidate = assemble_solution(self.instance, states[len(customers)][1])
+                if validate_solution(self.instance, candidate, enforce_movement_limit=False).feasible:
+                    best = candidate
             return best
         finally:
             self.evaluation_seconds = old
@@ -288,6 +371,14 @@ class HybridRoutes:
         if self.fast.supported:
             legacy_deadline = min(deadline, monotonic() + max(0, deadline-monotonic())*.25)
             best = self.fast.improve(best, policy, legacy_deadline, seed)
+        if len(best.served_visit_ids) < len(self.instance.customer_ids):
+            orders = sequences(best)
+            pending = set(self.instance.customer_ids) - set(best.served_visit_ids)
+            self._insert_remaining(orders, pending, deadline)
+            candidate = self.solution(orders, deadline)
+            if quality(candidate) > quality(best):
+                best = candidate
+                self._record("completion_insertion", best)
         self._survive(best, policy.population_size)
         current, rng = best, Random(seed)
         for iteration in range(policy.alns_iterations):
@@ -329,8 +420,7 @@ class HybridRoutes:
                 if quality(candidate) > quality(best):
                     best = candidate
                     self.operator_scores[operator] += 10
-                    self.trace.append({"event": "hybrid_improvement", "operator": operator,
-                                       "deliveries": quality(best)[0], "energy_kwh": best.net_energy_kwh})
+                    self._record("hybrid_improvement", best, operator=operator)
         return best
 
     def price(self, vehicle, prizes, cuts, energy_weight, starts, deadline):

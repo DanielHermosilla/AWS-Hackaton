@@ -29,6 +29,7 @@ Pyomo/Gurobi/SCIP y GCG posicional se conservan como referencias explícitas.
 | `src/ev_routing/route_callbacks.py` | Eventos, branching, selección de nodos, separación compatible y sub-SCIP primal. |
 | `src/ev_routing/route_pricing.py` | Potenciales del multigrafo, reparación física y cotas de completación por dual. |
 | `src/ev_routing/route_hybrid.py` | ALNS, población memética, recombinación y reparación sobre nodos de pricing. |
+| `src/ev_routing/route_schedule.py` | Reparación primal mediante LP de recargas y horarios sobre caminos candidatos; validación física y fallback al oráculo general. |
 | `src/ev_routing/route_orchestrator.py` | Referencia anterior de decisiones Bedrock entre etapas. |
 | `src/ev_routing/route_heuristics.py` | Inserción, búsqueda local, ruin/repair, recarga parcial, partición y pricing heurístico. |
 | `src/ev_routing/route_relaxation.py` | Cotas inferiores de asignación y tour sin recursos; no sustituye el maestro físico. |
@@ -66,6 +67,7 @@ Pyomo/Gurobi/SCIP y GCG posicional se conservan como referencias explícitas.
 | `docs/webapp-integration.md` | Gap energético 0,5 %, GPT-5.6 Luna probado en AWS, API Python y cambios para el futuro merge con webapp. |
 | `docs/performance-orchestrator.md` | Comparación medida, acceso real a modelos Bedrock, hashes y límites de la evidencia. |
 | `docs/benchmark-llm.md` | Comandos, familias sintéticas, métricas y controles de la evaluación del LLM. |
+| `docs/solver-repair.md` | Diagnóstico del incumplimiento, correcciones lexicográficas y mediciones entre versiones del solver. |
 | `docs/llm4mip-adaptation.md` | Material reutilizado, cambios, licencia y alcance. |
 | `docs/contracts.md` | Campos de entrada/salida y sus límites. |
 | `docs/validation.md` | Pruebas ejecutadas, resultados y límites de los ensayos. |

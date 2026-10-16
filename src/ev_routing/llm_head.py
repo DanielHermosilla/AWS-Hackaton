@@ -118,6 +118,9 @@ class LLMHead:
         self.abandoned = []
         self.last_request = -float("inf")
         self.revision, self.events, self.current_phase = 0, {}, "planning"
+        self.finished_stages = set()
+        self.locked_settings = set()
+        self.unsupported_settings = set()
         self.context = (instance_context(instance, config.instance_context_bytes, config.log_directory)
                         if instance is not None and config.policy == "adaptive" else {})
         self.customer_ids = set(instance.customer_ids) if instance is not None else set()
@@ -254,14 +257,16 @@ class LLMHead:
                     proposal.scip_parameters,
                     bool(self.profile.get("single_tour_certificate", {}).get("applicable")),
                 )
-                inactive = set()
-                if self.current_phase != "planning":
+                inactive = self.locked_settings | self.unsupported_settings
+                if "seeding" in self.finished_stages or self.current_phase != "planning":
                     inactive |= {"seed_strategy", "seed_starts", "seed_charging", "seed_time_fraction",
                                  "charging_seed_starts", "share_vehicle_oracles"}
                 if self.current_phase == "energy":
-                    inactive |= {"deliveries_time_fraction", "bound_strategy", "bound_time_fraction"}
+                    inactive |= {"deliveries_time_fraction"}
                     if not self.profile.get("single_tour_certificate", {}).get("applicable"):
                         inactive |= {"presolve", "separation", "subtour_batch_size"}
+                if "bound_relaxation" in self.finished_stages:
+                    inactive |= {"bound_strategy", "bound_time_fraction"}
                 changes = {}
                 for name, value in proposal.model_dump().items():
                     if name not in inactive and value != before[name]:
@@ -284,6 +289,8 @@ class LLMHead:
 
     def decide(self, event, state):
         self.current_phase = state.get("phase", self.current_phase)
+        if event == "after_seed" or self.current_phase != "planning":
+            self.finished_stages.add("seeding")
         self.events[event] = self.events.get(event, 0) + 1
         self.collect()
         if self.config.local_rule_control:
@@ -293,6 +300,14 @@ class LLMHead:
             or self.calls >= self.config.max_llm_calls
             or (event not in {"before_search", "after_seed"}
                 and now - self.last_request < self.config.decision_interval_seconds)):
+            return self.policy
+        # Con dos consultas, conservar una para observar pricing real. No
+        # consumirla en otro callback inmediato de la preparación o de la raíz.
+        if (self.config.max_llm_calls > 1 and self.calls == self.config.max_llm_calls - 1
+                and any(r["status"] == "applied" for r in self.records)
+                and event != "search_stagnation"):
+            if not any(r["reason"] == "reserved_for_search_feedback" for r in self.skipped):
+                self.skipped.append({"event": event, "reason": "reserved_for_search_feedback"})
             return self.policy
         available = min(self.deadline - now - .1, self.budget - self.runtime)
         if available < .25:
@@ -323,10 +338,9 @@ class LLMHead:
             "native_scip_catalog": {**catalog, "parameters_and_defaults": concise},
             "remaining_wall_seconds": max(0, self.deadline-now),
             "remaining_calls": self.config.max_llm_calls-self.calls,
-            "finished_stages": (
-                [] if self.current_phase == "planning" else
-                ["seeding", "bound_relaxation"] if self.current_phase == "energy" else ["seeding"]
-            ),
+            "finished_stages": sorted(self.finished_stages),
+            "locked_policy_fields": sorted(self.locked_settings),
+            "unsupported_policy_fields": sorted(self.unsupported_settings),
             "recent_decisions": [{k: r.get(k) for k in ("event", "status", "effective_changes")}
                                  for r in self.records[-2:]],
         }
@@ -435,9 +449,12 @@ class LLMHead:
                 or any(not future.done() for future, _ in self.abandoned)
             ),
             "events": self.events, "revision": self.revision,
+            "finished_stages": sorted(self.finished_stages),
+            "locked_policy_fields": sorted(self.locked_settings),
+            "unsupported_policy_fields": sorted(self.unsupported_settings),
             "callback_calls": sum(value for name, value in self.events.items()
                                   if name not in {"before_search", "after_seed", "search_stagnation",
-                                                  "heuristic_progress"}),
+                                                  "heuristic_progress", "heuristic_incumbent"}),
             "policy": self.policy.model_dump(), "skipped": self.skipped,
             "instance_scope": self.context.get("scope"), "model_id": self.config.bedrock.model_id,
             "local_policy_mode": (

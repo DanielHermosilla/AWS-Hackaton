@@ -173,6 +173,16 @@ el grafo completo localmente.
 `first_full_delivery_solver_seconds` es la primera observación del motor de una
 solución completa. No reconstruye eventos dentro de una operación indivisible.
 Se informa por separado si ocurrió dentro del presupuesto.
+Se registra tanto en construcción como al recuperar soluciones de SCIP, antes
+de cualquier salida anticipada. Si una corrida completa carece de ese dato,
+el piloto rechaza la selección y la comparación informa
+`full_service_runs_missing_time`; su PAR2 queda sin calcular. No se convierte
+un éxito sin reloj en un fracaso.
+
+El [informe de reparación del solver](solver-repair.md) contiene el diagnóstico
+de la primera corrida y una comparación entre versiones. Después de actualizar
+el código, use carpetas nuevas y repita el piloto: las políticas congeladas
+incluyen el hash del código y no son transferibles silenciosamente.
 
 `process_wall_seconds` incluye arranque del proceso, lectura, solver,
 coordinación/inferencia, validación y escritura. La inferencia puede solaparse

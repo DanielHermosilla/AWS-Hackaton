@@ -221,7 +221,7 @@ def test_invalid_head_action_keeps_last_valid_policy():
     head = LLMHead(config, {}, monotonic()+5, 5,
                    lambda _: {"policy": next(replies)}, instance=pairs())
     for _ in range(3):
-        head.decide("tree_node", {"phase": "energy"})
+        head.decide("search_stagnation", {"phase": "energy"})
         if head.pending:
             head.pending.result(timeout=1)
             head.collect()

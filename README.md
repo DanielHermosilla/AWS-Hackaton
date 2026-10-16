@@ -258,6 +258,9 @@ elige una política fija sin AWS; `compare` la enfrenta a la configuración
 estándar, reglas locales y el LLM en instancias distintas. Ambos requieren
 `--output-dir`; `compare` toma además `--fixed-policy` del piloto. La guía incluye
 un ensayo corto, límites de llamadas, logs y reanudación.
+El [diagnóstico y la reparación del solver](docs/solver-repair.md) explican los
+cambios de construcción, pricing y conservación de entregas, con mediciones
+entre versiones.
 
 ### Ensayo visible con clientes y 60 estaciones
 

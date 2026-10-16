@@ -38,7 +38,7 @@ def test_two_real_decision_stages_change_executed_native_parameters():
     instance = pairs()
     original = instance.model_dump_json()
     result = solve_routes(instance, SolverConfig(time_limit_seconds=5), SearchConfig(
-        policy="adaptive", max_llm_calls=2,
+        policy="adaptive", max_llm_calls=3,
         bedrock={"model_id": "double", "timeout_seconds": .01},
     ), policy_provider=provider)
     assert [r["event"] for r in calls] == ["before_search", "after_seed"]
