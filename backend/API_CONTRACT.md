@@ -350,7 +350,14 @@ rutas aproximadas y archivos fuera del directorio estático permitido.
 
 `GET /health` informa versión 3.0, revisión base del proveedor, `provider_available`
 y capacidades: preparación vial configurada, políticas y tolerancia energética.
-`GET /solve?run_id=<UUID>` recupera resultados temporales (máximo cuatro y 32 MiB),
+En `capabilities`, el campo existente `historical_upload_max_bytes` indica el
+máximo global de históricos: 4.294.967.296 bytes (4 GiB), admisible para CSV,
+no para todos los formatos. La extensión aditiva
+`historical_upload_max_bytes_by_format` informa
+`{"csv": 4294967296, "json": 268435456}`; los clientes deben usar el límite del
+formato elegido, incluido el máximo JSON de 256 MiB.
+
+`GET /solve?run_id=<UUID>` recupera resultados temporales (máximo cuatro y 256 MiB),
 que expiran por reemplazo o reinicio. No son almacenamiento persistente ni cuentas.
 Abandonar la página no cancela SCIP. Los límites del solver son blandos y los
 sobrecostos pueden exceder el tiempo solicitado.
