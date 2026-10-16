@@ -1,47 +1,54 @@
-import { API_VERSION, createSolverClient, readExecution, saveExecution } from './shared/solver-client.js';
-import { parseInstanceFile, inputNodes, makeSolveRequest, makePrepareRequest, solverSettings, validateNativeInstance, SYNTHETIC_PREPARATION } from './shared/solver-input.js';
+import { API_VERSION, MAX_FILE_BYTES, createSolverClient, readExecution, saveExecution } from './shared/solver-client.js';
+import { parseInstanceFile, inputNodes, inputFormValues, makeSolveRequest, makePrepareRequest, solverSettings, validateNativeInstance, validateInstanceFileHeader, createSyntheticPreparation } from './shared/solver-input.js';
 import { nativeRunResult, resultSections } from './shared/solver-output.js';
 import { createLocationEditor } from './location-editor.js';
 import { readEditableSource, saveEditableSource, readEditableDraft, saveEditableDraft, clearEditableDraft } from './shared/location-draft.js';
 
 export function initRunPanel() {
+  const fileLimitLabel = `${Math.round(MAX_FILE_BYTES / 1024 / 1024)} MB`;
   const strip = document.createElement('section');
   strip.className = 'run-strip';
   strip.setAttribute('aria-label', 'Ejecución del plan');
   strip.innerHTML = `<div class="run-summary"><strong id="run-source">Ejemplo de diseño</strong><span id="run-description">Calcula una instancia con el motor para obtener un plan.</span></div>
-    <div class="run-actions"><button id="open-run" type="button">Cargar y calcular</button><button id="run-download" type="button" hidden>Descargar</button></div>`;
+    <div class="run-actions"><button id="open-run" type="button">Cargar y calcular</button><button id="run-download" type="button" hidden>Ver resultados</button></div>`;
   document.getElementById('app-shell').after(strip);
   const dialog = document.createElement('dialog');
   dialog.id = 'run-dialog';
   dialog.className = 'app-dialog run-dialog';
   dialog.setAttribute('aria-labelledby', 'run-heading');
   dialog.innerHTML = `<div class="dialog-heading"><h2 id="run-heading">Calcular rutas</h2><button id="close-run" type="button" aria-label="Cerrar cálculo">×</button></div>
-    <p>Revisa la instancia y los supuestos antes de ejecutar. El motor se ejecuta en este servidor local.</p>
-    <form id="run-form">
-      <label class="run-file" for="instance-file">Instancia <input id="instance-file" type="file" accept=".csv,.json" aria-describedby="instance-help"></label>
-      <p id="instance-help" class="run-help">CSV de nodos, ProblemInstance nativa o ejecución exportada. Archivos hasta 64 MB; la instancia enviada al motor admite hasta 8 MiB.</p>
-      <button id="use-synthetic" type="button" class="run-text-button">Usar caso sintético pequeño</button>
-      <p id="input-summary" class="input-summary">Ningún archivo seleccionado.</p>
-      <div class="run-location-review"><button id="edit-locations" type="button" disabled>Revisar ubicaciones</button><span id="location-review-help">Carga una entrada para revisar sus puntos.</span></div>
-      <fieldset class="run-fields"><legend>Flota y supuestos</legend>
+    <div class="run-view-switch" id="run-view-switch" hidden aria-label="Vista del cálculo"><button id="show-config" type="button" aria-pressed="true">Preparar cálculo</button><button id="show-results" type="button" aria-pressed="false">Ver resultados</button></div>
+    <p id="run-intro">Elige tus ubicaciones y ajusta los valores de esta ejecución.</p>
+    <form id="run-form" novalidate>
+      <section class="run-input-section" aria-labelledby="instance-heading">
+        <div class="run-section-heading"><h3 id="instance-heading">Instancia</h3><div class="run-format-help"><button id="instance-format" type="button" aria-label="Formato de los archivos de instancia" aria-expanded="false" aria-controls="instance-help">?</button><div id="instance-help" class="run-format-popover" role="note" hidden><strong>¿Qué archivo puedo usar?</strong><p><b>CSV:</b> una fila por lugar. Incluye <code>node_id</code>, <code>node_type</code>, <code>latitude</code> y <code>longitude</code>. Los tipos son <code>base</code>, <code>visit</code> y <code>charger</code>.</p><p><b>JSON:</b> una instancia o ejecución exportada por esta app, con sus parámetros. Máximo ${fileLimitLabel}; la instancia enviada a calcular admite hasta 64 MB. Los históricos de mediciones eVED no son instancias de rutas.</p></div></div></div>
+        <input id="instance-file" class="run-visually-hidden" type="file" accept=".csv,.json" tabindex="-1" aria-label="Archivo de instancia">
+        <div class="run-file-row"><button id="choose-instance" type="button"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9Z"/><path d="M14 3v6h6M12 17v-5m-3 3 3-3 3 3"/></svg>Seleccionar archivo</button><span id="instance-filename">CSV o JSON · hasta ${fileLimitLabel}</span></div>
+        <details class="run-synthetic"><summary>Crear un caso de prueba</summary><p class="run-help">Genera ubicaciones de ejemplo para probar el cálculo por distancia.</p><div class="run-synthetic-fields"><label>Clientes<input id="synthetic-clients" type="number" min="1" max="199" step="1" value="2"></label><label>Cargadores<input id="synthetic-chargers" type="number" min="0" max="198" step="1" value="1"></label><button id="use-synthetic" type="button">Crear caso</button></div></details>
+        <p id="input-summary" class="input-summary" hidden>Ningún archivo seleccionado.</p>
+        <div class="run-location-review" id="location-review" hidden><button id="edit-locations" type="button" disabled>Revisar ubicaciones</button><span id="location-review-help">Carga una entrada para revisar sus puntos.</span></div>
+      </section>
+      <section class="run-card" aria-labelledby="fleet-heading"><h3 id="fleet-heading">Flota y supuestos</h3><div class="run-fields run-fleet-fields">
         <label>Vehículos<input id="run-count" name="num_vehicles" type="number" min="1" max="20" step="1" value="2" required></label>
-        <label>SoC inicial · %<input id="run-soc" name="initial_soc" type="number" min="1" max="100" step="any" value="60" required></label>
+        <label>Batería inicial · %<input id="run-soc" name="initial_soc" type="number" min="1" max="100" step="any" value="60" required></label>
         <label>Capacidad útil · kWh<input id="run-capacity" name="battery_capacity_kwh" type="number" min="0.01" step="any" placeholder="Por confirmar" required></label>
-        <label>Reserva mínima · kWh<input id="run-reserve" name="reserve_kwh" type="number" min="0.001" step="any" placeholder="Supuesto explícito" required></label>
-        <label>Consumo supuesto · kWh/km<input id="run-consumption" name="consumption_kwh_km" type="number" min="0.001" step="any" placeholder="Supuesto explícito" required></label>
-        <label>Presupuesto solver · s<input id="run-seconds" name="time_limit_seconds" type="number" min="1" max="120" step="1" value="120" required></label>
-        <label>Búsqueda<select id="run-policy"><option value="adaptive">GPT rápido · Bedrock</option><option value="standard">Estándar · sin LLM</option><option value="deterministic">Política determinista · sin LLM</option></select></label>
-        <label>Red para CSV<select id="run-network"><option value="road">Calles del servidor</option><option value="haversine">Distancia geodésica · sintética</option></select></label>
-      </fieldset>
+        <label>Reserva mínima · kWh<input id="run-reserve" name="reserve_kwh" type="number" min="0.001" step="any" placeholder="Por confirmar" required></label>
+        <label>Consumo · kWh/km<input id="run-consumption" name="consumption_kwh_km" type="number" min="0.001" step="any" placeholder="Por confirmar" required></label>
+        <label>Red para las ubicaciones<select id="run-network" name="network_mode"><option value="road">Calles del servidor</option><option value="haversine">Distancia · caso sintético</option></select></label>
+      </div>
       <p id="native-note" class="run-help" hidden></p>
-      <p id="fleet-help" class="run-help">El perfil oficial usa 2 Nissan Leaf 2013 al 60 %. Capacidad útil, reserva y consumo son supuestos de esta ejecución.</p>
-      <p id="network-note" class="run-help">El CSV aporta ubicaciones. La red vial debe estar configurada en el servidor. Capacidad, reserva y consumo son supuestos explícitos. La alternativa geodésica es sintética.</p>
-      <p class="run-help">Prioridad: maximizar entregas factibles; luego minimizar energía con tolerancia de 0,5 %. GPT propone estrategias de búsqueda; el motor comprueba la física y las cotas. Las credenciales AWS se configuran en el servidor.</p>
-      <label class="run-ack"><input id="run-ack" type="checkbox" required><span>Revisé estos parámetros y el alcance de la red.</span></label>
+      <p id="fleet-help" class="run-help">El escenario oficial usa 2 vehículos al 60 %. Capacidad, reserva y consumo son supuestos que puedes ajustar.</p>
+      <p id="network-note" class="run-help">El CSV contiene lugares, no calles. Usa la red del servidor para rutas viales; «Distancia» une los puntos para una prueba sintética.</p></section>
+      <section class="run-card" aria-labelledby="engine-heading"><h3 id="engine-heading">Parámetros del motor</h3><div class="run-fields">
+        <label>Presupuesto solver · s<input id="run-seconds" name="time_limit_seconds" type="number" min="1" max="120" step="1" value="120" required></label>
+        <label>Gap de optimalidad · %<input id="run-gap" name="energy_gap_percent" type="number" min="0" max="100" step="any" value="0.5" required aria-describedby="engine-help"></label>
+        <label>Búsqueda<select id="run-policy" name="search_policy"><option value="adaptive">GPT rápido · Bedrock</option><option value="standard">Estándar</option><option value="deterministic">Determinista</option></select></label>
+        <label>Semilla<input id="run-seed" name="random_seed" type="number" min="0" max="2000000000" step="1" value="0" required></label>
+      </div><p id="engine-help" class="run-help">Primero se buscan más entregas; después, menor consumo. El gap permite un pequeño margen en la energía. La semilla permite repetir la búsqueda.</p></section>
       <p id="run-message" class="run-message" role="status" aria-live="polite" tabindex="-1"></p>
-      <div class="dialog-actions"><button id="stop-waiting" type="button" hidden>Dejar de esperar</button><button id="solve-run" type="submit" class="primary">Calcular rutas</button></div>
+      <div class="dialog-actions run-submit"><button id="stop-waiting" type="button" hidden>Dejar de esperar</button><button id="solve-run" type="submit" class="primary">Calcular rutas</button></div>
     </form>
-    <details id="result-details" hidden><summary>Datos y límites de la ejecución</summary><div id="run-facts"></div></details>
+    <section id="run-results" hidden><p class="run-results-help">Estos datos pertenecen al último cálculo. Puedes volver a consultarlos desde «Ver resultados».</p><details id="result-details" hidden><summary>Datos y límites de la ejecución</summary><div id="run-facts"></div></details></section>
     <div class="run-exports"><button id="export-instance" type="button" disabled>Descargar instancia</button><button id="export-result" type="button" disabled>Descargar ejecución completa</button><button id="export-native-result" type="button" disabled>Descargar resultado nativo</button><button id="export-attempt" type="button" hidden>Descargar intento fallido</button><button id="show-example" type="button">Ver ejemplo de diseño</button></div>`;
   document.body.append(dialog);
   const $ = id => document.getElementById(id);
@@ -75,13 +82,14 @@ export function initRunPanel() {
         : result.validation?.feasible === false ? 'Resultado del motor · validación fallida'
           : 'Resultado del motor · verificación pendiente';
       const served = (result.kpis || nativeRunResult(rawResponse)?.kpis)?.served_deliveries;
-      $('run-description').textContent = `${result.metadata?.time_limit_reached === true ? 'Límite de tiempo · ' : ''}${result.validation?.feasible === true && Number.isFinite(served) ? `${served}/${result.total_visits} entregas planificadas` : `${result.total_visits} destinos · entregas sin validar`} · ${result.network?.vial ? 'Red vial declarada' : 'Red no vial'} · ${result.run_id.slice(0, 8)}`;
+      $('run-description').textContent = `${result.metadata?.time_limit_reached === true ? 'Límite de tiempo · ' : ''}${result.validation?.feasible === true && Number.isFinite(served) ? `${served}/${result.total_visits} entregas planificadas` : `${result.total_visits} destinos · entregas sin validar`} · ${result.network?.vial ? 'Red vial' : 'Red sintética o sin verificar'}`;
     } else if (saved) {
       $('run-source').textContent = 'Sin resultado del motor';
       $('run-description').textContent = 'Carga una instancia o vuelve al ejemplo de diseño.';
     }
     strip.dataset.stale = String(!!saved?.stale);
     $('run-download').hidden = !rawResponse;
+    $('run-view-switch').hidden = !rawResponse;
     if (saved && !saved.runId) {
       const main = document.querySelector('main');
       main.dataset.runPending = 'true';
@@ -100,7 +108,8 @@ export function initRunPanel() {
   }
   function setBusy(value) {
     busy = value;
-    $('solve-run').disabled = value || !input || locationEditor.isOpen;
+    $('solve-run').disabled = value;
+    $('solve-run').textContent = value ? 'Calculando…' : 'Calcular rutas';
     $('stop-waiting').hidden = !value;
     $('run-form').setAttribute('aria-busy', String(value));
   }
@@ -137,7 +146,7 @@ export function initRunPanel() {
       await locationEditor.whenClosed();
       if (!isCurrent()) return;
       const editableSourceSaved = saveEditableSource(response.result.run_id, lastPrepareRequest);
-      save({runId: response.result.run_id, stale: false, status: 'complete', message: '', editableSourceSaved, draftId: null, draftUnavailable: false});
+      save({runId: response.result.run_id, stale: false, status: 'complete', message: '', editableSourceSaved, draftId: null, draftUnavailable: false, reopenResults: true});
       clearEditableDraft();
       location.reload();
     },
@@ -147,9 +156,8 @@ export function initRunPanel() {
     canonicalInstance = null;
     client.invalidate();
     setBusy(false);
-    $('run-ack').checked = false;
     $('export-instance').disabled = true;
-    message('Cambios sin calcular. Revisa los supuestos antes de ejecutar.');
+    message('Cambios guardados para el próximo cálculo.');
     try { save({stale: true, status: 'editing', message: '', draftId: null}); }
     catch (error) { message(error.message, true); }
     renderStrip();
@@ -162,14 +170,14 @@ export function initRunPanel() {
       dirty();
       persistDraft();
       renderInputSummary();
-      message('Ubicaciones confirmadas. Revisa el alcance no vial y calcula para preparar la nueva instancia.');
+      message('Ubicaciones actualizadas. Calcula de nuevo para obtener las rutas.');
     },
   });
   function persistDraft() {
     draftWarning = '';
-    if (!input?.nodes || input.instance) return;
+    if (!input) return;
     const draftId = crypto.randomUUID();
-    const fields = Object.fromEntries([...dialog.querySelectorAll('.run-fields input')].map(field => [field.name, field.value]));
+    const fields = Object.fromEntries([...dialog.querySelectorAll('.run-fields input, .run-fields select')].map(field => [field.name, field.value]));
     const retained = saveEditableDraft(draftId, input, fields);
     try {
       save({draftId: retained ? draftId : null, draftUnavailable: !retained});
@@ -180,19 +188,21 @@ export function initRunPanel() {
   }
   function renderInputSummary() {
     const nodes = inputNodes(input);
-    $('input-summary').textContent = `${inputName} · ${nodes.filter(n => n.node_type === 'base').length} depósito · ${nodes.filter(n => n.node_type === 'visit').length} destinos · ${nodes.filter(n => n.node_type === 'charger').length} cargadores${input.instance ? ` · ${input.instance.arcs.length} arcos` : ''}`;
+    const clients = nodes.filter(n => n.node_type === 'visit').length;
+    const chargers = nodes.filter(n => n.node_type === 'charger').length;
+    $('input-summary').textContent = `${inputName} · 1 depósito · ${clients} ${clients === 1 ? 'cliente' : 'clientes'} · ${chargers} ${chargers === 1 ? 'cargador' : 'cargadores'}${input.instance ? ` · ${input.instance.arcs.length} arcos` : ''}`;
+    $('input-summary').hidden = false;
+    $('location-review').hidden = false;
   }
   function fieldsFrom(value) {
-    const native = value.instance;
-    const fleet = native?.parameters || value.prepareRequest?.fleet || {};
-    $('run-count').value = (native ? fleet.vehicle_count : fleet.num_vehicles) ?? (native ? '' : 2);
-    $('run-soc').value = fleet.initial_soc == null ? (native ? '' : 60) : fleet.initial_soc * 100;
-    $('run-capacity').value = fleet.battery_capacity_kwh ?? '';
-    $('run-reserve').value = fleet.reserve_kwh ?? '';
-    $('run-consumption').value = native ? '' : fleet.consumption_kwh_km ?? '';
-    $('run-seconds').value = value.request?.solver?.time_limit_seconds ?? 120;
-    $('run-policy').value = value.request?.solver?.search_policy ?? 'adaptive';
-    $('run-network').value = value.prepareRequest?.network_mode ?? 'road';
+    const values = inputFormValues(value);
+    for (const [name, raw] of Object.entries(values)) {
+      const field = $('run-form').elements.namedItem(name === 'energy_relative_gap' ? 'energy_gap_percent' : name);
+      if (field) {
+        field.value = raw == null ? '' : ['initial_soc', 'energy_relative_gap'].includes(name) ? Number(raw) * 100 : raw;
+        field.removeAttribute('aria-invalid');
+      }
+    }
   }
   function setInput(value, name) {
     locationEditor.close();
@@ -202,41 +212,74 @@ export function initRunPanel() {
     renderInputSummary();
     $('edit-locations').disabled = false;
     $('edit-locations').textContent = native ? 'Revisar ubicaciones' : 'Editar ubicaciones';
-    $('location-review-help').textContent = native ? 'Ubicaciones y red nativa protegidas.' : 'Formulario y mapa · los cambios se aplican al confirmar.';
+    $('location-review-help').textContent = native ? 'La red del archivo se conserva.' : 'Revisa los puntos en el formulario o en el mapa.';
     $('network-note').textContent = native
-      ? 'Se utilizará la red incluida en el JSON. Las coordenadas son opcionales: los nodos sin ubicación se conservan en la lista. El servidor valida la instancia sin cambiar su configuración física.'
-      : 'Elige calles del servidor para preparar la red dirigida y expandir el resultado. La alternativa por distancia es sintética; no acredita conectividad vial.';
+      ? 'Se usará la red incluida en el archivo. Los lugares sin coordenadas aparecen en la lista.'
+      : 'El CSV contiene lugares, no calles. Usa la red del servidor para rutas viales; «Distancia» une los puntos para una prueba sintética.';
     $('run-network').disabled = native;
     $('native-note').hidden = !native;
-    $('native-note').textContent = native ? 'Parámetros del JSON protegidos. Arcos, operaciones, conectores, compatibilidad y procedencia se conservan íntegros. Los parámetros omitidos usan los valores predeterminados del contrato nativo del motor; sus valores efectivos aparecerán en la instancia exportada después de ejecutar. Para cambiar el escenario, edita el archivo y vuelve a cargarlo. Solo el presupuesto del solver se configura aquí.' : '';
+    $('native-note').textContent = native ? 'Estos valores provienen del archivo. Para cambiar la flota o la red, edita el JSON y vuelve a cargarlo. Los parámetros del motor sí se pueden ajustar aquí.' : '';
     $('fleet-help').hidden = native;
     $('run-consumption').closest('label').hidden = native;
-    for (const field of dialog.querySelectorAll('.run-fields input')) {
-      if (field.id !== 'run-seconds') field.disabled = native;
-    }
+    for (const field of dialog.querySelectorAll('.run-fleet-fields input')) field.disabled = native;
     fieldsFrom(value);
     canonicalInstance = native ? value.instance : null;
     setBusy(busy);
   }
   function buildJob() {
-    if (!input) throw new Error('Selecciona una instancia antes de calcular.');
+    if (!input) throw new Error('Falta una instancia. Selecciona un archivo CSV o JSON, o crea un caso de prueba arriba.');
     if (locationEditor.isOpen) throw new Error('Confirma o cancela la edición de ubicaciones antes de calcular.');
-    if (!$('run-ack').checked) throw new Error('Revisa y confirma los parámetros y el alcance de la red.');
-    if (input.instance) return {request: makeSolveRequest(input, $('run-seconds').value, $('run-policy').value), prepareRequest: null};
+    for (const field of dialog.querySelectorAll('.run-fields input')) {
+      field.removeAttribute('aria-invalid');
+      if (!field.disabled && !field.checkValidity()) {
+        field.setAttribute('aria-invalid', 'true');
+        const label = field.closest('label').firstChild.textContent.trim();
+        throw new Error(field.value === '' ? `Completa «${label}» para calcular las rutas.` : `Revisa «${label}»: ingresa un valor entre ${field.min} y ${field.max || 'un máximo válido para tu flota'}.`);
+      }
+    }
+    const settings = [$('run-seconds').value, $('run-policy').value, Number($('run-gap').value) / 100, $('run-seed').value];
+    if (input.instance) return {request: makeSolveRequest(input, ...settings), prepareRequest: null};
     const values = Object.fromEntries(['num_vehicles', 'battery_capacity_kwh', 'reserve_kwh', 'initial_soc', 'consumption_kwh_km']
       .map(key => [key, $('run-form').elements.namedItem(key).value]));
     values.initial_soc = Number(values.initial_soc) / 100;
     values.network_mode = $('run-network').value;
-    return {request: {api_version: API_VERSION, solver: solverSettings($('run-seconds').value, $('run-policy').value)},
+    return {request: {api_version: API_VERSION, solver: solverSettings(...settings)},
       prepareRequest: makePrepareRequest(input, values)};
   }
-  function open(trigger) {
+  function showView(view) {
+    const results = view === 'results' && !!rawResponse;
+    $('run-form').hidden = results;
+    $('run-results').hidden = !results;
+    $('run-intro').hidden = results;
+    $('run-heading').textContent = results ? 'Resultados del cálculo' : 'Calcular rutas';
+    $('show-config').setAttribute('aria-pressed', String(!results));
+    $('show-results').setAttribute('aria-pressed', String(results));
+    if (results) $('result-details').open = true;
+    dialog.scrollTop = 0;
+  }
+  function open(trigger, view = 'config') {
     dialogOpener = trigger;
-    dialog.showModal();
-    (input?.instance ? $('run-seconds') : input ? $('run-capacity') : $('instance-file')).focus();
+    showView(view);
+    if (!dialog.open) dialog.showModal();
+    (view === 'results' ? $('result-details').querySelector('summary') : input?.instance ? $('run-seconds') : input ? $('run-capacity') : $('choose-instance')).focus({preventScroll: true});
   }
   $('open-run').addEventListener('click', () => open($('open-run')));
-  $('run-download').addEventListener('click', () => { open($('run-download')); $('result-details').open = true; $('export-result').focus(); });
+  $('run-download').addEventListener('click', () => open($('run-download'), 'results'));
+  $('show-config').addEventListener('click', () => showView('config'));
+  $('show-results').addEventListener('click', () => showView('results'));
+  $('choose-instance').addEventListener('click', () => $('instance-file').click());
+  const help = $('instance-format').parentElement;
+  const showHelp = visible => {
+    $('instance-format').setAttribute('aria-expanded', String(visible));
+    $('instance-help').hidden = !visible;
+  };
+  help.addEventListener('mouseenter', () => showHelp(true));
+  help.addEventListener('mouseleave', () => { if (!help.contains(document.activeElement)) showHelp(false); });
+  help.addEventListener('focusin', () => showHelp(true));
+  help.addEventListener('focusout', event => { if (!help.contains(event.relatedTarget)) showHelp(false); });
+  $('instance-format').addEventListener('click', () => showHelp(true));
+  help.addEventListener('keydown', event => { if (event.key === 'Escape' && !$('instance-help').hidden) { event.preventDefault(); event.stopPropagation(); showHelp(false); } });
+  dialog.addEventListener('pointerdown', event => { if (!help.contains(event.target)) showHelp(false); });
   $('close-run').addEventListener('click', () => dialog.close());
   $('edit-locations').addEventListener('click', () => {
     if (!input) return;
@@ -249,30 +292,39 @@ export function initRunPanel() {
     dirty();
     locationEditor.close();
     input = null;
-    $('solve-run').disabled = true;
+    $('input-summary').hidden = true;
+    $('location-review').hidden = true;
     $('edit-locations').disabled = true;
     $('location-review-help').textContent = 'Carga una entrada para revisar sus puntos.';
     const file = event.target.files?.[0];
-    if (!file) { $('input-summary').textContent = 'Ningún archivo seleccionado.'; return; }
+    if (!file) { $('input-summary').hidden = true; $('location-review').hidden = true; $('instance-filename').textContent = `CSV o JSON · hasta ${fileLimitLabel}`; return; }
+    $('instance-filename').textContent = file.name;
     try {
-      if (file.size > 64 * 1024 * 1024) throw new Error('El archivo supera el límite de importación de 64 MB.');
+      validateInstanceFileHeader(await file.slice(0, 4096).text());
+      if (revision !== fileRevision) return;
+      if (file.size > MAX_FILE_BYTES) throw new Error(`El archivo supera los ${fileLimitLabel}. Usa una instancia de rutas con ubicaciones y parámetros, sin históricos de mediciones.`);
       const text = await file.text();
       if (revision !== fileRevision) return;
       setInput(parseInstanceFile(text, file.name), file.name);
       persistDraft();
-      message('Instancia leída. Confirma los parámetros y el alcance de la red.');
+      message('Archivo cargado. Los parámetros incluidos ya están en el formulario.');
     } catch (error) { if (revision === fileRevision) message(error.message, true); }
   });
   $('use-synthetic').addEventListener('click', () => {
+    let prepareRequest;
+    try {
+      prepareRequest = createSyntheticPreparation({clients: Number($('synthetic-clients').value), chargers: Number($('synthetic-chargers').value)});
+    } catch (error) { message(error.message, true); return; }
     fileRevision++;
     dirty();
-    const prepareRequest = structuredClone(SYNTHETIC_PREPARATION);
     setInput({nodes: prepareRequest.nodes, prepareRequest}, 'Caso sintético · valores supuestos');
     persistDraft();
     $('instance-file').value = '';
-    message('Caso sintético preparado para una ejecución real del motor. Capacidad 10 kWh, reserva 1 kWh y consumo 1 kWh/km son valores de prueba.');
+    $('instance-filename').textContent = 'Caso de prueba creado';
+    dialog.querySelector('.run-synthetic').open = false;
+    message('Caso listo. Las rutas se calcularán por distancia, sin conectarlas a calles reales.');
   });
-  for (const field of dialog.querySelectorAll('.run-fields input')) field.addEventListener('input', () => { dirty(); persistDraft(); });
+  for (const field of dialog.querySelectorAll('.run-fields input')) field.addEventListener('input', () => { field.removeAttribute('aria-invalid'); dirty(); persistDraft(); });
   for (const field of dialog.querySelectorAll('.run-fields select')) field.addEventListener('change', () => { dirty(); persistDraft(); });
   $('run-form').addEventListener('submit', async event => {
     event.preventDefault();
@@ -334,11 +386,14 @@ export function initRunPanel() {
   const restoredDraft = readEditableDraft(saved?.draftId);
   if (restoredDraft) {
     setInput(restoredDraft.input, 'Borrador sin calcular');
-    for (const [name, value] of Object.entries(restoredDraft.fields)) $('run-form').elements.namedItem(name).value = value;
+    for (const [name, value] of Object.entries(restoredDraft.fields)) {
+      const field = $('run-form').elements.namedItem(name);
+      if (field) field.value = value;
+    }
     draftEdited = true;
     canonicalInstance = null;
     $('export-instance').disabled = true;
-    message('Borrador recuperado de esta pestaña. Revisa los parámetros y calcula para obtener una instancia vigente.');
+    message('Recuperamos tus ubicaciones y parámetros. Puedes continuar con el cálculo.');
   } else if (saved?.stale) {
     draftEdited = true;
     message('La entrada pendiente no está disponible en esta página. Carga de nuevo su archivo; un resultado anterior no contiene los cambios sin calcular.');
@@ -398,6 +453,10 @@ export function initRunPanel() {
         }
       }
       renderStrip();
+      if (rawResponse && saved?.reopenResults) {
+        save({reopenResults: false});
+        open($('run-download'), 'results');
+      }
     },
     fail(error) {
       message(error.message, true);

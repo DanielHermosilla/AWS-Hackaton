@@ -6,6 +6,7 @@ import { SYNTHETIC_PREPARATION, makePrepareRequest } from '../shared/solver-inpu
 
 const source = () => {
   const prepareRequest = structuredClone(SYNTHETIC_PREPARATION);
+  prepareRequest.nodes[1].node_id = 'Visita|ñ';
   prepareRequest.fleet.vehicle_connector_types = ['CHAdeMO'];
   prepareRequest.nodes.push({node_id: 'C /?# ñ', node_type: 'charger', latitude: 0, longitude: 0,
     address: 'Cargador', network: 'Red declarada', total_ports: 0, connector_types: 'CHAdeMO', max_power_kw: 0});
@@ -112,8 +113,25 @@ test('a pending draft persists before any run and keeps incomplete physical fiel
   assert.equal(readEditableDraft(null, storage), null);
 });
 
-test('pending draft rejects native graphs, corruption and storage quota failure', () => {
+test('pending draft rejects malformed native graphs, corruption and storage quota failure', () => {
   assert.equal(saveEditableDraft('draft-1', {instance: {}}, {}, memory()), false);
   assert.equal(saveEditableDraft('draft-1', source(), {}, {setItem: () => {throw new Error('QuotaExceededError');}}), false);
   assert.equal(readEditableDraft('draft-1', {getItem: () => '{'}), null);
+});
+
+test('draft preserves engine settings and network choice across navigation', () => {
+  const storage = memory(), input = source();
+  const fields = {search_policy: 'standard', network_mode: 'haversine', energy_gap_percent: '2.5', random_seed: '17'};
+  assert.equal(saveEditableDraft('engine-draft', input, fields, storage), true);
+  assert.deepEqual(readEditableDraft('engine-draft', storage), {input, fields});
+});
+
+test('native draft retains engine edits without granting location editing', async () => {
+  const request = JSON.parse(await readFile(new URL('../../backend/fixtures/native-request.json', import.meta.url)));
+  const input = {instance: request.instance, request}, storage = memory();
+  const fields = {time_limit_seconds: '9', search_policy: 'standard', energy_gap_percent: '0.1', random_seed: '41'};
+  assert.equal(saveEditableDraft('native-draft', input, fields, storage), true);
+  const restored = readEditableDraft('native-draft', storage);
+  assert.deepEqual(restored, {input, fields});
+  assert.equal(createLocationDraft(restored.input).readOnly, true);
 });

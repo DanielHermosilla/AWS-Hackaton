@@ -236,7 +236,7 @@ export function createLocationEditor({onConfirm, onOpenChange = () => {}}) {
       $('location-search').value = '';
       $('location-heading').textContent = draft.readOnly ? 'Ubicaciones de la instancia' : 'Editar ubicaciones';
       $('location-scope').textContent = draft.readOnly
-        ? 'Esta red nativa está protegida. Mover un punto dejaría desactualizados sus arcos, geometría y energía. Solicita una instancia preparada para las nuevas ubicaciones con el preparador de Daniel y vuelve a cargar su JSON. Esta API no reconstruye la red vial.'
+        ? 'Esta instancia conserva una red nativa ya calculada. Para mover sus puntos, carga un CSV o una entrada de ubicaciones y vuelve a preparar la red.'
         : 'Revisa depósito, destinos y cargadores. El ID y el tipo se conservan. Al confirmar, el servidor deberá preparar de nuevo la aproximación por distancia; no es una red vial.';
       $('location-address-help').hidden = draft.readOnly;
       $('confirm-locations').hidden = draft.readOnly;

@@ -38,21 +38,23 @@ const visible = async selector => assert.equal(await page.locator(selector).isVi
 async function synthetic() {
   await page.goto(origin);
   await page.locator('#open-run').click();
+  await page.locator('.run-synthetic').evaluate(el => { el.open = true; });
   await page.locator('#use-synthetic').click();
+  await page.locator('#run-policy').selectOption('standard');
 }
 try {
   await synthetic();
   await page.locator('#edit-locations').click();
   await visible('#location-dialog');
   await page.locator('#location-node').selectOption('1');
-  assert.equal(await page.locator('#location-id').textContent(), 'Visita|ñ');
+  assert.equal(await page.locator('#location-id').textContent(), 'C1');
   await page.locator('#location-latitude').fill('0');
   await page.locator('#location-longitude').fill('0');
   await page.locator('#location-address').fill('Nueva dirección manual');
   await page.locator('#cancel-locations').click();
   await page.locator('#edit-locations').click();
   await page.locator('#location-node').selectOption('1');
-  assert.equal(await page.locator('#location-latitude').inputValue(), '-33.451');
+  assert.equal(await page.locator('#location-latitude').inputValue(), '-33.45');
   await page.locator('#location-latitude').fill('');
   assert.equal(await page.locator('#confirm-locations').isDisabled(), true);
   await page.locator('#location-latitude').fill('-33.4505');
@@ -60,27 +62,24 @@ try {
   await page.locator('#location-address').fill('Nueva dirección manual');
   await page.screenshot({path: new URL('editor-desktop.png', output).pathname});
   await page.locator('#confirm-locations').click();
-  assert.match(await page.locator('#run-message').textContent(), /Ubicaciones confirmadas/);
-  assert.equal(await page.locator('#run-ack').isChecked(), false);
+  assert.match(await page.locator('#run-message').textContent(), /Ubicaciones actualizadas/);
   assert.equal(await page.locator('#export-instance').isDisabled(), true);
   const preparations = [];
   page.on('request', request => {
     if (request.url() === `${origin}/prepare` && request.method() === 'POST') preparations.push(request.postDataJSON());
   });
-  await page.locator('#run-ack').check();
   await page.locator('#run-seconds').fill('2');
-  await page.locator('#run-ack').check();
   await Promise.all([page.waitForEvent('load', {timeout: 180000}), page.locator('#solve-run').click()]);
   assert.equal(await page.evaluate(() => JSON.parse(sessionStorage.getItem('zmd.webapp.execution.v1'))?.status), 'complete');
   await page.waitForFunction(() => document.querySelector('#run-source')?.textContent.includes('Resultado del motor'));
   assert.equal(preparations.length, 1);
   assert.equal(preparations[0].nodes[1].latitude, -33.4505);
-  await page.locator('#open-run').click();
+  await page.locator('#show-config').click();
   const downloadPromise = page.waitForEvent('download');
   await page.locator('#export-instance').click();
   const download = await downloadPromise;
   const native = JSON.parse(await readFile(await download.path(), 'utf8'));
-  assert.equal(native.nodes.find(node => node.node_id === 'Visita|ñ').latitude, -33.4505);
+  assert.equal(native.nodes.find(node => node.node_id === 'C1').latitude, -33.4505);
   await page.locator('#edit-locations').click();
   assert.equal(await page.locator('#location-latitude').isEditable(), true);
   await page.keyboard.press('Escape');
@@ -93,7 +92,9 @@ try {
   assert.match(await page.locator('#location-scope').textContent(), /red nativa/);
   await page.screenshot({path: new URL('native-protected.png', output).pathname});
   await page.keyboard.press('Escape');
+  await page.locator('.run-synthetic').evaluate(el => { el.open = true; });
   await page.locator('#use-synthetic').click();
+  await page.locator('#run-policy').selectOption('standard');
   await page.setViewportSize({width: 390, height: 844});
   await page.locator('#edit-locations').click();
   assert.equal(await page.evaluate(() => document.querySelector('#location-dialog').scrollWidth <= document.querySelector('#location-dialog').clientWidth), true);
@@ -116,7 +117,6 @@ try {
   // client's revision guard, not server cancellation or solver feasibility.
   const delayedResult = JSON.parse(await readFile(new URL('../../backend/fixtures/native-response.json', import.meta.url)));
   await page.evaluate(() => { window.deferSolve = true; });
-  await page.locator('#run-ack').check();
   await page.locator('#solve-run').click();
   await page.waitForFunction(() => typeof window.releaseOldSolve === 'function');
   await page.locator('#edit-locations').click();
@@ -131,7 +131,7 @@ try {
   assert.equal(await page.evaluate(() => JSON.parse(sessionStorage.getItem('zmd.webapp.execution.v1')).revision), revision);
   assert.equal(await page.locator('#export-instance').isDisabled(), true);
   await page.locator('#edit-locations').click();
-  assert.equal(await page.locator('#solve-run').isDisabled(), true);
+  assert.equal(await page.locator('#solve-run').isEnabled(), true);
   await page.locator('#location-node').selectOption('1');
   assert.equal(await page.locator('#location-latitude').inputValue(), '-33.453');
   await page.locator('#cancel-locations').click();
@@ -158,7 +158,6 @@ try {
   await page.locator('#cancel-locations').click();
   console.log('PASS: selección y arrastre reales en mapa, y cancelación sin mutar la entrada.');
   await page.evaluate(() => { window.deferPrepare = true; });
-  await page.locator('#run-ack').check();
   await page.locator('#solve-run').click();
   await page.waitForFunction(() => typeof window.releaseOldPrepare === 'function');
   const solveCalls = await page.evaluate(() => window.solveCalls);
@@ -176,10 +175,11 @@ try {
   await page.locator('#cancel-locations').click();
   console.log('PASS: sustituir el archivo descarta una preparación tardía y no lanza su cálculo.');
 
+  await page.locator('.run-synthetic').evaluate(el => { el.open = true; });
   await page.locator('#use-synthetic').click();
+  await page.locator('#run-policy').selectOption('standard');
   await page.locator('#run-seconds').fill('2');
   await page.evaluate(() => { window.deferPrepare = false; window.deferSolve = false; window.holdSolveResult = true; });
-  await page.locator('#run-ack').check();
   await page.locator('#solve-run').click();
   await page.waitForFunction(() => typeof window.releaseCompletedSolve === 'function', null, {timeout: 180000});
   await page.locator('#edit-locations').click();
@@ -193,10 +193,10 @@ try {
   assert.equal(await page.evaluate(() => JSON.parse(sessionStorage.getItem('zmd.webapp.execution.v1')).status), 'running');
   await Promise.all([page.waitForEvent('load'), page.locator('#cancel-locations').click()]);
   await page.waitForFunction(() => document.querySelector('#run-source')?.textContent.includes('Resultado del motor'));
-  await page.locator('#open-run').click();
+  await page.locator('#show-config').click();
   await page.locator('#edit-locations').click();
   await page.locator('#location-node').selectOption('1');
-  assert.equal(await page.locator('#location-latitude').inputValue(), '-33.451');
+  assert.equal(await page.locator('#location-latitude').inputValue(), '-33.45');
   assert.equal(await page.evaluate(() => JSON.parse(sessionStorage.getItem('zmd.webapp.execution.v1')).stale), false);
   await page.locator('#cancel-locations').click();
   console.log('PASS: cancelar un borrador permite aceptar el cálculo real que terminó mientras el editor estaba abierto.');
@@ -207,13 +207,14 @@ try {
   const fallback = await fallbackContext.newPage();
   await fallback.goto(origin);
   await fallback.locator('#open-run').click();
+  await fallback.locator('.run-synthetic').evaluate(el => { el.open = true; });
   await fallback.locator('#use-synthetic').click();
   await fallback.locator('#edit-locations').click();
   await fallback.locator('#location-map-status').filter({hasText: 'Mapa no disponible'}).waitFor();
   await fallback.locator('#location-latitude').fill('0');
   await fallback.locator('#location-longitude').fill('0');
   await fallback.locator('#confirm-locations').click();
-  assert.match(await fallback.locator('#run-message').textContent(), /Ubicaciones confirmadas/);
+  assert.match(await fallback.locator('#run-message').textContent(), /Ubicaciones actualizadas/);
   await fallbackContext.close();
   console.log('PASS: fallo del renderizador del mapa conserva formulario, ceros y confirmación.');
 } catch (error) {

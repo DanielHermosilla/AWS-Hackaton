@@ -9,7 +9,9 @@ const page = await context.newPage();
 try {
   await page.goto(origin);
   await page.locator('#open-run').click();
+  await page.locator('.run-synthetic').evaluate(el => { el.open = true; });
   await page.locator('#use-synthetic').click();
+  await page.locator('#run-policy').selectOption('standard');
   await page.locator('#run-capacity').fill('12');
   await page.locator('#run-seconds').fill('3');
   await page.locator('#edit-locations').click();
@@ -27,10 +29,10 @@ try {
   await page.locator('#location-node').selectOption('1');
   assert.equal(await page.locator('#location-latitude').inputValue(), '-33.4507');
   await page.locator('#cancel-locations').click();
-  await page.locator('#run-ack').check();
   await Promise.all([page.waitForEvent('load', {timeout: 180000}), page.locator('#solve-run').click()]);
   await page.waitForFunction(() => document.querySelector('#run-source')?.textContent.includes('Resultado del motor'));
-  await page.locator('#open-run').click();
+  assert.equal(await page.locator('#run-dialog').isVisible(), true);
+  await page.locator('#show-config').click();
   await page.locator('#edit-locations').click();
   await page.locator('#location-node').selectOption('1');
   await page.locator('#location-latitude').fill('-33.4509');
@@ -43,7 +45,6 @@ try {
   assert.equal(await page.locator('#run-reserve').inputValue(), '1.5');
   assert.equal(await page.locator('#run-seconds').inputValue(), '4');
   assert.equal(await page.locator('#export-instance').isDisabled(), true);
-  assert.equal(await page.locator('#run-ack').isChecked(), false);
   await page.locator('#edit-locations').click();
   await page.locator('#location-node').selectOption('1');
   assert.equal(await page.locator('#location-latitude').inputValue(), '-33.4509');

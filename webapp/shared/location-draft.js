@@ -1,8 +1,9 @@
-import { inputNodes, parseInstanceFile, validateNodes } from './solver-input.js';
+import { inputNodes, parseInstanceFile, validateNodes, validateNativeInstance } from './solver-input.js';
 
 const SOURCE_KEY = 'zmd.webapp.editable-source.v1';
 const DRAFT_KEY = 'zmd.webapp.location-draft.v1';
-const formFields = new Set(['num_vehicles', 'battery_capacity_kwh', 'reserve_kwh', 'initial_soc', 'consumption_kwh_km', 'time_limit_seconds']);
+const formFields = new Set(['num_vehicles', 'battery_capacity_kwh', 'reserve_kwh', 'initial_soc', 'consumption_kwh_km',
+  'time_limit_seconds', 'search_policy', 'network_mode', 'energy_gap_percent', 'random_seed']);
 const editableFields = new Set(['address', 'latitude', 'longitude']);
 const coordinate = value => typeof value === 'number' || (typeof value === 'string' && value.trim())
   ? Number(value) : NaN;
@@ -74,8 +75,8 @@ export function readEditableSource(runId, storage, instance) {
 
 export function saveEditableDraft(draftId, input, fields, storage) {
   try {
-    if (input.instance) return false;
-    validateNodes(input.nodes);
+    if (input.instance) validateNativeInstance(input.instance);
+    else validateNodes(input.nodes);
     storage ??= globalThis.sessionStorage;
     storage.setItem(DRAFT_KEY, JSON.stringify({draftId, input, fields}));
     return true;
@@ -87,8 +88,9 @@ export function readEditableDraft(draftId, storage) {
     if (!draftId) return null;
     storage ??= globalThis.sessionStorage;
     const saved = JSON.parse(storage.getItem(DRAFT_KEY));
-    if (!saved || saved.draftId !== draftId || saved.input?.instance) return null;
-    validateNodes(saved.input.nodes);
+    if (!saved || saved.draftId !== draftId) return null;
+    if (saved.input?.instance) validateNativeInstance(saved.input.instance);
+    else validateNodes(saved.input.nodes);
     if (!saved.fields || Object.entries(saved.fields).some(([key, value]) => !formFields.has(key) || typeof value !== 'string')) return null;
     return {input: saved.input, fields: saved.fields};
   } catch { return null; }
