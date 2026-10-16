@@ -53,14 +53,19 @@ export function resultSections(result) {
       {label: 'Cota', value: format(phase.best_bound, unit)},
       {label: 'Gap absoluto', value: format(phase.absolute_gap, unit)},
       {label: 'Gap relativo (fracción)', value: format(phase.relative_gap)},
+      {label: 'Gap relativo · %', value: format(Number.isFinite(phase.relative_gap) ? phase.relative_gap * 100 : null, '%')},
       {label: 'Óptimo de fase reportado por el solver', value: text(phase.proven_optimal)},
       {label: 'Terminación', value: text(phase.termination_condition)},
       {label: 'Tiempo de la fase', value: format(phase.runtime_seconds, 's')}
-    ], notes: [phase.message, result.validation?.feasible === false
+    ], notes: [
+      phase.termination_condition === 'energy_gap_limit'
+        ? 'Se alcanzó la tolerancia energética de 0,5 %. Esto no acredita óptimo exacto.' : null,
+      phase.message, result.validation?.feasible === false
       ? 'La comprobación rechazó la solución; el estado reportado por el solver no acredita un plan factible.' : null].filter(Boolean)});
   }
   sections.push({title: 'Tiempos de cómputo', rows: [
     {label: 'Preparación del servicio', value: format(result.runtime_seconds?.preparation, 's')},
+    {label: 'Preparación vial original · reutilizable', value: format(result.runtime_seconds?.road_preprocessing, 's')},
     {label: 'Resolución, incluido el modelo', value: format(timings.resolution_including_model ?? result.runtime_seconds?.solver, 's')},
     {label: 'Comprobación independiente', value: format(timings.validation, 's')},
     {label: 'Comprobación de solución inicial', value: format(timings.initial_solution_validation, 's')},
@@ -87,8 +92,29 @@ export function resultSections(result) {
     label, value: operations[key] === null ? 'Sin configurar' : typeof operations[key] === 'number'
       ? format(operations[key], unit) : text(operations[key])
   })), notes: ['Son supuestos de esta instancia. El archivo nativo conserva toda la configuración.']});
-  sections.push({title: 'Tuning', rows: [{label: 'Estado informado', value: text(tuning.status)}],
+  sections.push({title: 'Tuning', rows: [
+    {label: 'Estado informado', value: text(tuning.status)},
+    {label: 'Modelo', value: text(tuning.model_id)},
+    {label: 'Política solicitada', value: text(tuning.requested_policy)},
+    {label: 'Política efectiva', value: text(tuning.active_policy)},
+    {label: 'Consultas', value: format(tuning.calls)},
+    {label: 'Decisiones aplicadas', value: format(tuning.applied_decisions)},
+  ],
     notes: [tuning.reason].filter(Boolean)});
+  for (const decision of tuning.decisions || []) {
+    sections.push({title: `Decisión LLM ${decision.call_index ?? ''} · ${decision.status}`, rows: [
+      {label: 'Evento / fase', value: `${text(decision.event)} / ${text(decision.phase)}`},
+      {label: 'Modelo', value: text(decision.model_id)},
+      {label: 'Tiempo de respuesta', value: format(decision.runtime_seconds, 's')},
+      {label: 'Instante observado', value: format(decision.elapsed_seconds, 's')},
+      {label: 'Cambios aceptados', value: text(decision.effective_changes || {})},
+      {label: 'Campos inactivos', value: text(decision.inactive_settings || {})},
+      {label: 'Respuesta validada', value: text(decision.proposal)},
+      {label: 'Tokens reportados', value: text(decision.usage)},
+    ], notes: [decision.reason, decision.proposal?.rationale,
+      'Los cambios configuran políticas. Una etapa no ejecutada no produjo mejoras; la respuesta del LLM no certifica la solución.'
+    ].filter(Boolean)});
+  }
   sections.push({title: 'Trazabilidad', rows: [
     {label: 'Ejecución web', value: text(result.run_id)},
     {label: 'Ejecución nativa', value: text(native.run_id || result.metadata?.native_run_id)},
@@ -96,7 +122,7 @@ export function resultSections(result) {
     {label: 'Solver solicitado', value: text(solver.requested_solver)},
     {label: 'Solver utilizado', value: text(solver.used_solver)},
     {label: 'Versión del solver', value: text(solver.solver_version)},
-    {label: 'Commit del motor', value: text(result.metadata?.provider_commit)},
+    {label: 'Commit base del motor', value: text(result.metadata?.provider_commit)},
     {label: 'Hash de instancia', value: text(native.instance_sha256 || result.metadata?.input_hash)},
     {label: 'Optimalidad lexicográfica reportada por el solver', value: text(result.metadata?.lexicographic_optimal)}
   ], notes: [result.validation?.feasible === false ? 'La solución fue rechazada por la comprobación independiente. La optimalidad reportada no acredita su factibilidad.' : null,

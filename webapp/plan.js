@@ -165,7 +165,11 @@ function render() {
       return `<section class="route-group" style="--route:${v.color}"><div class="route-head"><i class="vehicle-dot"></i>${esc(v.name)}<small>${deliveryCount(r)} entregas · ${number(r.distanceKm)} km${RUN_INFO ? '' : ' de ejemplo'}${r.active === false ? ' · Sin desplazamiento' : ''}</small></div>` +
         (r.stops.length ? '' : '<p class="plan-empty">El motor no informa paradas para este vehículo.</p>') +
         r.stops.map((s, i) => {
+          // Keep original step indices for battery/time detail and selection.
+          // Street intersections remain in the native export, not in the list
+          // of delivery/charging stops.
           const n = nodeById(s.nodeId);
+          if (n.type === 'junction') return '';
           const active = selectedStop?.vehicleId === v.id && selectedStop.index === i;
           const secondary = n.type === 'charger'
             ? s.chargeKwh > 0 ? `Recarga · +${number(s.chargeKwh)} kWh` : s.chargeKwh === null ? 'Recarga no informada' : 'Paso sin recarga'

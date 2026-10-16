@@ -5,7 +5,7 @@
 \usepackage{lmodern,amsmath,amssymb,booktabs,tabularx,array}
 \usepackage[margin=2.1cm]{geometry}
 \usepackage{microtype,xcolor}
-\usepackage[colorlinks=true,linkcolor=blue!45!black,urlcolor=blue!45!black]{hyperref}
+\usepackage[colorlinks=true,linkcolor=blue!45!black,urlcolor=blue!45!black,hypertexnames=false]{hyperref}
 \newcommand{\Rminus}{R^{-}}
 \newcommand{\reserve}{\underline b}
 \newcommand{\code}[1]{\texttt{\small #1}}
@@ -25,19 +25,19 @@ cumplimiento, minimizar consumo neto efectivo de batería. El tiempo de cómputo
 se reporta; no es una expresión optimizada dentro del MILP.
 
 \textbf{Formulación vigente sin $H$.} El backend predeterminado
-\code{scip-routes} implementa (25)--(29), al final de este documento.
+\code{scip-routes} implementa (25)--(29), en la sección~7.
 Las ecuaciones posicionales (1)--(24) se conservan como referencia Pyomo.
 Sus condiciones físicas y operacionales se mantienen en las rutas factibles,
 pero no su cota artificial de movimientos.
 
-\textbf{Dos representaciones.} La base (1)--(16) describe calles elementales
-dirigidas, admite regeneración y cuenta movimientos viales. La implementación
-\code{service-graph} recibe un grafo preprocesado con Dijkstra: cada arco
-representa un camino vial fijo entre servicios, de energía no negativa.
-En esta variante, $H$ cuenta traslados entre servicios. \textbf{No son
-formulaciones equivalentes}: un certificado sobre los caminos seleccionados
-no demuestra optimalidad entre todos los recorridos de la red vial.
-Las extensiones (17)--(24) se añaden a la misma plantilla.
+\textbf{Representaciones.} La base (1)--(16) describe calles elementales
+dirigidas, admite regeneración y cuenta movimientos viales. En el flujo sin
+$H$, \code{service-graph} usa Dijkstra si los consumos son no negativos y no hay
+plazos; en los demás casos compone perfiles de batería y conserva alternativas
+temporales e intersecciones cuando es necesario (sección~8).
+La referencia posicional conserva caminos fijos con $H$ en traslados entre
+servicios: no equivale al modelo con $H$ vial. Las extensiones (17)--(24)
+se añaden a la misma plantilla.
 
 \section{Parámetros y conjuntos}
 \begin{tabularx}{\textwidth}{@{}l X@{}}
@@ -58,9 +58,10 @@ $M_B$ & Cota de saturación $B+\max_{(i,j)\in A}|e_{ij}|$; con margen, usar $\wi
 \end{tabularx}
 
 Los arcos elementales no pueden ocultar una descarga seguida de regeneración.
-En los caminos agregados todos los segmentos tienen consumo no negativo:
-comprobar la reserva al final del camino basta para sus segmentos, y la
-auditoría además expande y comprueba las calles originales.
+En la reducción no negativa de Dijkstra, comprobar la reserva al final del
+camino basta para sus segmentos. Con regeneración se necesitan los perfiles
+(30)--(31), incluida la reserva interior. La auditoría siempre expande y
+comprueba las calles originales.
 
 \section{Variables y dominios}
 \begin{tabularx}{\textwidth}{@{}l X@{}}
@@ -358,14 +359,165 @@ de grados y cortes DFJ de subtours. No usa posiciones, MTZ ni Big-M de batería.
 El testigo heurístico no queda probado óptimo; la resolución DFJ determina
 coste y cota. Esta reducción conserva el óptimo, no todas las rutas factibles.
 
-\subsection{Estrategia del LLM y alcance}
-Bedrock se consulta una sola vez antes de ambas fases. Puede elegir reglas de
-branching y presupuestos de cortes o lotes implementados; no cambia el modelo,
-recursos ni pruebas. Los callbacks de pricing son locales, sin llamadas remotas.
+\subsection{Incumbentes y relajación energética}
+Se generan incumbentes mediante inserción, búsqueda local, partición de un
+orden de entregas y una vecindad de recarga parcial. Cada resultado se valida
+independientemente. Estas heurísticas no restringen $\mathcal R_k$: el pricing
+exacto conserva múltiples recargas, revisitas y recursos continuos.
+Un maestro con un conjunto finito de columnas conocidas sirve como heurística
+primal; su cota nativa no certifica el maestro completo.
+
+Con servicio completo y energías no negativas, sea $d_{ij}$ el coste de un
+camino mínimo dirigido en el grafo de entrada. Concatenar los recorridos de
+la flota en el depósito y atajar entre eventos de entrega usando $d$ produce
+un tour cuyo coste no supera la energía de la flota. Así, una asignación
+dirigida y las relajaciones con cortes de subtours proporcionan cotas inferiores
+válidas al eliminar batería, recargas, tiempos y reparto entre vehículos.
+La implementación resta un margen conservador de acumulación numérica.
+Este argumento no requiere que los arcos directos ya satisfagan exactamente
+la desigualdad triangular, pues se construye su clausura por caminos mínimos.
+No se aplica con regeneración ni cuando quedan clientes sin atender.
+Un tour relajado solo se incorpora como solución después de repararlo y validar
+su factibilidad física. Se conserva la formulación (25)--(29).
+
+\subsection{Orquestación del LLM y alcance}
+Por autorización del usuario, Bedrock puede tomar decisiones en eventos
+explícitos: antes de buscar, después del arranque, ante estancamiento y desde
+callbacks de árbol, LP, pricing, separación e incumbentes.
+La inferencia es asíncrona: otro hilo recibe solo JSON y los objetos nativos
+permanecen en el hilo de SCIP. El límite predeterminado es cuatro llamadas y una
+asignación de inferencia del 25\,\% del presupuesto global, ambos configurables.
+La frecuencia está acotada; no se consulta remotamente por cada nodo.
+Una decisión vencida no se aplica ni bloquea nuevas consultas presupuestadas.
+No se presupone cancelada la solicitud remota: su uso queda desconocido hasta
+recibir respuesta. Tiempo, tokens y cambios efectivos se registran por decisión.
+
+El LLM controla heurísticas, operadores, reparto interno de tiempo, relajaciones,
+pricing, cortes compatibles y parámetros nativos verificados. Los campos de
+etapas terminadas quedan inactivos. No cambia datos, física, tolerancias,
+presupuesto global ni criterios de prueba. Los callbacks ejecutan políticas
+locales mientras avanza la inferencia; una propuesta inválida conserva la última política
+válida y se registra como rechazo. El motor mantiene el pricing exacto ante
+fallos de AWS.
+El contexto incluye características y recursos de la instancia, duales, progreso,
+rutas incumbentes y APIs implementadas. Se exportan el grafo físico y el MPS del
+maestro restringido. Este último no contiene las columnas futuras ni representa
+por sí solo el problema completo; cualquier recorte enviado se declara.
 En snapshots antiguos, \code{movement\_limit} es metadato heredado y no interviene
 en esta formulación. Las rutas resultantes tienen longitud variable.
 
 El certificado sigue referido al grafo de entrada y al modelo energético.
-Con Dijkstra se optimiza sobre caminos fijos, sin recuperar alternativas
-viales descartadas. Detalles y fuentes: \code{docs/dantzig-wolfe.md}.
+La nueva preparación comprueba cuándo conserva el óptimo vial sin $H$; eso
+no sustituye la prueba de optimalidad de ambas fases. Un catálogo heredado de
+Dijkstra con plazos solo certifica sus caminos disponibles. Detalles y fuentes:
+\code{docs/dantzig-wolfe.md} y \code{docs/resource-paths.md}.
+
+\subsection{Búsqueda especializada y pricing por coste reducido}
+ALNS destruye grupos aleatorios, relacionados, de alto desvío o de una ruta,
+y repara mediante inserción greedy o regret. Una población memética combina
+órdenes de entrega con elitismo y diversidad de aristas. Cada orden se repara
+sobre el multigrafo físico, conservando alternativas de calles, recarga continua,
+ventanas y revisitas. Un sub-SCIP combina columnas conocidas como heurística
+primal; su cota no se transfiere al maestro completo.
+
+La consulta exacta se reinicia con cada dual: sus podas nunca se reutilizan
+con otro dual. Para una etiqueta en $v$ con clientes servidos $M$ y poliedro
+$\mathcal P$ de batería $b$, tiempo y carga acumulada $Q$, una cota de la
+energía final es
+\[
+\underline E=
+\begin{cases}
+b^{ini}+\min_{\mathcal P}(Q-b)+d(v,0),&\text{si no hay regeneración},\\
+b^{ini}+\min_{\mathcal P}Q-B,&\text{en general}.
+\end{cases}
+\]
+El primer caso usa una distancia mínima no negativa al depósito; el segundo
+usa que la recarga acumulada no decrece y la batería final no supera $B$.
+Para los premios duales $\pi_i$, una cota superior del premio de una continuación
+es $\sum_{i\in M}\pi_i+\sum_{i\notin M}\max(0,\pi_i)$.
+Para cada corte subset-row $S$, se usa su máximo coeficiente posible si su
+dual es positivo y el coeficiente ya acumulado si es negativo.
+Restar estos premios y el dual de convexidad de la cota energética produce
+una cota inferior conservadora de coste reducido. En Farkas el peso de energía
+es cero. Solo se poda si no puede existir una columna mejorante, incluyendo
+un margen numérico conservador. No hay límites de movimientos ni etiquetas.
+
+El branching actúa sobre asignaciones binarias de clientes, la selección de
+nodos sigue políticas locales y el separador agrega triples subset-row como
+restricciones modificables. Todas las columnas posteriores reciben sus
+coeficientes. Las columnas complementarias de coste reducido no negativo
+pueden admitirse como ayuda primal, pero no acreditan completitud del pricing.
+La interrupción descarta la cota del LP restringido.
+
+\clearpage
+\section{Preprocesamiento de caminos con recursos}
+
+El maestro (25)--(29) se mantiene. Se prepara por separado un multigrafo que
+conserva depósito, clientes, cargadores y las intersecciones que no resulte
+conveniente eliminar. Las conexiones tienen identificadores propios y testigos
+de calles; el pricing selecciona entre ellas y propaga recursos continuos.
+No se agrega un límite de movimientos, etiquetas, recargas o caminos por par.
+
+\subsection{Perfil físico y composición}
+
+Sea $P$ un camino sin actividades interiores y sean $e_1,\ldots,e_n$ sus consumos
+después de aplicar (17) a cada descarga. Defínanse $S_0=0$,
+$S_j=\sum_{\ell=1}^j e_\ell$, $m=\min_j S_j$, $M=\max_j S_j$ y
+$D=\max_{0\le i\le j\le n}(S_j-S_i)$. El camino tiene algún estado inicial
+factible si $M\le B-\reserve$ y $D\le B-\reserve$. Su perfil es
+\begin{equation}
+ L_P=\reserve+M,\quad E_P=S_n,\quad U_P=B-E_P+m,\qquad
+ F_P(b)=\min\{b-E_P,U_P\},\quad b\in[L_P,B]. \tag{30}
+\end{equation}
+El consumo efectivo es $b-F_P(b)$; no se sustituye por la suma firmada $E_P$.
+El dominio captura déficits interiores y $U_P$ captura saturación.
+Para concatenar $P$ y $Q$, sin actividad en su unión:
+\begin{equation}
+\begin{split}
+E_{PQ}&=E_P+E_Q,\\
+L_{PQ}&=\max\{L_P,L_Q+E_P\},\\
+U_{PQ}&=\min\{U_P-E_Q,U_Q\}.
+\end{split} \tag{31}
+\end{equation}
+La concatenación es inviable si $U_P<L_Q$ o $L_{PQ}>B$.
+Los tiempos y distancias se suman. El margen ya incorporado al perfil no se
+aplica nuevamente en el pricing.
+
+\subsection{Dominancia y eliminación parcial}
+
+Entre conexiones con iguales extremos, $P$ domina $Q$ si
+$L_P\le L_Q$, $F_P(b)\ge F_Q(b)$ para todo $b\in[L_Q,B]$ y, cuando hay jornada,
+$T_P\le T_Q$. La diferencia entre dos funciones de (30) es monótona; basta
+comprobar ambos extremos del intervalo. Las comparaciones de dominancia no
+relajan tolerancias.
+
+Eliminar una intersección sin actividades consiste en componer cada entrada
+con cada salida. Todo recorrido por ella tiene esa representación y cada
+conexión nueva se expande al mismo recorrido vial. Una conexión dominante
+permite llegar antes y con más batería; puede esperarse y reducir una carga
+parcial posterior. Por $c_r=b^{ini}+Q_r-b_r^{final}$, la sustitución no empeora
+el consumo efectivo. Esto conserva el óptimo, aunque quite recorridos dominados.
+
+Un autoarco dominado por permanecer en el nodo se elimina. Los ciclos que
+recuperan energía se conservan y una intersección con un autoarco útil no se
+elimina. Por tanto, no se supone ausencia de ciclos energéticos negativos.
+Si una eliminación genera demasiadas combinaciones o se agota el presupuesto
+de preparación, se conserva la intersección para que la explore el pricing.
+Detener la compresión no descarta caminos pendientes.
+
+\subsection{Alcance y auditoría}
+
+La reducción preserva el óptimo vial sin $H$ bajo tiempos constantes, espera
+sin consumo, recargas parciales y actividades solo en servicios. No cubre
+tráfico dependiente de hora, consumo por carga transportada, objetivos de
+distancia ni consumo auxiliar durante espera.
+Con energías no negativas y sin plazos, Dijkstra sigue siendo suficiente por
+monotonicidad de batería y objetivo energético.
+
+Se comprueban perfiles contra prefijos viales y se expanden todas las calles
+de la solución para validarlas independientemente. Ventanas, jornadas, recargas,
+reserva final y clientes atendidos se comprueban sobre esa expansión.
+La caché depende de la red, escenario, parámetros y versión. Las alternativas
+y el pricing pueden crecer mucho: no hay una garantía de tiempo polinomial.
+El presupuesto de preparación y el de resolución se registran por separado.
 \end{document}

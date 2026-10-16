@@ -17,7 +17,13 @@ from scipy.optimize import linprog
 from scipy.spatial import ConvexHull, QhullError
 
 from ev_routing.contracts import ProblemInstance, RouteStep, Solution, VehicleRoute
-from ev_routing.operations import arc_energy, charge_seconds, schedule_solution, travel_seconds
+from ev_routing.operations import (
+    arc_energy,
+    arc_key,
+    charge_seconds,
+    schedule_solution,
+    travel_seconds,
+)
 
 
 @dataclass
@@ -118,30 +124,40 @@ class Label:
     mask: int
     resources: Polytope
     active: bool = True
+    arc_ids: tuple[str | None, ...] = ()
 
 
 def route_from_walk(
-    instance: ProblemInstance, vehicle: str, walk, services, charges,
+    instance: ProblemInstance, vehicle: str, walk, services, charges, *, arc_ids=None, arc_lookup=None,
 ) -> VehicleRoute:
-    arcs = {(a.from_node_id, a.to_node_id): a for a in instance.arcs}
+    arcs = arc_lookup if arc_lookup is not None else {arc_key(a): a for a in instance.arcs}
     b = instance.parameters.initial_energy_kwh
     steps, energy = [], 0.0
     for index, node in enumerate(walk):
         q = float(charges[index])
         departure = b + q
         target = walk[index + 1] if index + 1 < len(walk) else None
+        arc_id = arc_ids[index] if target is not None and arc_ids is not None else None
+        arc = arcs.get((node, target, arc_id))
+        if target is not None and arc is None and not (
+            node == target == instance.depot_id and arc_id is None
+        ):
+            raise ValueError("El recorrido requiere el arc_id del camino seleccionado")
         predicted = None if target is None else (
-            0.0 if node == target == instance.depot_id else arc_energy(arcs[node, target], instance.operations)
+            0.0 if arc is None else arc_energy(arc, instance.operations)
         )
         arrival = None if target is None else min(
-            instance.parameters.battery_capacity_kwh, departure - predicted,
+            arc.battery_profile.maximum_arrival_kwh
+            if arc is not None and arc.battery_profile is not None
+            else instance.parameters.battery_capacity_kwh,
+            departure - predicted,
         )
         effective = None if arrival is None else departure - arrival
         steps.append(RouteStep(
             position=index, node_id=node, battery_arrival_kwh=b,
             charged_to_battery_kwh=q, battery_departure_kwh=departure,
             delivered_visit_ids=[node] if index in services else [],
-            next_node_id=target, predicted_arc_energy_kwh=predicted,
+            next_node_id=target, arc_id=arc_id, predicted_arc_energy_kwh=predicted,
             effective_arc_energy_kwh=effective,
         ))
         if arrival is not None:
@@ -163,12 +179,15 @@ class RouteOracle:
     """Exploración reutilizable entre duales y fases; ninguna cota de movimientos."""
 
     def __init__(self, instance: ProblemInstance, vehicle: str, *,
-                 search: str = "breadth_first", dominance: str = "convex"):
+                 search: str = "breadth_first", dominance: str = "convex", network=None):
         self.instance, self.vehicle = instance, vehicle
         self.bits = {node: 1 << i for i, node in enumerate(instance.customer_ids)}
-        self.outgoing = defaultdict(list)
-        for arc in instance.arcs:
-            self.outgoing[arc.from_node_id].append(arc)
+        self.outgoing = network.outgoing if network is not None else defaultdict(list)
+        if network is None:
+            for arc in instance.arcs:
+                self.outgoing[arc.from_node_id].append(arc)
+        self.arc_lookup = (network.arc_lookup if network is not None
+                           else {arc_key(a): a for a in instance.arcs})
         self.chargers = set(instance.chargers_for(vehicle))
         self.timed = instance.operations.max_route_seconds is not None
         initial = Label((instance.depot_id,), (), 0, Polytope(
@@ -251,6 +270,7 @@ class RouteOracle:
                 if previous is None or values[index] < previous.net_energy_kwh - 1e-9:
                     route = route_from_walk(
                         instance, self.vehicle, label.walk, label.services, poly.charges[index],
+                        arc_ids=label.arc_ids, arc_lookup=self.arc_lookup,
                     )
                     self.routes[label.mask] = changed[label.mask] = route
         for mask, services, poly in self._service(label):
@@ -267,13 +287,19 @@ class RouteOracle:
                 ).hull()
             for arc in self.outgoing[node]:
                 energy = arc_energy(arc, ops)
-                feasible = poly.clip(0, reserve + energy, upper=False) if energy >= 0 else poly
+                profile = arc.battery_profile
+                lower = profile.minimum_departure_kwh if profile else max(reserve, reserve + energy)
+                ceiling = profile.maximum_arrival_kwh if profile else capacity
+                # El invariante de las etiquetas ya exige b>=reserva. No
+                # volver a cortar ese mismo borde tras una resta redondeada
+                # (p.ej. 24-21.6), ni cambiar la extensión regenerativa original.
+                feasible = poly.clip(0, lower, upper=False) if lower > reserve else poly
                 if feasible is None:
                     continue
-                if energy < 0:
+                if ceiling + energy < capacity:
                     parts = [
-                        (feasible.clip(0, capacity + energy), False),
-                        (feasible.clip(0, capacity + energy, upper=False), True),
+                        (feasible.clip(0, ceiling + energy), False),
+                        (feasible.clip(0, ceiling + energy, upper=False), True),
                     ]
                 else:
                     parts = [(feasible, False)]
@@ -281,7 +307,7 @@ class RouteOracle:
                     if part is None:
                         continue
                     points = part.points.copy()
-                    points[:, 0] = capacity if saturated else points[:, 0] - energy
+                    points[:, 0] = ceiling if saturated else points[:, 0] - energy
                     if self.timed:
                         points[:, 1] += travel_seconds(arc, ops)
                     following = Polytope(
@@ -293,6 +319,7 @@ class RouteOracle:
                             continue
                     self._insert(Label(
                         (*label.walk, arc.to_node_id), services, mask, following.hull(),
+                        arc_ids=(*label.arc_ids, arc.arc_id),
                     ))
         self.complete = not self.queue
         return changed

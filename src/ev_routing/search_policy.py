@@ -11,6 +11,8 @@ from pydantic import Field, field_validator, model_validator
 
 from ev_routing.contracts import Contract
 
+DEFAULT_BEDROCK_MODEL = "us.openai.gpt-5.6-luna"
+
 
 class SearchPolicy(Contract):
     decomposition: Literal["vehicle", "vehicle_routing"] = "vehicle"
@@ -29,8 +31,17 @@ class BedrockConfig(Contract):
     region: str = Field(default="us-east-1", min_length=1)
     profile: str | None = "hackathon"
     timeout_seconds: float = Field(default=8, gt=0, le=60)
-    max_output_tokens: int = Field(default=4096, ge=128, le=16384)
-    reasoning_effort: Literal["low", "medium", "high"] | None = None
+    max_output_tokens: int = Field(default=700, ge=128, le=4096)
+    # Converse: Anthropic usa output_config.effort; GPT usa reasoning.effort.
+    reasoning_effort: Literal["low", "medium", "high", "xhigh", "max"] | None = None
+    fast_model_id: str | None = Field(default=None, min_length=1)
+    fast_timeout_seconds: float = Field(default=8, gt=0, le=60)
+    max_input_bytes: int = Field(default=180_000, ge=40_000, le=2_000_000)
+
+    @property
+    def is_openai_reasoning_model(self) -> bool:
+        model = self.model_id or ""
+        return "openai.gpt-" in model and "openai.gpt-oss-" not in model
 
     @field_validator("model_id", mode="before")
     @classmethod
@@ -44,12 +55,16 @@ class BedrockConfig(Contract):
 class SearchConfig(Contract):
     policy: Literal["standard", "deterministic", "adaptive"] = "standard"
     bedrock: BedrockConfig = Field(default_factory=BedrockConfig)
-    max_llm_calls: int = Field(default=1, ge=1, le=20, strict=True)
+    max_llm_calls: int = Field(default=4, ge=1, le=20, strict=True)
     decision_interval_seconds: float = Field(default=15, ge=0)
     min_pricing_calls_between_decisions: int = Field(default=10, ge=1, strict=True)
+    llm_time_fraction: float = Field(default=.25, gt=0, le=.5)
     # Ruta local de logs; no se transmite al LLM.
     log_directory: str | None = None
     show_llm_trace: bool = False
+    instance_context_bytes: int = Field(default=45_000, ge=2000, le=1_000_000, strict=True)
+    export_mps: bool = True
+    tree_control: bool = True
 
     @model_validator(mode="after")
     def adaptive_requires_model(self):

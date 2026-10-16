@@ -35,18 +35,17 @@ def test_native_examples_preserve_data_and_report_physical_results(name, deliver
     assert result["solve"]["lexicographic_optimal"]
     assert [phase["name"] for phase in result["solve"]["phases"]] == ["deliveries", "energy"]
     json.dumps(result, allow_nan=False)
-    assert "ev_routing.service_graph" not in sys.modules
     assert not any(name == "evrp" or name.startswith("evrp.") for name in sys.modules)
 
 
 @pytest.mark.parametrize("representation", [
     {"kind": "service_paths_nonnegative"}, "service_paths_nonnegative",
 ])
-def test_excluded_representation_is_rejected_before_solver(monkeypatch, representation):
+def test_paths_without_context_are_rejected_before_solver(monkeypatch, representation):
     instance = load_instance(EXAMPLES / "toy_recharge.json")
     instance.provenance["representation"] = representation
     monkeypatch.setattr(pipeline, "solve_instance", lambda *a, **kw: pytest.fail("solver called"))
-    with pytest.raises(ValueError, match="arcos elementales"):
+    with pytest.raises(ValueError, match="road-instance|representation"):
         pipeline.run_instance(instance)
 
 
@@ -84,9 +83,9 @@ def test_cli_uses_the_same_native_pipeline(tmp_path):
 def test_cli_rejects_ambiguous_or_nonfinite_json(tmp_path, text):
     instance = tmp_path / "invalid.json"
     instance.write_text(text)
-    with pytest.raises(SystemExit) as error:
-        cli.main(["run", "--instance", str(instance), "--output", str(tmp_path / "result.json")])
-    assert error.value.code == 2
+    assert cli.main([
+        "run", "--instance", str(instance), "--output", str(tmp_path / "result.json"),
+    ]) == 2
 
 
 def test_cli_rejects_boolean_energy_like_the_web(tmp_path, monkeypatch):
@@ -95,6 +94,6 @@ def test_cli_rejects_boolean_energy_like_the_web(tmp_path, monkeypatch):
     source = tmp_path / "boolean-energy.json"
     source.write_text(json.dumps(payload))
     monkeypatch.setattr(cli, "run_instance", lambda *a, **kw: pytest.fail("solver called"))
-    with pytest.raises(SystemExit) as error:
-        cli.main(["run", "--instance", str(source), "--output", str(tmp_path / "result.json")])
-    assert error.value.code == 2
+    assert cli.main([
+        "run", "--instance", str(source), "--output", str(tmp_path / "result.json"),
+    ]) == 2

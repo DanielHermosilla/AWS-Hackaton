@@ -1,5 +1,18 @@
-/data/
+data/
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.hypothesis/
+.ruff_cache/
+.coverage
+htmlcov/
+artifacts/
+*.egg-info/
+build/
+dist/
 
+/data/
 # Herramientas, memoria y archivos personales de desarrollo
 /.local/
 /.agents/
@@ -11,24 +24,11 @@
 /bb-env/
 /.credenciales-evento.md
 /memoria-hackaton-equipo.zip
-
 # La demostración compartida es sintética; los escenarios reales quedan locales
 /webapp/data/*.local.json
-
 # Entornos y archivos generados
 .DS_Store
-__pycache__/
-*.py[cod]
-.venv/
 node_modules/
-.pytest_cache/
-.ruff_cache/
-.coverage
-htmlcov/
-artifacts/
-*.egg-info/
-build/
-dist/
 .env
 .env.*
 !.env.example

@@ -19,7 +19,7 @@ export function initRunPanel() {
     <p>Revisa la instancia y los supuestos antes de ejecutar. El motor se ejecuta en este servidor local.</p>
     <form id="run-form">
       <label class="run-file" for="instance-file">Instancia <input id="instance-file" type="file" accept=".csv,.json" aria-describedby="instance-help"></label>
-      <p id="instance-help" class="run-help">CSV de nodos, ProblemInstance nativa 1.0 o una descarga del API 3.0. Hasta 8 MB.</p>
+      <p id="instance-help" class="run-help">CSV de nodos, ProblemInstance nativa o ejecución exportada. Archivos hasta 64 MB; la instancia enviada al motor admite hasta 8 MiB.</p>
       <button id="use-synthetic" type="button" class="run-text-button">Usar caso sintético pequeño</button>
       <p id="input-summary" class="input-summary">Ningún archivo seleccionado.</p>
       <div class="run-location-review"><button id="edit-locations" type="button" disabled>Revisar ubicaciones</button><span id="location-review-help">Carga una entrada para revisar sus puntos.</span></div>
@@ -29,11 +29,14 @@ export function initRunPanel() {
         <label>Capacidad útil · kWh<input id="run-capacity" name="battery_capacity_kwh" type="number" min="0.01" step="any" placeholder="Por confirmar" required></label>
         <label>Reserva mínima · kWh<input id="run-reserve" name="reserve_kwh" type="number" min="0.001" step="any" placeholder="Supuesto explícito" required></label>
         <label>Consumo supuesto · kWh/km<input id="run-consumption" name="consumption_kwh_km" type="number" min="0.001" step="any" placeholder="Supuesto explícito" required></label>
-        <label>Presupuesto solver · s<input id="run-seconds" name="time_limit_seconds" type="number" min="1" max="120" step="1" value="10" required></label>
+        <label>Presupuesto solver · s<input id="run-seconds" name="time_limit_seconds" type="number" min="1" max="120" step="1" value="120" required></label>
+        <label>Búsqueda<select id="run-policy"><option value="adaptive">GPT rápido · Bedrock</option><option value="standard">Estándar · sin LLM</option><option value="deterministic">Política determinista · sin LLM</option></select></label>
+        <label>Red para CSV<select id="run-network"><option value="road">Calles del servidor</option><option value="haversine">Distancia geodésica · sintética</option></select></label>
       </fieldset>
       <p id="native-note" class="run-help" hidden></p>
       <p id="fleet-help" class="run-help">El perfil oficial usa 2 Nissan Leaf 2013 al 60 %. Capacidad útil, reserva y consumo son supuestos de esta ejecución.</p>
-      <p id="network-note" class="run-help">El CSV aporta ubicaciones. Esta beta usa una aproximación por distancia, sin red vial ni pendiente. Una instancia nativa conserva sus arcos, parámetros y operaciones.</p>
+      <p id="network-note" class="run-help">El CSV aporta ubicaciones. La red vial debe estar configurada en el servidor. Capacidad, reserva y consumo son supuestos explícitos. La alternativa geodésica es sintética.</p>
+      <p class="run-help">Prioridad: maximizar entregas factibles; luego minimizar energía con tolerancia de 0,5 %. GPT propone estrategias de búsqueda; el motor comprueba la física y las cotas. Las credenciales AWS se configuran en el servidor.</p>
       <label class="run-ack"><input id="run-ack" type="checkbox" required><span>Revisé estos parámetros y el alcance de la red.</span></label>
       <p id="run-message" class="run-message" role="status" aria-live="polite" tabindex="-1"></p>
       <div class="dialog-actions"><button id="stop-waiting" type="button" hidden>Dejar de esperar</button><button id="solve-run" type="submit" class="primary">Calcular rutas</button></div>
@@ -187,7 +190,9 @@ export function initRunPanel() {
     $('run-capacity').value = fleet.battery_capacity_kwh ?? '';
     $('run-reserve').value = fleet.reserve_kwh ?? '';
     $('run-consumption').value = native ? '' : fleet.consumption_kwh_km ?? '';
-    $('run-seconds').value = value.request?.solver?.time_limit_seconds ?? 10;
+    $('run-seconds').value = value.request?.solver?.time_limit_seconds ?? 120;
+    $('run-policy').value = value.request?.solver?.search_policy ?? 'adaptive';
+    $('run-network').value = value.prepareRequest?.network_mode ?? 'road';
   }
   function setInput(value, name) {
     locationEditor.close();
@@ -200,7 +205,8 @@ export function initRunPanel() {
     $('location-review-help').textContent = native ? 'Ubicaciones y red nativa protegidas.' : 'Formulario y mapa · los cambios se aplican al confirmar.';
     $('network-note').textContent = native
       ? 'Se utilizará la red incluida en el JSON. Las coordenadas son opcionales: los nodos sin ubicación se conservan en la lista. El servidor valida la instancia sin cambiar su configuración física.'
-      : 'El servidor preparará una aproximación por distancia, sin red vial ni pendiente. Las coordenadas no acreditan conectividad por calles.';
+      : 'Elige calles del servidor para preparar la red dirigida y expandir el resultado. La alternativa por distancia es sintética; no acredita conectividad vial.';
+    $('run-network').disabled = native;
     $('native-note').hidden = !native;
     $('native-note').textContent = native ? 'Parámetros del JSON protegidos. Arcos, operaciones, conectores, compatibilidad y procedencia se conservan íntegros. Los parámetros omitidos usan los valores predeterminados del contrato nativo del motor; sus valores efectivos aparecerán en la instancia exportada después de ejecutar. Para cambiar el escenario, edita el archivo y vuelve a cargarlo. Solo el presupuesto del solver se configura aquí.' : '';
     $('fleet-help').hidden = native;
@@ -208,7 +214,7 @@ export function initRunPanel() {
     for (const field of dialog.querySelectorAll('.run-fields input')) {
       if (field.id !== 'run-seconds') field.disabled = native;
     }
-    if (native || value.prepareRequest) fieldsFrom(value);
+    fieldsFrom(value);
     canonicalInstance = native ? value.instance : null;
     setBusy(busy);
   }
@@ -216,11 +222,12 @@ export function initRunPanel() {
     if (!input) throw new Error('Selecciona una instancia antes de calcular.');
     if (locationEditor.isOpen) throw new Error('Confirma o cancela la edición de ubicaciones antes de calcular.');
     if (!$('run-ack').checked) throw new Error('Revisa y confirma los parámetros y el alcance de la red.');
-    if (input.instance) return {request: makeSolveRequest(input, $('run-seconds').value), prepareRequest: null};
+    if (input.instance) return {request: makeSolveRequest(input, $('run-seconds').value, $('run-policy').value), prepareRequest: null};
     const values = Object.fromEntries(['num_vehicles', 'battery_capacity_kwh', 'reserve_kwh', 'initial_soc', 'consumption_kwh_km']
       .map(key => [key, $('run-form').elements.namedItem(key).value]));
     values.initial_soc = Number(values.initial_soc) / 100;
-    return {request: {api_version: API_VERSION, solver: solverSettings($('run-seconds').value)},
+    values.network_mode = $('run-network').value;
+    return {request: {api_version: API_VERSION, solver: solverSettings($('run-seconds').value, $('run-policy').value)},
       prepareRequest: makePrepareRequest(input, values)};
   }
   function open(trigger) {
@@ -248,7 +255,7 @@ export function initRunPanel() {
     const file = event.target.files?.[0];
     if (!file) { $('input-summary').textContent = 'Ningún archivo seleccionado.'; return; }
     try {
-      if (file.size > 8 * 1024 * 1024) throw new Error('El archivo supera el límite de 8 MB de esta beta.');
+      if (file.size > 64 * 1024 * 1024) throw new Error('El archivo supera el límite de importación de 64 MB.');
       const text = await file.text();
       if (revision !== fileRevision) return;
       setInput(parseInstanceFile(text, file.name), file.name);
@@ -266,6 +273,7 @@ export function initRunPanel() {
     message('Caso sintético preparado para una ejecución real del motor. Capacidad 10 kWh, reserva 1 kWh y consumo 1 kWh/km son valores de prueba.');
   });
   for (const field of dialog.querySelectorAll('.run-fields input')) field.addEventListener('input', () => { dirty(); persistDraft(); });
+  for (const field of dialog.querySelectorAll('.run-fields select')) field.addEventListener('change', () => { dirty(); persistDraft(); });
   $('run-form').addEventListener('submit', async event => {
     event.preventDefault();
     if (busy) return;
@@ -296,7 +304,9 @@ export function initRunPanel() {
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
   $('export-instance').addEventListener('click', () => {
-    if (canonicalInstance) download(canonicalInstance, 'instancia-nativa.json');
+    const preparation = lastPrepareRequest || rawResponse?.result?.raw?.prepare_request;
+    if (canonicalInstance && preparation?.network_mode === 'road') download(preparation, 'entrada-vial.json');
+    else if (canonicalInstance) download(canonicalInstance, 'instancia-nativa.json');
     else message('Prepara o carga una instancia nativa antes de descargarla.', true);
   });
   $('export-result').addEventListener('click', () => {
@@ -344,11 +354,13 @@ export function initRunPanel() {
         // A slow run fetch must not overwrite a draft already edited on this page.
         if (!draftEdited) {
           const editable = readEditableSource(result.run_id, undefined, result.raw.instance);
-          setInput(editable ? {...editable, request: {solver: request.solver}} : {instance: result.raw.instance, request},
-            editable ? 'Ubicaciones de esta ejecución · aproximación por distancia' : 'Instancia nativa de esta ejecución');
+          const preparation = result.raw.prepare_request || editable?.prepareRequest;
+          setInput(preparation
+            ? {nodes: preparation.nodes, prepareRequest: preparation, request}
+            : {instance: result.raw.instance, request}, 'Entrada de esta ejecución');
           canonicalInstance = result.raw.instance;
           lastRequest = request;
-          lastPrepareRequest = editable?.prepareRequest || null;
+          lastPrepareRequest = preparation || null;
           $('export-instance').disabled = false;
           if (saved?.editableSourceSaved === false)
             message('El navegador no conservó el origen editable. Carga el CSV original para cambiar ubicaciones; la instancia calculada mantiene su red protegida.');

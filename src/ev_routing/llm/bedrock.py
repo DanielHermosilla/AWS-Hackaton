@@ -1,4 +1,4 @@
-"""Cliente Bedrock Converse; no contiene credenciales ni ejecuta código del LLM."""
+"""Bedrock Converse; credenciales AWS y decisiones JSON validadas."""
 
 from __future__ import annotations
 
@@ -49,25 +49,42 @@ class BedrockResponseError(ValueError):
         self.stop_reason = response.get("stopReason")
 
 
+def create_bedrock_client(config: BedrockConfig):
+    """Preparar SDK y transporte antes de competir con las heurísticas por el GIL."""
+    import boto3
+    from botocore.config import Config
+
+    session = boto3.Session(profile_name=config.profile, region_name=config.region)
+    return session.client(
+        "bedrock-runtime", region_name=config.region,
+        config=Config(
+            connect_timeout=min(3, config.timeout_seconds * .2),
+            read_timeout=max(.05, config.timeout_seconds * .8),
+            retries={"total_max_attempts": 1},
+        ),
+    )
+
+
 class BedrockPolicyClient:
     def __init__(self, config: BedrockConfig, *, client: Any = None, system_prompt: str = SYSTEM_PROMPT,
                  temperature: float | None = None, trace_directory: str | None = None,
-                 max_input_bytes: int = 40_000):
+                 show_trace: bool = False):
         self.config, self.client = config, client
         self.system_prompt = system_prompt
         self.temperature = temperature
         self.trace_directory = trace_directory
-        self.max_input_bytes = max_input_bytes
+        self.show_trace = show_trace
 
     def request_payload(self, request: dict[str, Any]) -> dict[str, Any]:
-        """Cuerpo exacto de Converse; no contiene credenciales ni cabeceras."""
+        """Cuerpo exacto del proveedor; no contiene credenciales ni cabeceras."""
         text = json.dumps(request, ensure_ascii=False, allow_nan=False)
-        if len(text.encode("utf-8")) > self.max_input_bytes:
+        if len(text.encode("utf-8")) > self.config.max_input_bytes:
             raise ValueError("El perfil excede el límite de entrada de Bedrock")
         inference = {"maxTokens": self.config.max_output_tokens}
-        anthropic = "anthropic.claude-" in (self.config.model_id or "")
-        # Los Claude nuevos rechazan temperaturas distintas del valor nativo.
-        if self.temperature is not None and not anthropic:
+        # El razonamiento adaptativo de Claude Fable no admite temperature=0.
+        # Al solicitar esfuerzo explícito se conserva el muestreo del proveedor.
+        if (self.temperature is not None and self.config.reasoning_effort is None
+                and not self.config.is_openai_reasoning_model):
             inference["temperature"] = self.temperature
         payload = {
             "modelId": self.config.model_id,
@@ -75,9 +92,11 @@ class BedrockPolicyClient:
             "messages": [{"role": "user", "content": [{"text": text}]}],
             "inferenceConfig": inference,
         }
-        if self.config.reasoning_effort is not None:
-            if not anthropic:
-                raise ValueError("reasoning_effort requiere un modelo Claude compatible")
+        if self.config.is_openai_reasoning_model:
+            payload["additionalModelRequestFields"] = {
+                "reasoning": {"effort": self.config.reasoning_effort or "low"},
+            }
+        elif self.config.reasoning_effort is not None:
             payload["additionalModelRequestFields"] = {
                 "output_config": {"effort": self.config.reasoning_effort},
             }
@@ -95,40 +114,29 @@ class BedrockPolicyClient:
     def __call__(self, request: dict[str, Any]) -> dict[str, Any]:
         payload = self.request_payload(request)
         self._trace("llm-request.json", payload)
-        if self.client is None:
-            import boto3
-            from botocore.config import Config
-
-            session = boto3.Session(
-                profile_name=self.config.profile, region_name=self.config.region,
-            )
-            self.client = session.client(
-                "bedrock-runtime", region_name=self.config.region,
-                config=Config(
-                    connect_timeout=min(3, self.config.timeout_seconds),
-                    read_timeout=self.config.timeout_seconds,
-                    retries={"total_max_attempts": 1},
-                ),
-            )
-        try:
-            response = self.client.converse(**payload)
-        except Exception as error:
-            detail = getattr(error, "response", {}).get("Error")
-            if detail:
-                self._trace("llm-error.json", {
-                    "code": detail.get("Code"), "message": str(detail.get("Message", ""))[:4000],
-                })
-            raise
-        # La respuesta del modelo, incluso inválida, permite diagnosticar fallback.
-        # Omitir cabeceras HTTP y metadatos de transporte.
+        response = self._converse(payload)
+        # Conservar respuesta final y uso, sin cabeceras ni razonamiento interno.
+        message = response.get("output", {}).get("message", {})
         self._trace("llm-response.json", {
-            key: response.get(key) for key in ("output", "usage", "stopReason", "metrics")
+            **{key: response.get(key) for key in ("usage", "stopReason", "metrics")},
+            "output": {"message": {
+                "role": message.get("role"),
+                "content": [{"text": block["text"]} for block in message.get("content", [])
+                            if "text" in block],
+            }},
         })
+        answer = "".join(
+            block.get("text", "")
+            for block in response.get("output", {}).get("message", {}).get("content", [])
+        )
+        if self.show_trace:
+            print("\n[LLM] Respuesta recibida (todavía no implica aplicación):\n" + json.dumps({
+                "model_id": self.config.model_id, "event": request.get("event"),
+                "stop_reason": response.get("stopReason"), "usage": response.get("usage"),
+                "metrics": response.get("metrics"),
+            }, ensure_ascii=False) + "\n" + answer, flush=True)
         if response.get("stopReason") not in {"end_turn", "stop_sequence"}:
             raise BedrockResponseError("incomplete_response", response)
-        answer = "".join(
-            block.get("text", "") for block in response["output"]["message"]["content"]
-        )
         # Aceptar una envoltura Markdown sin interpretar nada como código.
         if answer.strip().startswith("```") and answer.strip().endswith("```"):
             answer = "\n".join(answer.strip().splitlines()[1:-1])
@@ -143,3 +151,8 @@ class BedrockPolicyClient:
             "usage": response.get("usage", {}),
             "stop_reason": response.get("stopReason"),
         }
+
+    def _converse(self, payload):
+        if self.client is None:
+            self.client = create_bedrock_client(self.config)
+        return self.client.converse(**payload)

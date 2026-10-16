@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from ev_routing.contracts import ProblemInstance, Solution, ValidationReport
+from ev_routing.operations import arc_key, step_key
 
 
 def compute_metrics(
@@ -37,15 +38,15 @@ def compute_metrics(
     if not valid:
         return result
     assert solution is not None
-    distances = {(a.from_node_id, a.to_node_id): a.distance_m for a in instance.arcs}
-    distances[instance.depot_id, instance.depot_id] = 0.0
+    distances = {arc_key(a): a.distance_m for a in instance.arcs}
+    distances[instance.depot_id, instance.depot_id, None] = 0.0
     steps = [step for route in solution.routes for step in route.steps]
     result.update(
         served_deliveries=len(solution.served_visit_ids),
         net_battery_energy_kwh=solution.net_energy_kwh,
         charged_to_battery_kwh=sum(step.charged_to_battery_kwh for step in steps),
         distance_km=sum(
-            distances[step.node_id, step.next_node_id]
+            distances[step_key(step)]
             for step in steps
             if step.next_node_id is not None
         )

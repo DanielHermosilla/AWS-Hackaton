@@ -68,12 +68,13 @@ class RunStore:
 class LocalServer(ThreadingHTTPServer):
     daemon_threads = True
 
-    def __init__(self, host, port, static_root):
+    def __init__(self, host, port, static_root, runtime=None):
         if host not in {"127.0.0.1", "localhost"}:
             raise ValueError("El servidor beta solo admite 127.0.0.1 o localhost.")
         self.static_root = Path(static_root).resolve(strict=True)
         self.solve_lock = threading.Lock()
         self.runs = RunStore()
+        self.runtime = runtime
         super().__init__((host, port), Handler)
         self.allowed_hosts = {f"127.0.0.1:{self.server_port}", f"localhost:{self.server_port}"}
 
@@ -133,7 +134,7 @@ class Handler(BaseHTTPRequestHandler):
             self._error(404, "not_found", "Recurso no encontrado.")
             return
         if parts.path == "/health" and not parts.query:
-            self._send(200, service.health())
+            self._send(200, service.health(runtime=self.server.runtime))
             return
         if parts.path == "/solve":
             try:
@@ -237,9 +238,9 @@ class Handler(BaseHTTPRequestHandler):
             )
             return
         try:
-            response = (
-                service.prepare(payload) if self.path == "/prepare" else service.solve(payload)
-            )
+            options = {"runtime": self.server.runtime} if self.server.runtime is not None else {}
+            response = service.prepare(payload, **options) if self.path == "/prepare" \
+                else service.solve(payload, **options)
             encoded = service.json_bytes(response)
             if self.path == "/solve":
                 self.server.runs.put(response["result"]["run_id"], encoded)
@@ -266,18 +267,30 @@ class Handler(BaseHTTPRequestHandler):
         pass
 
 
-def make_server(host="127.0.0.1", port=8000, static_root=None):
+def make_server(host="127.0.0.1", port=8000, static_root=None, *, runtime=None):
     root = (
         static_root if static_root is not None else Path(__file__).resolve().parents[1] / "webapp"
     )
-    return LocalServer(host, port, root)
+    return LocalServer(host, port, root, runtime)
 
 
 def main():
     parser = argparse.ArgumentParser(description="ZMD beta local, webapp + núcleo nativo de Daniel")
     parser.add_argument("--port", type=int, default=8000)
+    parser.add_argument("--graphml", type=Path, help="Red dirigida local; no se descarga.")
+    parser.add_argument("--network-profile", choices=["drive", "delivery"], default="delivery")
+    parser.add_argument("--max-snap-distance-m", type=float, default=100)
+    parser.add_argument("--log-directory", type=Path, default=Path("artifacts/webapp"))
+    parser.add_argument("--tee", action="store_true", help="Mostrar logs SCIP y decisiones LLM.")
     args = parser.parse_args()
-    server = make_server(port=args.port)
+    from .runtime import Runtime
+
+    runtime = Runtime(
+        graphml=args.graphml, network_profile=args.network_profile,
+        max_snap_distance_m=args.max_snap_distance_m, log_directory=args.log_directory,
+        tee=args.tee,
+    )
+    server = make_server(port=args.port, runtime=runtime)
     print(f"ZMD Integración Beta: http://127.0.0.1:{server.server_port}", flush=True)
     print(
         "Los resultados temporales expiran al reiniciar; salir de la página no cancela el cálculo.",

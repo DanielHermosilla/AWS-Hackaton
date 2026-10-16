@@ -11,6 +11,7 @@
     "solver": "scip-routes",
     "time_limit_seconds": 60.0,
     "relative_gap": 0.0,
+    "energy_relative_gap": 0.005,
     "threads": 1,
     "seed": 0,
     "tee": false

@@ -14,6 +14,12 @@ from ev_routing import __version__
 from ev_routing.contracts import ProblemInstance, Solution, SolverConfig
 from ev_routing.metrics import compute_metrics
 from ev_routing.search_policy import SearchConfig
+from ev_routing.service_graph import (
+    SERVICE_REPRESENTATIONS,
+    PathArchive,
+    check_service_context,
+    expand_and_validate,
+)
 from ev_routing.solve import solve_instance
 from ev_routing.validation import validate_solution
 
@@ -23,6 +29,8 @@ def run_instance(
     config: SolverConfig | None = None,
     *,
     output_path: str | Path | None = None,
+    road_instance: ProblemInstance | None = None,
+    path_archive: PathArchive | None = None,
     initial_solution: Solution | None = None,
     search_config: SearchConfig | None = None,
 ) -> dict[str, Any]:
@@ -30,19 +38,27 @@ def run_instance(
     started = time.perf_counter()
     config = config or SolverConfig()
     without_h = config.solver == "scip-routes"
-    # La integración importa el solver de Daniel, sin el preprocesamiento
-    # derivado de codex/optimizacion-contraida. No aceptar sus arcos agregados
-    # sin la expansión/validación que esa representación necesita.
     representation = instance.provenance.get("representation", {})
-    if representation == "service_paths_nonnegative" or (
-        isinstance(representation, dict) and representation.get("kind") == "service_paths_nonnegative"
-    ):
-        raise ValueError("Esta integración requiere arcos elementales; no admite service_paths_nonnegative")
+    if not isinstance(representation, dict):
+        raise ValueError("provenance.representation debe ser un objeto con kind")
+    is_service_graph = representation.get("kind") in SERVICE_REPRESENTATIONS
+    if is_service_graph:
+        if road_instance is None or path_archive is None:
+            raise ValueError("Esta variante requiere --road-instance y --path-archive para validarse")
+        check_service_context(instance, road_instance, path_archive)
+    elif road_instance is not None or path_archive is not None:
+        raise ValueError("Los caminos externos solo corresponden a la variante de servicios")
     initial_checking = time.perf_counter()
     if initial_solution is not None:
         report = validate_solution(instance, initial_solution, enforce_movement_limit=not without_h)
         if not report.feasible:
             raise ValueError(f"Solución inicial inválida: {report.violations}")
+        if is_service_graph:
+            _, report, _ = expand_and_validate(
+                instance, road_instance, path_archive, initial_solution, without_h=without_h,
+            )
+            if not report.feasible:
+                raise ValueError(f"Solución inicial vial inválida: {report.violations}")
     initial_validation_seconds = time.perf_counter() - initial_checking
     canonical = json.dumps(
         instance.model_dump(mode="json"), sort_keys=True, allow_nan=False
@@ -58,7 +74,32 @@ def run_instance(
         validate_solution(instance, solved.solution, enforce_movement_limit=not without_h)
         if solved.solution is not None else None
     )
-    road_audit = None
+    road_audit = expanded = None
+    if is_service_graph and validation is not None and validation.feasible:
+        try:
+            expanded, report, counts = expand_and_validate(
+                instance, road_instance, path_archive, solved.solution, without_h=without_h,
+            )
+            road_audit = {
+                **report.model_dump(),
+                "road_movement_counts": counts,
+                "original_road_movement_limit": road_instance.parameters.movement_limit,
+                "within_original_movement_limit": all(
+                    count <= road_instance.parameters.movement_limit for count in counts.values()
+                ),
+                "routes": [route.model_dump(mode="json") for route in expanded.routes],
+                "scope": "Arcos, entregas, batería y opciones operacionales; H vial original separado.",
+            }
+            validation.checks["expanded_roads"] = report.feasible
+            if not report.feasible:
+                validation.feasible = False
+                validation.violations.extend(report.violations)
+                validation.checks["expanded_roads"] = False
+        except (ValueError, KeyError) as error:
+            validation.feasible = False
+            validation.violations.append(f"Expansión vial inválida: {error}")
+            validation.checks["expanded_roads"] = False
+            road_audit = {"feasible": False, "violations": [str(error)]}
     validation_seconds = time.perf_counter() - checking
     status = solved.status
     if validation is not None and not validation.feasible:
@@ -89,7 +130,11 @@ def run_instance(
             "deliveries": len(initial_solution.served_visit_ids) if initial_solution else None,
             "energy_kwh": initial_solution.net_energy_kwh if initial_solution else None,
         },
-        "kpis": compute_metrics(instance, solved.solution, validation),
+        "kpis": compute_metrics(
+            road_instance.model_copy(update={"operations": instance.operations})
+            if expanded is not None else instance,
+            expanded if expanded is not None else solved.solution, validation,
+        ),
         "tuning": solved.search["controller"] if solved.search else {
             "status": "disabled",
             "reason": "El backend seleccionado resuelve sin LLM ni llamadas a AWS.",

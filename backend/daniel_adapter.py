@@ -1,6 +1,6 @@
 """Project Daniel's native RunResult without replacing its physics or certificates.
 
-Source contract: ev_routing at 6242035. Runtime imports only the local project core.
+Runtime imports only the merged local project core.
 """
 
 from __future__ import annotations
@@ -44,16 +44,23 @@ def provider_available():
         return False
 
 
-def route_geometry(instance, steps):
+def _arc_lookup(instance):
+    return {
+        (a.from_node_id, a.to_node_id, a.arc_id): a
+        for a in instance.arcs
+    }
+
+
+def route_geometry(instance, steps, *, arcs=None, nodes=None):
     """Native Arc.geometry stores [latitude, longitude] (network.py)."""
-    nodes = {n.node_id: n for n in instance.nodes}
-    arcs = {(a.from_node_id, a.to_node_id): a for a in instance.arcs}
+    nodes = nodes if nodes is not None else {n.node_id: n for n in instance.nodes}
+    arcs = arcs if arcs is not None else _arc_lookup(instance)
     points = []
     for step in steps:
         destination = step.next_node_id
-        if destination is None or destination == step.node_id:
+        if destination is None or (destination == step.node_id and step.arc_id is None):
             continue
-        arc = arcs.get((step.node_id, destination))
+        arc = arcs.get((step.node_id, destination, step.arc_id))
         if arc is None or len(arc.geometry) < 2:
             return None
         for point, node_id in ((arc.geometry[0], step.node_id), (arc.geometry[-1], destination)):
@@ -67,12 +74,14 @@ def route_geometry(instance, steps):
             if points[-1] != coords[0]:
                 return None
             coords = coords[1:]
-        points.extend(coords)
+        for point in coords:
+            if not points or point != points[-1]:
+                points.append(point)
     return {"type": "LineString", "coordinates": points} if len(points) >= 2 else None
 
 
-def project_result(instance, config, native):
-    from ev_routing.contracts import SolveResult, ValidationReport
+def project_result(instance, config, native, *, road_instance=None, search_config=None):
+    from ev_routing.contracts import SolveResult, ValidationReport, VehicleRoute
 
     try:
         solved = SolveResult.model_validate(native["solve"])
@@ -90,6 +99,17 @@ def project_result(instance, config, native):
     params = instance.parameters
     solution = solved.solution
     valid = solution is not None and report is not None and report.feasible
+    display_instance = road_instance if road_instance is not None else instance
+    display_routes = solution.routes if solution is not None else []
+    road_audit = native.get("road_validation")
+    if road_instance is not None:
+        # No compact route is presented as a street route without the independent
+        # expansion check. The native result remains untouched for inspection.
+        valid = valid and road_audit is not None and road_audit.get("feasible") is True
+        if valid:
+            display_routes = [VehicleRoute.model_validate(r) for r in road_audit["routes"]]
+        else:
+            display_instance = instance
     scope = (
         "Validación independiente nativa de Daniel sobre los arcos y energía de la instancia; "
         "formulación por rutas completas sin H. No garantiza consumos reales ni una red vial no aportada."
@@ -97,7 +117,7 @@ def project_result(instance, config, native):
     warnings = []
     if solved.message:
         warnings.append(solved.message)
-    network = instance.provenance.get("network", {})
+    network = display_instance.provenance.get("network", {})
     network_kind = network.get("kind") if isinstance(network, dict) else None
     if not isinstance(network_kind, str):
         network_kind = (
@@ -106,8 +126,8 @@ def project_result(instance, config, native):
             else "native"
         )
     synthetic = (
-        instance.provenance.get("kind", "").startswith("synthetic")
-        if isinstance(instance.provenance.get("kind"), str)
+        display_instance.provenance.get("kind", "").startswith("synthetic")
+        if isinstance(display_instance.provenance.get("kind"), str)
         else False
     )
     if synthetic or network_kind == "haversine":
@@ -140,10 +160,12 @@ def project_result(instance, config, native):
         for i, vid in enumerate(instance.vehicle_ids)
     ]
     routes = []
-    distances = {(a.from_node_id, a.to_node_id): a.distance_m for a in instance.arcs}
-    distances[instance.depot_id, instance.depot_id] = 0.0
+    arcs = _arc_lookup(display_instance)
+    nodes_by_id = {n.node_id: n for n in display_instance.nodes}
+    distances = {key: a.distance_m for key, a in arcs.items()}
+    distances[instance.depot_id, instance.depot_id, None] = 0.0
     if solution is not None:
-        for route in solution.routes:
+        for route in display_routes:
             steps = []
             for step in route.steps:
                 readings = {
@@ -171,6 +193,7 @@ def project_result(instance, config, native):
                         "energy_kwh": step.effective_arc_energy_kwh if valid else None,
                         "delivered_visit_ids": list(step.delivered_visit_ids),
                         "next_node_id": step.next_node_id,
+                        "arc_id": step.arc_id,
                         "predicted_arc_energy_kwh": step.predicted_arc_energy_kwh,
                         "effective_arc_energy_kwh": step.effective_arc_energy_kwh,
                         "arrival_seconds": step.arrival_seconds,
@@ -185,7 +208,7 @@ def project_result(instance, config, native):
                 dict.fromkeys(v for step in route.steps for v in step.delivered_visit_ids)
             )
             known_distances = [
-                distances.get((step.node_id, step.next_node_id))
+                distances.get((step.node_id, step.next_node_id, step.arc_id))
                 for step in route.steps
                 if step.next_node_id is not None
             ]
@@ -194,7 +217,9 @@ def project_result(instance, config, native):
                     "vehicle_id": route.vehicle_id,
                     "served_visit_ids": delivered,
                     "steps": steps,
-                    "geometry": route_geometry(instance, route.steps),
+                    "geometry": route_geometry(
+                        display_instance, route.steps, arcs=arcs, nodes=nodes_by_id,
+                    ) if valid else None,
                     "distance_km": sum(known_distances) / 1000
                     if valid and all(v is not None for v in known_distances)
                     else None,
@@ -215,14 +240,21 @@ def project_result(instance, config, native):
         status = "validation_failed"
     else:
         status = "partial" if solution.unserved_visit_ids else "result_available"
-    assumptions = instance.provenance.get("assumptions", [])
+    assumptions = display_instance.provenance.get("assumptions", [])
     if not isinstance(assumptions, list) or not all(isinstance(a, str) for a in assumptions):
         assumptions = []
     native_times = native.get("runtime_seconds", {})
+    used_nodes = {step.node_id for route in display_routes for step in route.steps}
+    policy = search_config.policy if search_config else native.get("tuning", {}).get(
+        "requested_policy", "standard",
+    )
     return {
         "status": status,
         "has_solution": solution is not None,
-        "nodes": [node.model_dump(mode="json") for node in instance.nodes],
+        "nodes": [
+            node.model_dump(mode="json") for node in display_instance.nodes
+            if road_instance is None or node.node_type != "junction" or node.node_id in used_nodes
+        ],
         "fleet": fleet,
         "routes": routes,
         "served_count": len(solution.served_visit_ids) if solution is not None else None,
@@ -233,7 +265,7 @@ def project_result(instance, config, native):
         "operations": copy.deepcopy(native["operations"]),
         "tuning": copy.deepcopy(native["tuning"]),
         "validation": {
-            "feasible": report.feasible if solution is not None and report is not None else None,
+            "feasible": bool(valid) if solution is not None and report is not None else None,
             "violations": list(report.violations) if report is not None else [],
             "checks": dict(report.checks) if report is not None else {},
             "scope": scope,
@@ -242,7 +274,8 @@ def project_result(instance, config, native):
         "warnings": list(dict.fromkeys(warnings)),
         "assumptions": [
             *assumptions,
-            "SCIP por rutas sin H; un hilo, semilla 0, gap relativo 0 y política estándar sin AWS.",
+            f"SCIP por rutas sin H; un hilo, semilla 0; tolerancia energética "
+            f"{100 * config.energy_relative_gap:g} %; política solicitada {policy}.",
             "El presupuesto de solver puede excederse por construcción, validación o sobrecostos de la biblioteca.",
         ],
         "network": {
@@ -271,7 +304,8 @@ def project_result(instance, config, native):
         "raw": {
             "effective_config": {
                 "solver": config.model_dump(mode="json"),
-                "search_policy": "standard",
+                "search_policy": policy,
+                **({"search": search_config.model_dump(mode="json")} if search_config else {}),
             },
             "result": native,
         },
@@ -288,15 +322,18 @@ def project_result(instance, config, native):
     }
 
 
-def run(instance, config):
+def run(instance, config, *, search_config=None, road_instance=None, path_archive=None):
     run_instance, SearchConfig = load_provider()
     try:
         native = run_instance(
-            instance.model_copy(deep=True),
+            instance,
             config,
-            search_config=SearchConfig(
+            search_config=search_config or SearchConfig(
                 policy="standard", bedrock={"profile": None}, log_directory=None
             ),
+            road_instance=road_instance, path_archive=path_archive,
+            output_path=Path(search_config.log_directory).parent / "result.json"
+            if search_config and search_config.log_directory else None,
         )
     except ImportError as exc:
         raise ProviderError(
@@ -306,4 +343,6 @@ def run(instance, config):
         raise ProviderError(
             "El núcleo de Daniel no pudo completar la ejecución; revise la instancia y el entorno local."
         ) from exc
-    return project_result(instance, config, native)
+    return project_result(
+        instance, config, native, road_instance=road_instance, search_config=search_config,
+    )

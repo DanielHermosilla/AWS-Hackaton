@@ -65,9 +65,10 @@ export function createSolverClient({fetchImpl = fetch, onChange = () => {}, onPr
         if (prepareRequest) {
           const prepared = await post('/prepare', prepareRequest);
           if (current !== revision) return null;
-          if (prepared?.api_version !== API_VERSION || prepared?.instance?.schema_version !== '1.0')
-            throw new Error('La preparación no devolvió una instancia nativa 1.0 del API 3.0.');
-          solveRequest = {api_version: API_VERSION, instance: prepared.instance, solver: request.solver};
+          if (prepared?.api_version !== API_VERSION || !['1.0', '1.1'].includes(prepared?.instance?.schema_version))
+            throw new Error('La preparación no devolvió una instancia nativa compatible.');
+          solveRequest = {api_version: API_VERSION, instance: prepared.instance, solver: request.solver,
+            ...(prepared.prepared_instance_id ? {prepared_instance_id: prepared.prepared_instance_id} : {})};
           await onPrepared(solveRequest, () => current === revision);
           if (current !== revision) return null;
           stage = 'solving';

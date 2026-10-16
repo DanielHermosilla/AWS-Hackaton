@@ -9,7 +9,7 @@ from __future__ import annotations
 from math import isclose, isfinite
 
 from ev_routing.contracts import ProblemInstance, Solution, ValidationReport
-from ev_routing.operations import arc_energy, travel_seconds
+from ev_routing.operations import arc_energy, arc_key, step_key, travel_seconds
 
 
 def validate_solution(
@@ -43,10 +43,9 @@ def validate_solution(
     depot = instance.depot_id
     node_ids = {node.node_id for node in instance.nodes}
     customers = set(instance.customer_ids)
-    energies = {
-        (a.from_node_id, a.to_node_id): arc_energy(a, instance.operations) for a in instance.arcs
-    }
-    energies[depot, depot] = 0.0  # Arco ficticio de permanencia del PDF.
+    arcs = {arc_key(a): a for a in instance.arcs}
+    energies = {key: arc_energy(a, instance.operations) for key, a in arcs.items()}
+    energies[depot, depot, None] = 0.0  # Arco ficticio de permanencia del PDF.
     seen_deliveries: list[str] = []
     effective_total = 0.0
     vehicle_ids = [route.vehicle_id for route in solution.routes]
@@ -103,7 +102,7 @@ def validate_solution(
 
             if index == len(steps) - 1:
                 # q y arcos solo existen en R^-; no inventar una salida terminal.
-                if abs(charge) > tolerance or step.next_node_id is not None:
+                if abs(charge) > tolerance or step.next_node_id is not None or step.arc_id is not None:
                     fail("topology", f"{prefix}: posición terminal con salida/recarga")
                 if step.predicted_arc_energy_kwh is not None:
                     fail("energy", f"{prefix}: energía de arco en posición terminal")
@@ -114,14 +113,21 @@ def validate_solution(
             following = steps[index + 1]
             if step.next_node_id != following.node_id:
                 fail("topology", f"{prefix}: next_node_id no coincide con la ruta")
-            pair = (step.node_id, following.node_id)
+            pair = (step.node_id, following.node_id, step.arc_id)
             if pair not in energies:
                 fail("topology", f"{prefix}: arco no permitido {pair}")
                 continue
             predicted = energies[pair]
             # La recuperación que excede B se pierde: nunca aumenta la batería
             # sobre su capacidad ni reduce artificialmente el consumo informado.
-            expected_arrival = min(capacity, departure - predicted)
+            arc = arcs.get(pair)
+            profile = arc.battery_profile if arc is not None else None
+            if profile is not None and departure < profile.minimum_departure_kwh - tolerance:
+                fail("battery", f"{prefix}: el camino viola la reserva en una calle intermedia")
+            expected_arrival = min(
+                profile.maximum_arrival_kwh if profile is not None else capacity,
+                departure - predicted,
+            )
             if not equal(following.battery_arrival_kwh, expected_arrival):
                 fail("battery", f"{prefix}: transición física de batería incorrecta")
             if expected_arrival < reserve - tolerance:
@@ -164,7 +170,7 @@ def validate_solution(
 def _time_violations(instance, route, tolerance):
     """Reproducir el calendario publicado sin consultar Pyomo ni reconstruirlo."""
     ops = instance.operations
-    arcs = {(a.from_node_id, a.to_node_id): a for a in instance.arcs}
+    arcs = {arc_key(a): a for a in instance.arcs}
     expected_arrival = 0.0
     for step in route.steps:
         values = (
@@ -207,8 +213,8 @@ def _time_violations(instance, route, tolerance):
                 yield "posición terminal con tiempo de viaje"
             expected_arrival = arrival
             continue
-        pair = step.node_id, step.next_node_id
-        if pair == (instance.depot_id, instance.depot_id):
+        pair = step_key(step)
+        if pair == (instance.depot_id, instance.depot_id, None):
             travel = 0.0
         elif pair in arcs:
             travel = travel_seconds(arcs[pair], ops)

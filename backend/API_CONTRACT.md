@@ -1,19 +1,23 @@
-# API local 3.0 — núcleo de Daniel
+# API local 3.0 — motor integrado en main
 
-El proveedor es el núcleo local `ev_routing` importado de la rama `modelamiento`,
-commit `624203573bffdeec334a9e07a64b361a515f9725`. La procedencia y los archivos
-seleccionados constan en `docs/solver-source.json`. El adaptador anterior y sus
-fixtures se retiraron. Esta versión no es compatible con solicitudes HTTP 2.x.
+El proveedor es el núcleo local `ev_routing`, integrado desde
+`codex/evrp-llm-search@ab67dc6` con la webapp `a372d03`. Las revisiones base y
+adaptaciones están en `docs/solver-source.json`. HTTP 2.x no está soportado.
 
-La resolución utiliza `scip-routes`, un hilo, semilla 0, gap relativo 0 y política
-`standard`, sin llamadas a AWS. El núcleo conserva la formulación, contratos,
-validador, energía y certificados nativos. El puente no importa proveedores desde
-otro checkout ni acepta rutas de archivos en una petición.
+La resolución usa `scip-routes`, un hilo, semilla 0, gap de entregas 0 y tolerancia
+energética **0.005**. `solver.search_policy` admite `standard`, `deterministic` y
+`adaptive`; omitirlo conserva `standard` por compatibilidad. La UI envía
+`adaptive` por defecto. El núcleo conserva física y certificados; el puente
+no importa proveedores de otro checkout ni acepta rutas locales, credenciales,
+modelos o parámetros libres del solver desde el navegador.
 
-La paridad de salida significa conservar íntegramente el resultado de esa
-ejecución nativa. No significa exponer todas las funciones del proyecto de Daniel:
-esta API mantiene sus límites locales, política estándar y backend fijo; no
-habilita AWS, otros solvers, preparación vial ni el preprocesador excluido.
+La política adaptativa usa GPT-5.6 Luna `low` por Bedrock, configurable mediante
+`AWS_PROFILE` opcional, `AWS_DEFAULT_REGION` y `BEDROCK_MODEL_ID` del servidor.
+Dos consultas máximas, timeout de 8 s, 2.048 tokens y contexto físico de 8.000 bytes.
+El controlador limita la inferencia al 25 % del presupuesto. Respuestas tardías,
+inválidas o fallos se informan sin atribuirles decisiones aplicadas. El mismo
+pipeline mantiene pricing exacto o cotas válidas y nunca cambia de backend por
+esos fallos. El resultado nativo completo permanece en `raw.result`.
 
 ## Preparación explícita de CSV
 
@@ -56,8 +60,29 @@ calles, accesos, permisos, sentidos viales ni consumos observados. La interfaz d
 obtener la confirmación explícita del usuario antes de solicitar esta preparación.
 
 El límite local de este modo es 200 nodos y 20 vehículos; no son reglas del concurso.
-No se añade una matriz distinta en JavaScript ni se rellena una instancia nativa
-con esta preparación sin una petición explícita.
+No se añade una matriz distinta en JavaScript.
+
+### Preparación vial
+
+El mismo cuerpo admite `network_mode: "road"` y `operations` opcional,
+validado con el contrato nativo. Ventanas/jornada exigen tiempos explícitos
+o `assumed_speed_kph`; no se inventan velocidades. Las opciones se aplican
+antes del preprocesamiento y forman parte de la huella de caché. Requiere iniciar el servidor con
+`--graphml <archivo_local>`, `--network-profile drive|delivery` y opcionalmente
+`--max-snap-distance-m`. Son parámetros del operador; no se descargan mapas.
+Se usa el preparador nativo: calles dirigidas, accesos con alcance explícito,
+energía por el coeficiente recibido y preprocesamiento con archivos de caminos.
+
+Devuelve `instance` de pricing (1.0 o 1.1), `prepared_instance_id` opaco y
+`preparation: {runtime_seconds, reused}`. La red original y `PathArchive` quedan
+en el servidor. `/solve` exige la instancia canónica devuelta y ese ID; comprueba
+su huella y el pipeline verifica la correspondencia de los tres objetos.
+Un contexto alterado o vencido produce HTTP 400 y exige preparar nuevamente.
+La caché guarda como máximo dos contextos y 384 MiB de objetos serializados;
+no es una garantía de memoria RSS. Se pierde al reiniciar o reemplazar entradas.
+El límite HTTP sigue en 8 MiB; solo viaja la instancia de pricing. Si ella
+excede ese tamaño, usar la CLI, sin reducir la red silenciosamente.
+
 
 ## Resolución nativa
 
@@ -65,7 +90,7 @@ con esta preparación sin una petición explícita.
 {
   "api_version": "3.0",
   "instance": {"schema_version":"1.0", "nodes":[], "arcs":[], "parameters":{}, "provenance":{}},
-  "solver": {"time_limit_seconds": 30}
+  "solver": {"time_limit_seconds": 120, "search_policy": "adaptive"}
 }
 ```
 
@@ -73,18 +98,21 @@ El objeto mostrado es solo una estructura: la instancia debe contener exactament
 una base y un grafo válido. El ejemplo completo ejecutable está en
 `backend/fixtures/native-request.json`.
 
-`POST /solve` admite únicamente `api_version`, `instance` y `solver`. El presupuesto
+`POST /solve` admite `api_version`, `instance`, `solver` y, para caminos preparados,
+`prepared_instance_id`. El presupuesto
 obligatorio está entre 1 y 120 segundos. El resto de la configuración de resolución
 queda fijado por el puente. La instancia se valida con Pydantic nativo en modo
 estricto, sin cambiar nodos, arcos, parámetros, compatibilidad, opciones operacionales
 ni IDs. Su serialización canónica añade únicamente los defaults del contrato nativo.
 
-Se rechaza `provenance.representation.kind: "service_paths_nonnegative"`, también
-su forma textual, porque esta integración no incluye esa transformación ni su
-expansión. No hay campos HTTP antiguos `nodes`, `prepared`, `fleet`, `network` o
+Se rechazan `service_paths_nonnegative` y `resource_paths` sin un contexto vial
+del servidor: los caminos requieren red original y archivo de expansión. La
+forma textual de `representation` es inválida. Se admiten instancias nativas
+1.0 y 1.1; los perfiles y arcos paralelos conservan sus `arc_id`. No hay campos HTTP antiguos `nodes`, `prepared`, `fleet`, `network` o
 `movement_limit` en `/solve`. El `movement_limit` **nativo** sí se conserva en los
 datos; el proveedor `scip-routes` informa que resuelve sin H en su formulación.
-El límite local de entrada es 20 000 nodos, 200 000 arcos y 8 MiB por petición.
+El límite del JSON elemental subido es 20 000 nodos, 200 000 arcos y 8 MiB por
+petición. Las redes grandes preparadas permanecen en el servidor.
 
 ## Respuesta y conservación del resultado
 
@@ -95,14 +123,14 @@ El límite local de entrada es 20 000 nodos, 200 000 arcos y 8 MiB por petición
 | `run_id` | UUID del resultado HTTP. El identificador nativo permanece en `metadata.native_run_id` y `raw.result.run_id`. |
 | `status` | Con solución: `result_available`, `partial` o `validation_failed`. Sin solución: `no_solution`, `unavailable` o `error`. |
 | `has_solution` | Existencia de incumbente nativo; es independiente de su factibilidad. |
-| `nodes` | Nodos nativos, incluidos `junction`. Coordenadas emparejadas pueden ser `null`; `connector_types` es una lista. |
+| `nodes` | Nodos nativos; en preparación vial, todos los servicios y las intersecciones usadas por las rutas expandidas. Coordenadas emparejadas pueden ser `null`; `connector_types` es una lista. |
 | `fleet` | IDs nativos `vehicle_1`, etc.; capacidad, reserva y SoC de `parameters`. |
 | `routes` | Vehículo, entregas **explícitas**, pasos ordenados, geometría, kilómetros, energía neta y `duration_seconds` nativa, incluido `null`. Transitar por un cliente no implica atenderlo. |
 | `steps` | `position`, `node_id`, energía de llegada/salida, recarga y entregas explícitas. `energy_kwh` corresponde a `effective_arc_energy_kwh` del arco **saliente**; es `null` en el paso terminal. Los campos nativos de energía, destino y tiempo se conservan también con sus nombres originales, detallados abajo. |
 | `total_energy_kwh` | Energía neta efectiva de batería de los KPIs nativos cuando la solución pasa el validador; incluye regeneración saturada correctamente. No es electricidad comprada. |
 | `kpis` | Copia completa de los KPIs nativos y sus `unavailable_reasons`, sin recomputar, rellenar ausencias ni borrar métricas futuras. |
 | `operations` | Copia completa de las opciones operacionales nativas efectivamente utilizadas, incluidos sus defaults. |
-| `tuning` | Copia completa del informe nativo del controlador. La configuración actual no invoca AWS. |
+| `tuning` | Informe nativo completo: modelo, política solicitada/efectiva, propuestas, cambios, campos inactivos, latencias, fallbacks y tokens. |
 | `validation` | Resultado del validador independiente nativo, violaciones, `checks` y alcance. Sin incumbente: `feasible: null`, `checks: {}`. |
 | `phases` | Copia completa de las fases nativas: sentido, estado, terminación, incumbente, cota, gaps, prueba, tiempo y mensajes. No se combinan certificados. |
 | `metadata` | Proveedor/SHA, esquema nativo, hashes, estado nativo, `lexicographic_optimal`, alcance/formulación, indicador de límite de tiempo y resumen `native_solver`. |
@@ -110,7 +138,7 @@ El límite local de entrada es 20 000 nodos, 200 000 arcos y 8 MiB por petición
 | `runtime_seconds` | `preparation` valida la petición; `solver` toma resolución incluyendo modelo del núcleo; `total` mide el servicio completo. Añade los tiempos nativos detallados abajo sin sumarlos. |
 
 La ampliación de presentación es aditiva y conserva API 3.0. Cada paso añade,
-sin conversión ni estimación, `next_node_id`, `predicted_arc_energy_kwh`,
+sin conversión ni estimación, `arc_id`, `next_node_id`, `predicted_arc_energy_kwh`,
 `effective_arc_energy_kwh`, `arrival_seconds`, `service_start_seconds`,
 `departure_seconds`, `service_duration_seconds`, `charging_duration_seconds` y
 `travel_time_seconds`. Los `null` originales permanecen `null`. La energía
@@ -154,6 +182,20 @@ Si una solución nativa es inválida, los KPIs energéticos se mantienen no disp
 Una lectura de batería fuera de `[0, capacidad]` se omite de la presentación con
 advertencia, conservando el original; nunca se recorta para aparentar factibilidad.
 
+La preparación vial añade `raw.prepare_request`, suficiente para reconstruir
+la entrada usando el GraphML del operador. `raw.instance` es la instancia de
+pricing; no basta por sí sola sin red original y `PathArchive`. Los archivos
+completos se conservan mediante la CLI. La UI admite importar exportaciones locales de hasta 64 MB sin aumentar el
+límite de petición HTTP de 8 MiB. La UI reabre la entrada de preparación
+para no depender del ID temporal. El resultado nativo preserva `road_validation`
+con rutas expandidas y la comprobación de segmentos. Solo se muestra geometría
+vial si esa comprobación pasa.
+
+`runtime_seconds.road_preprocessing` es la duración de la preparación original,
+reutilizable; no forma parte de `total` de `/solve`. El `total` de `/prepare`
+se mide aparte. `energy_gap_limit` significa tolerancia energética alcanzada,
+no timeout ni óptimo exacto; se preservan cotas y pruebas por fase.
+
 ## Geometría
 
 `Arc.geometry` nativa usa `[latitud, longitud]`, confirmado en `network.py`; el
@@ -177,15 +219,16 @@ mantienen `vial: false`, aunque incluyan además aquella cadena de procedencia.
 Desde el checkout integrado y su entorno sincronizado:
 
 ```sh
-uv sync --locked --group dev
-uv run python -m backend.local_server --port 8000
+uv sync --locked --group dev --extra dw
+AWS_PROFILE=hackathon uv run --extra dw python -m backend.local_server --port 8000
 ```
 
 El servidor sirve `webapp/` y la API en `http://127.0.0.1:8000`, solo loopback y el
 mismo origen, sin CORS ni autenticación. Rechaza JSON no finito, claves duplicadas,
 rutas aproximadas y archivos fuera del directorio estático permitido.
 
-`GET /health` informa versión 3.0, proveedor/SHA y `provider_available`.
+`GET /health` informa versión 3.0, revisión base del proveedor, `provider_available`
+y capacidades: preparación vial configurada, políticas y tolerancia energética.
 `GET /solve?run_id=<UUID>` recupera resultados temporales (máximo cuatro y 32 MiB),
 que expiran por reemplazo o reinicio. No son almacenamiento persistente ni cuentas.
 Abandonar la página no cancela SCIP. Los límites del solver son blandos y los
@@ -213,3 +256,10 @@ proceden del ejemplo sintético de recarga de Daniel con opciones temporales
 explícitas: dos entregas, 14 kWh netos, 9 kWh incorporados a batería, 10 kWh de red
 y 3.580 segundos hasta el último retorno. La respuesta procede de SCIP real a
 través del servidor local; las cifras no representan una operación real.
+
+Las pruebas del merge en `tests/test_integrated_webapp.py` añaden preparación
+vial→SCIP→expansión→GET, reutilización/alteración/expiración de contexto,
+paralelos con ventanas, fallo AWS explícito y gap sin falsa optimalidad.
+Las pruebas JS cubren reabrir la preparación, políticas y decisiones visibles.
+La aceptación real con datos públicos y AWS se documenta por separado en
+`docs/main-integration-validation.md`; no ocurre en la suite habitual.

@@ -1,6 +1,5 @@
-"""API 3.0: explicit synthetic preparation and Daniel's native ProblemInstance.
+"""API 3.0: road/synthetic preparation and the shared native solver pipeline.
 
-The provider is the local ev_routing core imported from Daniel's 6242035 commit.
 The HTTP boundary never accepts file paths, free solver options, or AWS settings.
 """
 
@@ -16,7 +15,7 @@ from pathlib import Path
 from typing import Any
 
 API_VERSION = "3.0"
-PROVIDER_COMMIT = "624203573bffdeec334a9e07a64b361a515f9725"
+PROVIDER_COMMIT = "ab67dc6b88a720f274789bb0dace8e47a68a7460"
 MAX_PREPARE_NODES = 200
 MAX_NATIVE_NODES = 20_000
 MAX_NATIVE_ARCS = 200_000
@@ -74,9 +73,23 @@ def json_bytes(value: Any) -> bytes:
 
 
 def fingerprint(value: Any) -> str:
+    def canonical_numbers(item):
+        # JSON/JavaScript has one number type: JSON.stringify writes 24.0 as 24.
+        # Normalize that representation only, without numerical tolerances or
+        # coercion of booleans/strings. Otherwise a browser cannot return a
+        # prepared context whose hash was produced by Python.
+        if isinstance(item, float) and item.is_integer():
+            return int(item)
+        if isinstance(item, dict):
+            return {key: canonical_numbers(v) for key, v in item.items()}
+        if isinstance(item, (list, tuple)):
+            return [canonical_numbers(v) for v in item]
+        return item
+
     return hashlib.sha256(
         json.dumps(
-            value, ensure_ascii=False, allow_nan=False, sort_keys=True, separators=(",", ":")
+            canonical_numbers(value),
+            ensure_ascii=False, allow_nan=False, sort_keys=True, separators=(",", ":")
         ).encode()
     ).hexdigest()
 
@@ -155,21 +168,24 @@ def _validate_model(model, value, label):
         ) from exc
 
 
-def _native_instance(value):
+def _native_instance(value, *, prepared=False):
     _, ProblemInstance, _ = _models()
-    if not isinstance(value, dict) or value.get("schema_version") != "1.0":
+    if not isinstance(value, dict) or value.get("schema_version") not in ("1.0", "1.1"):
         raise SolveRequestError(
-            "instance debe ser un objeto ProblemInstance con schema_version='1.0'."
+            "instance debe ser un objeto ProblemInstance con schema_version 1.0 o 1.1."
         )
     provenance = value.get("provenance", {})
     representation = provenance.get("representation") if isinstance(provenance, dict) else None
-    if representation == "service_paths_nonnegative" or (
-        isinstance(representation, dict)
-        and representation.get("kind") == "service_paths_nonnegative"
-    ):
+    kind = representation.get("kind") if isinstance(representation, dict) else representation
+    if not prepared and kind in ("service_paths_nonnegative", "resource_paths"):
         raise SolveRequestError(
-            "La representación service_paths_nonnegative no está admitida; use la instancia nativa de arcos elementales de Daniel."
+            "La representación de caminos requiere una preparación vial del servidor "
+            "con red original y archivo de caminos. Cargue los arcos elementales o prepare el CSV."
         )
+    if representation is not None and not isinstance(representation, dict):
+        raise SolveRequestError("provenance.representation debe ser un objeto.")
+    if kind is not None and not isinstance(kind, str):
+        raise SolveRequestError("provenance.representation.kind debe ser texto.")
     if (
         not isinstance(value.get("nodes"), list)
         or not 1 <= len(value["nodes"]) <= MAX_NATIVE_NODES
@@ -190,10 +206,10 @@ def _native_instance(value):
     return instance
 
 
-def validate_request(payload):
+def validate_request(payload, *, runtime=None):
     object_fields(
         payload,
-        {"api_version", "instance", "solver"},
+        {"api_version", "instance", "solver", "prepared_instance_id"},
         "petición",
         ("api_version", "instance", "solver"),
     )
@@ -203,10 +219,21 @@ def validate_request(payload):
             "api_version debe ser 3.0; esta API recibe el contrato nativo de Daniel."
         )
     solver = object_fields(
-        payload["solver"], {"time_limit_seconds"}, "solver", ("time_limit_seconds",)
+        payload["solver"], {"time_limit_seconds", "search_policy"}, "solver",
+        ("time_limit_seconds",),
     )
     seconds = number(solver["time_limit_seconds"], "time_limit_seconds", 1, 120)
-    instance = _native_instance(payload["instance"])
+    policy = solver.get("search_policy", "standard")
+    if not isinstance(policy, str) or policy not in {"standard", "adaptive", "deterministic"}:
+        raise SolveRequestError("search_policy debe ser standard, deterministic o adaptive.")
+    prepared = "prepared_instance_id" in payload
+    if prepared:
+        if runtime is None:
+            raise SolveRequestError("La preparación vial no está disponible; vuelva a prepararla.")
+        context = runtime.get_context(payload["prepared_instance_id"], payload["instance"])
+        instance = context.instance
+    else:
+        instance = _native_instance(payload["instance"])
     _, _, SolverConfig = _models()
     config = SolverConfig(
         solver="scip-routes",
@@ -214,23 +241,29 @@ def validate_request(payload):
         threads=1,
         seed=0,
         relative_gap=0,
+        energy_relative_gap=0.005,
         tee=False,
     )
     return instance, config
 
 
-def prepare(payload):
+def prepare(payload, *, runtime=None):
     object_fields(
         payload,
-        {"api_version", "nodes", "fleet", "network_mode"},
+        {"api_version", "nodes", "fleet", "network_mode", "operations"},
         "preparación",
         ("api_version", "nodes", "fleet", "network_mode"),
     )
     _finite_json(payload)
-    if payload["api_version"] != API_VERSION or payload["network_mode"] != "haversine":
+    if payload["api_version"] != API_VERSION or payload["network_mode"] not in (
+        "haversine", "road",
+    ):
         raise SolveRequestError(
-            "Confirme api_version='3.0' y network_mode='haversine' para la preparación sintética."
+            "Confirme api_version='3.0' y network_mode='road' o 'haversine'."
         )
+    from ev_routing.contracts import Operations
+
+    operations = _validate_model(Operations, payload.get("operations", {}), "Operaciones")
     rows = payload["nodes"]
     if not isinstance(rows, list) or not 1 <= len(rows) <= MAX_PREPARE_NODES:
         raise SolveRequestError(
@@ -291,6 +324,26 @@ def prepare(payload):
                 f"Puertos inconsistentes en {node.node_id}: DC + nivel 2 supera el total."
             )
         nodes.append(node.model_dump(mode="json"))
+    if payload["network_mode"] == "road":
+        if runtime is None:
+            raise SolveRequestError("Configure --graphml en el servidor para preparar calles.")
+        from ev_routing.contracts import ModelParameters
+
+        parameters = _validate_model(ModelParameters, {
+            "vehicle_count": count, "battery_capacity_kwh": capacity,
+            "reserve_kwh": reserve, "initial_soc": soc,
+            "vehicle_connector_types": connectors,
+        }, "Parámetros de flota")
+        identifier, context, reused = runtime.prepare_road(
+            [_validate_model(Node, n, "Nodo") for n in nodes], parameters, consumption,
+            copy.deepcopy(payload),
+        )
+        return {
+            "api_version": API_VERSION,
+            "instance": context.instance.model_dump(mode="json"),
+            "prepared_instance_id": identifier,
+            "preparation": {"runtime_seconds": context.seconds, "reused": reused},
+        }
     arcs = []
     for origin in nodes:
         for destination in nodes:
@@ -331,6 +384,7 @@ def prepare(payload):
                 "initial_soc": soc,
                 "vehicle_connector_types": connectors,
             },
+            "operations": operations.model_dump(mode="json"),
             "provenance": {
                 "kind": "synthetic",
                 "network": {"kind": "haversine", "vial": False},
@@ -347,20 +401,31 @@ def prepare(payload):
     return {"api_version": API_VERSION, "instance": instance.model_dump(mode="json")}
 
 
-def solve(payload):
+def solve(payload, *, runtime=None):
     started = time.perf_counter()
-    instance, config = validate_request(payload)
+    instance, config = validate_request(payload, runtime=runtime)
     prepared_seconds = time.perf_counter() - started
     from .daniel_adapter import run
+    from .runtime import Runtime
 
-    result = run(instance, config)
-    result["run_id"] = str(uuid.uuid4())
+    runtime = runtime or Runtime()
+    run_id = str(uuid.uuid4())
+    context = runtime.get_context(payload["prepared_instance_id"], payload["instance"]) \
+        if "prepared_instance_id" in payload else None
+    search = runtime.search_config(payload["solver"].get("search_policy", "standard"), run_id)
+    config.tee = runtime.tee
+    result = run(
+        instance, config, search_config=search,
+        road_instance=context.road if context else None,
+        path_archive=context.archive if context else None,
+    )
+    result["run_id"] = run_id
     canonical = instance.model_dump(mode="json")
     result["raw"].update(input=copy.deepcopy(payload), instance=canonical)
     result["metadata"].update(
         provider="ev_routing",
         provider_commit=PROVIDER_COMMIT,
-        native_schema_version="1.0",
+        native_schema_version=instance.schema_version,
         input_hash=fingerprint(canonical),
         config_hash=fingerprint(result["raw"]["effective_config"]),
         network_hash=fingerprint(
@@ -372,13 +437,17 @@ def solve(payload):
         ),
     )
     result["runtime_seconds"]["preparation"] = prepared_seconds
+    result["runtime_seconds"]["road_preprocessing"] = context.seconds if context else None
     result["runtime_seconds"]["total"] = time.perf_counter() - started
+    if context:
+        result["raw"]["prepare_request"] = copy.deepcopy(context.request)
+        result["metadata"]["road_instance_sha256"] = context.archive.road_instance_sha256
     envelope = {"api_version": API_VERSION, "result": result}
     json_bytes(envelope)
     return envelope
 
 
-def health():
+def health(*, runtime=None):
     from .daniel_adapter import provider_available
 
     return {
@@ -387,5 +456,11 @@ def health():
         "provider": "ev_routing",
         "provider_commit": PROVIDER_COMMIT,
         "native_schema_version": "1.0",
+        "native_schema_versions": ["1.0", "1.1"],
         "provider_available": provider_available(),
+        "capabilities": {
+            "road_preparation": runtime is not None and runtime.graphml is not None,
+            "search_policies": ["standard", "deterministic", "adaptive"],
+            "energy_relative_gap": 0.005,
+        },
     }

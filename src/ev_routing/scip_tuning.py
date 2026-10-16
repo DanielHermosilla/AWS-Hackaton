@@ -33,7 +33,7 @@ def parameter_catalog(single_tour: bool = False) -> dict:
         if (name.startswith(prefixes) or name in LP_SEARCH)
         and not any(token in name.lower() for token in (
             "/seed", "/randomseed", "/threads", "/nthreads", "/time", "/memory",
-            "filename", "/file", "/write", "/read", "feastol", "epsilon",
+            "filename", "/file", "/write", "/read",
         ))
     }
     result = {
@@ -82,22 +82,6 @@ def validate_parameters(parameters: dict, single_tour: bool = False) -> dict:
         return {name: model.getParam(name) for name in parameters}
     finally:
         model.freeProb()
-
-
-def prompt_catalog(single_tour: bool = False) -> dict:
-    """Agrupar prefijos repetidos para reducir tokens sin quitar parámetros."""
-    catalog = parameter_catalog(single_tour)
-    tree = {}
-    for name, value in catalog["parameters_and_defaults"].items():
-        node = tree
-        parts = name.split("/")
-        for part in parts[:-1]:
-            node = node.setdefault(part, {})
-        node[parts[-1]] = value
-    return {
-        **catalog, "parameters_and_defaults": tree,
-        "path_format": "Slash-join nested leaf keys; scip_parameters output must use flat full names.",
-    }
 
 
 def apply_parameters(model, policy, *, single_tour: bool) -> dict:

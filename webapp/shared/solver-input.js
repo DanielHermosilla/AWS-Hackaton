@@ -71,8 +71,8 @@ const requireFields = (value, allowed, name) => {
 // authoritative; the original instance is returned without defaults or rewrites.
 export function validateNativeInstance(instance) {
   requireFields(instance, nativeFields, 'ProblemInstance');
-  if (instance.schema_version !== '1.0' || !Array.isArray(instance.nodes) || !Array.isArray(instance.arcs))
-    throw new Error('Carga una ProblemInstance nativa con schema_version 1.0, nodes y arcs.');
+  if (!['1.0', '1.1'].includes(instance.schema_version) || !Array.isArray(instance.nodes) || !Array.isArray(instance.arcs))
+    throw new Error('Carga una ProblemInstance nativa con schema_version 1.0 o 1.1, nodes y arcs.');
   const ids = new Set();
   for (const node of instance.nodes) {
     if (!record(node) || typeof node.node_id !== 'string' || !node.node_id.trim() || ids.has(node.node_id))
@@ -87,10 +87,13 @@ export function validateNativeInstance(instance) {
   }
   if (instance.nodes.filter(node => node.node_type === 'base').length !== 1) throw new Error('La instancia necesita exactamente un depósito (base).');
   const pairs = new Set();
+  const resourcePaths = instance.schema_version === '1.1' && instance.provenance?.representation?.kind === 'resource_paths';
   for (const arc of instance.arcs) {
     if (!record(arc) || !ids.has(arc.from_node_id) || !ids.has(arc.to_node_id)) throw new Error('Un arco referencia nodos desconocidos.');
-    const key = JSON.stringify([arc.from_node_id, arc.to_node_id]);
-    if (pairs.has(key) || arc.from_node_id === arc.to_node_id) throw new Error('La instancia contiene arcos duplicados o autoarcos.');
+    const key = resourcePaths ? arc.arc_id : JSON.stringify([arc.from_node_id, arc.to_node_id]);
+    if (resourcePaths && (typeof key !== 'string' || !key || !record(arc.battery_profile)))
+      throw new Error('Cada camino con recursos requiere arc_id único y perfil de batería.');
+    if (pairs.has(key) || (!resourcePaths && arc.from_node_id === arc.to_node_id)) throw new Error('La instancia contiene arcos duplicados o autoarcos.');
     pairs.add(key);
     if (!Number.isFinite(arc.energy_kwh)) throw new Error('Cada arco necesita energy_kwh finita, con su signo original.');
   }
@@ -162,24 +165,31 @@ export function parseInstanceFile(text, filename = '') {
         preparationAttempt = value.request;
         requireFields(preparationAttempt, ['api_version', 'solver'], 'request');
         if (preparationAttempt.api_version !== API_VERSION) throw new Error('Versión del intento no admitida; se requiere API 3.0.');
-        if (preparationAttempt.solver !== undefined) requireFields(preparationAttempt.solver, ['time_limit_seconds'], 'solver');
+        if (preparationAttempt.solver !== undefined) requireFields(preparationAttempt.solver, ['time_limit_seconds', 'search_policy'], 'solver');
       }
       value = value.request?.instance ? value.request : value.prepare_request || value.request;
     }
-    if (value?.api_version === API_VERSION && value.result) value = value.result.raw?.input;
+    if (value?.api_version === API_VERSION && value.result) {
+      const raw = value.result.raw;
+      if (raw?.prepare_request) {
+        preparationAttempt = {api_version: API_VERSION, solver: raw.input?.solver};
+        value = raw.prepare_request;
+      } else value = raw?.input;
+    }
     if (!record(value)) throw new Error('El archivo no contiene una entrada completa reutilizable.');
     if (value.schema_version === '1.0' && record(value.solve) && record(value.kpis))
       throw new Error('Este archivo es un resultado nativo: no contiene los nodos y arcos de su instancia. Carga la instancia correspondiente o la descarga de ejecución completa del API 3.0.');
-    if (value.schema_version === '1.0') value = {instance: validateNativeInstance(value)};
+    if (['1.0', '1.1'].includes(value.schema_version)) value = {instance: validateNativeInstance(value)};
     else if (value.api_version === API_VERSION && value.instance) {
       const request = value;
-      requireFields(request, ['api_version', 'instance', 'solver'], 'request');
-      if (request.solver !== undefined) requireFields(request.solver, ['time_limit_seconds'], 'solver');
+      requireFields(request, ['api_version', 'instance', 'solver', 'prepared_instance_id'], 'request');
+      if (request.solver !== undefined) requireFields(request.solver, ['time_limit_seconds', 'search_policy'], 'solver');
+      if (request.prepared_instance_id) throw new Error('Carga la ejecución completa o la entrada de preparación para reconstruir los caminos; este identificador es temporal.');
       value = {instance: validateNativeInstance(request.instance), request};
     } else if (value.api_version === API_VERSION && value.nodes) {
-      requireFields(value, ['api_version', 'nodes', 'fleet', 'network_mode'], 'prepare');
+      requireFields(value, ['api_version', 'nodes', 'fleet', 'network_mode', 'operations'], 'prepare');
       requireFields(value.fleet, ['num_vehicles', 'battery_capacity_kwh', 'reserve_kwh', 'initial_soc', 'consumption_kwh_km', 'vehicle_connector_types'], 'fleet');
-      if (value.network_mode !== 'haversine') throw new Error('La preparación de nodos requiere network_mode haversine explícito.');
+      if (!['haversine', 'road'].includes(value.network_mode)) throw new Error('La preparación requiere network_mode road o haversine explícito.');
       value = {nodes: value.nodes, prepareRequest: value, ...(preparationAttempt ? {request: preparationAttempt} : {})};
     } else throw new Error('Versión no admitida. Los formatos anteriores no son compatibles: carga un CSV o una ProblemInstance nativa 1.0.');
   }
@@ -193,15 +203,16 @@ function positive(value, name) {
   return Number(value);
 }
 
-export function solverSettings(timeLimit) {
+export function solverSettings(timeLimit, policy) {
   const seconds = positive(timeLimit, 'El tiempo límite');
   if (seconds < 1 || seconds > 120) throw new Error('El tiempo límite debe estar entre 1 y 120 segundos.');
-  return {time_limit_seconds: seconds};
+  if (policy !== undefined && !['standard', 'adaptive', 'deterministic'].includes(policy)) throw new Error('Política de búsqueda inválida.');
+  return {time_limit_seconds: seconds, ...(policy ? {search_policy: policy} : {})};
 }
 
-export function makeSolveRequest(input, timeLimit) {
+export function makeSolveRequest(input, timeLimit, policy) {
   if (!input.instance) throw new Error('Primero prepara los nodos en el servidor para obtener una instancia nativa.');
-  return {api_version: API_VERSION, instance: validateNativeInstance(input.instance), solver: solverSettings(timeLimit)};
+  return {api_version: API_VERSION, instance: validateNativeInstance(input.instance), solver: solverSettings(timeLimit, policy)};
 }
 
 export function makePrepareRequest(input, values) {
@@ -216,7 +227,10 @@ export function makePrepareRequest(input, values) {
   if (initial > 1) throw new Error('El SoC inicial debe ser de hasta 100 %.');
   if (reserve > initial * capacity) throw new Error('La reserva no puede superar la energía inicial.');
   const connectors = input.prepareRequest?.fleet?.vehicle_connector_types;
-  return {api_version: API_VERSION, nodes: input.nodes, network_mode: 'haversine',
+  const networkMode = values.network_mode || input.prepareRequest?.network_mode || 'haversine';
+  if (!['road', 'haversine'].includes(networkMode)) throw new Error('Modo de red inválido.');
+  return {api_version: API_VERSION, nodes: input.nodes, network_mode: networkMode,
+    ...(input.prepareRequest?.operations ? {operations: structuredClone(input.prepareRequest.operations)} : {}),
     fleet: {num_vehicles: count, battery_capacity_kwh: capacity, reserve_kwh: reserve,
       initial_soc: initial, consumption_kwh_km: consumption,
       ...(connectors ? {vehicle_connector_types: [...connectors]} : {})}};

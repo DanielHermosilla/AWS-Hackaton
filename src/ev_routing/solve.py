@@ -497,6 +497,8 @@ def solve_instance(
     El presupuesto total incluye construcción, intentos fallidos y extracción;
     los límites de los backends son blandos y pueden excederse por sobrecostos.
     """
+    if config.solver != "scip-routes" and instance.provenance.get("representation", {}).get("kind") == "resource_paths":
+        raise ValueError("resource_paths requiere scip-routes; conservar la red vial para backends posicionales")
     if config.solver == "scip-routes":
         try:
             from ev_routing.route_solver import solve_routes

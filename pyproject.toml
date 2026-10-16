@@ -43,6 +43,7 @@ packages = ["src/ev_routing"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+pythonpath = ["."]
 addopts = "-ra"
 markers = [
   "solver: ejecuta un solver instalado; no necesita Internet",

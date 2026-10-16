@@ -157,6 +157,9 @@ export async function createMap(container, options = {}) {
       map.on('click', `${sourceId}-line`, () => options.onVehicleSelect?.(route.vehicleId));
     }
     for (const node of mappedNodes) {
+      // Geometry already contains street intersections. Render markers only
+      // for service locations; the native export retains every physical step.
+      if (node.type === 'junction') continue;
       const el = document.createElement('button');
       el.type = 'button';
       el.className = `zmd-pin type-${node.type}`;

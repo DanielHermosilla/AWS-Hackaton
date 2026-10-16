@@ -2,27 +2,31 @@
 
 Interfaz HTML/CSS/JavaScript para planificar una flota eléctrica de reparto, desarrollada por ZMD Mobility. Tiene dos pantallas, Inicio y Plan, con cabecera y navegación compartidas. No requiere paquetes JavaScript ni compilación.
 
-Esta rama conecta la interfaz con el **motor nativo de Daniel (`ev_routing`)**
+La rama `main` conecta la interfaz con el **motor nativo de Daniel (`ev_routing`)**
 mediante el API 3.0. Desde la raíz del repositorio:
 
 ```sh
-uv sync --locked
-uv run --locked python -m backend.local_server --port 4294
+uv sync --locked --extra dw
+AWS_PROFILE=hackathon uv run --locked --extra dw python -m backend.local_server --port 4294
 ```
 
 Abrir `http://127.0.0.1:4294/` y elegir **Cargar y calcular**. El CSV se envía a
 `/prepare` para que el backend construya la instancia; después se envía la
-ProblemInstance 1.0 canónica a `/solve`. La preparación por distancia es una
-aproximación no vial explícita. La UI no estima energía ni construye arcos.
+ProblemInstance 1.0/1.1 canónica a `/solve`. La selección **Calles del servidor** usa el GraphML indicado con `--graphml` y
+preprocesamiento con expansión vial; la selección geodésica es sintética.
+La UI no estima energía ni construye arcos. Configuración y comandos completos
+en [la guía de integración](../docs/webapp-integration.md).
 
-También se puede cargar directamente un **JSON nativo ProblemInstance 1.0**.
+También se puede cargar directamente un **JSON nativo ProblemInstance 1.0/1.1**.
 Sus arcos, parámetros, operaciones, compatibilidad de cargadores y procedencia
 se conservan sin cambios. Los campos físicos se bloquean en el formulario;
-solo se puede modificar el presupuesto del solver. Para cambiar la instancia,
+se puede modificar el presupuesto del solver y escoger una política de búsqueda. Para cambiar la instancia,
 editar el JSON y volver a cargarlo. Los formatos antiguos de preparación y
 el API beta 2 no se admiten.
 
-La descarga de instancia entrega un JSON nativo reutilizable. **Descargar
+Para JSON elemental, la descarga de instancia conserva el JSON nativo. Para
+preparación vial entrega la entrada de nodos y supuestos para reconstruirla
+con el GraphML del servidor. La ejecución completa conserva ambos contratos. **Descargar
 ejecución completa** conserva el envoltorio API 3.0 y los objetos originales del
 motor. **Descargar resultado nativo** entrega directamente el `RunResult` 1.0
 íntegro de Daniel, incluidos los campos que la UI no representa. Ese resultado

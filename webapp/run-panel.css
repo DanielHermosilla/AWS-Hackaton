@@ -26,7 +26,7 @@ main[data-run-pending="true"]>:not(.run-pending-placeholder){display:none}
 .run-fields{display:grid;grid-template-columns:1fr 1fr;gap:13px 18px;margin:0;padding:0;border:0}
 .run-fields legend{font-size:13px;font-weight:650;margin-bottom:14px}
 .run-fields label{display:grid;gap:6px;font-size:12px;min-width:0;color:var(--shell-muted)}
-.run-fields input{width:100%;padding:10px 12px;border:1px solid var(--shell-field-line);background:var(--shell-field-bg);color:var(--shell-ink)}
+.run-fields input,.run-fields select{width:100%;padding:10px 12px;border:1px solid var(--shell-field-line);background:var(--shell-field-bg);color:var(--shell-ink);border-radius:6px}
 .run-ack{display:flex;align-items:flex-start;gap:10px;margin-top:18px;font-size:13px;line-height:1.5}
 .run-ack input{margin-top:3px;flex:none}
 .run-dialog .run-message{margin-top:16px;color:var(--shell-ink)}
