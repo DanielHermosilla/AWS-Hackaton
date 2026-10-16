@@ -173,25 +173,67 @@ def test_one_strategic_call_for_both_phases():
     assert any(s.get("callback_control") is not None for s in result.search["phases"])
 
 
-def test_pricing_interruption_cannot_certify_restricted_master(monkeypatch):
-    from ev_routing.route_resources import RouteOracle
-    original = RouteOracle.advance
-
-    def slow(self):
-        deadline = monotonic() + .02
-        while monotonic() < deadline:
-            pass
-        return original(self)
-
-    monkeypatch.setattr(RouteOracle, "advance", slow)
-    result = solve_routes(tiny(service_seconds=100, max_route_seconds=250),
-                          SolverConfig(time_limit_seconds=.01))
-    assert not result.lexicographic_optimal
+def test_short_budget_cannot_claim_false_optimum_or_infeasibility():
+    instance = tiny(service_seconds=100, max_route_seconds=250)
+    result = solve_routes(instance, SolverConfig(time_limit_seconds=.01))
     assert result.status != "infeasible"
-    # El presupuesto también puede vencer reparando el arranque, antes del LP.
-    assert not result.search["phases"] or any(
-        s["pricing_interrupted"] for s in result.search["phases"]
+    if result.solution is not None:
+        assert validate_solution(instance, result.solution, enforce_movement_limit=False).feasible
+    if result.lexicographic_optimal:
+        # Una máquina rápida puede terminar: el óptimo manual exige una ruta
+        # de 2 kWh por cliente, pues la jornada impide atender ambos juntos.
+        assert result.solution is not None
+        assert len(result.solution.served_visit_ids) == 2
+        assert result.solution.net_energy_kwh == pytest.approx(4)
+        assert [phase.name for phase in result.phases] == ["deliveries", "energy"]
+        assert all(phase.proven_optimal for phase in result.phases)
+        assert all(phase.best_bound == pytest.approx(phase.incumbent) for phase in result.phases)
+
+
+@pytest.mark.parametrize("name,incumbent,bound", [
+    ("deliveries", 1, 2),
+    ("energy", 2, 0),
+])
+def test_pricing_callback_interruption_keeps_only_analytic_bound(
+    monkeypatch, name, incumbent, bound,
+):
+    from ev_routing.route_resources import RouteOracle, assemble_solution, route_from_walk
+    from ev_routing.route_solver import RoutePricer, _master_phase
+
+    instance = tiny(service_seconds=100, max_route_seconds=250)
+    # Testigo explícito: un cliente atendido, 2 kWh y segundo vehículo inactivo.
+    seed = assemble_solution(instance, [
+        route_from_walk(instance, instance.vehicle_ids[0], ["0", "A", "0"], [1], [0, 0, 0]),
+        route_from_walk(instance, instance.vehicle_ids[1], ["0"], [], [0]),
+    ])
+    assert validate_solution(instance, seed, enforce_movement_limit=False).feasible
+    original = RoutePricer._price
+
+    def expire_inside_callback(self, farkas):
+        # Agotar el plazo dentro del callback real, sin depender del tiempo
+        # del arranque, del maestro restringido o de un oráculo ya sustituido.
+        self.deadline = monotonic() - 1
+        return original(self, farkas)
+
+    monkeypatch.setattr(RoutePricer, "_price", expire_inside_callback)
+    oracles = {vehicle: RouteOracle(instance, vehicle) for vehicle in instance.vehicle_ids}
+    config = SolverConfig(time_limit_seconds=2)
+    best, phase, stats = _master_phase(
+        instance, config, RoutePolicy(pricing_strategy="exhaustive"),
+        oracles, name, monotonic() + config.time_limit_seconds, seed,
     )
+    assert stats["pricing_calls"] > 0
+    assert not phase.proven_optimal
+    assert phase.status != "infeasible"
+    assert phase.incumbent == incumbent
+    assert phase.best_bound == bound
+    assert phase.termination_condition == "pricing_incomplete"
+    assert stats["bound_source"] == "analytic"
+    assert stats["pricing_interrupted"]
+    assert not stats["last_pricing_query_complete"]
+    assert stats["pricing_error"] is None
+    assert best is not None
+    assert validate_solution(instance, best, enforce_movement_limit=False).feasible
 
 
 def test_margin_applied_once():
