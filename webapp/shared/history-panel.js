@@ -7,7 +7,7 @@ const number = value => Number.isFinite(value) ? new Intl.NumberFormat('es-CL', 
 // An independent input: telemetry never becomes a list of delivery locations.
 export function createHistoryPanel({host, onChange = () => {}, client = createHistoryClient()} = {}) {
   host.innerHTML = `<div class="run-history-heading"><div><h4>Consumo con históricos</h4><span>Opcional</span></div><button id="history-aws" type="button">Conectar con AWS</button></div>
-    <p class="run-help">Adjunta mediciones eVED u otro histórico CSV o JSON. Donde haya evidencia, estimaremos el consumo por calle; en los demás tramos se usará tu consumo supuesto.</p>
+    <p class="run-help">Adjunta mediciones eléctricas eVED u otro histórico: CSV hasta 4 GiB, JSON hasta 256 MiB. Donde haya evidencia, estimaremos el consumo por calle; en los demás tramos se usará tu consumo supuesto. Sin instancia, se cargarán las ubicaciones de la hackatón en Ann Arbor.</p>
     <p id="history-native-note" class="run-help" hidden>Este JSON ya incluye la energía de sus tramos. Para usar históricos, carga ubicaciones en CSV o crea una instancia editable.</p>
     <input id="history-file" class="run-visually-hidden" type="file" accept=".csv,.json" tabindex="-1" aria-label="Archivo de datos históricos">
     <div class="run-history-actions"><button id="choose-history" type="button">Adjuntar histórico</button><button id="history-remove" type="button" hidden>Quitar</button><button id="history-analyze" type="button" hidden>Interpretar con IA</button><button id="history-cancel" type="button" hidden>Cancelar carga</button></div>
@@ -39,7 +39,7 @@ export function createHistoryPanel({host, onChange = () => {}, client = createHi
   let stateMessage = 'Sin histórico. Se usará el consumo supuesto.';
   const setState = message => { stateMessage = message; $('history-state').textContent = message; };
   const clearSecrets = () => { for (const id of ['bedrock-access', 'bedrock-secret', 'bedrock-token']) $(id).value = ''; };
-  function changed(invalidate = true) { onChange(profile ? {profile_id: profile.profile_id, filename: text(profile.filename)} : null, {invalidate}); }
+  function changed(invalidate = true) { onChange(profile ? {profile_id: profile.profile_id, filename: text(profile.filename), status: profile.status} : null, {invalidate}); }
   function renderSession() {
     $('history-aws').textContent = session?.connected ? 'AWS conectado' : 'Conectar con AWS';
     $('bedrock-disconnect').hidden = !session?.connected;
@@ -49,7 +49,7 @@ export function createHistoryPanel({host, onChange = () => {}, client = createHi
     $('choose-history').disabled = native || pending || runBusy;
     $('history-remove').hidden = !profile;
     $('history-remove').disabled = pending || runBusy;
-    $('history-analyze').hidden = !profile || ['reviewed', 'applied'].includes(profile.ai_analysis?.status);
+    $('history-analyze').hidden = !profile || profile.status === 'error' || ['reviewed', 'applied'].includes(profile.ai_analysis?.status);
     $('history-analyze').textContent = profile?.status === 'ready' ? 'Ampliar análisis con IA' : 'Interpretar con IA';
     $('history-analyze').disabled = native || pending || runBusy;
     $('history-cancel').hidden = !controller;
@@ -93,6 +93,7 @@ export function createHistoryPanel({host, onChange = () => {}, client = createHi
   }
   function profileMessage(value) {
     if (value.status === 'ready') return 'Histórico preparado. Comprobaremos su cobertura por calle al calcular.';
+    if (value.status === 'error') return 'Este archivo no permite calibrar consumo eléctrico. Revisa el motivo indicado y adjunta un histórico EV válido.';
     return text(value.ai_analysis?.message) || 'Este formato necesita interpretación. Conecta con AWS y elige «Interpretar con IA». Puedes calcular con el consumo supuesto mientras tanto.';
   }
   function accept(value, notify = true) {
@@ -236,6 +237,11 @@ export function createHistoryPanel({host, onChange = () => {}, client = createHi
   refreshSession();
   return {
     restore,
+    useProfile(value) {
+      generation++; controller?.abort(); controller = null; restoringId = null; pending = false;
+      $('history-upload').hidden = true;
+      accept(value);
+    },
     get profileId() { return !native && !pending && profile?.status === 'ready' ? profile.profile_id : null; },
     get isPending() { return pending; },
     setNative(value) { native = value; render(); },

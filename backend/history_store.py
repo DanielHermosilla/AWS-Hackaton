@@ -10,9 +10,9 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-from .service import ProviderError, SolveRequestError, fingerprint
+from ev_routing.historical_energy import MAX_HISTORY_BYTES, MAX_HISTORY_JSON_BYTES
 
-MAX_HISTORY_BYTES = 256 * 1024 * 1024
+from .service import ProviderError, SolveRequestError, fingerprint
 
 
 def _json_value(value):
@@ -86,12 +86,35 @@ class HistoryStore:
             entry.temporary.cleanup()
         self.entries.clear()
 
+    def load_example(self, *, data_directory=None):
+        from ev_routing.energy import file_sha256
+
+        from .scenarios import data_directory_path
+
+        path = data_directory_path(data_directory) / "eVED_EV.csv"
+        if not path.is_file():
+            raise ProviderError(
+                "Falta eVED_EV.csv en data/ del servidor. Adjunta tu histórico eléctrico "
+                "para usarlo con las ubicaciones de la hackatón.",
+                "example_history_unavailable", 404,
+            )
+        digest = file_sha256(path)
+        for entry in self.entries.values():
+            if entry.source_sha256 == digest:
+                return entry.public()
+        with path.open("rb") as stream:
+            return self.upload(stream, path.stat().st_size, path.name)
+
     def upload(self, stream, length, filename):
-        from ev_routing.historical_energy import HistoryNeedsMapping, inspect_history, normalize_history
+        from ev_routing.historical_energy import (
+            HistoryNeedsMapping,
+            inspect_history,
+            normalize_history,
+        )
 
         if not 0 < length <= MAX_HISTORY_BYTES:
             raise ProviderError(
-                "Adjunta un histórico CSV o JSON de hasta 256 MiB.",
+                "Adjunta un histórico CSV de hasta 4 GiB o JSON de hasta 256 MiB.",
                 "history_too_large", 413,
             )
         filename = filename.replace("\\", "/").rsplit("/", 1)[-1].strip()
@@ -101,6 +124,11 @@ class HistoryStore:
             or Path(filename).suffix.lower() not in {".csv", ".json"}
         ):
             raise SolveRequestError("El histórico debe ser un archivo CSV o JSON.")
+        if Path(filename).suffix.lower() == ".json" and length > MAX_HISTORY_JSON_BYTES:
+            raise ProviderError(
+                "El JSON histórico supera 256 MiB. Expórtalo como CSV (hasta 4 GiB).",
+                "history_too_large", 413,
+            )
         directory = tempfile.TemporaryDirectory(prefix="zmd-history-")
         path = Path(directory.name) / ("upload" + Path(filename).suffix.lower())
         digest = hashlib.sha256()
@@ -146,7 +174,7 @@ class HistoryStore:
         # Known eVED remains usable when AWS is absent or the interpretation fails.
         if self.bedrock.status().get("connected") and entry.status != "error":
             self.analyze(entry.profile_id)
-        elif entry.data is None:
+        elif entry.data is None and entry.status != "error":
             entry.ai_analysis = {
                 "status": "unavailable",
                 "message": "Conecta con AWS para interpretar las columnas y unidades de este archivo. "
@@ -233,7 +261,9 @@ class HistoryStore:
 
     def apply(self, identifier, road, fallback_rate, *, synthetic=False):
         from ev_routing.historical_energy import (
-            MODEL_VERSION, apply_historical_energy, fit_historical_energy,
+            MODEL_VERSION,
+            apply_historical_energy,
+            fit_historical_energy,
             historical_network_fingerprint,
         )
 

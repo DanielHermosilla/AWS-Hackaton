@@ -91,6 +91,50 @@ def test_eved_detection_uses_schema_and_preview_is_bounded(tmp_path):
     assert inspection["source_sha256"] == normalize_history(source).source_sha256
 
 
+def test_full_csv_projects_columns_and_validates_late_vehicle_classes(tmp_path, monkeypatch):
+    from ev_routing import historical_energy
+
+    frame = eved(trips=20)
+    frame["unneeded_payload"] = "x" * 1000
+    frame["Vehicle Type"] = "EV"
+    source = write_csv(tmp_path, frame)
+    read_csv = historical_energy.pd.read_csv
+    calls = []
+
+    def recorded(*args, **kwargs):
+        calls.append(kwargs)
+        return read_csv(*args, **kwargs)
+
+    monkeypatch.setattr(historical_energy.pd, "read_csv", recorded)
+    normalized = normalize_history(source)
+    assert normalized.summary["row_count"] == len(frame)
+    full_read = next(call for call in calls if call.get("usecols"))
+    assert "unneeded_payload" not in full_read["usecols"]
+    assert "Vehicle Type" in full_read["usecols"]
+    frame.loc[len(frame) - 1, "Vehicle Type"] = "HEV"
+    with pytest.raises(ValueError, match="eléctricos"):
+        normalize_history(write_csv(tmp_path, frame))
+
+
+def test_ice_is_rejected_from_preview_without_reading_the_full_csv(tmp_path, monkeypatch):
+    from ev_routing import historical_energy
+
+    frame = eved()
+    frame["Engine RPM[RPM]"] = 1000
+    source = write_csv(tmp_path, frame)
+    read_csv = historical_energy.pd.read_csv
+    calls = []
+
+    def recorded(*args, **kwargs):
+        calls.append(kwargs)
+        return read_csv(*args, **kwargs)
+
+    monkeypatch.setattr(historical_energy.pd, "read_csv", recorded)
+    with pytest.raises(ValueError, match="combustión"):
+        normalize_history(source)
+    assert len(calls) == 1 and calls[0]["nrows"] == 256
+
+
 def test_supported_directed_streets_have_different_energy_and_holdout(tmp_path):
     data, streets, profile = fitted(tmp_path)
     estimates = {(e.from_node_id, e.to_node_id): e for e in profile.estimates}

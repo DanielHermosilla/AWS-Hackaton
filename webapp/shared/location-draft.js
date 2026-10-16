@@ -3,7 +3,7 @@ import { inputNodes, parseInstanceFile, validateNodes, validateNativeInstance } 
 const SOURCE_KEY = 'zmd.webapp.editable-source.v1';
 const DRAFT_KEY = 'zmd.webapp.location-draft.v1';
 const formFields = new Set(['num_vehicles', 'battery_capacity_kwh', 'reserve_kwh', 'initial_soc', 'consumption_kwh_km',
-  'time_limit_seconds', 'search_policy', 'network_mode', 'energy_gap_percent', 'random_seed']);
+  'time_limit_seconds', 'search_policy', 'network_mode', 'energy_gap_percent', 'random_seed', 'energy_margin_percent']);
 const editableFields = new Set(['address', 'latitude', 'longitude']);
 const coordinate = value => typeof value === 'number' || (typeof value === 'string' && value.trim())
   ? Number(value) : NaN;

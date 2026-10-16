@@ -40,7 +40,7 @@ misma sesión AWS. La configuración de búsqueda conserva su presupuesto acotad
 
 | Endpoint | Entrada / salida |
 |---|---|
-| `POST /history/upload` | Bytes, `application/octet-stream`, `X-History-Filename` codificado con URL. Máximo 256 MiB y dos millones de filas. CSV o JSON con `records` y metadatos opcionales. |
+| `POST /history/upload` | Bytes, `application/octet-stream`, `X-History-Filename` codificado con URL. CSV hasta 4 GiB; JSON hasta 256 MiB con `records` y metadatos opcionales. Máximo veinte millones de filas, sin truncamiento silencioso. |
 | `GET /history?profile_id=…` | `{api_version, profile}`: estado `ready`, `needs_mapping` o `error`, resumen, supuestos, advertencias y análisis IA. |
 | `POST /history/analyze` | `{profile_id}`. Una interpretación y, al normalizar un formato nuevo, una explicación adicional de estadísticas; máximo dos llamadas por acción. |
 | `POST /history/remove` | `{profile_id}`. Elimina el archivo temporal y su perfil. |
@@ -66,6 +66,60 @@ un histórico inexistente devuelve `history_expired`: adjuntarlo de nuevo o
 retirarlo es una decisión visible. Los originales no se modifican. Bedrock
 recibe solo una muestra y estadísticas limitadas; las integrales se calculan
 localmente sobre el archivo admitido. Una unidad o signo ambiguos no se inventan.
+
+Los CSV se transfieren a disco en bloques de 1 MiB y se leen únicamente las
+columnas de mediciones, clasificación y contexto necesarias. La normalización
+ordena el conjunto completo admitido por vehículo, viaje y tiempo antes de
+integrar; el límite de bytes no garantiza RAM para cualquier número de muestras.
+La memoria depende de las columnas normalizadas. Un JSON se materializa para
+validarlo y conserva el límite menor. Los históricos de combustión e híbridos
+se rechazan por esquema antes de leer todas sus filas.
+
+### Caso histórico y variantes de la hackatón
+
+`GET /scenarios/hackathon?dataset=competition|evaluation` devuelve
+`{api_version, scenario: {name, source_file, nodes, network_mode: "road", scenario}}`.
+Lee exclusivamente los dos CSV conocidos en `data/`; no admite rutas arbitrarias
+ni publica el directorio. La ausencia del original devuelve 404
+`scenario_unavailable`, sin inventar ubicaciones. Los nodos se validan con el
+lector compartido y preservan coordenadas, IDs, conectores y puertos.
+
+`POST /scenarios/hackathon` recibe `{dataset: "competition"|"evaluation"}` y
+devuelve `{api_version, scenario, profile}`. Carga también el archivo local fijo
+`data/eVED_EV.csv` en el mismo almacén temporal de históricos; reutiliza un perfil
+con igual SHA-256. No acepta rutas arbitrarias. Si falta el histórico devuelve
+404 `example_history_unavailable`.
+
+Opcionalmente recibe `simulation: {customers, chargers, seed?}`: clientes ≥ 1,
+cargadores ≥ 0, hasta 200 servicios incluido el depósito; semilla entera entre
+0 y 2.000.000.000, predeterminada 0. Reducir cantidades selecciona ubicaciones
+fuente con esa semilla. Las adicionales se muestrean sin reemplazo entre
+intersecciones de la red local dentro del rectángulo de clientes originales
+y en el componente fuertemente conexo del depósito, mediante el muestreador
+compartido `simulate_customers`. Los originales no se modifican. No se inventan
+arcos ni se descarga una red. Si faltan calles o candidatos, la acción falla
+con un error explícito. Los cargadores añadidos declaran conectores J1772/CHAdeMO,
+un puerto DC y uno L2, máximo nominal 50 kW; no se infiere potencia efectiva.
+La respuesta incluye `scenario.simulation` con cantidades, semilla y supuestos.
+
+`energy_profile_id` opcional reutiliza el histórico seleccionado en lugar de
+cargar el local, sin aceptar perfiles caducados o no preparados. La interfaz
+lo envía al crear una variante sobre el histórico actual.
+
+`POST /prepare` admite el metadato aditivo
+`scenario: {kind: "hackathon"|"hackathon_simulation", dataset, seed?}`. Se conserva
+en la procedencia y en la entrada exportada; declara origen, no certifica
+factibilidad ni autenticidad de ubicaciones editadas. El margen del formulario
+se convierte a `operations.energy_margin_fraction` y utiliza la física vigente.
+
+La interfaz permite cargar cualquiera de los casos explícitamente. Si se adjunta
+un histórico válido sin ubicaciones, carga el caso seleccionado automáticamente
+y conserva la flota y los supuestos editados. Después utiliza los endpoints
+existentes `/prepare` y `/solve`, con `energy_profile_id`. No interpreta los
+trayectos del histórico como demanda ni inventa un depósito. Sin histórico,
+el mismo caso puede calcularse con el consumo supuesto. Los controles de capacidad
+24 kWh, reserva 2,4 kWh y respaldo 0,2 kWh/km se completan únicamente si están vacíos
+y se identifican como supuestos ajustables.
 
 ## Preparación explícita de CSV
 
@@ -117,7 +171,8 @@ No se añade una matriz distinta en JavaScript.
 El mismo cuerpo admite `network_mode: "road"` y `operations` opcional,
 validado con el contrato nativo. Ventanas/jornada exigen tiempos explícitos
 o `assumed_speed_kph`; no se inventan velocidades. Las opciones se aplican
-antes del preprocesamiento y forman parte de la huella de caché. Requiere iniciar el servidor con
+antes del preprocesamiento y forman parte de la huella de caché. El comando local
+usa `artifacts/network/competition_delivery.graphml` si existe, o la ruta explícita
 `--graphml <archivo_local>`, `--network-profile drive|delivery` y opcionalmente
 `--max-snap-distance-m`. Son parámetros del operador; no se descargan mapas.
 Se usa el preparador nativo: calles dirigidas, accesos con alcance explícito,

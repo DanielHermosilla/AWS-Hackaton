@@ -62,6 +62,18 @@ test('adapts one real run without reconstructing unavailable energy or geometry'
   assert.equal(NODES[0].lat, -33.45);
 });
 
+test('a historical demand simulation is labeled while retaining its real road geometry', () => {
+  const envelope = response();
+  envelope.result.raw.prepare_request = {
+    scenario: {kind: 'hackathon_simulation', dataset: 'competition', seed: 17},
+  };
+  envelope.result.network.geometry_source = 'expanded_road_paths';
+  const {SCENARIO} = adaptSolverResponse(envelope);
+  assert.equal(SCENARIO.name, 'Simulación sobre el caso histórico');
+  assert.equal(SCENARIO.demonstration, false);
+  assert.equal(SCENARIO.synthetic, false);
+});
+
 test('passing through a client does not add an explicit delivery', () => {
   const { ROUTES, RUN_INFO } = adaptSolverResponse(response());
   assert.deepEqual(ROUTES[0].servedVisitIds, ['V|1']);

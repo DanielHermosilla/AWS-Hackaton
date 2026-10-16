@@ -145,6 +145,20 @@ class Handler(BaseHTTPRequestHandler):
         if parts.path == "/health" and not parts.query:
             self._send(200, service.health(runtime=self.server.runtime))
             return
+        if parts.path == "/scenarios/hackathon":
+            from .scenarios import hackathon_scenario
+
+            try:
+                params = parse_qs(parts.query, strict_parsing=True)
+                if set(params) != {"dataset"} or len(params["dataset"]) != 1:
+                    raise service.SolveRequestError("Indica un único dataset de la hackatón.")
+                scenario = hackathon_scenario(params["dataset"][0])
+                self._send(200, {"api_version": service.API_VERSION, "scenario": scenario})
+            except service.ProviderError as error:
+                self._error(error.status, error.code, str(error))
+            except ValueError as error:
+                self._error(400, "invalid_scenario", str(error))
+            return
         if parts.path == "/bedrock/session" and not parts.query:
             self._send(200, {
                 "api_version": service.API_VERSION, "status": self.server.runtime.bedrock.status(),
@@ -218,7 +232,7 @@ class Handler(BaseHTTPRequestHandler):
             return
         endpoints = {
             "/solve", "/prepare", "/history/upload", "/history/analyze", "/history/remove",
-            "/bedrock/session", "/bedrock/disconnect",
+            "/bedrock/session", "/bedrock/disconnect", "/scenarios/hackathon",
         }
         if self.path not in endpoints:
             self._error(404, "not_found", "Recurso no encontrado.")
@@ -252,7 +266,7 @@ class Handler(BaseHTTPRequestHandler):
         )
         if length > limit:
             message = (
-                "El histórico supera los 256 MiB admitidos."
+                "El histórico supera los 4 GiB admitidos para CSV."
                 if upload else
                 "La petición supera el tamaño admitido para esta operación."
             )
@@ -288,7 +302,16 @@ class Handler(BaseHTTPRequestHandler):
             return
         try:
             runtime = self.server.runtime
-            if self.path == "/history/upload":
+            if self.path == "/scenarios/hackathon":
+                from .scenarios import load_historical_case
+
+                response = {
+                    "api_version": service.API_VERSION,
+                    **load_historical_case(payload, runtime),
+                }
+            elif self.path == "/history/upload":
+                # Socket timeout measures inactivity, not total upload duration.
+                self.connection.settimeout(120)
                 profile = runtime.histories.upload(
                     self.rfile, length, unquote(self.headers.get("X-History-Filename", "")),
                 )
@@ -362,7 +385,11 @@ def make_server(host="127.0.0.1", port=8000, static_root=None, *, runtime=None):
 def main():
     parser = argparse.ArgumentParser(description="ZMD beta local, webapp + núcleo nativo de Daniel")
     parser.add_argument("--port", type=int, default=8000)
-    parser.add_argument("--graphml", type=Path, help="Red dirigida local; no se descarga.")
+    default_graph = Path(__file__).resolve().parents[1] / "artifacts/network/competition_delivery.graphml"
+    parser.add_argument(
+        "--graphml", type=Path, default=default_graph if default_graph.is_file() else None,
+        help="Red dirigida local; por defecto usa competition_delivery.graphml si existe. No se descarga.",
+    )
     parser.add_argument("--network-profile", choices=["drive", "delivery"], default="delivery")
     parser.add_argument("--max-snap-distance-m", type=float, default=100)
     parser.add_argument("--log-directory", type=Path, default=Path("artifacts/webapp"))

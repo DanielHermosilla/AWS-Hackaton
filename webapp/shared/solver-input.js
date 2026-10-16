@@ -189,7 +189,7 @@ export function parseInstanceFile(text, filename = '') {
       if (request.prepared_instance_id) throw new Error('Carga la ejecución completa o la entrada de preparación para reconstruir los caminos; este identificador es temporal.');
       value = {instance: validateNativeInstance(request.instance), request};
     } else if (value.api_version === API_VERSION && value.nodes) {
-      requireFields(value, ['api_version', 'nodes', 'fleet', 'network_mode', 'operations', 'energy_profile_id'], 'prepare');
+      requireFields(value, ['api_version', 'nodes', 'fleet', 'network_mode', 'operations', 'energy_profile_id', 'scenario'], 'prepare');
       if (value.energy_profile_id !== undefined && (typeof value.energy_profile_id !== 'string' || !value.energy_profile_id || value.energy_profile_id.length > 200))
         throw new Error('El identificador del histórico no es válido. Vuelve a adjuntar el histórico.');
       requireFields(value.fleet, ['num_vehicles', 'battery_capacity_kwh', 'reserve_kwh', 'initial_soc', 'consumption_kwh_km', 'vehicle_connector_types'], 'fleet');
@@ -244,9 +244,16 @@ export function makePrepareRequest(input, values) {
   if (!['road', 'haversine'].includes(networkMode)) throw new Error('Modo de red inválido.');
   if (values.energy_profile_id != null && (typeof values.energy_profile_id !== 'string' || !values.energy_profile_id || values.energy_profile_id.length > 200))
     throw new Error('El identificador del histórico no es válido. Vuelve a adjuntar el histórico.');
+  const operations = structuredClone(input.prepareRequest?.operations || {});
+  if (values.energy_margin_percent !== undefined) {
+    const margin = inputNumber(values.energy_margin_percent);
+    if (!Number.isFinite(margin) || margin < 0) throw new Error('El margen de consumo debe ser un porcentaje no negativo.');
+    if (margin !== 0 || 'energy_margin_fraction' in operations) operations.energy_margin_fraction = margin / 100;
+  }
   return {api_version: API_VERSION, nodes: input.nodes, network_mode: networkMode,
     ...(values.energy_profile_id ? {energy_profile_id: values.energy_profile_id} : {}),
-    ...(input.prepareRequest?.operations ? {operations: structuredClone(input.prepareRequest.operations)} : {}),
+    ...(Object.keys(operations).length ? {operations} : {}),
+    ...(input.prepareRequest?.scenario ? {scenario: structuredClone(input.prepareRequest.scenario)} : {}),
     fleet: {num_vehicles: count, battery_capacity_kwh: capacity, reserve_kwh: reserve,
       initial_soc: initial, consumption_kwh_km: consumption,
       ...(connectors ? {vehicle_connector_types: [...connectors]} : {})}};
@@ -279,6 +286,7 @@ export function inputFormValues(input) {
     time_limit_seconds: solver.time_limit_seconds ?? 120,
     search_policy: solver.search_policy ?? (input.request ? 'standard' : 'adaptive'),
     energy_relative_gap: solver.energy_relative_gap ?? .005,
+    energy_margin_percent: 100 * ((native ? instance.operations : input.prepareRequest?.operations)?.energy_margin_fraction ?? 0),
     random_seed: solver.random_seed ?? 0,
     network_mode: input.prepareRequest?.network_mode || (network.kind === 'haversine' ? 'haversine' : 'road'),
   };

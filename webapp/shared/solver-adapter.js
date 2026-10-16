@@ -189,7 +189,8 @@ export function adaptSolverResponse(envelope) {
     require(text(result.metadata[field]), `metadata.${field}`);
   }
   return {
-    SCENARIO: { id: result.run_id, name: 'Resultado del motor', demonstration: false,
+    SCENARIO: { id: result.run_id, name: result.raw?.prepare_request?.scenario?.kind === 'hackathon_simulation'
+      ? 'Simulación sobre el caso histórico' : 'Resultado del motor', demonstration: false,
       synthetic: result.network?.geometry_source === 'synthetic_haversine' },
     VEHICLES, NODES, ROUTES,
     RUN_INFO: {

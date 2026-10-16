@@ -5,6 +5,7 @@ import { createLocationEditor } from './location-editor.js';
 import { readEditableSource, saveEditableSource, readEditableDraft, saveEditableDraft, clearEditableDraft } from './shared/location-draft.js';
 import { createHistoryPanel } from './shared/history-panel.js';
 import { historyCoverageSnapshot } from './shared/history-details.js';
+import { loadHackathonScenario, loadHistoricalCase } from './shared/scenario-client.js';
 
 export function initRunPanel() {
   const fileLimitLabel = `${Math.round(MAX_FILE_BYTES / 1024 / 1024)} MB`;
@@ -20,13 +21,15 @@ export function initRunPanel() {
   dialog.setAttribute('aria-labelledby', 'run-heading');
   dialog.innerHTML = `<div class="dialog-heading"><h2 id="run-heading">Calcular rutas</h2><button id="close-run" type="button" aria-label="Cerrar cálculo">×</button></div>
     <div class="run-view-switch" id="run-view-switch" hidden aria-label="Vista del cálculo"><button id="show-config" type="button" aria-pressed="true">Preparar cálculo</button><button id="show-results" type="button" aria-pressed="false">Ver resultados</button></div>
-    <p id="run-intro">Elige tus ubicaciones y ajusta los valores de esta ejecución.</p>
+    <p id="run-intro">Carga el caso histórico de la hackatón y calcula sus rutas, o crea una variante con otros clientes, cargadores y parámetros de flota.</p>
     <form id="run-form" novalidate>
       <section class="run-input-section" aria-labelledby="instance-heading">
         <div class="run-section-heading"><h3 id="instance-heading">Instancia</h3><div class="run-format-help"><button id="instance-format" type="button" aria-label="Formato de los archivos de instancia" aria-expanded="false" aria-controls="instance-help">?</button><div id="instance-help" class="run-format-popover" role="note" hidden><strong>¿Qué archivo puedo usar?</strong><p><b>CSV:</b> una fila por lugar. Incluye <code>node_id</code>, <code>node_type</code>, <code>latitude</code> y <code>longitude</code>. Los tipos son <code>base</code>, <code>visit</code> y <code>charger</code>.</p><p><b>JSON:</b> una instancia o ejecución exportada por esta app, con sus parámetros. Máximo ${fileLimitLabel}; la instancia enviada a calcular admite hasta 64 MB. Los históricos de mediciones eVED no son instancias de rutas.</p></div></div></div>
         <input id="instance-file" class="run-visually-hidden" type="file" accept=".csv,.json" tabindex="-1" aria-label="Archivo de instancia">
-        <div class="run-file-row"><button id="choose-instance" type="button"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9Z"/><path d="M14 3v6h6M12 17v-5m-3 3 3-3 3 3"/></svg>Seleccionar archivo</button><span id="instance-filename">CSV o JSON · hasta ${fileLimitLabel}</span></div>
-        <details class="run-synthetic"><summary>Crear un caso de prueba</summary><p class="run-help">Genera ubicaciones de ejemplo para probar el cálculo por distancia.</p><div class="run-synthetic-fields"><label>Clientes<input id="synthetic-clients" type="number" min="1" max="199" step="1" value="2"></label><label>Cargadores<input id="synthetic-chargers" type="number" min="0" max="198" step="1" value="1"></label><button id="use-synthetic" type="button">Crear caso</button></div></details>
+        <div class="run-hackathon"><label for="hackathon-dataset">Caso histórico de la hackatón · Ann Arbor, Michigan</label><div><select id="hackathon-dataset"><option value="competition">Caso competition</option><option value="evaluation">Caso evaluation</option></select><button id="use-hackathon" type="button" class="primary">Cargar caso histórico</button></div><p class="run-help">Incluye ubicaciones e histórico eléctrico eVED del servidor, sin subir archivos. Puedes calcular el caso original o crear una variante y cambiar sus parámetros.</p>
+        <details class="run-variant"><summary>Simular una variante de este caso</summary><p class="run-help">Conserva el depósito, las calles de Ann Arbor y el histórico. Puedes reducir ubicaciones o añadir clientes y cargadores simulados sobre la red vial.</p><div class="run-synthetic-fields"><label>Clientes<input id="variant-clients" type="number" min="1" max="199" step="1" value="20"></label><label>Cargadores<input id="variant-chargers" type="number" min="0" max="198" step="1" value="60"></label><label>Semilla de ubicaciones<input id="variant-seed" type="number" min="0" max="2000000000" step="1" value="0"></label><button id="simulate-hackathon" type="button">Crear variante</button></div><p class="run-help">Hasta 200 ubicaciones. Los cargadores añadidos son supuestos: J1772/CHAdeMO, dos puertos y potencia nominal máxima de 50 kW. Revisa la flota, batería y margen de consumo más abajo.</p></details></div>
+        <div class="run-file-row"><button id="choose-instance" type="button"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9Z"/><path d="M14 3v6h6M12 17v-5m-3 3 3-3 3 3"/></svg>Cargar mis ubicaciones</button><span id="instance-filename">CSV o JSON · hasta ${fileLimitLabel}</span></div>
+        <details class="run-synthetic"><summary>Crear un caso de prueba por distancia</summary><p class="run-help">Genera ubicaciones de ejemplo para probar el cálculo por distancia.</p><div class="run-synthetic-fields"><label>Clientes<input id="synthetic-clients" type="number" min="1" max="199" step="1" value="2"></label><label>Cargadores<input id="synthetic-chargers" type="number" min="0" max="198" step="1" value="1"></label><button id="use-synthetic" type="button">Crear caso</button></div></details>
         <p id="input-summary" class="input-summary" hidden>Ningún archivo seleccionado.</p>
         <div class="run-location-review" id="location-review" hidden><button id="edit-locations" type="button" disabled>Revisar ubicaciones</button><span id="location-review-help">Carga una entrada para revisar sus puntos.</span></div>
       </section>
@@ -37,7 +40,9 @@ export function initRunPanel() {
         <label>Reserva mínima · kWh<input id="run-reserve" name="reserve_kwh" type="number" min="0.001" step="any" placeholder="Por confirmar" required></label>
         <label>Consumo supuesto · kWh/km<input id="run-consumption" name="consumption_kwh_km" type="number" min="0.001" step="any" placeholder="Por confirmar" required></label>
         <label>Red para las ubicaciones<select id="run-network" name="network_mode"><option value="road">Calles del servidor</option><option value="haversine">Distancia · caso sintético</option></select></label>
+        <label>Margen de consumo · %<input id="run-margin" name="energy_margin_percent" type="number" min="0" step="any" value="0" required aria-describedby="margin-help"></label>
       </div>
+      <p id="margin-help" class="run-help">0 % conserva la estimación. Un margen mayor aumenta el consumo previsto de las calles, incluidas las calibradas con el histórico; la regeneración se conserva.</p>
       <p id="native-note" class="run-help" hidden></p>
       <p id="fleet-help" class="run-help">El escenario oficial usa 2 vehículos al 60 %. Capacidad, reserva y consumo son supuestos que puedes ajustar.</p>
       <p id="network-note" class="run-help">El CSV contiene lugares, no calles. Usa la red del servidor para rutas viales; «Distancia» une los puntos para una prueba sintética.</p><section id="run-history" class="run-history" aria-label="Consumo con históricos"></section></section>
@@ -62,11 +67,16 @@ export function initRunPanel() {
   let fileRevision = 0;
   let inputName = '', editorSource = null;
   let draftWarning = '';
+  let scenarioLoading = null;
+  let readingInstance = false;
   const history = createHistoryPanel({host: $('run-history'), onChange(profile, {invalidate}) {
     synchronizeHistoryReference(profile?.profile_id);
     if (invalidate && !input?.instance) dirty();
     try { save({energyProfile: profile, ...(invalidate ? {energyCoverage: null} : {})}); } catch (error) { message(error.message, true); }
     if (invalidate) persistDraft();
+    if (profile?.status === 'ready' && !input && !readingInstance) {
+      useHackathon().catch(error => message(error.message, true));
+    }
   }});
   function synchronizeHistoryReference(profileId) {
     if (!input?.prepareRequest) return;
@@ -125,10 +135,13 @@ export function initRunPanel() {
   function setBusy(value) {
     busy = value;
     $('solve-run').disabled = value;
+    $('use-hackathon').disabled = value || !!scenarioLoading;
+    $('simulate-hackathon').disabled = value || !!scenarioLoading;
+    $('edit-locations').disabled = !input || !!scenarioLoading;
     $('solve-run').textContent = value ? 'Calculando…' : 'Calcular rutas';
     $('stop-waiting').hidden = !value;
-    $('run-form').setAttribute('aria-busy', String(value));
-    history.setRunBusy(value);
+    $('run-form').setAttribute('aria-busy', String(value || !!scenarioLoading));
+    history.setRunBusy(value || !!scenarioLoading);
   }
   const client = createSolverClient({
     onChange(state) {
@@ -233,6 +246,12 @@ export function initRunPanel() {
     input = value;
     lastPrepareRequest = value.prepareRequest || null;
     inputName = name;
+    if (value.prepareRequest?.scenario) {
+      $('hackathon-dataset').value = value.prepareRequest.scenario.dataset;
+      $('variant-clients').value = value.nodes.filter(node => node.node_type === 'visit').length;
+      $('variant-chargers').value = value.nodes.filter(node => node.node_type === 'charger').length;
+      $('variant-seed').value = value.prepareRequest.scenario.seed ?? 0;
+    }
     const native = !!value.instance;
     history.setNative(native);
     // A saved explicit choice (including removal) takes precedence over the
@@ -259,8 +278,49 @@ export function initRunPanel() {
     canonicalInstance = native ? value.instance : null;
     setBusy(busy);
   }
+  async function useHackathon({withHistory = false, simulation = null} = {}) {
+    if (scenarioLoading) return scenarioLoading;
+    if (withHistory && history.isPending) throw new Error('Espera a que termine la carga del histórico.');
+    const revision = ++fileRevision;
+    readingInstance = false;
+    message(simulation ? 'Creando la variante sobre las calles de Ann Arbor…' : withHistory
+      ? 'Cargando ubicaciones e histórico eléctrico de la hackatón…' : 'Cargando las ubicaciones de la hackatón en Ann Arbor…');
+    $('use-hackathon').disabled = true;
+    scenarioLoading = (async () => {
+      const loaded = withHistory
+        ? await loadHistoricalCase({dataset: $('hackathon-dataset').value, simulation,
+          ...(simulation && history.profileId ? {energy_profile_id: history.profileId} : {})})
+        : {scenario: await loadHackathonScenario($('hackathon-dataset').value)};
+      const scenario = loaded.scenario;
+      if (revision !== fileRevision) return;
+      // Read the latest edits after the fetch, including changes made while the
+      // historical upload was being normalized. Do not reset fleet/solver choices.
+      const fields = Object.fromEntries([...dialog.querySelectorAll('.run-fields input, .run-fields select')]
+        .filter(field => field.value !== '').map(field => [field.name, field.value]));
+      dirty();
+      const prepareRequest = {api_version: API_VERSION, nodes: scenario.nodes, network_mode: 'road',
+        ...(scenario.scenario ? {scenario: scenario.scenario} : {}),
+        fleet: {num_vehicles: 2, initial_soc: .6, battery_capacity_kwh: 24, reserve_kwh: 2.4, consumption_kwh_km: .2}};
+      setInput({nodes: scenario.nodes, prepareRequest}, scenario.name);
+      for (const [name, value] of Object.entries(fields)) $('run-form').elements.namedItem(name).value = value;
+      // Selecting the challenge always requests the real street network.
+      $('run-network').value = 'road';
+      if (loaded.profile) history.useProfile(loaded.profile);
+      synchronizeHistoryReference(history.profileId);
+      $('instance-file').value = '';
+      $('instance-filename').textContent = scenario.source_file;
+      persistDraft();
+      message(simulation
+        ? 'Variante lista con el mismo histórico. Revisa las ubicaciones y ajusta flota, batería o margen de consumo antes de calcular.'
+        : 'Caso de Ann Arbor cargado. Revisa la flota y calcula. Valores iniciales ajustables: capacidad útil 24 kWh, reserva 2,4 kWh y consumo de respaldo 0,2 kWh/km; no son mediciones ni reglas oficiales.');
+    })();
+    setBusy(busy);
+    try { await scenarioLoading; }
+    finally { scenarioLoading = null; setBusy(busy); }
+  }
   function buildJob() {
-    if (!input) throw new Error('Falta una instancia. Selecciona un archivo CSV o JSON, o crea un caso de prueba arriba.');
+    if (readingInstance) throw new Error('Espera a que termine la lectura de la instancia antes de calcular.');
+    if (!input) throw new Error('Elige el caso de la hackatón, adjunta un histórico o carga tus ubicaciones para simular la flota.');
     if (!input.instance && history.isPending) throw new Error('Espera a que termine el histórico o cancela su carga antes de calcular.');
     if (locationEditor.isOpen) throw new Error('Confirma o cancela la edición de ubicaciones antes de calcular.');
     for (const field of dialog.querySelectorAll('.run-fields input')) {
@@ -278,6 +338,7 @@ export function initRunPanel() {
     values.initial_soc = Number(values.initial_soc) / 100;
     values.network_mode = $('run-network').value;
     values.energy_profile_id = history.profileId;
+    values.energy_margin_percent = $('run-margin').value;
     return {request: {api_version: API_VERSION, solver: solverSettings(...settings)},
       prepareRequest: makePrepareRequest(input, values)};
   }
@@ -296,13 +357,25 @@ export function initRunPanel() {
     dialogOpener = trigger;
     showView(view);
     if (!dialog.open) dialog.showModal();
-    (view === 'results' ? $('result-details').querySelector('summary') : input?.instance ? $('run-seconds') : input ? $('run-capacity') : $('choose-instance')).focus({preventScroll: true});
+    (view === 'results' ? $('result-details').querySelector('summary') : input?.instance ? $('run-seconds') : input ? $('run-capacity') : $('use-hackathon')).focus({preventScroll: true});
   }
   $('open-run').addEventListener('click', () => open($('open-run')));
   $('run-download').addEventListener('click', () => open($('run-download'), 'results'));
   $('show-config').addEventListener('click', () => showView('config'));
   $('show-results').addEventListener('click', () => showView('results'));
   $('choose-instance').addEventListener('click', () => $('instance-file').click());
+  $('use-hackathon').addEventListener('click', () => useHackathon({withHistory: true}).catch(error => message(error.message, true)));
+  $('simulate-hackathon').addEventListener('click', () => {
+    const simulation = {customers: Number($('variant-clients').value), chargers: Number($('variant-chargers').value), seed: Number($('variant-seed').value)};
+    if (!Number.isInteger(simulation.customers) || simulation.customers < 1 ||
+        !Number.isInteger(simulation.chargers) || simulation.chargers < 0 ||
+        simulation.customers + simulation.chargers > 199 ||
+        !Number.isInteger(simulation.seed) || simulation.seed < 0 || simulation.seed > 2000000000) {
+      message('Usa cantidades enteras: al menos un cliente, cargadores desde cero, hasta 200 ubicaciones en total y semilla entre 0 y 2.000.000.000.', true);
+      return;
+    }
+    useHackathon({withHistory: true, simulation}).catch(error => message(error.message, true));
+  });
   const help = $('instance-format').parentElement;
   const showHelp = visible => {
     $('instance-format').setAttribute('aria-expanded', String(visible));
@@ -323,7 +396,10 @@ export function initRunPanel() {
   });
   dialog.addEventListener('close', () => dialogOpener?.focus());
   $('instance-file').addEventListener('change', async event => {
+    const file = event.target.files?.[0];
+    if (!file) return;
     const revision = ++fileRevision;
+    readingInstance = revision;
     dirty();
     locationEditor.close();
     input = null;
@@ -331,8 +407,6 @@ export function initRunPanel() {
     $('location-review').hidden = true;
     $('edit-locations').disabled = true;
     $('location-review-help').textContent = 'Carga una entrada para revisar sus puntos.';
-    const file = event.target.files?.[0];
-    if (!file) { $('input-summary').hidden = true; $('location-review').hidden = true; $('instance-filename').textContent = `CSV o JSON · hasta ${fileLimitLabel}`; return; }
     $('instance-filename').textContent = file.name;
     try {
       validateInstanceFileHeader(await file.slice(0, 4096).text());
@@ -344,6 +418,7 @@ export function initRunPanel() {
       persistDraft();
       message('Archivo cargado. Los parámetros incluidos ya están en el formulario.');
     } catch (error) { if (revision === fileRevision) message(error.message, true); }
+    finally { if (readingInstance === revision) readingInstance = false; }
   });
   $('use-synthetic').addEventListener('click', () => {
     let prepareRequest;
@@ -351,6 +426,7 @@ export function initRunPanel() {
       prepareRequest = createSyntheticPreparation({clients: Number($('synthetic-clients').value), chargers: Number($('synthetic-chargers').value)});
     } catch (error) { message(error.message, true); return; }
     fileRevision++;
+    readingInstance = false;
     dirty();
     setInput({nodes: prepareRequest.nodes, prepareRequest}, 'Caso sintético · valores supuestos');
     persistDraft();
@@ -365,6 +441,11 @@ export function initRunPanel() {
     event.preventDefault();
     if (busy) return;
     try {
+      if (readingInstance) throw new Error('Espera a que termine la lectura de la instancia antes de calcular.');
+      if (history.isPending) throw new Error('Espera a que termine la carga del histórico antes de calcular.');
+      if (scenarioLoading) await scenarioLoading;
+      if (!input && history.profileId) await useHackathon();
+      if (busy) return;
       const job = buildJob();
       lastRequest = job.request;
       lastPrepareRequest = job.prepareRequest;

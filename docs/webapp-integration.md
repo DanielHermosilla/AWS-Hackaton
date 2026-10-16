@@ -17,17 +17,25 @@ AWS_PROFILE=hackathon uv run --locked --extra dw python -m backend.local_server 
   --network-profile delivery --tee
 ```
 
-Abrir `http://127.0.0.1:4294/`, pulsar **Cargar y calcular** y cargar el CSV
-público. Seleccionar **Calles del servidor** y **GPT rápido · Bedrock**.
+Abrir `http://127.0.0.1:4294/`, pulsar **Cargar y calcular → Cargar caso histórico**.
+Esto carga el CSV de ubicaciones seleccionado y `data/eVED_EV.csv` del servidor.
+**Simular una variante de este caso** permite cambiar clientes y cargadores
+conservando el depósito, las calles y el histórico. También se puede cargar un
+CSV propio. Seleccionar **Calles del servidor** y la política de búsqueda.
 Dos vehículos y 60 % de SoC son los valores oficiales iniciales. La capacidad
 útil, reserva y consumo deben ser entradas explícitas: 24 kWh y 2,4 kWh son
 supuestos del escenario local, no capacidades medidas ni requisitos oficiales.
 El presupuesto predeterminado de la UI es 120 s y el gap energético es 0,5 %.
+El margen de consumo de **Flota y supuestos** usa
+`operations.energy_margin_fraction`: aumenta las energías positivas, también
+las calibradas, y conserva la regeneración. Es un escenario físico editable,
+independiente del gap del solver.
 
 El GraphML es un archivo local configurado por el operador. No se descarga
 al abrir la webapp ni se aceptan rutas de archivo enviadas por el navegador.
 Usar `--network-profile drive` para una caché preparada con ese perfil.
-Sin `--graphml`, se pueden resolver instancias JSON elementales y preparar
+Sin `--graphml`, el comando usa `artifacts/network/competition_delivery.graphml`
+si existe. Si tampoco existe esa red local, se pueden resolver instancias JSON elementales y preparar
 la alternativa **Distancia geodésica · sintética**. La red sintética se declara
 como tal y nunca se sustituye automáticamente por calles ni a la inversa.
 
