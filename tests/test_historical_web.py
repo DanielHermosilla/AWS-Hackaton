@@ -9,12 +9,12 @@ from urllib.request import Request, urlopen
 import networkx as nx
 import osmnx as ox
 import pytest
+from test_web_bridge import prepare_request
 
 from backend import service
 from backend.history_store import HistoryStore
 from backend.local_server import make_server
 from backend.runtime import Runtime
-from test_web_bridge import prepare_request
 
 
 def eved_bytes():
@@ -259,8 +259,9 @@ def test_history_energy_is_applied_before_path_preparation_and_invalidates_cache
 
 
 def test_editing_fleet_reuses_calibration_but_changed_streets_do_not(monkeypatch):
-    from ev_routing import historical_energy
     from test_historical_energy import eved, road
+
+    from ev_routing import historical_energy
 
     store = HistoryStore(OfflineBedrock())
     content = eved().to_csv(index=False).encode()
@@ -286,3 +287,183 @@ def test_editing_fleet_reuses_calibration_but_changed_streets_do_not(monkeypatch
         assert len(calls) == 2
     finally:
         store.close()
+
+
+def test_hackathon_endpoint_reads_local_csv_without_exposing_arbitrary_paths(
+    history_server, tmp_path, monkeypatch,
+):
+    from backend import scenarios
+    from ev_routing.inputs import ROUTING_COLUMNS
+
+    for dataset, latitude in (("competition", 42.27708), ("evaluation", 42.28)):
+        (tmp_path / f"{dataset}_routing_nodes.csv").write_text(
+            ",".join(ROUTING_COLUMNS) + "\n"
+            f"BASE,base,{latitude},-83.76281,,,,,,,\n"
+            "V1,visit,42.28,-83.76,,,,,,,\n",
+        )
+    load = scenarios.hackathon_scenario
+    monkeypatch.setattr(
+        scenarios, "hackathon_scenario",
+        lambda dataset: load(dataset, data_directory=tmp_path),
+    )
+    _, fetch = history_server
+    for dataset, latitude in (("competition", 42.27708), ("evaluation", 42.28)):
+        code, envelope = fetch(f"/scenarios/hackathon?dataset={dataset}")
+        assert code == 200, envelope
+        scenario = envelope["scenario"]
+        assert scenario["nodes"][0]["latitude"] == latitude
+        assert scenario["nodes"][0]["longitude"] == -83.76281
+        request = {**prepare_request(), "nodes": scenario["nodes"]}
+        assert fetch("/prepare", request)[0] == 200
+    assert fetch("/scenarios/hackathon?dataset=../../secret")[0] == 400
+    assert fetch("/scenarios/hackathon?dataset=competition&dataset=evaluation")[0] == 400
+    (tmp_path / "competition_routing_nodes.csv").unlink()
+    code, response = fetch("/scenarios/hackathon?dataset=competition")
+    assert code == 404 and response["error"]["code"] == "scenario_unavailable"
+
+
+def test_history_upload_and_parser_share_large_csv_limit():
+    from backend.history_store import MAX_HISTORY_BYTES
+    from ev_routing import historical_energy
+
+    assert MAX_HISTORY_BYTES == historical_energy.MAX_HISTORY_BYTES == 4 * 1024 ** 3
+    store = HistoryStore(OfflineBedrock())
+    try:
+        with pytest.raises(service.ProviderError, match="CSV"):
+            store.upload(io.BytesIO(b""), 300 * 1024 ** 2, "big.json")
+        with pytest.raises(service.ProviderError, match="4 GiB"):
+            store.upload(io.BytesIO(b""), MAX_HISTORY_BYTES + 1, "big.csv")
+        # An accepted CSV length above 256 MiB reaches streaming, and an
+        # interrupted upload cleans its temporary file instead of becoming ready.
+        with pytest.raises(service.SolveRequestError, match="interrumpió"):
+            store.upload(io.BytesIO(eved_bytes()), 300 * 1024 ** 2, "big.csv")
+        assert not store.entries
+    finally:
+        store.close()
+
+
+@pytest.fixture
+def local_hackathon(tmp_path, monkeypatch):
+    from backend import scenarios
+    from ev_routing.inputs import ROUTING_COLUMNS
+
+    for dataset in ("competition", "evaluation"):
+        (tmp_path / f"{dataset}_routing_nodes.csv").write_text(
+            ",".join(ROUTING_COLUMNS) + "\n"
+            "BASE,base,0,0,,,,,,,\n"
+            "V1,visit,0.0002,0.0002,,,,,,,\n"
+            "V2,visit,0.0028,0.0028,,,,,,,\n"
+            "F1,charger,0.001,0.001,Original,Local,2,1,1,J1772;CHAdeMO,50\n",
+        )
+    (tmp_path / "eVED_EV.csv").write_bytes(eved_bytes())
+    monkeypatch.setattr(scenarios, "data_directory_path", lambda directory=None: tmp_path)
+    return tmp_path
+
+
+def test_complete_historical_case_reuses_profile_and_preserves_originals(
+    history_server, local_hackathon,
+):
+    server, fetch = history_server
+    originals = {path.name: path.read_bytes() for path in local_hackathon.glob("*.csv")}
+    code, first = fetch("/scenarios/hackathon", {"dataset": "competition"})
+    assert code == 200, first
+    assert first["profile"]["status"] == "ready"
+    assert first["profile"]["filename"] == "eVED_EV.csv"
+    assert first["profile"]["summary"]["row_count"] == 12
+    assert first["scenario"]["scenario"] == {"kind": "hackathon", "dataset": "competition"}
+    identifier = first["profile"]["profile_id"]
+    assert server.runtime.histories.get(identifier).path.parent != local_hackathon
+    code, second = fetch("/scenarios/hackathon", {"dataset": "evaluation"})
+    assert code == 200 and second["profile"]["profile_id"] == identifier
+    code, variant = fetch("/scenarios/hackathon", {
+        "dataset": "competition", "energy_profile_id": identifier,
+        "simulation": {"customers": 1, "chargers": 0, "seed": 7},
+    })
+    assert code == 200, variant
+    nodes = variant["scenario"]["nodes"]
+    assert len(nodes) == 2
+    assert nodes[0] == first["scenario"]["nodes"][0]
+    assert variant["profile"]["profile_id"] == identifier
+    assert variant["scenario"]["scenario"]["kind"] == "hackathon_simulation"
+    assert variant["scenario"]["simulation"]["added_customers"] == 0
+    assert {path.name: path.read_bytes() for path in local_hackathon.glob("*.csv")} == originals
+
+
+def test_historical_case_adds_reproducible_services_on_connected_streets(
+    history_server, local_hackathon,
+):
+    server, fetch = history_server
+    graph = nx.MultiDiGraph(crs="EPSG:4326")
+    for row in range(4):
+        for column in range(4):
+            identifier = row * 4 + column
+            graph.add_node(identifier, x=column * .001, y=row * .001)
+    for row in range(4):
+        for column in range(4):
+            for other_row, other_column in ((row + 1, column), (row, column + 1)):
+                if other_row >= 4 or other_column >= 4:
+                    continue
+                a, b = row * 4 + column, other_row * 4 + other_column
+                for source, target in ((a, b), (b, a)):
+                    graph.add_edge(source, target, length=111, highway="residential")
+    path = local_hackathon / "streets.graphml"
+    ox.save_graphml(graph, path)
+    server.runtime.graphml = path
+    server.runtime.network_profile = "drive"
+    payload = {"dataset": "competition", "simulation": {"customers": 4, "chargers": 2, "seed": 9}}
+    code, first = fetch("/scenarios/hackathon", payload)
+    assert code == 200, first
+    scenario = first["scenario"]
+    nodes = scenario["nodes"]
+    assert len([n for n in nodes if n["node_type"] == "visit"]) == 4
+    assert len([n for n in nodes if n["node_type"] == "charger"]) == 2
+    added = [n for n in nodes if n["node_id"].startswith("SIM-")]
+    assert {(n["latitude"], n["longitude"]) for n in added} == {
+        (.001, .002), (.002, .001), (.002, .002),
+    }
+    assert len({n["node_id"] for n in nodes}) == len(nodes)
+    charger = next(n for n in added if n["node_type"] == "charger")
+    assert charger["connector_types"] == "J1772;CHAdeMO"
+    assert charger["max_power_kw"] == 50
+    assert scenario["simulation"]["added_chargers"] == 1
+    code, repeated = fetch("/scenarios/hackathon", payload)
+    assert code == 200 and repeated == first
+    request = {
+        **prepare_request(), "network_mode": "road", "nodes": nodes,
+        "scenario": scenario["scenario"], "operations": {"energy_margin_fraction": .15},
+        "energy_profile_id": first["profile"]["profile_id"],
+    }
+    code, prepared = fetch("/prepare", request)
+    assert code == 200, prepared
+    assert prepared["instance"]["operations"]["energy_margin_fraction"] == .15
+    context = next(iter(server.runtime.contexts.values()))[1]
+    assert context.road.provenance["scenario"] == scenario["scenario"]
+    code, impossible = fetch("/scenarios/hackathon", {
+        "dataset": "competition", "simulation": {"customers": 20, "chargers": 2},
+    })
+    assert code == 400 and "nodos viales elegibles" in impossible["error"]["message"]
+
+
+@pytest.mark.parametrize("payload", [
+    {"dataset": []},
+    {"dataset": "competition", "path": "/secret.csv"},
+    {"dataset": "competition", "energy_profile_id": []},
+    {"dataset": "competition", "simulation": {"customers": True, "chargers": 0}},
+    {"dataset": "competition", "simulation": {"customers": 199, "chargers": 1}},
+    {"dataset": "competition", "simulation": {"customers": 1, "chargers": -1}},
+    {"dataset": "competition", "simulation": {"customers": 1, "chargers": 0, "seed": -1}},
+])
+def test_historical_case_rejects_invalid_options(history_server, local_hackathon, payload):
+    _, fetch = history_server
+    assert fetch("/scenarios/hackathon", payload)[0] in (400, 404)
+
+
+def test_missing_local_history_or_streets_has_actionable_error(history_server, local_hackathon):
+    _, fetch = history_server
+    code, missing_streets = fetch("/scenarios/hackathon", {
+        "dataset": "competition", "simulation": {"customers": 3, "chargers": 1},
+    })
+    assert code == 400 and "red de Ann Arbor" in missing_streets["error"]["message"]
+    (local_hackathon / "eVED_EV.csv").unlink()
+    code, missing = fetch("/scenarios/hackathon", {"dataset": "competition"})
+    assert code == 404 and missing["error"]["code"] == "example_history_unavailable"

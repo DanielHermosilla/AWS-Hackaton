@@ -41,6 +41,14 @@ main[data-run-pending="true"]>:not(.run-pending-placeholder){display:none}
 .run-file-row span{font-size:12px;line-height:1.45;color:var(--shell-muted);overflow-wrap:anywhere;min-width:0}
 .run-visually-hidden{position:absolute;width:1px;height:1px;clip-path:inset(50%);overflow:hidden;white-space:nowrap}
 .run-synthetic{margin-top:18px}
+.run-hackathon{margin:18px 0}
+.run-hackathon>label{display:block;font-size:12px;font-weight:600;margin-bottom:9px}
+.run-hackathon>div{display:flex;gap:10px;flex-wrap:wrap}
+.run-hackathon select{flex:1;min-width:0;min-height:42px;padding:10px;border:1px solid var(--shell-field-line);background:var(--shell-field-bg);color:var(--shell-ink);border-radius:8px}
+.run-variant{margin-top:14px;padding:14px;border:1px solid var(--shell-line);border-radius:10px}
+.run-variant>summary{font-size:13px;font-weight:600;color:var(--shell-accent);cursor:pointer}
+.run-variant .run-synthetic-fields{grid-template-columns:repeat(3,minmax(0,1fr))}
+.run-variant .run-synthetic-fields button{grid-column:1/-1}
 .run-synthetic>summary{width:fit-content;font-size:12px;font-weight:550;color:var(--shell-accent);cursor:pointer;padding:3px 0;text-underline-offset:3px}
 .run-synthetic>summary:hover{text-decoration:underline}
 .run-synthetic-fields{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto;align-items:end;gap:12px;margin-top:12px}

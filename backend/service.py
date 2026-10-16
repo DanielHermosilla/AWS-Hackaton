@@ -262,7 +262,7 @@ def validate_request(payload, *, runtime=None):
 def prepare(payload, *, runtime=None):
     object_fields(
         payload,
-        {"api_version", "nodes", "fleet", "network_mode", "operations", "energy_profile_id"},
+        {"api_version", "nodes", "fleet", "network_mode", "operations", "energy_profile_id", "scenario"},
         "preparación",
         ("api_version", "nodes", "fleet", "network_mode"),
     )
@@ -275,7 +275,10 @@ def prepare(payload, *, runtime=None):
         )
     from ev_routing.contracts import Operations
 
+    from .scenarios import validate_scenario
+
     operations = _validate_model(Operations, payload.get("operations", {}), "Operaciones")
+    scenario = validate_scenario(payload.get("scenario"))
     history_id = payload.get("energy_profile_id")
     if "energy_profile_id" in payload:
         if not isinstance(history_id, str) or not history_id.strip():
@@ -413,6 +416,7 @@ def prepare(payload, *, runtime=None):
             "operations": operations.model_dump(mode="json"),
             "provenance": {
                 "kind": "synthetic",
+                **({"scenario": scenario} if scenario else {}),
                 "network": {"kind": "haversine", "vial": False, "geometry_source": "synthetic_haversine"},
                 "consumption_kwh_km": consumption,
                 "assumptions": [

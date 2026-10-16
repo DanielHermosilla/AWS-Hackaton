@@ -27,8 +27,10 @@ from shapely.strtree import STRtree
 from ev_routing.contracts import Arc, Contract, Node, ProblemInstance
 from ev_routing.energy import file_sha256
 
-MAX_HISTORY_BYTES = 256 * 1024 * 1024
-MAX_HISTORY_ROWS = 2_000_000
+MAX_HISTORY_BYTES = 4 * 1024 * 1024 * 1024
+# JSON materializes records before normalization; large telemetry should use CSV.
+MAX_HISTORY_JSON_BYTES = 256 * 1024 * 1024
+MAX_HISTORY_ROWS = 20_000_000
 MODEL_VERSION = "historical-streets-1.2"
 _UNITS = {
     "timestamp": {"iso8601", "unix_s", "unix_ms", "elapsed_s"},
@@ -117,7 +119,7 @@ def _check_file(path: str | Path) -> Path:
     if not source.is_file():
         raise ValueError("No se encontró el archivo histórico.")
     if source.stat().st_size > MAX_HISTORY_BYTES:
-        raise ValueError("El histórico supera 256 MiB. Divídelo por viajes completos.")
+        raise ValueError("El histórico supera 4 GiB. Divídelo por viajes completos.")
     if source.stat().st_size == 0:
         raise ValueError("El archivo histórico está vacío.")
     return source
@@ -136,12 +138,14 @@ def _unique_json_object(pairs):
 
 
 def _read_history(
-    path: str | Path, *, preview=False, identifier_columns=(),
+    path: str | Path, *, preview=False, identifier_columns=(), selected_columns=None,
 ) -> tuple[pd.DataFrame, dict, str]:
     source = _check_file(path)
     with source.open("r", encoding="utf-8-sig") as handle:
         prefix = handle.read(8192)
     if prefix.lstrip().startswith(("[", "{")):
+        if source.stat().st_size > MAX_HISTORY_JSON_BYTES:
+            raise ValueError("El JSON histórico supera 256 MiB. Expórtalo como CSV (hasta 4 GiB).")
         with source.open("r", encoding="utf-8-sig") as handle:
             content = json.load(handle, object_pairs_hook=_unique_json_object)
         metadata = content.get("metadata", {}) if isinstance(content, dict) else {}
@@ -149,7 +153,7 @@ def _read_history(
         if not isinstance(records, list) or not all(isinstance(r, dict) for r in records):
             raise ValueError("El JSON histórico necesita una lista de registros en records.")
         if len(records) > MAX_HISTORY_ROWS:
-            raise ValueError("El histórico supera dos millones de muestras.")
+            raise ValueError("El histórico supera veinte millones de muestras.")
         frame = pd.DataFrame(records[:256] if preview else records)
         file_format = "json"
     else:
@@ -158,16 +162,19 @@ def _read_history(
         except csv.Error:
             separator = ","
         header = next(csv.reader(prefix.splitlines(), delimiter=separator))
+        if len(header) > 200 or any(len(column) > 200 for column in header):
+            raise ValueError("El histórico admite hasta 200 columnas con nombres de hasta 200 caracteres.")
         if len(set(header)) != len(header):
             raise ValueError("El histórico contiene nombres de columnas repetidos.")
         frame = pd.read_csv(
             source, sep=separator, encoding="utf-8-sig",
             nrows=256 if preview else MAX_HISTORY_ROWS + 1,
             dtype={name: str for name in ("VehId", "Trip", *identifier_columns)},
+            usecols=selected_columns,
         )
         metadata, file_format = {}, "csv"
         if len(frame) > MAX_HISTORY_ROWS:
-            raise ValueError("El histórico supera dos millones de muestras.")
+            raise ValueError("El histórico supera veinte millones de muestras.")
     if frame.empty:
         raise ValueError("El histórico no contiene muestras.")
     if len(frame.columns) > 200:
@@ -325,17 +332,32 @@ def normalize_history(
     """Normalize only declared units; retain missing readings and signed energy."""
     if not isfinite(max_gap_seconds) or max_gap_seconds <= 0:
         raise ValueError("max_gap_seconds debe ser finito y positivo.")
-    columns = mapping.get("columns", {}) if isinstance(mapping, dict) else {}
+    # Inspect schema before reading the full CSV: reject ICE/HEV immediately and
+    # retain only the signals needed for normalization and descriptive statistics.
+    preview, metadata, _ = _read_history(path, preview=True)
+    recognized = _recognized_eved(preview.columns)
+    if _NON_EV_COLUMNS & set(preview.columns):
+        raise ValueError("Este histórico incluye señales de combustión o híbridos; usa datos EV.")
+    if mapping is None:
+        mapping = _eved_mapping(preview.columns) if recognized else metadata.get("mapping")
+    _validate_mapping(mapping, preview.columns)
+    columns = mapping["columns"]
     identifier_columns = [
         columns[key] for key in _IDENTIFIERS if key in columns
     ] if isinstance(columns, dict) else []
-    raw, metadata, file_format = _read_history(path, identifier_columns=identifier_columns)
+    selected = set(columns.values()) | {
+        column for column in preview.columns
+        if _classification_key(column) in _VEHICLE_CLASS_FIELDS
+    }
+    if recognized:
+        selected |= set(preview.columns) & {
+            "Air Conditioning Power[Watts]", "Heater Power[Watts]",
+            "Gradient", "Elevation Smoothed[m]",
+        }
+    raw, metadata, file_format = _read_history(
+        path, identifier_columns=identifier_columns, selected_columns=list(selected),
+    )
     _validate_declared_vehicle_types(raw, metadata)
-    recognized = _recognized_eved(raw.columns)
-    if _NON_EV_COLUMNS & set(raw.columns):
-        raise ValueError("Este histórico incluye señales de combustión o híbridos; usa datos EV.")
-    if mapping is None:
-        mapping = _eved_mapping(raw.columns) if recognized else metadata.get("mapping")
     _validate_mapping(mapping, raw.columns)
     names, units = mapping["columns"], mapping["units"]
     frame = raw[list(names.values())].rename(columns={v: k for k, v in names.items()}).copy()

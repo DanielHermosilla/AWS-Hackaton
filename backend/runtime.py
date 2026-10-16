@@ -98,6 +98,15 @@ class Runtime:
             }
             road = ProblemInstance.model_validate({
                 **dict(road), "operations": request.get("operations", {}),
+                "provenance": {
+                    **road.provenance,
+                    **({"scenario": request["scenario"]} if request.get("scenario") else {}),
+                    "assumptions": [
+                        *road.provenance.get("assumptions", []),
+                        *(["Demanda e infraestructura simuladas a partir del caso de la hackatón."]
+                          if request.get("scenario", {}).get("kind") == "hackathon_simulation" else []),
+                    ],
+                },
             })
             energy_report = None
             if history_id:

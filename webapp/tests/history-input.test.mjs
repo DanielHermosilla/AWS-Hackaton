@@ -1,15 +1,18 @@
 import assert from 'node:assert/strict';
 import {test} from 'node:test';
-import {createHistoryClient, validateHistoryFile, MAX_HISTORY_BYTES} from '../shared/history-client.js';
+import {createHistoryClient, validateHistoryFile, MAX_HISTORY_BYTES, MAX_HISTORY_JSON_BYTES} from '../shared/history-client.js';
 import {createSyntheticPreparation, makePrepareRequest, parseInstanceFile, inputFormValues} from '../shared/solver-input.js';
 import {createSolverClient} from '../shared/solver-client.js';
 import {readFile} from 'node:fs/promises';
 
 test('history selection has its own bounded CSV/JSON contract', () => {
   validateHistoryFile({name: 'Viajes.csv', size: 100_000_000});
-  validateHistoryFile({name: 'historico.JSON', size: MAX_HISTORY_BYTES});
+  validateHistoryFile({name: 'historico.csv', size: 3 * 1024 ** 3});
+  validateHistoryFile({name: 'historico.csv', size: MAX_HISTORY_BYTES});
+  validateHistoryFile({name: 'historico.JSON', size: MAX_HISTORY_JSON_BYTES});
   assert.throws(() => validateHistoryFile({name: 'archivo.csv', size: 0}), /vacío/);
-  assert.throws(() => validateHistoryFile({name: 'archivo.csv', size: MAX_HISTORY_BYTES + 1}), /256 MB/);
+  assert.throws(() => validateHistoryFile({name: 'archivo.csv', size: MAX_HISTORY_BYTES + 1}), /4 GiB/);
+  assert.throws(() => validateHistoryFile({name: 'archivo.json', size: MAX_HISTORY_JSON_BYTES + 1}), /CSV/);
   assert.throws(() => validateHistoryFile({name: 'programa.py', size: 400}), /CSV o JSON/);
 });
 
@@ -23,6 +26,23 @@ test('only explicitly selected ready history references enter a preparation, nev
   assert.equal('energy_profile_id' in makePrepareRequest(input, values), false);
   assert.throws(() => makePrepareRequest({instance: {}}, values), /nativa/);
   assert.throws(() => parseInstanceFile(JSON.stringify({...preparation, energy_profile_id: {secret: 'x'}}), 'entrada.json'), /identificador/);
+});
+
+test('historical simulation retains origin and applies the chosen consumption margin exactly once', () => {
+  const preparation = createSyntheticPreparation({clients: 2, chargers: 1});
+  preparation.scenario = {kind: 'hackathon_simulation', dataset: 'competition', seed: 12};
+  preparation.operations = {energy_margin_fraction: .1, service_seconds: 45};
+  const input = parseInstanceFile(JSON.stringify(preparation), 'variante.json');
+  const values = inputFormValues(input);
+  assert.equal(values.energy_margin_percent, 10);
+  const request = makePrepareRequest(input, {...values, energy_margin_percent: '15', energy_profile_id: 'ev'});
+  assert.deepEqual(request.scenario, preparation.scenario);
+  assert.deepEqual(request.operations, {energy_margin_fraction: .15, service_seconds: 45});
+  assert.equal(request.energy_profile_id, 'ev');
+  assert.equal(inputFormValues({prepareRequest: request}).energy_margin_percent, 15);
+  assert.equal(makePrepareRequest(input, {...values, energy_margin_percent: 0}).operations.energy_margin_fraction, 0);
+  assert.throws(() => makePrepareRequest(input, {...values, energy_margin_percent: -1}), /margen/i);
+  assert.equal(preparation.operations.energy_margin_fraction, .1);
 });
 
 test('connection secrets occur only in a POST body and service errors never echo them', async () => {

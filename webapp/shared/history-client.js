@@ -1,11 +1,13 @@
-import {API_VERSION, MAX_FILE_BYTES} from './solver-client.js';
+import {API_VERSION} from './solver-client.js';
 
-export const MAX_HISTORY_BYTES = MAX_FILE_BYTES;
+export const MAX_HISTORY_BYTES = 4 * 1024 * 1024 * 1024;
+export const MAX_HISTORY_JSON_BYTES = 256 * 1024 * 1024;
 
 export function validateHistoryFile(file) {
   if (!file || !/\.(csv|json)$/i.test(file.name)) throw new Error('Elige un histórico CSV o JSON con mediciones del vehículo.');
   if (!file.size) throw new Error('Este archivo está vacío. Elige un histórico con mediciones.');
-  if (file.size > MAX_HISTORY_BYTES) throw new Error('El histórico supera los 256 MB. Exporta una selección de viajes completos en CSV o JSON.');
+  if (/\.json$/i.test(file.name) && file.size > MAX_HISTORY_JSON_BYTES) throw new Error('El JSON histórico supera 256 MiB. Expórtalo como CSV (hasta 4 GiB).');
+  if (file.size > MAX_HISTORY_BYTES) throw new Error('El histórico supera 4 GiB. Exporta una selección de viajes completos en CSV.');
 }
 
 async function responseBody(response, fallback, historical = false) {

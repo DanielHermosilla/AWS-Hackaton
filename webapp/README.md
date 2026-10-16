@@ -45,7 +45,46 @@ escogida de clientes y cargadores (hasta 200 ubicaciones en total). El signo `?`
 explica el formato por mouse, teclado y toque. El caso sintético selecciona una red
 por distancia; sus líneas discontinuas son aproximaciones, no calles.
 
-**Flota y supuestos** reúne vehículos, batería, reserva, consumo y red. El CSV solo
+**Cargar caso histórico** carga `competition_routing_nodes.csv` o
+`evaluation_routing_nodes.csv` junto con `eVED_EV.csv` desde `data/` del servidor,
+sin pedir una carga manual del histórico. Reutiliza el perfil cuando su contenido
+ya está cargado. Conserva las coordenadas
+de Ann Arbor, Michigan, incluido el depósito en 42.27708, −83.76281 en los archivos
+actuales. Los CSV originales siguen fuera del directorio público. El mapa usa
+esas ubicaciones y el mismo estilo cartográfico del ejemplo; no se traslada el caso
+a Santiago. El selector no utiliza resultados de evaluación para calibrar.
+
+**Simular una variante de este caso** mantiene el depósito y el histórico elegido,
+y permite cambiar el número de clientes y cargadores. Si no hay un histórico
+seleccionado, usa el eléctrico del servidor. Al reducir cantidades selecciona
+ubicaciones originales; al aumentarlas incorpora intersecciones únicas conectadas
+al depósito dentro del área de los clientes originales. La semilla permite repetir
+la selección. Añadir ubicaciones requiere el GraphML local. Los cargadores nuevos
+son supuestos explícitos: J1772/CHAdeMO, dos puertos y máximo nominal de 50 kW;
+esa cifra no representa potencia efectiva. La simulación admite hasta 200 servicios.
+Las rutas se calculan y validan por el mismo motor, y los resultados se identifican
+como simulación sobre el caso histórico.
+
+**Consumo con históricos** admite CSV eléctricos de hasta **4 GiB** y JSON de
+hasta **256 MiB**. La carga transmite el archivo directamente a disco temporal;
+el navegador no lo convierte a texto ni lo guarda en su almacenamiento.
+Sin instancia, un histórico válido carga automáticamente el caso de la hackatón
+seleccionado. Puedes ajustar vehículos, batería y reserva antes de calcular.
+También puedes combinar el histórico con un CSV propio de ubicaciones. La
+calibración usa calles con evidencia suficiente; el resto conserva el consumo
+supuesto y la interfaz informa la cobertura. Los CSV de combustión e híbridos no
+se convierten en mediciones eléctricas del Leaf.
+
+Al cargar el caso se proponen capacidad útil de 24 kWh, reserva de 2,4 kWh y
+consumo de respaldo de 0,2 kWh/km solo donde el formulario está vacío. Son
+supuestos editables, no mediciones ni exigencias del desafío. Se conservan los
+valores ya ingresados. El escenario oficial indica dos vehículos y SoC de 60 %.
+
+**Flota y supuestos** reúne vehículos, batería, reserva, consumo, margen y red.
+El margen aumenta el consumo previsto por calle, incluido el calibrado con el
+histórico, sin aumentar ni eliminar la regeneración. Cero conserva la estimación;
+el consumo en kWh/km sigue siendo el respaldo para calles sin evidencia suficiente.
+El CSV solo
 aporta lugares; sus supuestos se completan en el formulario. Un JSON nativo o una
 exportación completa rellena los valores presentes y conserva la configuración
 física del archivo. **Parámetros del motor** configura tiempo (1–120 s), gap de
@@ -60,8 +99,9 @@ incluso después de navegar. Los parámetros y borradores se conservan por pesta
 un límite de almacenamiento muestra una advertencia sin reemplazar el borrador.
 
 Se admiten CSV de nodos con sus cuatro columnas obligatorias, instancias nativas,
-entradas de preparación y ejecuciones exportadas. Los históricos eVED se rechazan
-leyendo solo su encabezado. Límite de importación: 256 MiB; de petición de instancia:
+entradas de preparación y ejecuciones exportadas. Si se elige eVED como instancia,
+el encabezado permite dirigirlo al control **Adjuntar histórico**. Límite de importación
+de instancias: 256 MiB; de petición de instancia:
 64 MiB. El almacén temporal conserva hasta cuatro resultados y 256 MiB en total.
 Estos límites de bytes no garantizan memoria ni tiempo para cualquier grafo.
 

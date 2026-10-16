@@ -11,7 +11,16 @@ AWS_PROFILE=hackathon uv run --locked --extra dw python -m backend.local_server 
 ```
 
 Abrir `http://127.0.0.1:4294/`, cargar el CSV y elegir **Calles del servidor**.
-El GraphML debe existir; sin él se admiten JSON elementales o preparación
+**Cargar caso histórico** incluye las ubicaciones de Ann Arbor y `eVED_EV.csv`
+del servidor en un paso. **Simular una variante de este caso** permite reducir o
+añadir clientes y cargadores sobre esas calles, conservando el histórico. Puedes
+ajustar vehículos, batería, reserva y margen de consumo antes de calcular.
+También puedes adjuntar solo un histórico: se cargan automáticamente las
+ubicaciones del caso seleccionado. Los históricos CSV admiten hasta 4 GiB;
+los JSON históricos, hasta 256 MiB. Se requiere evidencia EV para calibrar
+consumo eléctrico por calle; combustión e híbridos no se usan como si fueran Leaf.
+El comando local encuentra `competition_delivery.graphml` en `artifacts/network/`
+automáticamente si no se indica otra ruta. El GraphML debe existir; sin él se admiten JSON elementales o preparación
 sintética explícita. La UI permite GPT-5.6 Luna `low` o el mismo motor sin LLM.
 Se mantiene gap energético de 0,5 %, con prueba y cota por fase.
 [Guía completa de integración, preparación y credenciales](docs/webapp-integration.md).
