@@ -9,6 +9,7 @@ from ev_routing.historical_energy import (
     HistoryNeedsMapping,
     apply_historical_energy,
     fit_historical_energy,
+    historical_network_fingerprint,
     inspect_history,
     normalize_history,
 )
@@ -429,6 +430,24 @@ def test_custom_identifier_columns_keep_leading_zeroes(tmp_path):
     frame.loc[frame.journey.eq("1"), "vehicle"] = "1"
     data = normalize_history(write_csv(tmp_path, frame), custom_mapping())
     assert set(data.frame.vehicle_id) == {"001", "1"}
+
+
+def test_new_services_reuse_street_calibration(tmp_path):
+    data, streets, profile = fitted(tmp_path)
+    service = Node(node_id="V2", node_type="visit", latitude=42.0001, longitude=-82.999)
+    access = [
+        Arc(from_node_id=a, to_node_id=b, source_id="assumed_access:V2", distance_m=11.1,
+            energy_kwh=.00222, geometry=[(42.0001, -82.999), (42, -82.999)][::step])
+        for a, b, step in [("V2", "J", 1), ("J", "V2", -1)]
+    ]
+    variant = streets.model_copy(update={
+        "nodes": [*streets.nodes, service], "arcs": [*streets.arcs, *access],
+    })
+    assert historical_network_fingerprint(variant) == profile.network_sha256
+    refit = fit_historical_energy(data, variant, config=profile.config)
+    assert refit.estimates == profile.estimates and refit.model_id == profile.model_id
+    result = apply_historical_energy(variant, profile, .2)
+    assert {a.energy_kwh for a in result.arcs if a.source_id == "assumed_access:V2"} == {11.1 * .2 / 1000}
 
 
 def test_source_mapping_policy_and_network_invalidate_profile_identity(tmp_path):

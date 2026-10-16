@@ -583,15 +583,35 @@ def normalize_history(
     )
 
 
+def _is_access(arc: Arc) -> bool:
+    return (arc.source_id or "").startswith("assumed_access:")
+
+
+def _street_node_ids(road: ProblemInstance) -> set[str]:
+    return {
+        key for arc in road.arcs if not _is_access(arc)
+        for key in (arc.from_node_id, arc.to_node_id)
+    }
+
+
 def historical_network_fingerprint(road: ProblemInstance) -> str:
-    """The exact input street network, including costs used to check cycles."""
+    """The exact street network used for GPS matching, including cycle-check costs.
+
+    Service locations and their assumed access connectors are excluded: GPS is
+    matched only to streets, so changing services reuses the same calibration.
+    """
+    streets = _street_node_ids(road)
     digest = hashlib.sha256()
     for node in road.nodes:
+        if node.node_id not in streets:
+            continue
         digest.update(json.dumps(
             [node.node_id, node.node_type, node.latitude, node.longitude],
             separators=(",", ":"), allow_nan=False,
         ).encode())
     for arc in road.arcs:
+        if _is_access(arc):
+            continue
         digest.update(json.dumps(
             [
                 arc.from_node_id, arc.to_node_id, arc.source_id,
@@ -609,7 +629,10 @@ class _StreetIndex:
             n.node_id: (n.longitude, n.latitude)
             for n in road.nodes if n.latitude is not None
         }
-        center = np.mean(list(positions.values()), axis=0)
+        # Services do not move the projection, so the matching depends only on streets.
+        streets = _street_node_ids(road)
+        anchors = [positions[n.node_id] for n in road.nodes if n.node_id in streets and n.node_id in positions]
+        center = np.mean(anchors or list(positions.values()), axis=0)
         projection = CRS.from_proj4(
             f"+proj=aeqd +lat_0={center[1]} +lon_0={center[0]} +datum=WGS84 +units=m"
         )
@@ -617,7 +640,7 @@ class _StreetIndex:
         self.arcs, self.lines, self.graph = [], [], nx.DiGraph()
         self.by_pair = {}
         for arc in road.arcs:
-            if (arc.source_id or "").startswith("assumed_access:") or arc.distance_m <= 0:
+            if _is_access(arc) or arc.distance_m <= 0:
                 continue
             if arc.geometry:
                 coordinates = [(lon, lat) for lat, lon in arc.geometry]
