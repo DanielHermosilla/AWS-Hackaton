@@ -249,3 +249,85 @@ def test_invalid_response_preserves_bounded_usage_without_preserving_raw_text():
         )
     assert caught.value.usage == {"inputTokens": 12, "outputTokens": 5}
     assert "private-file-cell" not in repr(caught.value)
+
+
+@pytest.mark.parametrize("header,unit,accepted", [
+    ("Power[kilowatt]", "W", False),
+    ("Power[kilowatt]", "kW", True),
+    ("Power[watts]", "W", True),
+    ("Power[kilowatts]", "W", False),
+    ("Power[gigawatt]", "W", False),
+    ("Power[gigawatt]", "kW", False),
+    ("Power[megawatt]", "W", False),
+    ("Power[giga watt]", "W", False),
+    ("Power[kW]", "W", False),
+    ("Power[kWh]", "kW", False),
+    ("Power[kilowatt hour]", "kW", False),
+    ("Power[W or kW]", "W", False),
+    ("Power[W or kW]", "kW", False),
+    ("Energy[kWh_interval]", "Wh_interval", False),
+    ("Energy[kWh_interval]", "kWh_interval", True),
+    ("Energy[Wh_interval]", "Wh_interval", True),
+    ("Energy[kWh/s]", "Wh_per_second", False),
+    ("Energy[kWh/s]", "kWh_per_second", True),
+    ("Energy[Wh/s]", "Wh_per_second", True),
+    ("Energy[MWh_interval]", "Wh_interval", False),
+    ("Energy[GWh/s]", "Wh_per_second", False),
+    ("Energy[kWh/min]", "kWh_per_second", False),
+    ("Energy[kWh/s/min]", "kWh_per_second", False),
+])
+def test_unit_prefixes_dimensions_and_ambiguous_headers_are_not_substrings(header, unit, accepted):
+    from ev_routing.llm.history import HistoryInterpretationError
+
+    data = profile()
+    data["columns"][-1] = header
+    data["sample_rows"][0][header] = data["sample_rows"][0].pop("power_kW")
+    answer = proposal()
+    target = "energy_kwh" if header.startswith("Energy") else "power_kw"
+    answer["mapping"]["columns"].pop("power_kw")
+    answer["mapping"]["units"].pop("power_kw")
+    answer["mapping"]["columns"][target] = header
+    answer["mapping"]["units"][target] = unit
+    answer["mapping"]["evidence"][-1]["key"] = header
+    if accepted:
+        assert analyze(answer, data)["interpretation"]["mapping"]["units"][target] == unit
+    else:
+        with pytest.raises(HistoryInterpretationError):
+            analyze(answer, data)
+
+
+def test_documented_match_type_mapping_reaches_energy_normalizer(tmp_path):
+    import json
+    from ev_routing.historical_energy import normalize_history
+
+    data = profile()
+    data["columns"].append("Match Type")
+    data["sample_rows"][0]["Match Type"] = 1
+    data["sample_rows"].append({**data["sample_rows"][0], "time": 2})
+    data["declared_metadata"]["match_type_unit"] = "eved_code"
+    answer = proposal()
+    answer["mapping"]["columns"]["match_type"] = "Match Type"
+    answer["mapping"]["units"]["match_type"] = "eved_code"
+    answer["mapping"]["evidence"].append({
+        "kind": "metadata", "key": "match_type_unit", "value": "eved_code",
+    })
+    mapping = analyze(answer, data)["interpretation"]["mapping"]
+    path = tmp_path / "declared-history.json"
+    path.write_text(json.dumps({"metadata": data["declared_metadata"], "records": data["sample_rows"]}))
+    normalized = normalize_history(path, mapping)
+    assert normalized.mapping["units"]["match_type"] == "eved_code"
+    assert normalized.frame["match_type"].tolist() == [1, 1]
+    assert normalized.frame.iloc[1]["energy_kwh"] == pytest.approx(3 / 3600)
+
+
+def test_match_type_header_alone_cannot_claim_eved_code_convention():
+    from ev_routing.llm.history import HistoryInterpretationError
+
+    data = profile()
+    data["columns"].append("Match Type")
+    answer = proposal()
+    answer["mapping"]["columns"]["match_type"] = "Match Type"
+    answer["mapping"]["units"]["match_type"] = "eved_code"
+    answer["mapping"]["evidence"].append({"kind": "column", "key": "Match Type"})
+    with pytest.raises(HistoryInterpretationError):
+        analyze(answer, data)

@@ -23,7 +23,7 @@ MAX_INPUT_BYTES = 64_000
 MAX_OUTPUT_TOKENS = 4096
 
 FIELD_UNITS = {
-    "vehicle_id": set(), "trip_id": set(), "match_type": set(),
+    "vehicle_id": set(), "trip_id": set(), "match_type": {"eved_code"},
     "timestamp": {"iso8601", "unix_s", "unix_ms", "elapsed_s"},
     "latitude": {"degrees"}, "longitude": {"degrees"},
     "speed_kph": {"km/h", "m/s", "mph"}, "current_a": {"A"}, "voltage_v": {"V"},
@@ -244,28 +244,54 @@ def _unit_supported(target: str, unit: str, source: str, mapping: HistoryMapping
     }
     if source.casefold() == target.casefold() and target in canonical_units:
         return unit == canonical_units[target]
-    tokens = {
+    if (target == "match_type" and unit == "eved_code"
+            and profile.get("recognized_format") == "eved_ev" and source == "Match Type"):
+        return True
+    aliases = {
         "km/h": ["km/h", "kmh", "kph"], "m/s": ["m/s", "mps"], "mph": ["mph"],
-        "A": ["[a]", "(a)", "_a"], "V": ["[v]", "(v)", "_v"],
-        "kW": ["kw", "kilowatt"], "W": ["[w]", "(w)", "_w", "watt"],
+        "A": ["a", "ampere", "amperes"], "V": ["v", "volt", "volts"],
+        "kW": ["kw", "kilowatt", "kilowatts"], "W": ["w", "watt", "watts"],
         "percent": ["%", "percent", "pct"], "fraction": ["fraction"],
-        "C": ["°c", "[c]", "(c)", "_c", "celsius"],
-        "F": ["°f", "[f]", "(f)", "_f", "fahrenheit"],
-        "degrees": ["degree", "latitude", "longitude"],
+        "C": ["°c", "c", "celsius"], "F": ["°f", "f", "fahrenheit"],
+        "degrees": ["degree", "degrees", "latitude", "longitude"],
         "unix_s": ["unix_s", "epoch_s"], "unix_ms": ["unix_ms", "epoch_ms"],
         "elapsed_s": ["elapsed_s"], "iso8601": ["iso8601"],
         "kWh_interval": ["kwh_interval"], "Wh_interval": ["wh_interval"],
         "kWh_per_second": ["kwh_per_second", "kwh/s"],
         "Wh_per_second": ["wh_per_second", "wh/s"],
+        # Matching a generic "Match Type" header does not establish eVED's
+        # numeric convention. Require recognized eVED or explicit metadata.
+        "eved_code": [],
     }
     normalized = source.casefold()
-    if any(token in normalized for token in tokens[unit]):
-        # Avoid W being "proved" by kW, or Wh by kWh.
-        if unit == "W" and "kw" in normalized:
-            return False
-        if unit.startswith("Wh") and "kwh" in normalized:
-            return False
-        return True
+    # Units are whole tokens, never substrings: watt is not kilowatt, kW is
+    # not kWh, and Wh/s is not kWh/s. Underscores delimit canonical CSV labels.
+    # A spelled-out separated prefix must not leave a bare "watt" token.
+    unsupported_prefix = re.search(
+        r"(?<![a-z0-9])(?:(?:giga|mega|tera|milli|micro|nano|pico)[ -]*watts?"
+        r"|[mgtunp]wh?)(?![a-z0-9])",
+        normalized,
+    )
+    normalized = re.sub(r"(?<![a-z0-9])kilo[ -]+watts?(?![a-z0-9])", "kilowatt", normalized)
+    if (target in {"power_kw", "auxiliary_power_w"} and re.search(
+        r"(?<![a-z0-9])(?:kw|kilowatts?|w|watts?)[ _-]+(?:h|hours?)(?![a-z0-9])",
+        normalized,
+    )):
+        return False
+    matched = {
+        candidate for candidate, names in aliases.items()
+        if any(re.search(
+            r"(?<![a-z0-9])" + re.escape(name)
+            + r"(?![a-z0-9/*^])(?!_(?:per|interval)(?:[^a-z0-9]|$))", normalized,
+        )
+               for name in names)
+    }
+    if unsupported_prefix:
+        return False
+    if matched:
+        # Two units or a different dimension are contradictory, not permission
+        # to choose whichever gives a more favourable numerical result.
+        return matched == {unit}
     for ref in mapping.evidence:
         if ref.kind != "metadata":
             continue
