@@ -115,6 +115,26 @@ test('a preparation failure export restores the original solver budget and prepa
   assert.deepEqual(makePrepareRequest(restored, restored.prepareRequest.fleet), prepareRequest);
 });
 
+test('a failed road solve restores preparation and settings without its temporary instance handle', () => {
+  const prepareRequest = makePrepareRequest(parseInstanceFile(csv, 'nodes.csv'),
+    {...fleet, network_mode: 'road', energy_margin_percent: 15});
+  const solver = {time_limit_seconds: 42, search_policy: 'deterministic', energy_relative_gap: .005, random_seed: 17};
+  const exported = {
+    schema_version: 'zmd.integration-beta.attempt/2',
+    request: {api_version: '3.0', instance: native(), prepared_instance_id: 'expired-preparation', solver},
+    prepare_request: prepareRequest,
+    stage: 'solving',
+    response: {api_version: '3.0', error: {code: 'solver_failed', message: 'Solver failed'}},
+    status: 'error'
+  };
+  const restored = parseInstanceFile(JSON.stringify(exported), 'intento-fallido-beta.json');
+  assert.deepEqual(restored.nodes, prepareRequest.nodes);
+  assert.deepEqual(restored.prepareRequest, prepareRequest);
+  assert.deepEqual(restored.request, {api_version: '3.0', solver});
+  assert.equal(restored.instance, undefined);
+  assert.deepEqual(makePrepareRequest(restored, {...fleet, network_mode: 'road', energy_margin_percent: 15}), prepareRequest);
+});
+
 test('CSV creates only a prepare request; it never creates arcs or estimated energy in the UI', () => {
   const input = parseInstanceFile(csv, 'nodes.csv');
   const request = makePrepareRequest(input, fleet);
