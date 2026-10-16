@@ -24,6 +24,8 @@ from .datos import Nodo, cargar_nodos
 from .red import Red
 
 ESQUEMA = "evrp.instancia_preparada/1"
+ESQUEMA_V2 = "evrp.instancia_preparada/2"      # añade tiempos t̂ (min) por par (opcional)
+ESQUEMAS_LEIBLES = {ESQUEMA, ESQUEMA_V2}
 
 
 class RedPreparada(Red):
@@ -62,6 +64,7 @@ class InstanciaPreparada:
     energia_caminos: dict[str, Any]          # modelo usado para ELEGIR caminos
     geometrias: dict[tuple[str, str], list[tuple[float, float]]] = field(default_factory=dict)
     origen: dict[str, Any] = field(default_factory=dict)
+    tiempos_par: dict[tuple[str, str], float] = field(default_factory=dict)  # t̂ (min) por par (esquema /2)
     esquema: str = ESQUEMA
 
     # ---------------------------------------------------------------- uso
@@ -81,7 +84,7 @@ class InstanciaPreparada:
     def a_dict(self) -> dict:
         def clave(p):
             return f"{p[0]}|{p[1]}"
-        return {
+        d = {
             "esquema": self.esquema,
             "origen": self.origen,
             "red": self.red,
@@ -91,6 +94,10 @@ class InstanciaPreparada:
             "geometrias": {clave(p): [[round(a, 6), round(b, 6)] for a, b in g]
                            for p, g in self.geometrias.items()},
         }
+        if self.esquema == ESQUEMA_V2 or self.tiempos_par:
+            d["esquema"] = ESQUEMA_V2
+            d["tiempos_par"] = {clave(p): round(t, 4) for p, t in self.tiempos_par.items()}
+        return d
 
     def guardar(self, ruta: str | Path) -> Path:
         ruta = Path(ruta)
@@ -105,8 +112,9 @@ class InstanciaPreparada:
 
     @classmethod
     def desde_dict(cls, d: dict) -> "InstanciaPreparada":
-        if d.get("esquema") != ESQUEMA:
-            raise ValueError(f"Esquema no soportado: {d.get('esquema')!r} (se espera {ESQUEMA})")
+        esq = d.get("esquema")
+        if esq not in ESQUEMAS_LEIBLES:
+            raise ValueError(f"Esquema no soportado: {esq!r} (se esperan {sorted(ESQUEMAS_LEIBLES)})")
 
         def par(k):
             i, j = k.split("|", 1)
@@ -114,7 +122,8 @@ class InstanciaPreparada:
         nodos = [Nodo(**{**n, "conectores": frozenset(n["conectores"])}) for n in d["nodos"]]
         tramos = {par(k): [(float(a), float(b)) for a, b in v] for k, v in d["tramos"].items()}
         geos = {par(k): [(float(a), float(b)) for a, b in v] for k, v in d.get("geometrias", {}).items()}
-        return cls(nodos, tramos, d["red"], d["energia_caminos"], geos, d.get("origen", {}), d["esquema"])
+        tiempos = {par(k): float(v) for k, v in d.get("tiempos_par", {}).items()}
+        return cls(nodos, tramos, d["red"], d["energia_caminos"], geos, d.get("origen", {}), tiempos, esq)
 
     @classmethod
     def cargar(cls, ruta: str | Path) -> "InstanciaPreparada":
@@ -149,11 +158,24 @@ def preparar_con_cfg(ruta_nodos: str | Path, cfg: dict, geometria: bool = False)
     ids = [n.id for n in nodos]
     tramos = {(i, j): list(red.tramos(i, j)) for i in ids for j in ids if i != j}
     geos = {(i, j): list(red.geometria(i, j)) for i in ids for j in ids if i != j} if geometria else {}
+    tiempos_par: dict[tuple[str, str], float] = {}
+    if getattr(red, "tiempo_arco", False) and getattr(red, "_t_arco", None):
+        tiempos_par = {(i, j): red.t_trayecto_min(i, j) for i in ids for j in ids if i != j}
     info_red = {"tipo": red.nombre, "vial": red.nombre == "osm", "grafo": getattr(red, "origen_grafo", None),
                 "elevacion": cfg["red"].get("elevacion", "ninguna") if energia.usar_pendiente else "ninguna",
                 "meta_elevacion": getattr(red, "meta_elevacion", None),
                 "tiempos": getattr(red, "tiempos", None), "respaldo_linea_recta": respaldo,
-                "factor_vial": cfg["red"]["factor_vial"] if red.nombre == "haversine" else None}
+                "factor_vial": cfg["red"]["factor_vial"] if red.nombre == "haversine" else None,
+                "extensiones": {
+                    "avisar_clamp": getattr(red, "avisar_clamp", False),
+                    "clamp_info": getattr(red, "clamp_info", {}) or None,
+                    "snap_sentido": getattr(red, "snap_sentido", False),
+                    "tiempo_arco": getattr(red, "tiempo_arco", False),
+                    "t_max_trayecto_min": getattr(red, "t_max_trayecto_min", None),
+                    "pares_descartados_tmax": len(getattr(red, "pares_descartados_tmax", [])),
+                    "caminos_alternativos": getattr(red, "caminos_alternativos", False),
+                    "pares_rescatados": len(getattr(red, "pares_rescatados", [])),
+                }}
     e = {"usar_pendiente": energia.usar_pendiente, "consumo_kwh_km": energia.consumo_kwh_km,
          "masa_kg": energia.masa_kg, "eta_traccion": energia.eta_traccion,
          "eta_regeneracion": energia.eta_regeneracion}
@@ -161,4 +183,5 @@ def preparar_con_cfg(ruta_nodos: str | Path, cfg: dict, geometria: bool = False)
 
     origen = {"archivo": str(ruta_nodos), "sha256_16": _hash_archivo(ruta_nodos), "evrp": __version__,
               "tiempo_s": round(time.perf_counter() - t0, 3)}
-    return InstanciaPreparada(nodos, tramos, info_red, e, geos, origen)
+    esquema = ESQUEMA_V2 if tiempos_par else ESQUEMA
+    return InstanciaPreparada(nodos, tramos, info_red, e, geos, origen, tiempos_par, esquema)

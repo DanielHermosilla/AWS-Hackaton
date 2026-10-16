@@ -120,6 +120,11 @@ def tipos_desde_config(cfg: dict) -> list[TipoVehiculo]:
 
 
 def _estad_par(red: Red, energia: ModeloEnergia, i: str, j: str) -> Estad:
+    # Un par puede quedar descartado por la red (p.ej. filtro T_max de red.py);
+    # se devuelve un Estad infactible para que los filtros de batería lo rechacen.
+    if getattr(red, "par_descartado", None) and red.par_descartado(i, j):
+        INF = float("inf")
+        return Estad(INF, INF, INF, INF)
     return estadisticos([energia.tramo(km, dh) for km, dh in red.tramos(i, j)])
 
 

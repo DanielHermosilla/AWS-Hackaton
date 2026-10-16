@@ -10,6 +10,56 @@ from pathlib import Path
 
 G = 9.81
 
+# --- F2: tiempo por arco (OPCIONAL, apagado por defecto) --------------------
+# Velocidad efectiva por tipo de vía OSM (km/h), usada cuando falta `maxspeed`.
+# Calibrada groseramente con eVED: la velocidad media de marcha (incluidas
+# detenciones) ronda 0.80× el límite señalizado en vías urbanas (40–72 km/h) y
+# sube hacia el límite en autopista. Ver docs/experimentos/dijkstra_extensiones.md.
+V_EF_POR_VIA = {
+    "motorway": 95.0, "motorway_link": 55.0,
+    "trunk": 75.0, "trunk_link": 45.0,
+    "primary": 55.0, "primary_link": 40.0,
+    "secondary": 45.0, "secondary_link": 35.0,
+    "tertiary": 40.0, "tertiary_link": 30.0,
+    "unclassified": 35.0, "residential": 30.0,
+    "living_street": 15.0, "service": 20.0,
+}
+V_EF_DEFECTO = 32.0            # vía desconocida
+FACTOR_MAXSPEED = 0.80        # fracción del límite señalizado para v efectiva (eVED)
+
+
+def _mph_a_kmh(txt: str) -> float | None:
+    t = txt.strip().lower()
+    try:
+        if t.endswith("mph"):
+            return float(t[:-3].strip()) * 1.609344
+        return float(t.split()[0])        # ya en km/h
+    except (ValueError, IndexError):
+        return None
+
+
+def velocidad_efectiva_kmh(highway, maxspeed=None) -> float:
+    """v_ef (km/h) de un arco a partir de `maxspeed` y/o tipo de vía OSM.
+
+    Prioriza `maxspeed` (×FACTOR_MAXSPEED); si falta o es inválido, usa la tabla
+    por tipo de vía. Acepta listas de OSM (toma el primer valor válido / tipo).
+    """
+    if isinstance(maxspeed, (list, tuple)):
+        maxspeed = maxspeed[0] if maxspeed else None
+    if maxspeed is not None:
+        lim = _mph_a_kmh(str(maxspeed))
+        if lim and lim > 0:
+            return lim * FACTOR_MAXSPEED
+    if isinstance(highway, (list, tuple)):
+        highway = highway[0] if highway else None
+    return V_EF_POR_VIA.get(str(highway), V_EF_DEFECTO)
+
+
+def tiempo_arco_min(km: float, highway=None, maxspeed=None) -> float:
+    """Tiempo del arco en minutos: t = ℓ / v_ef · 60."""
+    v = velocidad_efectiva_kmh(highway, maxspeed)
+    return 60.0 * km / v if v > 0 else 0.0
+
 
 @dataclass(frozen=True)
 class ModeloEnergia:
