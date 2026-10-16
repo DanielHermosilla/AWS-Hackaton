@@ -1,6 +1,8 @@
 import { API_VERSION, createSolverClient, readExecution, saveExecution } from './shared/solver-client.js';
 import { parseInstanceFile, inputNodes, makeSolveRequest, makePrepareRequest, solverSettings, validateNativeInstance, SYNTHETIC_PREPARATION } from './shared/solver-input.js';
 import { nativeRunResult, resultSections } from './shared/solver-output.js';
+import { createLocationEditor } from './location-editor.js';
+import { readEditableSource, saveEditableSource, readEditableDraft, saveEditableDraft, clearEditableDraft } from './shared/location-draft.js';
 
 export function initRunPanel() {
   const strip = document.createElement('section');
@@ -20,6 +22,7 @@ export function initRunPanel() {
       <p id="instance-help" class="run-help">CSV de nodos, ProblemInstance nativa 1.0 o una descarga del API 3.0. Hasta 8 MB.</p>
       <button id="use-synthetic" type="button" class="run-text-button">Usar caso sintético pequeño</button>
       <p id="input-summary" class="input-summary">Ningún archivo seleccionado.</p>
+      <div class="run-location-review"><button id="edit-locations" type="button" disabled>Revisar ubicaciones</button><span id="location-review-help">Carga una entrada para revisar sus puntos.</span></div>
       <fieldset class="run-fields"><legend>Flota y supuestos</legend>
         <label>Vehículos<input id="run-count" name="num_vehicles" type="number" min="1" max="20" step="1" value="2" required></label>
         <label>SoC inicial · %<input id="run-soc" name="initial_soc" type="number" min="1" max="100" step="any" value="60" required></label>
@@ -45,6 +48,8 @@ export function initRunPanel() {
   let dialogOpener = $('open-run');
   let saved = readExecution();
   let fileRevision = 0;
+  let inputName = '', editorSource = null;
+  let draftWarning = '';
 
   function save(patch) {
     saved = {...saved, ...patch, revision: crypto.randomUUID()};
@@ -86,13 +91,13 @@ export function initRunPanel() {
     }
   }
   function message(text, isError = false) {
-    $('run-message').textContent = text;
+    $('run-message').textContent = [text, draftWarning].filter(Boolean).join(' ');
     $('run-message').classList.toggle('is-error', isError);
     if (isError) $('run-message').focus();
   }
   function setBusy(value) {
     busy = value;
-    $('solve-run').disabled = value || !input;
+    $('solve-run').disabled = value || !input || locationEditor.isOpen;
     $('stop-waiting').hidden = !value;
     $('run-form').setAttribute('aria-busy', String(value));
   }
@@ -124,7 +129,13 @@ export function initRunPanel() {
       const { adaptSolverResponse } = await import('./shared/solver-adapter.js');
       if (!isCurrent()) return;
       adaptSolverResponse(response);
-      save({runId: response.result.run_id, stale: false, status: 'complete', message: ''});
+      // A result may finish while the independent location draft is open.
+      // Confirm invalidates it; cancel allows the unchanged run to complete.
+      await locationEditor.whenClosed();
+      if (!isCurrent()) return;
+      const editableSourceSaved = saveEditableSource(response.result.run_id, lastPrepareRequest);
+      save({runId: response.result.run_id, stale: false, status: 'complete', message: '', editableSourceSaved, draftId: null, draftUnavailable: false});
+      clearEditableDraft();
       location.reload();
     },
   });
@@ -136,9 +147,37 @@ export function initRunPanel() {
     $('run-ack').checked = false;
     $('export-instance').disabled = true;
     message('Cambios sin calcular. Revisa los supuestos antes de ejecutar.');
-    try { save({stale: true, status: 'editing', message: ''}); }
+    try { save({stale: true, status: 'editing', message: '', draftId: null}); }
     catch (error) { message(error.message, true); }
     renderStrip();
+  }
+  const locationEditor = createLocationEditor({
+    onOpenChange() { setBusy(busy); },
+    onConfirm(confirmed) {
+      if (input !== editorSource) throw new Error('La entrada cambió mientras editabas. Abre de nuevo sus ubicaciones.');
+      input = confirmed;
+      dirty();
+      persistDraft();
+      renderInputSummary();
+      message('Ubicaciones confirmadas. Revisa el alcance no vial y calcula para preparar la nueva instancia.');
+    },
+  });
+  function persistDraft() {
+    draftWarning = '';
+    if (!input?.nodes || input.instance) return;
+    const draftId = crypto.randomUUID();
+    const fields = Object.fromEntries([...dialog.querySelectorAll('.run-fields input')].map(field => [field.name, field.value]));
+    const retained = saveEditableDraft(draftId, input, fields);
+    try {
+      save({draftId: retained ? draftId : null, draftUnavailable: !retained});
+      if (retained) return;
+    } catch { /* Explain the same persistence limitation below. */ }
+    draftWarning = 'El navegador no pudo conservar el borrador. Mantén esta página abierta hasta calcular: si navegas o recargas perderás estos cambios.';
+    message('Cambios pendientes.');
+  }
+  function renderInputSummary() {
+    const nodes = inputNodes(input);
+    $('input-summary').textContent = `${inputName} · ${nodes.filter(n => n.node_type === 'base').length} depósito · ${nodes.filter(n => n.node_type === 'visit').length} destinos · ${nodes.filter(n => n.node_type === 'charger').length} cargadores${input.instance ? ` · ${input.instance.arcs.length} arcos` : ''}`;
   }
   function fieldsFrom(value) {
     const native = value.instance;
@@ -151,10 +190,14 @@ export function initRunPanel() {
     $('run-seconds').value = value.request?.solver?.time_limit_seconds ?? 10;
   }
   function setInput(value, name) {
+    locationEditor.close();
     input = value;
-    const nodes = inputNodes(value);
+    inputName = name;
     const native = !!value.instance;
-    $('input-summary').textContent = `${name} · ${nodes.filter(n => n.node_type === 'base').length} depósito · ${nodes.filter(n => n.node_type === 'visit').length} destinos · ${nodes.filter(n => n.node_type === 'charger').length} cargadores${native ? ` · ${value.instance.arcs.length} arcos` : ''}`;
+    renderInputSummary();
+    $('edit-locations').disabled = false;
+    $('edit-locations').textContent = native ? 'Revisar ubicaciones' : 'Editar ubicaciones';
+    $('location-review-help').textContent = native ? 'Ubicaciones y red nativa protegidas.' : 'Formulario y mapa · los cambios se aplican al confirmar.';
     $('network-note').textContent = native
       ? 'Se utilizará la red incluida en el JSON. Las coordenadas son opcionales: los nodos sin ubicación se conservan en la lista. El servidor valida la instancia sin cambiar su configuración física.'
       : 'El servidor preparará una aproximación por distancia, sin red vial ni pendiente. Las coordenadas no acreditan conectividad por calles.';
@@ -167,10 +210,12 @@ export function initRunPanel() {
     }
     if (native || value.prepareRequest) fieldsFrom(value);
     canonicalInstance = native ? value.instance : null;
-    $('solve-run').disabled = false;
+    setBusy(busy);
   }
   function buildJob() {
     if (!input) throw new Error('Selecciona una instancia antes de calcular.');
+    if (locationEditor.isOpen) throw new Error('Confirma o cancela la edición de ubicaciones antes de calcular.');
+    if (!$('run-ack').checked) throw new Error('Revisa y confirma los parámetros y el alcance de la red.');
     if (input.instance) return {request: makeSolveRequest(input, $('run-seconds').value), prepareRequest: null};
     const values = Object.fromEntries(['num_vehicles', 'battery_capacity_kwh', 'reserve_kwh', 'initial_soc', 'consumption_kwh_km']
       .map(key => [key, $('run-form').elements.namedItem(key).value]));
@@ -186,12 +231,20 @@ export function initRunPanel() {
   $('open-run').addEventListener('click', () => open($('open-run')));
   $('run-download').addEventListener('click', () => { open($('run-download')); $('result-details').open = true; $('export-result').focus(); });
   $('close-run').addEventListener('click', () => dialog.close());
+  $('edit-locations').addEventListener('click', () => {
+    if (!input) return;
+    editorSource = input;
+    locationEditor.open(input, $('edit-locations'));
+  });
   dialog.addEventListener('close', () => dialogOpener?.focus());
   $('instance-file').addEventListener('change', async event => {
     const revision = ++fileRevision;
     dirty();
+    locationEditor.close();
     input = null;
     $('solve-run').disabled = true;
+    $('edit-locations').disabled = true;
+    $('location-review-help').textContent = 'Carga una entrada para revisar sus puntos.';
     const file = event.target.files?.[0];
     if (!file) { $('input-summary').textContent = 'Ningún archivo seleccionado.'; return; }
     try {
@@ -199,6 +252,7 @@ export function initRunPanel() {
       const text = await file.text();
       if (revision !== fileRevision) return;
       setInput(parseInstanceFile(text, file.name), file.name);
+      persistDraft();
       message('Instancia leída. Confirma los parámetros y el alcance de la red.');
     } catch (error) { if (revision === fileRevision) message(error.message, true); }
   });
@@ -207,10 +261,11 @@ export function initRunPanel() {
     dirty();
     const prepareRequest = structuredClone(SYNTHETIC_PREPARATION);
     setInput({nodes: prepareRequest.nodes, prepareRequest}, 'Caso sintético · valores supuestos');
+    persistDraft();
     $('instance-file').value = '';
     message('Caso sintético preparado para una ejecución real del motor. Capacidad 10 kWh, reserva 1 kWh y consumo 1 kWh/km son valores de prueba.');
   });
-  for (const field of dialog.querySelectorAll('.run-fields input')) field.addEventListener('input', dirty);
+  for (const field of dialog.querySelectorAll('.run-fields input')) field.addEventListener('input', () => { dirty(); persistDraft(); });
   $('run-form').addEventListener('submit', async event => {
     event.preventDefault();
     if (busy) return;
@@ -228,6 +283,8 @@ export function initRunPanel() {
   $('stop-waiting').addEventListener('click', () => client.stopWaiting());
   $('show-example').addEventListener('click', () => {
     client.invalidate();
+    saveEditableSource(null, null);
+    clearEditableDraft();
     saveExecution(null);
     location.reload();
   });
@@ -264,6 +321,18 @@ export function initRunPanel() {
     saved = {...saved, status: 'stopped', message: 'La espera anterior terminó al salir de la página. El cálculo puede continuar en el servidor.', stale: true};
     saveExecution(saved);
   }
+  const restoredDraft = readEditableDraft(saved?.draftId);
+  if (restoredDraft) {
+    setInput(restoredDraft.input, 'Borrador sin calcular');
+    for (const [name, value] of Object.entries(restoredDraft.fields)) $('run-form').elements.namedItem(name).value = value;
+    draftEdited = true;
+    canonicalInstance = null;
+    $('export-instance').disabled = true;
+    message('Borrador recuperado de esta pestaña. Revisa los parámetros y calcula para obtener una instancia vigente.');
+  } else if (saved?.stale) {
+    draftEdited = true;
+    message('La entrada pendiente no está disponible en esta página. Carga de nuevo su archivo; un resultado anterior no contiene los cambios sin calcular.');
+  }
   setBusy(false);
   renderStrip();
   return {
@@ -274,10 +343,15 @@ export function initRunPanel() {
         const request = result.raw.input;
         // A slow run fetch must not overwrite a draft already edited on this page.
         if (!draftEdited) {
-          setInput({instance: result.raw.instance, request}, 'Instancia nativa de esta ejecución');
+          const editable = readEditableSource(result.run_id, undefined, result.raw.instance);
+          setInput(editable ? {...editable, request: {solver: request.solver}} : {instance: result.raw.instance, request},
+            editable ? 'Ubicaciones de esta ejecución · aproximación por distancia' : 'Instancia nativa de esta ejecución');
           canonicalInstance = result.raw.instance;
           lastRequest = request;
+          lastPrepareRequest = editable?.prepareRequest || null;
           $('export-instance').disabled = false;
+          if (saved?.editableSourceSaved === false)
+            message('El navegador no conservó el origen editable. Carga el CSV original para cambiar ubicaciones; la instancia calculada mantiene su red protegida.');
         }
         $('export-result').disabled = false;
         $('export-native-result').disabled = !nativeRunResult(rawResponse);

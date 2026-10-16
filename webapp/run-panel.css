@@ -1,3 +1,4 @@
+@import url("./location-editor.css");
 /* Shared execution controls retain the shell's existing material and color tokens. */
 .run-strip{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-left:var(--rail-width);padding:11px 24px;border-bottom:1px solid var(--shell-line);background:var(--shell-bg);color:var(--shell-ink)}
 .run-summary{display:grid;gap:4px;min-width:0;font-size:12px;line-height:1.4}
@@ -19,6 +20,9 @@ main[data-run-pending="true"]>:not(.run-pending-placeholder){display:none}
 .run-dialog .run-help{font-size:12px;line-height:1.5;margin-top:8px}
 .run-dialog .run-text-button{border:0;padding:8px 0;text-decoration:underline;background:transparent;font-size:12px}
 .run-dialog .input-summary{padding:12px;margin:8px 0 16px;border:1px solid var(--shell-line);border-radius:9px;background:var(--shell-chip-bg);color:var(--shell-ink)}
+.run-location-review{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:-4px 0 20px}
+.run-location-review button{font-size:12px}
+.run-location-review span{flex:1;min-width:170px;font-size:11.5px;line-height:1.5;color:var(--shell-muted)}
 .run-fields{display:grid;grid-template-columns:1fr 1fr;gap:13px 18px;margin:0;padding:0;border:0}
 .run-fields legend{font-size:13px;font-weight:650;margin-bottom:14px}
 .run-fields label{display:grid;gap:6px;font-size:12px;min-width:0;color:var(--shell-muted)}
