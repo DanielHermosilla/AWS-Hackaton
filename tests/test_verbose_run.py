@@ -100,7 +100,9 @@ def test_reasoning_model_omits_sampling_temperature_and_parses_only_final_text(t
     assert response["policy"] == {"branching": "mostinf"}
     payload = json.loads((tmp_path / "llm-request.json").read_text())
     assert "temperature" not in payload["inferenceConfig"]
-    assert payload["additionalModelRequestFields"] == {"output_config": {"effort": "max"}}
+    assert payload["additionalModelRequestFields"] == {
+        "thinking": {"type": "adaptive"}, "output_config": {"effort": "max"},
+    }
 
 
 def test_only_changes_applicable_to_selected_algorithm_are_reported(tmp_path, capsys):

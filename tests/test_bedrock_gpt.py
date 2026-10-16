@@ -70,7 +70,9 @@ def test_explicit_gpt_effort_and_anthropic_effort_use_different_fields():
         model_id="us.anthropic.claude-fable-5", reasoning_effort="high",
     )).request_payload({})
     assert gpt["additionalModelRequestFields"] == {"reasoning": {"effort": "medium"}}
-    assert claude["additionalModelRequestFields"] == {"output_config": {"effort": "high"}}
+    assert claude["additionalModelRequestFields"] == {
+        "thinking": {"type": "adaptive"}, "output_config": {"effort": "high"},
+    }
 
 
 @pytest.mark.parametrize("policy,injected,preloads", [
