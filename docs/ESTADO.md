@@ -33,3 +33,12 @@ Default idéntico a v0.3.0 verificado (competition/eved = 11.1466 kWh, 20/20).
 | F2 tiempo por arco `t=ℓ/v_ef` + `t̂` por par + esquema preparada /2 (`red.tiempo_arco`) | EVALUACIÓN (apagado) | `test_dijkstra_extensiones.py::test_tiempo_arco_y_tmax`, `::test_esquema_v2_ida_y_vuelta` |
 | F2 filtro `red.t_max_trayecto_min` | EVALUACIÓN (apagado) | `experimentos/dijkstra/resultados.jsonl` (T30→0, T20→56–159, T15→615–940 pares; rutas sin cambio) |
 | F1-lite camino alternativo de menor pico (`red.caminos_alternativos`) | EVALUACIÓN (apagado) | `resultados.jsonl` (0 rescates con perfil plano; ~10× coste prep) |
+
+## exp/max-clientes
+
+| Componente | Estado | Evidencia |
+|---|---|---|
+| Verificación de maximización de clientes (fase 1 MILP) vs oráculo independiente | DEFINITIVA-EVIDENCIA | `tests/test_max_clientes.py` (8 OK); `docs/experimentos/max_clientes.md`; `experimentos/max_clientes/resultados.json` |
+| Mínima energía con N\* fijo (fase 2) vs oráculo | DEFINITIVA-EVIDENCIA | energía idéntica al oráculo en 5/5 pequeñas (`max_clientes.md`) |
+| Respaldo a formulación completa para cadenas F→F | DEFINITIVA-EVIDENCIA | `peq_cadena_F_F`: compacta N\*=3 → completa N\*=4=oráculo (`test_respaldo_completa_para_cadena_F_F`) |
+| Grandes (20 clientes, infactible): fase 1 agota presupuesto; respaldo "cortes" puede no entregar solución | EVALUACIÓN (hallazgo) | `max_clientes.md` §Discrepancias; `g20_dos_veh_anillo`, `g20_cadena_F_F` |
