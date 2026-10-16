@@ -1,0 +1,14 @@
+{
+  "geography": "Ann Arbor, Michigan, USA",
+  "diesel_kg_co2_per_litre": 2.689271493005951,
+  "diesel_litres_per_100km": 8.0,
+  "factor_source": "https://www.epa.gov/greenvehicles/greenhouse-gas-emissions-typical-passenger-vehicle",
+  "factor_date": "2026-06-03",
+  "factor_conversion": "10.180 kg CO2 por galón estadounidense / 3.785411784 litros",
+  "consumption_assumption": "Escenario ilustrativo de 8 L/100km, NO medido en una flota diésel. Mismo recorrido y entregas que el EV.",
+  "grid_kg_co2_per_kwh": null,
+  "grid_source": null,
+  "grid_date": null,
+  "charging_efficiency": null,
+  "equivalent_route_days_per_year": null
+}

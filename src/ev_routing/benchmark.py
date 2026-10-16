@@ -49,6 +49,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--initial-solution", type=Path)
     parser.add_argument("--output-dir", required=True, type=Path)
     parser.add_argument("--time-limit-seconds", type=float, default=60)
+    parser.add_argument("--energy-relative-gap", type=float, default=0.005)
     parser.add_argument("--process-grace-seconds", type=float, default=60)
     parser.add_argument("--threads", type=int, default=1)
     parser.add_argument("--seeds", nargs="+", type=int, default=[0, 1, 2])
@@ -63,6 +64,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--llm-max-calls", type=int, default=4)
     parser.add_argument("--llm-timeout-seconds", type=float, default=8)
     parser.add_argument("--llm-max-output-tokens", type=int, default=2048)
+    parser.add_argument("--llm-instance-context-bytes", type=int, default=8000)
     parser.add_argument("--llm-reasoning-effort", choices=["low", "medium", "high", "xhigh", "max"])
     parser.add_argument("--llm-time-fraction", type=float, default=.25)
     parser.add_argument("--decision-interval-seconds", type=float, default=15)
@@ -119,6 +121,7 @@ def run_benchmark(args) -> int:
     instance = load_instance(args.instance)
     solver_config = SolverConfig(
         solver="scip-routes", time_limit_seconds=args.time_limit_seconds, threads=args.threads,
+        energy_relative_gap=args.energy_relative_gap,
     )
     if args.repetitions < 1 or args.process_grace_seconds < 0:
         raise ValueError("Repeticiones positivas y margen de proceso no negativo")
@@ -137,6 +140,7 @@ def run_benchmark(args) -> int:
         max_llm_calls=args.llm_max_calls,
         llm_time_fraction=args.llm_time_fraction,
         decision_interval_seconds=args.decision_interval_seconds,
+        instance_context_bytes=args.llm_instance_context_bytes,
     )
     paths = {"instance": args.instance.resolve()}
     for key in ("road_instance", "path_archive", "initial_solution"):
@@ -190,8 +194,9 @@ def run_benchmark(args) -> int:
         "schema_version": "1.0", "engine": "SCIP complete routes without H",
         "inputs": {key: {"path": str(path), "sha256": _sha(path)} for key, path in paths.items()},
         "instance_sha256": fingerprint(instance), "code_sha256": code_hash.hexdigest(),
-        "versions": {name: importlib.metadata.version(name)
-                     for name in ("pygcgopt", "pyscipopt", "pyomo", "boto3")},
+        "versions": {
+            name: _version(name) for name in ("pyscipopt", "pyomo", "boto3", "numpy", "scipy")
+        },
         "environment": {
             "platform": platform.platform(), "machine": platform.machine(),
             "python": platform.python_version(), "cpu_count": os.cpu_count(),
@@ -250,6 +255,7 @@ def run_benchmark(args) -> int:
                 "--llm-max-calls", str(args.llm_max_calls),
                 "--llm-timeout-seconds", str(args.llm_timeout_seconds),
                 "--llm-max-output-tokens", str(args.llm_max_output_tokens),
+                "--llm-instance-context-bytes", str(args.llm_instance_context_bytes),
                 "--llm-time-fraction", str(args.llm_time_fraction),
                 "--decision-interval-seconds", str(args.decision_interval_seconds),
                 "--solver-log-directory", str(directory / "native"),
@@ -301,6 +307,14 @@ def run_benchmark(args) -> int:
         or row["status"] in {"error", "invalid_solution", "unavailable", "execution_error"}
         or not row["llm_comparison_eligible"] for row in rows
     ) else 0
+
+
+def _version(name):
+    """An optional AWS dependency must not prevent a local route benchmark."""
+    try:
+        return importlib.metadata.version(name)
+    except importlib.metadata.PackageNotFoundError:
+        return None
 
 
 def main(argv=None) -> int:

@@ -1,0 +1,19 @@
+[
+  {
+    "id": "shift-4hours",
+    "operations": {
+      "service_seconds": 180,
+      "max_route_seconds": 14400,
+      "assumed_speed_kph": 30,
+      "include_charging_time": true,
+      "charging_power_kw": 6.0,
+      "charging_efficiency": 0.9
+    }
+  },
+  {
+    "id": "reserve20percent",
+    "operations": {
+      "final_reserve_soc": 0.2
+    }
+  }
+]

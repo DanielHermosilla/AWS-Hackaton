@@ -239,6 +239,13 @@ bash scripts/benchmark_dw.sh \
   --output-dir artifacts/benchmark-dw-toy
 ```
 
+Para la presentación, [la campaña de evidencia](docs/benchmark-evidence.md)
+agrega escalamiento de demanda/flota, sensibilidad física, comparaciones
+pareadas, CO₂ con supuestos explícitos y auditoría de resultados de terceros:
+`bash scripts/benchmark_evidence.sh campaign --help`.
+El plan no ejecuta corridas hasta añadir `--execute`; AWS requiere
+`--with-bedrock`.
+
 Ejecuta las tres políticas en procesos separados y genera `summary.csv`,
 `summary.json`, manifiesto, resultados y logs. `us-east-1` y `hackathon` son
 valores iniciales configurables; no se guardan credenciales.
