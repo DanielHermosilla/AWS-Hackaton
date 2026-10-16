@@ -28,7 +28,7 @@ from ev_routing.energy import file_sha256
 
 MAX_HISTORY_BYTES = 256 * 1024 * 1024
 MAX_HISTORY_ROWS = 2_000_000
-MODEL_VERSION = "historical-streets-1.0"
+MODEL_VERSION = "historical-streets-1.1"
 _UNITS = {
     "timestamp": {"iso8601", "unix_s", "unix_ms", "elapsed_s"},
     "latitude": {"degrees"}, "longitude": {"degrees"},
@@ -380,6 +380,24 @@ def normalize_history(
     frame["valid_interval"] = valid
     frame["energy_kwh"] = energy.where(valid, np.nan)
     frame["distance_m"] = pd.Series(distance).where(valid, np.nan)
+    if "speed_kph" in frame:
+        stationary_or_unknown_movement = frame.speed_kph.eq(0)
+    elif "latitude" in frame:
+        # A repeated GPS reading does not prove a stop, but without speed it
+        # cannot establish braking regeneration instead of external charging.
+        previous = group[["latitude", "longitude"]].shift()
+        stationary_or_unknown_movement = (
+            frame.latitude.eq(previous.latitude)
+            & frame.longitude.eq(previous.longitude)
+        )
+    else:
+        stationary_or_unknown_movement = pd.Series(True, index=frame.index)
+    frame["ambiguous_stationary_recovery"] = (
+        valid & energy.lt(0) & stationary_or_unknown_movement
+    )
+    ambiguous_recovery = float(
+        -energy[frame.ambiguous_stationary_recovery].sum()
+    )
     assumptions = [
         {
             "key": "energy_integration", "label": "Cómo se calcula el consumo",
@@ -462,6 +480,16 @@ def normalize_history(
                 if stationary is not None else "Falta velocidad medida para identificar detenciones."
             ),
         },
+        {
+            "key": "ambiguous_stationary_recovery",
+            "label": "Recuperación sin movimiento confirmado",
+            "value": ambiguous_recovery, "unit": "kWh", "kind": "observed",
+            "applied": False,
+            "evidence": (
+                "Se conserva en el historial, pero los bloques afectados no calibran calles: "
+                "podría ser recarga externa o una lectura que no acredita regeneración al circular."
+            ),
+        },
     ))
     summary = {
         "schema_version": "1.0", "source_sha256": file_sha256(path),
@@ -478,6 +506,10 @@ def normalize_history(
         if distance_source != "unavailable" else None,
         "distance_source": distance_source, "max_gap_seconds": max_gap_seconds,
         "stationary_energy_kwh": stationary,
+        "ambiguous_stationary_recovery_kwh": ambiguous_recovery,
+        "ambiguous_stationary_recovery_interval_count": int(
+            frame.ambiguous_stationary_recovery.sum()
+        ),
         "assumptions": assumptions,
     }
     return HistoryData(
@@ -637,6 +669,10 @@ def _blocks(frame):
                 continue
             interval = group.iloc[anchor + 1:index + 1]
             if interval.valid_interval.all():
+                if interval.ambiguous_stationary_recovery.any():
+                    yield {"rejection_reason": "ambiguous_stationary_charging"}
+                    anchor = index
+                    continue
                 energy = interval.energy_kwh
                 yield {
                     "vehicle": vehicle, "trip": trip,
@@ -747,6 +783,9 @@ def fit_historical_energy(
                 if total > config.max_match_blocks:
                     reasons["processing_limit"] += 1
                     continue
+                if block.get("rejection_reason"):
+                    reasons[block["rejection_reason"]] += 1
+                    continue
                 parts, error = index.match(block["first"], block["last"], block["distance"])
                 if error:
                     reasons[error] += 1
@@ -815,6 +854,11 @@ def fit_historical_energy(
     }
     if not estimates:
         warnings.append("No hay tramos con evidencia suficiente; se usará el consumo supuesto.")
+    if reasons["ambiguous_stationary_charging"]:
+        warnings.append(
+            "Se excluyeron bloques con recuperación de energía sin movimiento confirmado. "
+            "No se usa una posible recarga estacionaria como ahorro al recorrer una calle."
+        )
     assumptions = tuple(data.summary["assumptions"]) + ({
         "key": "mixed_sign_order", "label": "Descarga y recuperación",
         "value": "Se supone descarga antes de recuperación",

@@ -265,6 +265,45 @@ def test_zero_speed_energy_is_integrated_not_discarded(tmp_path):
     assert data.summary["energy_kwh"] == pytest.approx(.30)
 
 
+@pytest.mark.parametrize("speed_available", [True, False])
+def test_stationary_charging_does_not_become_regeneration_of_the_next_street(
+    tmp_path, speed_available,
+):
+    frame = eved()
+    charging = frame.groupby("Trip").cumcount().eq(1)
+    frame.loc[charging, "Matched Longitude[deg]"] = -83
+    frame.loc[charging, "Match Type"] = 1
+    frame.loc[charging, "Vehicle Speed[km/h]"] = 0
+    frame.loc[charging, "HV Battery Current[A]"] = 150  # 15 Wh received while stopped.
+    # Next sample travels to J and consumes 10 Wh. Netting the two used to
+    # invent a -5 Wh nominal street and charge the route while driving.
+    if speed_available:
+        data = normalize_history(write_csv(tmp_path, frame))
+    else:
+        frame = frame.rename(columns={"VehId": "vehicle", "Trip": "journey"}).drop(
+            columns=["Vehicle Speed[km/h]"]
+        )
+        mapping = custom_mapping()
+        del mapping["columns"]["speed_kph"]
+        del mapping["units"]["speed_kph"]
+        data = normalize_history(write_csv(tmp_path, frame), mapping)
+    streets = road()
+    profile = fit_historical_energy(
+        data, streets, config=HistoryConfig(min_support_distance_km=.001),
+    )
+    assert data.summary["recovery_kwh"] == pytest.approx(.075)
+    assert data.summary["ambiguous_stationary_recovery_kwh"] == pytest.approx(.075)
+    assert data.summary["ambiguous_stationary_recovery_interval_count"] == 5
+    assert profile.summary["unmatched_reasons"]["ambiguous_stationary_charging"] == 5
+    assert profile.summary["matched_recovery_kwh"] == 0
+    assert all(estimate.from_node_id != "B" for estimate in profile.estimates)
+    assert any(estimate.from_node_id == "J" for estimate in profile.estimates)
+    result = apply_historical_energy(streets, profile, .2)
+    first = next(a for a in result.arcs if a.from_node_id == "B" and a.to_node_id == "J")
+    assert first.energy_kwh == pytest.approx(.01657)
+    assert not result.provenance["energy_model"]["mixed_sign_subdivisions"]
+
+
 def test_ambiguous_parallel_streets_are_rejected(tmp_path):
     frame = eved().iloc[:3].copy()
     frame["Matched Latitude[deg]"] = 42.000005
