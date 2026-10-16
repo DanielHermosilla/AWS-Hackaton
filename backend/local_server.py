@@ -15,7 +15,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path, PurePosixPath
 from urllib.parse import parse_qs, unquote, urlsplit
 
-from . import service
+from . import assist_service, service
 
 MAX_BODY_BYTES = 8 * 1024 * 1024
 STATIC_TYPES = {
@@ -159,6 +159,9 @@ class Handler(BaseHTTPRequestHandler):
             else:
                 self._send(200, data)
             return
+        if parts.path == "/assist/schema" and not parts.query:
+            self._send(200, assist_service.schema(runtime=self.server.runtime))
+            return
         self._static(parts.path)
 
     def _static(self, raw_path):
@@ -190,7 +193,7 @@ class Handler(BaseHTTPRequestHandler):
     def do_POST(self):  # noqa: N802
         if not self._same_origin():
             return
-        if self.path not in {"/solve", "/prepare"}:
+        if self.path not in {"/solve", "/prepare", "/assist/chat"}:
             self._error(404, "not_found", "Recurso no encontrado.")
             return
         if self.headers.get_content_type() != "application/json":
@@ -229,6 +232,26 @@ class Handler(BaseHTTPRequestHandler):
                 if isinstance(exc, service.SolveRequestError)
                 else "Se agotó la espera del cuerpo JSON.",
             )
+            return
+        if self.path == "/assist/chat":
+            # El chat gestiona el solve_lock internamente (solo lo toma si
+            # resuelve), para no bloquear turnos que solo cambian configuracion.
+            try:
+                response = assist_service.chat(
+                    payload, solve_lock=self.server.solve_lock,
+                    runtime=self.server.runtime, runs=self.server.runs,
+                )
+                self._send(200, response)
+            except service.SolveRequestError as exc:
+                self._error(400, "invalid_request", str(exc))
+            except service.ProviderError as exc:
+                self._error(exc.status, exc.code, str(exc))
+            except Exception:
+                self._error(
+                    502,
+                    "provider_error",
+                    "No se pudo completar el turno del asistente.",
+                )
             return
         if not self.server.solve_lock.acquire(blocking=False):
             self._error(

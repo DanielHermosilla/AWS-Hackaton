@@ -2,212 +2,203 @@
 
 El modelo NUNCA produce rutas ni edita libremente la configuracion: solo invoca
 estas herramientas. ``cambiar_parametro`` acepta exclusivamente las claves de
-``PARAMETROS``, cada una con tipo, rango y DESTINO en los contratos reales del
-solver (``SolverConfig`` / ``Operations``). Cualquier otra clave se rechaza con
-un mensaje claro; nada se aplica en silencio. Esto es lo que protege la
-factibilidad frente a sugerencias del LLM.
+``PARAMETROS``, cada una con tipo, rango u opciones y su VALOR ESTANDAR. Nada se
+aplica en silencio: claves o valores invalidos devuelven un error accionable.
+
+La lista blanca es la fuente unica de verdad para: el chat, el schema que
+consume el frontend (``parametros_schema``) y los valores por defecto.
+
+Estandar del escenario (README.md, AGENTS.md, diccionario.md): dos Nissan Leaf
+2013 al 60 %, bateria anunciada de 24 kWh. Consumo de referencia EPA del Leaf
+2013: ~30 kWh/100 mi (~0,18 kWh/km). El resto son supuestos de demo.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Callable, Literal
+from typing import Any, Literal
+
+Tipo = Literal["float", "int", "opcion"]
 
 
 @dataclass(frozen=True)
 class ParametroSpec:
-    """Especificacion de un parametro editable por el usuario via la IA.
+    """Parametro editable por el usuario via el asistente.
 
-    ``seccion`` indica a que contrato pertenece el destino:
-      - "solver"      -> campos de ``SolverConfig``
-      - "operations"  -> campos de ``Operations`` (parametros fisicos/operativos)
-      - "instancia"   -> cantidades a nivel de instancia (p. ej. flota)
-
-    ``importante`` marca cambios de alto impacto que requieren confirmacion
-    explicita del usuario en el turno siguiente antes de aplicarse.
+    ``web`` es la clave en la configuracion de la app (peticiones /prepare y
+    /solve). ``destino`` es el campo del contrato nativo cuando el parametro se
+    aplica directamente sobre una ProblemInstance (``seccion``):
+      - "parametros": ProblemInstance.parameters (ModelParameters)
+      - "solver":     SolverConfig
+      - "preparacion": solo existe al preparar desde nodos (p. ej. consumo, red)
+    ``importante`` marca cambios de alto impacto (la libreria puede pedir
+    confirmacion; el chat web trata la instruccion explicita como confirmacion).
     """
 
     clave: str
-    seccion: Literal["solver", "operations", "instancia"]
-    destino: str                      # nombre del campo real en el contrato
-    tipo: Literal["float", "int"]
-    minimo: float
-    maximo: float
+    web: str
+    seccion: Literal["parametros", "solver", "preparacion"]
+    destino: str | None
+    tipo: Tipo
+    estandar: Any
     descripcion: str
+    minimo: float | None = None
+    maximo: float | None = None
+    opciones: tuple[str, ...] = ()
     importante: bool = False
-    validar_extra: Callable[[float], str | None] | None = None
 
 
-# --- lista blanca: unicas claves que el LLM puede tocar --------------------
 PARAMETROS: dict[str, ParametroSpec] = {
-    "soc_inicial": ParametroSpec(
-        "soc_inicial", "operations", "final_reserve_soc", "float", 0.0, 1.0,
-        "Estado de carga inicial de la bateria (fraccion 0..1).",
-    ),
     "vehiculos": ParametroSpec(
-        # Flota: maximo 20 (alineado con el form del frontend y el limite local
-        # del backend, API_CONTRACT.md: "limite local 200 nodos y 20 vehiculos").
-        # Destino real confirmado contra el contrato: ProblemInstance.parameters.vehicle_count.
-        "vehiculos", "instancia", "vehicle_count", "int", 1, 20,
-        "Numero de vehiculos de la flota (1..20).", importante=True,
+        "vehiculos", "num_vehicles", "parametros", "vehicle_count", "int", 2,
+        "Numero de vehiculos de la flota.", 1, 20, importante=True,
     ),
-    "reserva_final_soc": ParametroSpec(
-        "reserva_final_soc", "operations", "final_reserve_soc", "float", 0.0, 1.0,
-        "Reserva minima de carga al terminar la ruta (fraccion 0..1).",
+    "soc_inicial": ParametroSpec(
+        "soc_inicial", "initial_soc", "parametros", "initial_soc", "float", 0.6,
+        "Carga inicial de bateria como fraccion (0.6 = 60 %).", 0.01, 1.0,
     ),
-    "margen_energia": ParametroSpec(
-        "margen_energia", "operations", "energy_margin_fraction", "float", 0.0, 0.5,
-        "Margen de seguridad sobre el consumo estimado por arco (fraccion).",
+    "capacidad_kwh": ParametroSpec(
+        "capacidad_kwh", "battery_capacity_kwh", "parametros", "battery_capacity_kwh",
+        "float", 24.0, "Capacidad util de bateria por vehiculo en kWh.", 1.0, 200.0,
+        importante=True,
+    ),
+    "reserva_kwh": ParametroSpec(
+        "reserva_kwh", "reserve_kwh", "parametros", "reserve_kwh", "float", 2.0,
+        "Reserva minima de energia en kWh.", 0.001, 100.0,
+    ),
+    "consumo_kwh_km": ParametroSpec(
+        "consumo_kwh_km", "consumption_kwh_km", "preparacion", None, "float", 0.18,
+        "Consumo supuesto en kWh/km (solo al preparar desde nodos).", 0.01, 5.0,
     ),
     "tiempo_limite_s": ParametroSpec(
-        "tiempo_limite_s", "solver", "time_limit_seconds", "float", 1.0, 600.0,
-        "Presupuesto de tiempo del solver en segundos.",
+        "tiempo_limite_s", "time_limit_seconds", "solver", "time_limit_seconds", "float",
+        10.0, "Presupuesto de tiempo del solver en segundos.", 1.0, 120.0,
     ),
-    "gap_energia": ParametroSpec(
-        "gap_energia", "solver", "energy_relative_gap", "float", 0.0, 1.0,
-        "Tolerancia relativa de la fase de energia (0 = exacto).",
+    "busqueda": ParametroSpec(
+        "busqueda", "search_policy", "solver", None, "opcion", "adaptive",
+        "Politica de busqueda: adaptive (GPT via Bedrock), standard o deterministic.",
+        opciones=("adaptive", "standard", "deterministic"),
     ),
-    "max_ruta_s": ParametroSpec(
-        "max_ruta_s", "operations", "max_route_seconds", "float", 1.0, 86400.0,
-        "Duracion maxima de una ruta en segundos.", importante=True,
+    "red": ParametroSpec(
+        "red", "network_mode", "preparacion", None, "opcion", "road",
+        "Red: road (calles del servidor) o haversine (geodesica sintetica).",
+        opciones=("road", "haversine"),
     ),
 }
 
+# Clave web -> clave de la lista blanca (para leer configuraciones existentes).
+POR_CLAVE_WEB = {spec.web: spec.clave for spec in PARAMETROS.values()}
+
 
 class ErrorParametro(ValueError):
-    """Parametro desconocido o fuera de rango."""
+    """Parametro desconocido, de tipo invalido o fuera de rango."""
 
 
-def validar_parametro(clave: str, valor: Any) -> tuple[ParametroSpec, float | int]:
-    """Valida (clave, valor) contra la lista blanca.
-
-    Devuelve ``(spec, valor_tipado)`` o lanza ``ErrorParametro`` con mensaje
-    claro si la clave no esta permitida o el valor es invalido/fuera de rango.
-    """
+def validar_parametro(clave: str, valor: Any) -> tuple[ParametroSpec, Any]:
+    """Valida (clave, valor) contra la lista blanca. Devuelve (spec, valor_tipado)."""
     spec = PARAMETROS.get(clave)
     if spec is None:
         permitidas = ", ".join(sorted(PARAMETROS))
-        raise ErrorParametro(
-            f"Parametro '{clave}' no permitido. Editables: {permitidas}."
-        )
+        raise ErrorParametro(f"Parametro '{clave}' no permitido. Editables: {permitidas}.")
+    if spec.tipo == "opcion":
+        texto = str(valor).strip().lower()
+        if texto not in spec.opciones:
+            raise ErrorParametro(
+                f"'{clave}' admite: {', '.join(spec.opciones)}; recibido {valor!r}."
+            )
+        return spec, texto
+    if isinstance(valor, bool):
+        raise ErrorParametro(f"'{clave}' espera un numero; recibido {valor!r}.")
     try:
-        tipado: float | int = int(valor) if spec.tipo == "int" else float(valor)
+        numero = float(valor)
     except (TypeError, ValueError) as exc:
-        raise ErrorParametro(
-            f"'{clave}' espera un {spec.tipo}; recibido {valor!r}."
-        ) from exc
+        raise ErrorParametro(f"'{clave}' espera un numero; recibido {valor!r}.") from exc
+    if spec.tipo == "int":
+        if not numero.is_integer():
+            raise ErrorParametro(f"'{clave}' espera un entero; recibido {valor!r}.")
+        tipado: Any = int(numero)
+    else:
+        tipado = numero
     if not (spec.minimo <= tipado <= spec.maximo):
         raise ErrorParametro(
-            f"'{clave}' fuera de rango [{spec.minimo}, {spec.maximo}]: {tipado}."
+            f"'{clave}' fuera de rango [{spec.minimo:g}, {spec.maximo:g}]: {tipado}."
         )
-    if spec.validar_extra is not None:
-        problema = spec.validar_extra(tipado)
-        if problema:
-            raise ErrorParametro(f"'{clave}': {problema}")
     return spec, tipado
 
 
-def tool_specs() -> dict:
-    """toolConfig de Bedrock: herramientas que el modelo puede invocar.
+def valores_estandar() -> dict[str, Any]:
+    """Configuracion estandar del escenario, por clave de la lista blanca."""
+    return {clave: spec.estandar for clave, spec in PARAMETROS.items()}
 
-    Ninguna herramienta produce rutas por si misma; 'resolver' delega el calculo
-    real a ``pipeline.run_instance`` + validacion independiente.
-    """
-    claves = sorted(PARAMETROS)
+
+def tool_specs() -> dict:
+    """toolConfig de Bedrock. Ninguna herramienta produce rutas por si misma."""
+    vacio = {"json": {"type": "object", "properties": {}}}
+    descripcion_claves = "; ".join(
+        f"{s.clave}: {s.descripcion}" for s in PARAMETROS.values()
+    )
     return {
         "tools": [
-            {
-                "toolSpec": {
-                    "name": "resolver",
-                    "description": (
-                        "Resuelve la instancia actual con la configuracion vigente "
-                        "usando el solver determinista. Unica fuente de rutas."
-                    ),
-                    "inputSchema": {"json": {"type": "object", "properties": {}}},
-                }
-            },
-            {
-                "toolSpec": {
-                    "name": "consultar_resultado",
-                    "description": (
-                        "Devuelve el ultimo resultado resuelto (rutas, entregas, "
-                        "clientes sin atender, energia). No resuelve de nuevo."
-                    ),
-                    "inputSchema": {"json": {"type": "object", "properties": {}}},
-                }
-            },
-            {
-                "toolSpec": {
-                    "name": "cambiar_parametro",
-                    "description": (
-                        "Cambia un parametro de configuracion de la lista blanca. "
-                        "Cambios importantes requieren confirmacion del usuario."
-                    ),
-                    "inputSchema": {
-                        "json": {
-                            "type": "object",
-                            "properties": {
-                                "clave": {"type": "string", "enum": claves},
-                                "valor": {"type": "number"},
-                            },
-                            "required": ["clave", "valor"],
-                        }
+            {"toolSpec": {
+                "name": "resolver",
+                "description": (
+                    "Calcula el plan con el motor usando los datos de la sesion y la "
+                    "configuracion vigente. Unica fuente de rutas. Si faltan datos, "
+                    "devuelve necesita_archivo=true."
+                ),
+                "inputSchema": vacio,
+            }},
+            {"toolSpec": {
+                "name": "consultar_resultado",
+                "description": "Resume el ultimo plan calculado (entregas, recargas, energia).",
+                "inputSchema": vacio,
+            }},
+            {"toolSpec": {
+                "name": "cambiar_parametro",
+                "description": "Cambia un parametro de la lista blanca. " + descripcion_claves,
+                "inputSchema": {"json": {
+                    "type": "object",
+                    "properties": {
+                        "clave": {"type": "string", "enum": sorted(PARAMETROS)},
+                        "valor": {"description": "Numero, o texto para busqueda/red."},
                     },
-                }
-            },
-            {
-                "toolSpec": {
-                    "name": "reiniciar_config",
-                    "description": (
-                        "Restaura la configuracion y la instancia a su estado "
-                        "inicial (deshace todos los cambios de la sesion)."
-                    ),
-                    "inputSchema": {"json": {"type": "object", "properties": {}}},
-                }
-            },
-            {
-                "toolSpec": {
-                    "name": "mostrar_config",
-                    "description": (
-                        "Muestra la configuracion inicial y la vigente, y los "
-                        "cambios aplicados en la sesion."
-                    ),
-                    "inputSchema": {"json": {"type": "object", "properties": {}}},
-                }
-            },
+                    "required": ["clave", "valor"],
+                }},
+            }},
+            {"toolSpec": {
+                "name": "reiniciar_config",
+                "description": "Vuelve a la configuracion inicial de la sesion.",
+                "inputSchema": vacio,
+            }},
+            {"toolSpec": {
+                "name": "mostrar_config",
+                "description": "Muestra la configuracion inicial, la vigente y los cambios.",
+                "inputSchema": vacio,
+            }},
         ]
     }
 
 
-
 # --- esquema para el frontend ---------------------------------------------
-# Fuente de verdad unica de rangos/tipos: evita numeros magicos en el JS del
-# frontend. El backend debe servir esto en GET /assist/schema (ver
-# docs/assist/integracion.md y docs/assist/schema.md) para que la UI rellene
-# min/max/value de sus inputs dinamicamente.
-SCHEMA_VERSION = "1.0"
+SCHEMA_VERSION = "1.1"
 
 
 def parametros_schema() -> dict:
-    """Serializa la lista blanca a un contrato JSON estable para el frontend.
-
-    Cada entrada expone: tipo, min, max, descripcion, si requiere confirmacion
-    (importante) y a que seccion del contrato pertenece. No incluye valores
-    por defecto del solver: esos los aporta ``SolverConfig()``/``Operations()``
-    y el backend puede fusionarlos al servir el esquema.
-    """
-    return {
-        "schema_version": SCHEMA_VERSION,
-        "parametros": {
-            spec.clave: {
-                "tipo": spec.tipo,
-                "min": spec.minimo,
-                "max": spec.maximo,
-                "seccion": spec.seccion,
-                "destino": spec.destino,
-                "importante": spec.importante,
-                "descripcion": spec.descripcion,
-            }
-            for spec in PARAMETROS.values()
-        },
-    }
+    """Serializa la lista blanca (tipos, rangos/opciones y estandar) para la UI."""
+    parametros = {}
+    for spec in PARAMETROS.values():
+        entrada = {
+            "tipo": spec.tipo,
+            "estandar": spec.estandar,
+            "clave_web": spec.web,
+            "seccion": spec.seccion,
+            "destino": spec.destino,
+            "importante": spec.importante,
+            "descripcion": spec.descripcion,
+        }
+        if spec.tipo == "opcion":
+            entrada["opciones"] = list(spec.opciones)
+        else:
+            entrada["min"], entrada["max"] = spec.minimo, spec.maximo
+        parametros[spec.clave] = entrada
+    return {"schema_version": SCHEMA_VERSION, "parametros": parametros}

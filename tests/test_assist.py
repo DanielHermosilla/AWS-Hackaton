@@ -157,3 +157,104 @@ def test_confirmacion_pendiente_vive_en_la_sesion():
     assert "Aplicado" in r2.respuesta
     assert ses.confirmacion_pendiente is None
     assert ses._overrides.get("vehiculos") == 3
+
+
+# --- interprete local (sin LLM) ----------------------------------------------
+@pytest.mark.parametrize("texto, esperado", [
+    ("dale con 5 autos, 20 segundos", {"vehiculos": 5, "tiempo_limite_s": 20}),
+    ("4 AUTOS", {"vehiculos": 4}),
+    ("salimos al 70%", {"soc_inicial": 0.7}),
+    ("calcula sin GPT", {"busqueda": "standard"}),
+    ("usa la red geodésica", {"red": "haversine"}),
+    ("Hola", {}),
+])
+def test_interprete_extrae_ajustes(texto, esperado):
+    from ev_routing.assist import interpretar
+
+    assert interpretar(texto).ajustes == esperado
+
+
+def test_interprete_intenciones():
+    from ev_routing.assist import interpretar
+
+    assert interpretar("Hola, qué tal").saludo and not interpretar("Hola").calcular
+    r = interpretar("resuelve con 4 autos y las configuraciones estandar")
+    assert r.calcular and r.reiniciar and r.ajustes == {"vehiculos": 4}
+    assert interpretar("explícame las rutas").explicar
+
+
+# --- turno local: el pedido queda pendiente hasta que llegan los datos --------
+def test_turno_local_saludo_no_pide_formularios():
+    from ev_routing.assist import Asistente, Sesion
+
+    r = Asistente(Sesion()).turno("hola")
+    assert r.modo == "local" and not r.necesita_datos and not r.resolvio
+    assert "archivo" in r.respuesta
+
+
+def test_turno_local_calcular_sin_datos_y_luego_con_datos():
+    from ev_routing.assist import Asistente, Sesion
+
+    ses = Sesion()
+    r1 = Asistente(ses, confirmar_importantes=False).turno("calcula con 3 autos")
+    assert r1.necesita_datos and ses.pendiente_calcular
+    assert ses.overrides == {"vehiculos": 3}
+
+    recibido = {}
+
+    def resolutor(cfg):
+        recibido.update(cfg)
+        return RESULTADO
+
+    ses.cargar_datos(resolutor, descripcion="nodos.csv (2 destinos)")
+    r2 = Asistente(ses, confirmar_importantes=False).turno(
+        "[Adjunte nodos.csv.] Calcula ahora con lo que te pedi.")
+    assert r2.resolvio and not ses.pendiente_calcular
+    assert recibido["vehiculos"] == 3 and recibido["soc_inicial"] == 0.6  # estandar
+    assert "2 entregas" in r2.respuesta
+
+
+# --- turno con LLM (cliente falso): herramientas e historial en la sesion ----
+class _ClienteGuion:
+    """Turno 1: cambia flota y resuelve; luego responde. Registra lo enviado."""
+
+    def __init__(self):
+        self.llamadas = []
+
+    def conversar(self, mensajes, *, sistema, tool_config=None):
+        self.llamadas.append((len(mensajes), sistema))
+        ultimo = mensajes[-1]["content"]
+        if any("toolResult" in b for b in ultimo):
+            return {"output": {"message": {"role": "assistant", "content": [
+                {"text": "Listo: 2 entregas con 3 vehiculos."}]}}}
+        return {"output": {"message": {"role": "assistant", "content": [
+            {"toolUse": {"toolUseId": "a", "name": "cambiar_parametro",
+                         "input": {"clave": "vehiculos", "valor": 3}}},
+            {"toolUse": {"toolUseId": "b", "name": "resolver", "input": {}}}]}}}
+
+
+def test_turno_llm_aplica_y_resuelve_con_historial_en_sesion():
+    from ev_routing.assist import Asistente, Sesion
+
+    ses = Sesion(resolutor=lambda cfg: RESULTADO, descripcion_datos="nodos.csv")
+    cliente = _ClienteGuion()
+    r = Asistente(ses, cliente, confirmar_importantes=False).turno("calcula con 3 autos")
+    assert r.resolvio and r.modo == "llm"
+    assert ses.overrides == {"vehiculos": 3}
+    assert "Datos: nodos.csv" in cliente.llamadas[0][1]  # estado en el prompt
+    n = len(ses.mensajes)
+    Asistente(ses, cliente, confirmar_importantes=False).turno("gracias")
+    assert len(ses.mensajes) > n  # otra instancia continua el mismo historial
+
+
+def test_turno_llm_cae_a_local_si_bedrock_falla():
+    from ev_routing.assist import Asistente, ErrorBedrock, Sesion
+
+    class _Roto:
+        def conversar(self, *a, **k):
+            raise ErrorBedrock("sin red")
+
+    ses = Sesion()
+    r = Asistente(ses, _Roto()).turno("hola")
+    assert r.modo == "local" and r.respuesta
+    assert ses.mensajes == []  # no queda historial a medias

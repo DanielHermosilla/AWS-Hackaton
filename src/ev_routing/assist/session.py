@@ -1,102 +1,156 @@
-"""Estado de la sesion de chat: instancia base inmutable + overrides validados.
+"""Estado de una conversacion: datos, configuracion y ultimo plan.
 
-La sesion recuerda SIEMPRE la configuracion inicial (snapshot inmutable), de
-modo que el usuario puede volver a ella en cualquier momento ("reiniciar_config"
-o "deshace el ultimo cambio"). Los cambios se acumulan como overrides y se
-aplican sobre copias, nunca mutando el estado base.
+La sesion separa tres cosas:
 
-El calculo real de rutas lo hace ``pipeline.run_instance`` (solver determinista
-+ validacion independiente). Esta sesion solo prepara entradas validas.
+- **Datos**: de donde salen los nodos. O bien una ``ProblemInstance`` nativa
+  (modo libreria/CLI, se resuelve con ``pipeline.run_instance``), o bien un
+  ``resolutor`` inyectado por quien expone el chat (el backend web lo usa para
+  correr /prepare + /solve con la red vial del servidor).
+- **Configuracion**: ``config_base`` (inmutable, para volver atras) mas los
+  overrides validados por la lista blanca. Las claves son las de
+  ``tools.PARAMETROS``.
+- **Conversacion**: historial Converse y pedidos pendientes, para que un
+  backend sin estado pueda recrear el ``Asistente`` en cada request.
 """
 
 from __future__ import annotations
 
-import copy
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, Callable
 
-from .tools import ParametroSpec, validar_parametro
+from .tools import PARAMETROS, validar_parametro, valores_estandar
 
-# Import perezoso del nucleo para no acoplar el import del paquete al solver.
-try:  # pragma: no cover - disponible en el repo real
-    from ev_routing.contracts import Operations, ProblemInstance, SolverConfig
-    from ev_routing.pipeline import run_instance
-except Exception:  # pragma: no cover - permite inspeccionar sin entorno
-    Operations = ProblemInstance = SolverConfig = Any  # type: ignore
-    run_instance = None  # type: ignore
+Resolutor = Callable[[dict[str, Any]], dict]
 
 
 class ErrorSesion(RuntimeError):
     """Fallo al aplicar un cambio o al resolver desde la sesion."""
 
 
+class NecesitaDatos(ErrorSesion):
+    """No hay datos cargados: hay que pedir el archivo de nodos."""
+
+
 @dataclass
 class CambioAplicado:
-    """Registro de un override aplicado (para historial y deshacer)."""
-
     clave: str
-    valor: float | int
+    valor: Any
     seccion: str
-    destino: str
+    destino: str | None
+
+
+def config_desde_instancia(instancia: Any) -> dict[str, Any]:
+    """Lee de una ProblemInstance los parametros que la lista blanca conoce."""
+    params = getattr(instancia, "parameters", None)
+    if params is None:
+        return {}
+    salida = {}
+    for clave, spec in PARAMETROS.items():
+        if spec.seccion == "parametros" and hasattr(params, spec.destino):
+            salida[clave] = getattr(params, spec.destino)
+    return salida
+
+
+def describir_config(cfg: dict[str, Any]) -> str:
+    """Texto breve y legible de una configuracion efectiva."""
+    red = "calles del servidor" if cfg.get("red") == "road" else "red geodesica"
+    busqueda = {"adaptive": "GPT", "standard": "estandar", "deterministic": "determinista"}
+    return (
+        f"{cfg['vehiculos']} vehiculo(s), SoC {round(cfg['soc_inicial'] * 100)} %, "
+        f"bateria {cfg['capacidad_kwh']:g} kWh, reserva {cfg['reserva_kwh']:g} kWh, "
+        f"consumo {cfg['consumo_kwh_km']:g} kWh/km, {red}, "
+        f"{cfg['tiempo_limite_s']:g} s de calculo, busqueda {busqueda.get(cfg['busqueda'], cfg['busqueda'])}"
+    )
 
 
 @dataclass
 class Sesion:
-    """Mantiene instancia/config inicial, los overrides y el ultimo resultado.
-
-    ``instancia_base`` y ``config_base`` son el snapshot inmutable al que se
-    puede volver. ``_overrides`` guarda los valores actuales por clave de la
-    lista blanca; ``historial`` permite deshacer el ultimo cambio.
-    """
-
-    instancia_base: Any
-    config_base: Any = None
-    _overrides: dict[str, float | int] = field(default_factory=dict)
+    instancia_base: Any = None
+    config_base: dict[str, Any] | None = None
+    resolutor: Resolutor | None = None
+    descripcion_datos: str | None = None
+    no_aplicables: frozenset[str] = frozenset()
+    _overrides: dict[str, Any] = field(default_factory=dict)
     historial: list[CambioAplicado] = field(default_factory=list)
     ultimo_resultado: dict | None = None
-    # Confirmacion pendiente (clave, valor) de un cambio importante. Vive en la
-    # sesion -no en el Asistente- para sobrevivir entre requests/instancias en
-    # un backend sin estado (cada request puede crear un Asistente nuevo).
-    confirmacion_pendiente: tuple[str, float | int] | None = None
+    # Cambio importante esperando confirmacion (modo libreria).
+    confirmacion_pendiente: tuple[str, Any] | None = None
+    # El usuario pidio calcular pero faltaban datos: retomar al recibirlos.
+    pendiente_calcular: bool = False
+    # Historial Converse; vive aqui para sobrevivir entre requests.
+    mensajes: list[dict] = field(default_factory=list)
 
     def __post_init__(self) -> None:
-        if self.config_base is None and SolverConfig is not Any:
-            self.config_base = SolverConfig()  # defaults del contrato
+        base = valores_estandar()
+        if self.instancia_base is not None:
+            base.update(config_desde_instancia(self.instancia_base))
+            if self.resolutor is None and not self.no_aplicables:
+                # Una instancia nativa ya trae su red: consumo y red no aplican.
+                self.no_aplicables = frozenset(
+                    k for k, s in PARAMETROS.items() if s.seccion == "preparacion"
+                )
+        if isinstance(self.config_base, dict):
+            base.update(self.config_base)
+        self.config_base = base
 
-    # --- consulta de configuracion ----------------------------------------
+    # --- datos -------------------------------------------------------------
+    @property
+    def tiene_datos(self) -> bool:
+        return self.resolutor is not None or self.instancia_base is not None
+
+    def cargar_datos(
+        self,
+        resolutor: Resolutor,
+        *,
+        descripcion: str,
+        config: dict[str, Any] | None = None,
+        no_aplicables: frozenset[str] = frozenset(),
+    ) -> None:
+        """Reemplaza la fuente de datos. Conserva los ajustes ya conversados."""
+        self.resolutor = resolutor
+        self.instancia_base = None
+        self.descripcion_datos = descripcion
+        self.no_aplicables = no_aplicables
+        base = valores_estandar()
+        base.update(config or {})
+        self.config_base = base
+        self.ultimo_resultado = None
+
+    # --- configuracion -----------------------------------------------------
+    def config_efectiva(self) -> dict[str, Any]:
+        return {**self.config_base, **self._overrides}
+
+    @property
+    def overrides(self) -> dict[str, Any]:
+        return dict(self._overrides)
+
     def resumen_config(self) -> dict:
-        """Config inicial, cambios aplicados y valores vigentes (para contexto)."""
-        from .tools import PARAMETROS  # evita import circular en carga del paquete
-
         return {
-            "inicial": self._dump(self.config_base),
-            "cambios_aplicados": {k: v for k, v in self._overrides.items()},
-            # Derivado de la lista blanca: no es un numero magico aqui.
+            "inicial": dict(self.config_base),
+            "vigente": self.config_efectiva(),
+            "cambios_aplicados": dict(self._overrides),
             "flota_maxima": int(PARAMETROS["vehiculos"].maximo),
+            "datos": self.descripcion_datos,
         }
 
-    @staticmethod
-    def _dump(obj: Any) -> Any:
-        dump = getattr(obj, "model_dump", None)
-        return dump(mode="json") if callable(dump) else obj
-
-    # --- aplicar / deshacer -----------------------------------------------
     def aplicar(self, clave: str, valor: Any) -> CambioAplicado:
         """Valida y registra un override. Lanza ``ErrorParametro`` si es invalido."""
         spec, tipado = validar_parametro(clave, valor)
+        if clave in self.no_aplicables:
+            raise ErrorSesion(
+                f"'{clave}' solo se usa al preparar desde nodos; estos datos ya traen su red."
+            )
         self._overrides[clave] = tipado
         cambio = CambioAplicado(clave, tipado, spec.seccion, spec.destino)
         self.historial.append(cambio)
         return cambio
 
     def deshacer(self) -> CambioAplicado | None:
-        """Quita el ultimo cambio; recalcula el override efectivo de esa clave."""
         if not self.historial:
             return None
         ultimo = self.historial.pop()
         previo = next(
-            (c.valor for c in reversed(self.historial) if c.clave == ultimo.clave),
-            None,
+            (c.valor for c in reversed(self.historial) if c.clave == ultimo.clave), None
         )
         if previo is None:
             self._overrides.pop(ultimo.clave, None)
@@ -105,58 +159,45 @@ class Sesion:
         return ultimo
 
     def reiniciar(self) -> None:
-        """Vuelve al estado inicial: descarta todos los overrides."""
         self._overrides.clear()
         self.historial.clear()
-
-    # --- materializar instancia/config efectivas --------------------------
-    def _instancia_config_efectivas(self) -> tuple[Any, Any]:
-        """Aplica los overrides sobre copias de la instancia/config base."""
-        if ProblemInstance is Any:  # entorno sin contratos (solo inspeccion)
-            raise ErrorSesion("Contratos no disponibles en este entorno.")
-        instancia = copy.deepcopy(self.instancia_base)
-        config = copy.deepcopy(self.config_base)
-        ops_updates: dict[str, Any] = {}
-        cfg_updates: dict[str, Any] = {}
-        for clave, valor in self._overrides.items():
-            spec: ParametroSpec = __import__(
-                "ev_routing.assist.tools", fromlist=["PARAMETROS"]
-            ).PARAMETROS[clave]
-            if spec.seccion == "operations":
-                ops_updates[spec.destino] = valor
-            elif spec.seccion == "solver":
-                cfg_updates[spec.destino] = valor
-            elif spec.seccion == "instancia":
-                instancia = self._aplicar_instancia(instancia, spec.destino, valor)
-        if ops_updates:
-            nuevas_ops = instancia.operations.model_copy(update=ops_updates)
-            instancia = instancia.model_copy(update={"operations": nuevas_ops})
-        if cfg_updates:
-            config = config.model_copy(update=cfg_updates)
-        return instancia, config
-
-    @staticmethod
-    def _aplicar_instancia(instancia: Any, destino: str, valor: Any) -> Any:
-        """Overrides a nivel de instancia (p. ej. tamano de flota).
-
-        Nota: el nombre real del campo de flota depende del contrato de
-        instancia; se resuelve dinamicamente y, si no existe, se informa.
-        """
-        if hasattr(instancia, destino):
-            return instancia.model_copy(update={destino: valor})
-        params = getattr(instancia, "parameters", None)
-        if params is not None and hasattr(params, destino):
-            nuevos = params.model_copy(update={destino: valor})
-            return instancia.model_copy(update={"parameters": nuevos})
-        raise ErrorSesion(
-            f"La instancia no expone '{destino}'; no se pudo aplicar el cambio."
-        )
+        self.confirmacion_pendiente = None
 
     # --- resolver ----------------------------------------------------------
     def resolver(self) -> dict:
-        """Resuelve la instancia efectiva con el solver determinista real."""
-        if run_instance is None:
-            raise ErrorSesion("pipeline.run_instance no disponible en este entorno.")
-        instancia, config = self._instancia_config_efectivas()
-        self.ultimo_resultado = run_instance(instancia, config)
-        return self.ultimo_resultado
+        """Calcula el plan con el motor. Unica via por la que existen rutas."""
+        if self.resolutor is not None:
+            resultado = self.resolutor(self.config_efectiva())
+        elif self.instancia_base is not None:
+            from ev_routing.pipeline import run_instance
+
+            instancia, config = self._instancia_config_efectivas()
+            resultado = run_instance(instancia, config)
+        else:
+            raise NecesitaDatos("No hay datos cargados: falta el archivo de nodos.")
+        self.ultimo_resultado = resultado
+        self.pendiente_calcular = False
+        return resultado
+
+    def _instancia_config_efectivas(self) -> tuple[Any, Any]:
+        """Modo nativo: aplica overrides sobre la instancia y SolverConfig."""
+        if self.instancia_base is None:
+            raise NecesitaDatos("No hay instancia nativa cargada.")
+        from ev_routing.contracts import SolverConfig
+
+        cfg = self.config_efectiva()
+        instancia = self.instancia_base
+        cambios = {
+            spec.destino: self._overrides[clave]
+            for clave, spec in PARAMETROS.items()
+            if spec.seccion == "parametros" and clave in self._overrides
+        }
+        if cambios:
+            datos = instancia.model_dump(mode="json")
+            datos["parameters"] = {**datos["parameters"], **cambios}
+            try:
+                instancia = type(instancia).model_validate(datos)
+            except ValueError as exc:
+                raise ErrorSesion(f"La configuracion no es valida para estos datos: {exc}") from exc
+        config = SolverConfig(time_limit_seconds=cfg["tiempo_limite_s"])
+        return instancia, config

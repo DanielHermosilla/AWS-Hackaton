@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 5
 requires-python = ">=3.12, <3.14"
 
 [[package]]
@@ -176,6 +176,9 @@ dependencies = [
 ]
 
 [package.optional-dependencies]
+assist = [
+    { name = "boto3" },
+]
 dw = [
     { name = "boto3" },
     { name = "pygcgopt" },
@@ -190,6 +193,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "boto3", marker = "extra == 'assist'", specifier = ">=1.40,<2" },
     { name = "boto3", marker = "extra == 'dw'", specifier = ">=1.40,<2" },
     { name = "gurobipy", specifier = ">=12,<14" },
     { name = "networkx", specifier = ">=3.4,<4" },
@@ -203,7 +207,7 @@ requires-dist = [
     { name = "pyscipopt", specifier = "==6.0.0" },
     { name = "scipy", specifier = ">=1.15,<2" },
 ]
-provides-extras = ["dw"]
+provides-extras = ["dw", "assist"]
 
 [package.metadata.requires-dev]
 dev = [
