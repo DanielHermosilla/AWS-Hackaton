@@ -85,7 +85,7 @@ function resumeFrom(saved) {
   const stopRoute = routeById(saved.stop?.vehicleId);
   const stop = saved.stop && Number.isInteger(saved.stop.index) ? stopsOf(stopRoute)[saved.stop.index] : null;
   const valid = (saved.vehicle === null || !!vehicle)
-    && ['fleet', 'stops'].includes(saved.tab)
+    && ['fleet', 'stops', 'chargers'].includes(saved.tab)
     && (saved.stop === null || (!!stop && saved.stop.vehicleId === saved.vehicle))
     && typeof saved.chargers === 'boolean';
   if (!valid) return fallback;
@@ -96,7 +96,7 @@ function resumeFrom(saved) {
   return {
     title: 'Donde lo dejaste',
     cta: 'Continuar plan',
-    context: [vehicle?.name || 'Toda la flota', saved.tab === 'stops' ? 'Paradas' : 'Vehículos', stopLabel,
+    context: [vehicle?.name || 'Toda la flota', { fleet: 'Vehículos', stops: 'Paradas', chargers: 'Cargadores' }[saved.tab], stopLabel,
       saved.chargers ? 'Estaciones visibles' : null].filter(Boolean).join(' · '),
   };
 }
