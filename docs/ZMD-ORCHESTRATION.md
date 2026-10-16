@@ -151,3 +151,20 @@ El arnés de unión y sus capturas están en
 `.local/features-implementation-2026-10-15/qa/combined.mjs` y `combined-report.json`.
 Esta carpeta conserva su nombre iniciado en la investigación del 15 de octubre;
 la entrega consolidada se registra el **16-10-2026**.
+
+## Auditoría ligera posterior · 16-10-2026
+
+Solicitada por Diego como pasada rápida, sobre `7d872c9`, sin ampliar alcance.
+Dos agentes nuevos revisaron en paralelo la unión del código y la experiencia
+visible. Sin hallazgos reproducibles ni cambios de producto.
+
+- `/root/quick_integration_audit`: **32/32 pruebas específicas** y lectura de
+  arranque, Continuar plan, borrador, vigencia, protección nativa y KPIs.
+- `/root/quick_visual_audit`: **11 comprobaciones de navegador**, dos cálculos
+  sintéticos reales, escritorio 1440 px y móvil 390 px. Capturas inspeccionadas;
+  cero errores JS y sin desbordamiento observado en resumen/editor.
+- Madre: servidor y tres módulos nuevos responden HTTP 200; motor, backend y
+  dependencias siguen sin cambios respecto de la base.
+
+Evidencia: `.local/quick-audit-2026-10-16/visual/combined-report.json` y capturas
+en esa misma carpeta. Esta pasada acotada no repitió la regresión Python completa.
