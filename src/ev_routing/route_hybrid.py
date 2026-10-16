@@ -43,6 +43,18 @@ class HybridRoutes:
         self.evaluation_seconds = .04
         self.policy = None
         self.observer = None
+        self.last_observation = -inf
+
+    def _observe(self):
+        if self.observer is None:
+            return
+        now = monotonic()
+        if now - self.last_observation < .25:
+            return
+        self.last_observation = now
+        self.observer("heuristic_progress", self.telemetry())
+        if self.policy is not None:
+            self.evaluation_seconds = self.policy.resource_repair_seconds
 
     def remember(self, route):
         self.fast.pool_limit = self.pool_limit
@@ -108,6 +120,9 @@ class HybridRoutes:
             for pos in positions:
                 if monotonic() >= deadline:
                     return sorted(choices)
+                # Una reparación puede ocupar toda la etapa. Recoger respuestas
+                # listas entre inserciones, sin esperar inferencia remota.
+                self._observe()
                 candidate = self.evaluate(
                     self.instance.vehicle_ids[k], order[:pos] + [customer] + order[pos:], deadline,
                 )
@@ -278,8 +293,7 @@ class HybridRoutes:
         for iteration in range(policy.alns_iterations):
             if monotonic() >= deadline:
                 break
-            if self.observer:
-                self.observer("heuristic_progress", self.telemetry())
+            self._observe()
             operators = policy.destroy_operators
             weights = [1 + self.operator_scores[op] / (1 + self.operator_counts[op]) for op in operators]
             operator = rng.choices(operators, weights=weights)[0]

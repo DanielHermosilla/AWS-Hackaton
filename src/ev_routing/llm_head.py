@@ -107,6 +107,23 @@ class LLMHead:
         self.customer_ids = set(instance.customer_ids) if instance is not None else set()
         self.mps = None
         self.closed = False
+        self.bedrock_clients, self.provider_setup_error = {}, None
+        if config.policy == "adaptive" and provider is None:
+            # Preparar SDK, credenciales y transporte antes de ALNS/SCIP: su
+            # inicialización diferida puede agotar el plazo de la decisión.
+            # No se invoca ningún modelo aquí; la inferencia sigue asíncrona.
+            from ev_routing.llm.bedrock import create_bedrock_client
+            try:
+                timeouts = {config.bedrock.timeout_seconds}
+                if config.bedrock.fast_model_id:
+                    timeouts.add(config.bedrock.fast_timeout_seconds)
+                for timeout in timeouts:
+                    settings = config.bedrock.model_copy(update={"timeout_seconds": timeout})
+                    self.bedrock_clients[timeout] = create_bedrock_client(settings)
+            except Exception as error:
+                # El trabajador registrará el fallo con el fallback habitual,
+                # sin reintentar autenticación ni exponer mensajes del SDK.
+                self.provider_setup_error = error
 
     def _console(self, label, data):
         if self.config.show_llm_trace:
@@ -134,9 +151,12 @@ class LLMHead:
         try:
             provider = self.provider
             if provider is None:
+                if self.provider_setup_error is not None:
+                    raise self.provider_setup_error
                 from ev_routing.llm.bedrock import BedrockPolicyClient
                 provider = BedrockPolicyClient(
                     bedrock, system_prompt=ROUTE_PROMPT, temperature=0,
+                    client=self.bedrock_clients.get(bedrock.timeout_seconds),
                     trace_directory=(str(Path(self.config.log_directory) / "decisions" / f"{index:02d}")
                                      if self.config.log_directory else None),
                     show_trace=self.config.show_llm_trace,

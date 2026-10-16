@@ -4,6 +4,7 @@ import json
 from random import Random
 from threading import Event, get_ident
 from time import monotonic
+from types import SimpleNamespace
 
 import pytest
 from pyscipopt import Model
@@ -22,6 +23,32 @@ from ev_routing.route_solver import solve_routes
 from ev_routing.search_policy import SearchConfig
 from ev_routing.service_graph import expand_and_validate
 from ev_routing.validation import validate_solution
+
+
+def test_long_repair_collects_policy_updates_between_insertions(monkeypatch):
+    import ev_routing.route_hybrid as hybrid
+
+    search = HybridRoutes(pairs())
+    search.policy = RoutePolicy()
+    clock, events, evaluations = [0.0], [], []
+    monkeypatch.setattr(hybrid, "monotonic", lambda: clock[0])
+
+    def evaluate(vehicle, order, deadline):
+        evaluations.append((clock[0], search.evaluation_seconds))
+        clock[0] += .2
+        return SimpleNamespace(net_energy_kwh=float(len(order)))
+
+    def observer(event, state):
+        events.append(clock[0])
+        search.policy.resource_repair_seconds = .08
+
+    search.evaluate, search.observer = evaluate, observer
+    a, b, c = sorted(search.instance.customer_ids)
+    choices = search._options([[a, b], []], c, 10)
+    assert choices
+    assert events and events[0] < evaluations[-1][0]
+    assert any(seconds == .08 for _, seconds in evaluations[1:])
+    assert all(later - earlier >= .25 for earlier, later in zip(events, events[1:]))
 
 
 @pytest.mark.parametrize("seed", range(8))

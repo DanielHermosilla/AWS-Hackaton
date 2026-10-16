@@ -60,7 +60,7 @@ Pyomo/Gurobi/SCIP y GCG posicional se conservan como referencias explícitas.
 | `docs/dantzig-wolfe.md` | Formulación descompuesta, decisiones admitidas, presupuesto y benchmark. |
 | `docs/orchestration.md` | Flujo del orquestador, acciones, presupuestos y demostración de las cotas energéticas. |
 | `docs/llm-head-search.md` | Integración actual, API de SCIP, trazabilidad, validación y mediciones. |
-| `docs/webapp-integration.md` | Gap energético 0,5 %, GPT-6 Luna, estado del acceso AWS, API Python y cambios para el futuro merge con webapp. |
+| `docs/webapp-integration.md` | Gap energético 0,5 %, GPT-5.6 Luna probado en AWS, API Python y cambios para el futuro merge con webapp. |
 | `docs/performance-orchestrator.md` | Comparación medida, acceso real a modelos Bedrock, hashes y límites de la evidencia. |
 | `docs/llm4mip-adaptation.md` | Material reutilizado, cambios, licencia y alcance. |
 | `docs/contracts.md` | Campos de entrada/salida y sus límites. |

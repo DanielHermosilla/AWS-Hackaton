@@ -81,8 +81,8 @@ testigo completo.
 
 ## 3. Modelo GPT, autenticación y trazabilidad
 
-La CLI y `scripts/test_clients.sh` usan por defecto **GPT-6 Luna**:
-`us.openai.gpt-6-luna`, con esfuerzo de razonamiento **`low`**. El adaptador usa
+La CLI y `scripts/test_clients.sh` usan por defecto **GPT-5.6 Luna**:
+`us.openai.gpt-5.6-luna`, con esfuerzo de razonamiento **`low`**. El adaptador usa
 `boto3` y **Bedrock Converse**, enviando
 `additionalModelRequestFields.reasoning.effort`. No usa el campo de esfuerzo
 de Anthropic. No requiere una clave de OpenAI ni una sesión del producto ChatGPT.
@@ -92,21 +92,39 @@ en estas instancias.
 Se reutilizan región `us-east-1` y perfil `hackathon`, ambos configurables.
 `--bedrock-model` o `BEDROCK_MODEL_ID` reemplazan el modelo predeterminado.
 `--bedrock-fast-model` permite otro modelo para eventos posteriores; si se
-omite, se mantiene GPT-6 Luna. La API Python exige un `model_id` explícito
+omite, se mantiene GPT-5.6 Luna. La API Python exige un `model_id` explícito
 en `BedrockConfig` para activar `adaptive`.
 
-**Acceso comprobado el 16 de octubre de 2026:** el perfil de inferencia existe,
-pero el rol `WSParticipantRole` del perfil local `hackathon` rechaza su
-invocación con `AccessDeniedException`: hay un `explicit deny` en
-`ws-bedrock-model-allowlist-policy-1`. No se modificaron permisos.
-El administrador debe habilitar el modelo, o el operador debe proporcionar
-un perfil autorizado mediante `--aws-profile`. Cambiar un ID o una variable
-no concede permisos. Hasta resolverlo, la corrida se registra como fallback;
-no debe anunciarse como una decisión aplicada de GPT.
+**Acceso comprobado el 16 de octubre de 2026:** se leyó la política
+`ws-bedrock-model-allowlist-policy-1` y se probaron dos candidatos admitidos,
+con el mismo prompt de la instancia de 40 clientes, esfuerzo `low`, límite
+de 12 s y 2.048 tokens de salida. Ambos devolvieron una `RoutePolicy` válida:
 
-Un intento previo por Responses recibió HTTP 401. La implementación final
-reutiliza Converse y deja que el SDK gestione la autenticación. No se añadió
-un cliente HTTP, un generador de tokens ni dependencias nuevas.
+| Modelo | Tiempo completo de consulta | Tokens de salida |
+|---|---:|---:|
+| `us.openai.gpt-5.6-luna` | 4,4351 s | 451 |
+| `us.openai.gpt-5.6-terra` | 6,5352 s | 473 |
+
+Se eligió Luna por su menor latencia observada y respuesta compatible con el
+orquestador. Es una consulta por candidato, no un benchmark estadístico ni una
+prueba de mejora de calidad del solver. La validación limita la respuesta a
+acciones implementadas; la física y los certificados siguen a cargo del motor.
+Los registros locales están en `artifacts/gpt-model-selection-20261016/`.
+
+La comprobación dentro del solver reveló dos retrasos locales adicionales:
+el SDK se inicializaba en el hilo remoto compitiendo con ALNS, y una reparación
+larga podía no recoger la respuesta hasta finalizar la etapa. Ahora se prepara
+el cliente AWS antes de empezar la búsqueda; la inferencia sigue en el
+trabajador. Durante la reparación se revisa el progreso entre inserciones,
+como máximo una vez cada 0,25 s. Esa revisión no espera una respuesta ni
+omite los límites existentes de llamadas e intervalo entre consultas.
+El tiempo de inicialización permanece incluido en el presupuesto del solver.
+
+El modelo anterior, GPT-6 Luna, está excluido por esa política y fue rechazado
+con `AccessDeniedException`. No se modificaron permisos. Para otra cuenta,
+volver a verificar acceso mediante una invocación: aparecer en el catálogo
+no basta. La implementación usa Converse y el SDK gestiona la autenticación;
+no se añadieron dependencias.
 
 Los logs conservan solicitudes, respuestas finales, tokens, propuestas, campos
 efectivamente cambiados y motivos de rechazo o vencimiento. No contienen
@@ -133,7 +151,7 @@ uv run --locked --extra dw ev-routing run \
   --road-instance artifacts/instance.json \
   --path-archive artifacts/service-paths.json \
   --time-limit-seconds 120 --energy-relative-gap 0.005 \
-  --bedrock-model us.openai.gpt-6-luna --llm-reasoning-effort low \
+  --bedrock-model us.openai.gpt-5.6-luna --llm-reasoning-effort low \
   --aws-profile hackathon --aws-region us-east-1 \
   --llm-timeout-seconds 8 --llm-max-calls 2 --llm-max-output-tokens 2048 \
   --llm-instance-context-bytes 8000 \
@@ -142,7 +160,7 @@ uv run --locked --extra dw ev-routing run \
   --output artifacts/solve-gpt/result.json
 ```
 
-Sustituir `hackathon` por un perfil con acceso cuando se disponga de él.
+Sustituir `hackathon` si la cuenta utiliza otro perfil autorizado.
 `--search-policy standard` ejecuta el mismo motor sin consultas remotas.
 El [README](../README.md#desde-archivos-originales-locales-con-scip-y-llm-en-vivo)
 incluye la preparación desde CSV, eVED y GraphML y la simulación a 40 clientes.
@@ -250,10 +268,10 @@ caminos incompatibles, regeneración/arcos paralelos y geometría expandida.
 Comparar el resultado nativo CLI/Python con `raw.result` del HTTP sobre la misma
 instancia. Una prueba con un doble de LLM no acredita acceso real a AWS.
 
-Validación de este cambio: **665 pruebas aprobadas**; Ruff sin errores en
+Validación de este cambio: **670 pruebas aprobadas**; Ruff sin errores en
 `src`, `tests` y `scripts/test_routing_verbose.py`. La suite no invoca AWS.
 
-Medición con el código final sobre la instancia preparada de 40 clientes y 60
+Medición anterior al cambio a GPT-5.6, sobre la instancia preparada de 40 clientes y 60
 cargadores, presupuesto 120 s: **15,3570 s** de resolución, **16,2171 s** de
 pipeline y **19,0828 s** de proceso; 40/40 entregas, **14,56660712 kWh**, cota
 **14,52526525 kWh**, gap **0,2838126 %**, validación vial aprobada.
@@ -263,11 +281,22 @@ cero. Se comprobó también que omitir `--energy-relative-gap` aplica 0.005.
 Evidencia local ignorada por Git: `artifacts/gpt-luna-gap-005-final/`.
 El rechazo de acceso se confirmó de forma separada por Converse.
 
+Corrida final con **GPT-5.6 Luna `low`**, preparación del cliente antes de
+buscar y observación durante reparación: respuesta en **4,7564 s**, decisión
+validada y aplicada a los **5,0581 s**; estado `adaptive`, una llamada.
+Resolución **14,9483 s**, pipeline **15,7938 s**, proceso **18,8659 s**.
+Se mantienen 40/40 entregas, 14,56660712 kWh, cota 14,52526525 kWh y gap
+0,2838126 %, con auditoría vial aprobada. La política actualizó, entre otros,
+reparación, diversificación y población. También propuso opciones para pricing
+y cortes, pero esta instancia terminó por gap antes de necesitarlos; no se
+atribuyen mejoras a etapas no ejecutadas. No mejoró la energía frente al
+control anterior. Evidencia local: `artifacts/gpt-model-selection-20261016/run-verified/`.
+
 ## Referencias
 
 - [Preprocesamiento auditado](resource-paths.md).
 - [Motor, callbacks, ALNS y certificados](llm-head-search.md).
 - [Contratos del resultado](contracts.md) y [solvers](solvers.md).
 - [OpenAI: modelos en Amazon Bedrock](https://developers.openai.com/api/docs/guides/amazon-bedrock).
-- [AWS: GPT-6 Luna, APIs, perfiles y esfuerzo](https://docs.aws.amazon.com/bedrock/latest/userguide/model-card-openai-gpt-6-luna.html).
+- [OpenAI: GPT-5.6 Luna y esfuerzo de razonamiento](https://developers.openai.com/api/docs/models/gpt-5.6-luna).
 - [AWS: Converse](https://docs.aws.amazon.com/bedrock/latest/userguide/conversation-inference.html).

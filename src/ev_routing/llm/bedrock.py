@@ -49,6 +49,22 @@ class BedrockResponseError(ValueError):
         self.stop_reason = response.get("stopReason")
 
 
+def create_bedrock_client(config: BedrockConfig):
+    """Preparar SDK y transporte antes de competir con las heurísticas por el GIL."""
+    import boto3
+    from botocore.config import Config
+
+    session = boto3.Session(profile_name=config.profile, region_name=config.region)
+    return session.client(
+        "bedrock-runtime", region_name=config.region,
+        config=Config(
+            connect_timeout=min(3, config.timeout_seconds * .2),
+            read_timeout=max(.05, config.timeout_seconds * .8),
+            retries={"total_max_attempts": 1},
+        ),
+    )
+
+
 class BedrockPolicyClient:
     def __init__(self, config: BedrockConfig, *, client: Any = None, system_prompt: str = SYSTEM_PROMPT,
                  temperature: float | None = None, trace_directory: str | None = None,
@@ -138,18 +154,5 @@ class BedrockPolicyClient:
 
     def _converse(self, payload):
         if self.client is None:
-            import boto3
-            from botocore.config import Config
-
-            session = boto3.Session(
-                profile_name=self.config.profile, region_name=self.config.region,
-            )
-            self.client = session.client(
-                "bedrock-runtime", region_name=self.config.region,
-                config=Config(
-                    connect_timeout=min(3, self.config.timeout_seconds * .2),
-                    read_timeout=max(.05, self.config.timeout_seconds * .8),
-                    retries={"total_max_attempts": 1},
-                ),
-            )
+            self.client = create_bedrock_client(self.config)
         return self.client.converse(**payload)

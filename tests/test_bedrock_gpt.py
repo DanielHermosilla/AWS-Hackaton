@@ -1,11 +1,14 @@
 """GPT por Converse: esfuerzo correcto, trazabilidad y errores, sin red."""
 
 import json
+from threading import get_ident
+from time import monotonic
 
 import pytest
 
 from ev_routing.llm.bedrock import BedrockPolicyClient, BedrockResponseError
-from ev_routing.search_policy import DEFAULT_BEDROCK_MODEL, BedrockConfig
+from ev_routing.llm_head import LLMHead
+from ev_routing.search_policy import DEFAULT_BEDROCK_MODEL, BedrockConfig, SearchConfig
 
 
 class Client:
@@ -68,3 +71,50 @@ def test_explicit_gpt_effort_and_anthropic_effort_use_different_fields():
     )).request_payload({})
     assert gpt["additionalModelRequestFields"] == {"reasoning": {"effort": "medium"}}
     assert claude["additionalModelRequestFields"] == {"output_config": {"effort": "high"}}
+
+
+@pytest.mark.parametrize("policy,injected,preloads", [
+    ("adaptive", False, True), ("adaptive", True, False), ("standard", False, False),
+])
+def test_sdk_setup_precedes_cpu_search_only_for_real_adaptive_provider(
+    monkeypatch, policy, injected, preloads,
+):
+    from ev_routing.llm import bedrock
+
+    threads = []
+    native = Client()
+
+    def prepare(config):
+        threads.append(get_ident())
+        return native
+
+    monkeypatch.setattr(bedrock, "create_bedrock_client", prepare)
+    config = SearchConfig(policy=policy, bedrock=BedrockConfig(model_id=DEFAULT_BEDROCK_MODEL))
+    head = LLMHead(
+        config, {}, monotonic() + 3, 3,
+        provider=(lambda _: {}) if injected else None,
+    )
+    assert threads == ([get_ident()] if preloads else [])
+    assert head.calls == 0  # La precarga local no invoca al proveedor.
+    assert native.payload is None
+    if preloads:
+        reply = head._call({"event": "before_search"}, config.bedrock, 1)
+        assert reply["reply"]["policy"] == {"columns_per_round": 75}
+        assert threads == [get_ident()]  # El trabajador reutiliza el transporte.
+
+
+def test_missing_optional_sdk_still_records_provider_fallback(monkeypatch):
+    from ev_routing.llm import bedrock
+
+    def missing(config):
+        raise ModuleNotFoundError("boto3")
+
+    monkeypatch.setattr(bedrock, "create_bedrock_client", missing)
+    config = SearchConfig(policy="adaptive", bedrock=BedrockConfig(model_id=DEFAULT_BEDROCK_MODEL))
+    head = LLMHead(config, {}, monotonic() + 3, 3)
+    head.decide("before_search", {"phase": "planning"})
+    if head.pending is not None:
+        head.pending.result(timeout=1)
+    head.collect()
+    assert head.report()["status"] == "fallback"
+    assert head.records[0]["reason"] == "ModuleNotFoundError"

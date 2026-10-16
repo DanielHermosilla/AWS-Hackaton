@@ -132,7 +132,7 @@ un cliente sin ventana configurada no recibe una automáticamente.
 `SearchConfig`, `SearchPolicy` y `BedrockConfig` están en `search_policy.py`.
 Son configuración de algoritmo e inferencia, separada de `ProblemInstance`.
 Rechazan campos ajenos a la lista admitida; la API Python adaptativa exige un
-modelo explícito. La CLI completa por defecto `us.openai.gpt-6-luna`;
+modelo explícito. La CLI completa por defecto `us.openai.gpt-5.6-luna`;
 Converse usa `reasoning.effort="low"` si no se indica otro esfuerzo.
 Región inicial `us-east-1`, perfil inicial `hackathon`; el perfil necesita
 permiso de invocación. Ver el [estado de acceso e integración](webapp-integration.md).

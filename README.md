@@ -178,10 +178,11 @@ hilo. El motor conserva control de los certificados y el checker valida la físi
 Ver [implementación, API de SCIP, mediciones y límites](docs/llm-head-search.md).
 La fase energética se detiene al alcanzar un gap global de **0,5 %**
 (`--energy-relative-gap 0.005`); las entregas mantienen su prioridad.
-El modelo predeterminado de la CLI es **GPT-6 Luna**, con razonamiento `low`.
-**El perfil AWS local `hackathon` actualmente tiene una prohibición explícita
-para invocarlo**: requiere un perfil autorizado o habilitación del administrador.
-Ante ese error se registra fallback y continúa la política local.
+El modelo predeterminado de la CLI es **GPT-5.6 Luna**, con razonamiento `low`.
+Se verificó una respuesta real con `hackathon`/`us-east-1` en 4,76 s,
+aplicada durante la búsqueda a los 5,06 s.
+GPT-6 Luna queda fuera de la lista de modelos permitidos de ese perfil.
+Ante errores de AWS se registra fallback y continúa la política local.
 La [guía de conexión con webapp](docs/webapp-integration.md) explica arquitectura,
 autenticación, resultados y cambios necesarios para el merge posterior.
 La mejora histórica de 2/40 a 40/40 corresponde al motor anterior; no acredita
@@ -194,7 +195,7 @@ uv run --locked --extra dw ev-routing run --instance artifacts/service-instance.
   --road-instance artifacts/instance.json --path-archive artifacts/service-paths.json \
   --solver scip-routes --search-policy adaptive --time-limit-seconds 120 \
   --energy-relative-gap 0.005 \
-  --bedrock-model us.openai.gpt-6-luna \
+  --bedrock-model us.openai.gpt-5.6-luna \
   --llm-timeout-seconds 8 \
   --llm-reasoning-effort low --llm-max-output-tokens 2048 \
   --llm-instance-context-bytes 8000 \
@@ -209,8 +210,8 @@ Un `.mps` restringido no contiene la familia implícita de rutas futuras.
 
 ```bash
 uv sync --locked --extra dw
-# Requiere un perfil AWS autorizado para este modelo:
-export BEDROCK_MODEL_ID='us.openai.gpt-6-luna'
+# Modelo probado con el perfil hackathon:
+export BEDROCK_MODEL_ID='us.openai.gpt-5.6-luna'
 bash scripts/benchmark_dw.sh \
   --instance examples/toy_recharge.json \
   --bedrock-model "$BEDROCK_MODEL_ID" \
@@ -225,7 +226,7 @@ Ejecuta las tres políticas en procesos separados y genera `summary.csv`,
 `summary.json`, manifiesto, resultados y logs. `us-east-1` y `hackathon` son
 valores iniciales configurables; no se guardan credenciales.
 Ejecutar el `export` en la misma terminal antes del benchmark. También se puede
-pasar el identificador directamente: `--bedrock-model us.openai.gpt-6-luna`.
+pasar el identificador directamente: `--bedrock-model us.openai.gpt-5.6-luna`.
 Para los servicios del concurso hay que añadir red original, archivo de caminos
 y, opcionalmente, el arranque compartido.
 
@@ -240,7 +241,7 @@ Con los archivos de `artifacts/hackathon/` ya preparados:
 
 ```bash
 bash scripts/test_clients.sh \
-  --energy-relative-gap 0.005 --bedrock-model us.openai.gpt-6-luna \
+  --energy-relative-gap 0.005 --bedrock-model us.openai.gpt-5.6-luna \
   --llm-reasoning-effort low --llm-max-output-tokens 2048 \
   --llm-max-calls 2 --llm-timeout-seconds 8 --llm-time-fraction .5 \
   --time-limit-seconds 120 --threads 1 --seed 0
@@ -282,7 +283,7 @@ Para simular **40 clientes totales** (los 20 originales más 20 sintéticos):
 ```bash
 bash scripts/test_clients.sh \
   --simulate-customers 40 --simulation-seed 0 \
-  --energy-relative-gap 0.005 --bedrock-model us.openai.gpt-6-luna \
+  --energy-relative-gap 0.005 --bedrock-model us.openai.gpt-5.6-luna \
   --aws-region us-east-1 --aws-profile hackathon \
   --llm-reasoning-effort low --llm-max-output-tokens 2048 \
   --llm-max-calls 2 --llm-timeout-seconds 8 --llm-time-fraction .5 \
@@ -319,7 +320,7 @@ bash scripts/test_clients.sh \
   --road-instance "$EVRP_RUN/instance.json" \
   --simulate-customers 40 --simulation-seed 0 \
   --search-policy adaptive --time-limit-seconds 120 \
-  --energy-relative-gap 0.005 --bedrock-model us.openai.gpt-6-luna \
+  --energy-relative-gap 0.005 --bedrock-model us.openai.gpt-5.6-luna \
   --llm-reasoning-effort low --llm-max-output-tokens 2048 \
   --llm-timeout-seconds 8 \
   --llm-instance-context-bytes 8000 --llm-max-calls 2 \

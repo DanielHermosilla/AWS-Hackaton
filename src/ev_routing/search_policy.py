@@ -11,7 +11,7 @@ from pydantic import Field, field_validator, model_validator
 
 from ev_routing.contracts import Contract
 
-DEFAULT_BEDROCK_MODEL = "us.openai.gpt-6-luna"
+DEFAULT_BEDROCK_MODEL = "us.openai.gpt-5.6-luna"
 
 
 class SearchPolicy(Contract):

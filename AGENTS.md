@@ -80,11 +80,12 @@ La reducción a tour DFJ exige verificar métrica dirigida, costes no negativos,
 ausencia de jornada/ventanas/reserva final adicional y un tour completo que cabe
 en la batería inicial. Nunca aplicarla por una sugerencia no verificada del LLM.
 Región inicial `us-east-1`, perfil AWS inicial `hackathon`, ambos configurables.
-En esta rama, la CLI usa `us.openai.gpt-6-luna` con esfuerzo `low` por defecto,
+En esta rama, la CLI usa `us.openai.gpt-5.6-luna` con esfuerzo `low` por defecto,
 mediante Converse y `additionalModelRequestFields.reasoning.effort`.
-La API Python adaptativa requiere `model_id` explícito. No dar por acreditado
-el acceso: `hackathon` tiene un deny explícito para ese modelo al verificarlo
-el 16 de octubre de 2026. Registrar fallback; nunca alterar IAM automáticamente.
+La API Python adaptativa requiere `model_id` explícito. El 16 de octubre de 2026
+se verificó una respuesta real de GPT-5.6 Luna con `hackathon`/`us-east-1`;
+GPT-6 Luna tiene un deny explícito en ese perfil. La visibilidad en el catálogo
+no acredita invocación. Registrar fallback; nunca alterar IAM automáticamente.
 Por petición del usuario, `energy_relative_gap=0.005` controla solo energía en
 `scip-routes`. Una parada por ese gap necesita cota global válida y no acredita
 optimalidad exacta; cero conserva la búsqueda de cierre. Ver

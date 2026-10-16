@@ -7,9 +7,9 @@ worktrees no se modifican. Esta rama conserva (25)–(31) de `modelamiento.pdf`.
 
 Actualización: el objetivo de gap energético es **0,5 %**, configurable mediante
 `--energy-relative-gap`; cero vuelve a buscar cierre exacto. No se relaja el
-objetivo principal de entregas. La CLI usa **GPT-6 Luna con esfuerzo `low`**
-por Converse. La prueba real encontró un deny explícito de AWS para el perfil
-`hackathon`; hace falta acceso autorizado antes de atribuir decisiones a GPT.
+objetivo principal de entregas. La CLI usa **GPT-5.6 Luna con esfuerzo `low`**
+por Converse, con respuesta real validada en `hackathon`/`us-east-1`.
+Se reemplazó GPT-6 Luna, que el perfil deniega explícitamente.
 La [guía de integración](webapp-integration.md) reúne comandos, estado del acceso,
 semántica del gap y conexión futura con `origin/codex/webapp`.
 
@@ -105,7 +105,12 @@ duales de clientes, presupuesto, esquema de acciones y contexto físico.
 El modelo principal se configura con `--bedrock-model`; `--bedrock-fast-model`
 permite usar otro de menor latencia en eventos durante la búsqueda.
 
-La inferencia usa un hilo que recibe únicamente JSON. Los callbacks continúan
+La inferencia usa un hilo cuyo contexto de optimización es únicamente JSON.
+El SDK, las credenciales y el transporte AWS se preparan antes de iniciar la
+búsqueda, dentro de su presupuesto, para que esa inicialización no compita
+con ALNS por el GIL. No se consulta ningún modelo durante esa preparación.
+Las reparaciones recogen decisiones listas entre inserciones, como máximo
+cada 0,25 s, sin esperar la red. Los callbacks continúan
 ejecutando la política validada; ninguna llamada de SCIP ocurre en el hilo remoto.
 La llamada nativa es `optimizeNogil()`, también en los sub-SCIP: `optimize()`
 retiene el GIL de Python y, en el ensayo inicial, una respuesta que AWS generó
