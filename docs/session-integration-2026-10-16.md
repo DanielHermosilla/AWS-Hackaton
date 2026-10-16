@@ -6,6 +6,68 @@ Base de comparación: `origin/main` recién actualizado, fijado en
 `5d8745e3faa90b9ae4aca541ad90f665c6974b3a`.
 Rama de integración: `codex/integrate-session-fixes`.
 
+## Actualización posterior: rama de asistencia
+
+Tras comprobar nuevamente que `origin/main` seguía en `5d8745e`, se recibió
+la petición de incorporar la rama de asistencia recién publicada. Se encontró
+`origin/feat/ia-asistente-mas-datos` en
+`087bd3e52a686f763865d21589650d3d8d706e12`, que incluye la rama anterior
+`feat/ia-asistente-explicacion`. Sus ocho commits se fusionaron en `4ebb66b`.
+
+La rama añade el chat en Inicio y Plan, los endpoints `/assist/chat` y
+`/assist/schema`, la carga y resolución desde el asistente y explicaciones
+con tiempos, indicadores, gaps y certificados por fase. También restaura
+intencionalmente el diseño anterior de Inicio/Plan: el caso de la hackatón
+se precarga al abrir «Cargar y calcular». El mapa de preparación anterior
+deja de ser la pantalla inicial.
+
+Las correcciones de recuperación y concurrencia de la primera integración
+se conservan. Las quince regresiones de cambios de entrada se adaptan a la
+nueva apertura del diálogo; no se exige el selector del mapa que esta rama
+retiró de la pantalla inicial.
+
+La primera comprobación de la combinación dio **1.007 pruebas Python
+aprobadas**, diez omitidas y una excluida por requerir datos reales, además
+de **161 pruebas JavaScript aprobadas**. La revisión independiente también
+reprodujo problemas que esas pruebas no cubrían: resultados sin solución
+presentados como planes listos, repetición de efectos tras fallar Bedrock,
+uso de una conexión ya desconectada y publicación de respuestas del chat
+sobre un borrador distinto.
+
+Se incorporaron tres correcciones con reproducción anterior y pruebas:
+
+- `938861d`: un fallo posterior de Bedrock conserva las acciones realizadas
+  y no vuelve a ejecutar el pedido. Cada llamada comprueba la sesión vigente,
+  su caducidad y el bloqueo compartido; desconectar impide llamadas futuras.
+- `c72a238`: sin solución validada, el chat conserva conteos desconocidos y
+  muestra el diagnóstico, sin presentar un plan listo ni cero entregas
+  ficticias. Una solución factible de cero entregas sigue mostrando cero.
+  La explicación de esos estados usa el diagnóstico determinista.
+- `63a8275`: un resultado del chat se publica con un estado limpio,
+  correspondiente a ese cálculo. Si el usuario cambia la entrada mientras
+  espera, la respuesta anterior no reemplaza el borrador ni abre otro plan.
+  Incluye dos regresiones de navegador y adapta las quince anteriores.
+
+Verificación final de la combinación en `a1bfea4`:
+
+| Comprobación | Resultado |
+| --- | --- |
+| Python completo, sin red ni datos reales | **1.022 aprobadas, diez omitidas, una excluida y 37 subpruebas aprobadas**, cero fallos; 47,94 s. |
+| JavaScript completo | **161 aprobadas**, cero fallos. |
+| Navegador, cambios de fuente y estado del chat | **17 escenarios aprobados**. |
+| HTTP del asistente → SCIP → resultado → explicación | **Aprobado**: dos entregas de dos, 14 kWh, validación independiente y explicación de tiempos/gaps de ambas fases desde el resultado publicado. |
+
+Las diez omisiones son las condiciones de backend ya registradas en la
+primera integración. La nueva exclusión requiere datos reales. Las pruebas
+de Bedrock usan dobles; la aceptación HTTP desactiva Bedrock y bloquea
+conexiones fuera de loopback. No se acredita acceso real a AWS.
+La evidencia queda en `.local/session-integration/assist-087bd3e/`.
+Se volvió a consultar el remoto al cerrar: la rama seguía en `087bd3e`.
+No se modificaron el núcleo del solver, datos originales ni presentaciones.
+
+Las secciones siguientes documentan la primera consolidación, anterior a
+esta actualización del asistente.
+
 La integración se preparó en un worktree independiente. Se revisaron los
 cambios contra esta base y se reprodujeron los defectos antes de portarlos.
 La rama `main` y los checkouts de las sesiones originales se conservaron.
