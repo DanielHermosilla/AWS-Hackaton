@@ -8,6 +8,7 @@ import pytest
 
 from backend import local_server, service
 from backend.runtime import Runtime
+from ev_routing.network import ServiceAccessError
 from test_web_bridge import native_request, prepare_request
 
 
@@ -64,10 +65,10 @@ def test_road_coverage_failure_explains_action_without_loosening_snap(tmp_path, 
 
     def outside(*args, **kwargs):
         assert kwargs["max_snap_distance_m"] == 100
-        raise ValueError("BASE#fin: acceso de 8516388.6 m supera max_snap_distance_m=100; revisar cobertura/ubicación")
+        raise ServiceAccessError("BASE#fin", 8516388.6, 100)
 
     monkeypatch.setattr("ev_routing.network.build_osm_instance", outside)
-    with pytest.raises(service.SolveRequestError, match="fuera.*cobertura.*coordenadas"):
+    with pytest.raises(service.SolveRequestError, match="BASE#fin.*8516389 m.*calle.*100 m.*coordenadas"):
         service.prepare({**prepare_request(), "network_mode": "road"}, runtime=runtime)
 
 

@@ -67,7 +67,7 @@ class Runtime:
     def prepare_road(self, nodes, parameters, rate, request):
         from ev_routing.contracts import ProblemInstance
         from ev_routing.energy import file_sha256
-        from ev_routing.network import build_osm_instance
+        from ev_routing.network import ServiceAccessError, build_osm_instance
         from ev_routing.resource_graph import prepare_service_graph
 
         if self.graphml is None:
@@ -112,12 +112,13 @@ class Runtime:
             if history_id:
                 road, energy_report = self.histories.apply(history_id, road, rate)
             pricing, archive = prepare_service_graph(road)
+        except ServiceAccessError as exc:
+            raise SolveRequestError(
+                f"La ubicación {exc.node_id} está a {exc.distance_m:.0f} m de la calle más "
+                f"cercana de la red del servidor (máximo {exc.limit_m:g} m). Revisa sus "
+                "coordenadas o usa la aproximación por distancia para un ejemplo sintético."
+            ) from exc
         except ValueError as exc:
-            if "max_snap_distance_m" in str(exc):
-                raise SolveRequestError(
-                    "Una ubicación está fuera de la cobertura de calles disponible. "
-                    "Revisa sus coordenadas o usa la aproximación por distancia para un ejemplo sintético."
-                ) from exc
             raise SolveRequestError(f"No se pudo preparar la red vial: {exc}") from exc
         # Admission bound measured on serialized payloads, not an RSS guarantee.
         size = sum(len(item.model_dump_json().encode()) for item in (road, pricing, archive))

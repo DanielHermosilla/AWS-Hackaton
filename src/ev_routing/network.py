@@ -2,7 +2,9 @@
 
 No se construye una matriz de distancias rectas entre clientes. Los únicos
 segmentos rectos añadidos son accesos cortos, identificados en procedencia, desde
-cada ubicación de servicio hasta su intersección vial más cercana.
+cada ubicación de servicio hasta su intersección vial más cercana. Si ninguna
+intersección queda dentro del límite, el acceso llega al punto más cercano de la
+calle, que se subdivide allí conservando su longitud y sentido.
 """
 
 from __future__ import annotations
@@ -14,6 +16,7 @@ from pathlib import Path
 from typing import Any, Literal
 
 import networkx as nx
+import numpy as np
 from pyproj import CRS
 
 from ev_routing.contracts import Arc, ModelParameters, Node, ProblemInstance
@@ -74,6 +77,110 @@ def _split_geometry(
             return [*points[: index + 1], middle], [middle, *points[index + 1 :]]
         walked += length
     raise ValueError("No se pudo subdividir la geometría")
+
+
+class ServiceAccessError(ValueError):
+    """Ningún tramo de la red queda dentro del acceso permitido a un servicio."""
+
+    def __init__(self, node_id: str, distance_m: float, limit_m: float):
+        self.node_id, self.distance_m, self.limit_m = node_id, distance_m, limit_m
+        super().__init__(
+            f"{node_id}: acceso de {distance_m:.1f} m supera "
+            f"max_snap_distance_m={limit_m}; revisar cobertura/ubicación"
+        )
+
+
+class _StreetSegments:
+    """Segmentos de los arcos viales para proyectar servicios sobre su calle.
+
+    Modifica la lista de arcos recibida: cada subdivisión reemplaza el arco por
+    su primer tramo y agrega el segundo al final, con la misma source_id.
+    """
+
+    METERS_PER_DEGREE = 111_195
+
+    def __init__(self, arcs: list[Arc]):
+        self.arcs, self.splits = arcs, 0
+        self.by_pair: dict[tuple[str, str], list[int]] = {}
+        self.owner = np.empty(0, dtype=int)
+        self.segment = np.empty(0, dtype=int)
+        self.start = np.empty((0, 2))
+        self.end = np.empty((0, 2))
+        self._add(range(len(arcs)))
+
+    def _add(self, indices) -> None:
+        owner, segment, start, end = [], [], [], []
+        for index in indices:
+            arc = self.arcs[index]
+            self.by_pair.setdefault((arc.from_node_id, arc.to_node_id), []).append(index)
+            for position, (a, b) in enumerate(zip(arc.geometry, arc.geometry[1:])):
+                owner.append(index)
+                segment.append(position)
+                start.append(a)
+                end.append(b)
+        self.owner = np.concatenate([self.owner, np.array(owner, dtype=int)])
+        self.segment = np.concatenate([self.segment, np.array(segment, dtype=int)])
+        self.start = np.concatenate([self.start, np.array(start, dtype=float).reshape(-1, 2)])
+        self.end = np.concatenate([self.end, np.array(end, dtype=float).reshape(-1, 2)])
+
+    def nearest(
+        self, position: tuple[float, float], owner: int | None = None,
+    ) -> tuple[int, int, tuple[float, float], float]:
+        """Arco, segmento, punto proyectado (lat, lon) y distancia en metros."""
+        mask = slice(None) if owner is None else self.owner == owner
+        start, end = self.start[mask], self.end[mask]
+        if not len(start):
+            return -1, -1, position, float("inf")
+        # Plano equirectangular local: suficiente para accesos de decenas de metros.
+        scale = np.array([1.0, cos(radians(position[0]))]) * self.METERS_PER_DEGREE
+        a = (start - np.asarray(position)) * scale
+        d = (end - start) * scale
+        length2 = (d * d).sum(axis=1)
+        t = np.clip(-(a * d).sum(axis=1) / np.where(length2 > 0, length2, 1.0), 0.0, 1.0)
+        k = int(np.argmin(((a + t[:, None] * d) ** 2).sum(axis=1)))
+        lat, lon = start[k] + t[k] * (end[k] - start[k])
+        point = (float(lat), float(lon))
+        owners, segments = self.owner[mask], self.segment[mask]
+        return int(owners[k]), int(segments[k]), point, haversine_m(position, point)
+
+    def endpoint(self, index: int, point: tuple[float, float]) -> str | None:
+        """Extremo del arco que coincide con el punto, para no crear tramos nulos."""
+        arc = self.arcs[index]
+        for node_id, vertex in [(arc.from_node_id, arc.geometry[0]), (arc.to_node_id, arc.geometry[-1])]:
+            if haversine_m(point, vertex) < 0.01:
+                return node_id
+        return None
+
+    def split(self, index: int, segment: int, point: tuple[float, float], middle_id: str) -> None:
+        arc = self.arcs[index]
+        points = arc.geometry
+        first = [*points[: segment + 1], point]
+        second = [point, *points[segment + 1 :]]
+        if len(first) > 2 and first[-2] == point:
+            first.pop(-2)
+        if len(second) > 2 and second[1] == point:
+            second.pop(1)
+        lengths = [sum(haversine_m(a, b) for a, b in zip(line, line[1:])) for line in (first, second)]
+        fraction = lengths[0] / sum(lengths) if sum(lengths) else 0.5
+        pieces = [
+            arc.model_copy(update={
+                "to_node_id": middle_id, "geometry": first,
+                "distance_m": arc.distance_m * fraction, "energy_kwh": arc.energy_kwh * fraction,
+            }),
+            arc.model_copy(update={
+                "from_node_id": middle_id, "geometry": second,
+                "distance_m": arc.distance_m * (1 - fraction),
+                "energy_kwh": arc.energy_kwh * (1 - fraction),
+            }),
+        ]
+        keep = self.owner != index
+        self.owner, self.segment = self.owner[keep], self.segment[keep]
+        self.start, self.end = self.start[keep], self.end[keep]
+        self.by_pair[arc.from_node_id, arc.to_node_id].remove(index)
+        self.arcs[index] = pieces[0]
+        self.arcs.append(pieces[1])
+        self._add([index, len(self.arcs) - 1])
+        self.splits += 1
 
 
 def build_instance_from_graph(
@@ -168,7 +275,7 @@ def build_instance_from_graph(
                     source_id=source_id,
                 )
             )
-    snaps = []
+    snaps, targets, streets, junctions = [], [], None, {}
     for service in nodes:
         position = (service.latitude, service.longitude)
         nearest, distance = min(
@@ -178,18 +285,49 @@ def build_instance_from_graph(
             ),
             key=lambda pair: pair[1],
         )
+        snap = {
+            "service_node_id": service.node_id,
+            "junction_node_id": nearest.node_id,
+            "access_distance_m": distance,
+        }
         if distance > max_snap_distance_m:
-            raise ValueError(
-                f"{service.node_id}: acceso de {distance:.1f} m supera "
-                f"max_snap_distance_m={max_snap_distance_m}; revisar cobertura/ubicación"
+            # Un tramo largo sin intersecciones intermedias puede pasar junto al
+            # servicio. Se subdivide en el punto proyectado, sin alterar su
+            # longitud total ni sentidos; las intersecciones cercanas mantienen
+            # el acceso anterior.
+            if streets is None:
+                streets = _StreetSegments(arcs)
+                junctions = {node.node_id: node for node in result_nodes}
+            index, segment, point, distance = streets.nearest(position)
+            if distance > max_snap_distance_m:
+                raise ServiceAccessError(service.node_id, distance, max_snap_distance_m)
+            arc = arcs[index]
+            endpoint = streets.endpoint(index, point)
+            split_source_ids = []
+            if endpoint is not None:
+                nearest = junctions[endpoint]
+            else:
+                nearest = Node(
+                    node_id=allocate(f"access:{service.node_id}"),
+                    node_type="junction", latitude=point[0], longitude=point[1],
+                )
+                result_nodes.append(nearest)
+                junctions[nearest.node_id] = nearest
+                streets.split(index, segment, point, nearest.node_id)
+                split_source_ids.append(arc.source_id)
+                # El sentido contrario de una calle bidireccional comparte el punto.
+                for other in list(streets.by_pair.get((arc.to_node_id, arc.from_node_id), [])):
+                    _, other_segment, other_point, gap = streets.nearest(point, owner=other)
+                    if gap <= 1.0 and streets.endpoint(other, other_point) is None:
+                        split_source_ids.append(arcs[other].source_id)
+                        streets.split(other, other_segment, point, nearest.node_id)
+            snap.update(
+                junction_node_id=nearest.node_id, access_distance_m=distance,
+                access_kind="street_projection", split_source_ids=sorted(set(split_source_ids)),
             )
-        snaps.append(
-            {
-                "service_node_id": service.node_id,
-                "junction_node_id": nearest.node_id,
-                "access_distance_m": distance,
-            }
-        )
+        snaps.append(snap)
+        targets.append((service, nearest, distance))
+    for service, nearest, distance in targets:
         for start, end in [(service, nearest), (nearest, service)]:
             arcs.append(
                 Arc(
@@ -224,7 +362,11 @@ def build_instance_from_graph(
             "original_road_arc_count": len(source_edges),
             "source_graph_simplified": bool(graph.graph.get("simplified", False)),
             "subdivided_road_arc_count": subdivided_edges,
-            "snapping": "nearest_junction_with_bidirectional_access_connectors",
+            "snapping": (
+                "nearest_junction_or_street_projection_with_bidirectional_access_connectors"
+                if streets is not None and streets.splits
+                else "nearest_junction_with_bidirectional_access_connectors"
+            ),
             "max_snap_distance_m": max_snap_distance_m,
             "service_access": snaps,
             "round_trip_unreachable_service_ids": [

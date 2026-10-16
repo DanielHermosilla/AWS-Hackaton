@@ -5,6 +5,7 @@ from shapely.geometry import LineString
 from ev_routing.contracts import ModelParameters, Node
 from ev_routing.network import (
     DELIVERY_NETWORK_FILTER,
+    ServiceAccessError,
     build_instance_from_graph,
     build_osm_instance,
     load_road_graph,
@@ -89,6 +90,66 @@ def test_access_connector_distance_is_bounded_and_recorded():
     assert sum(a.distance_m for a in access) == pytest.approx(2 * snap["access_distance_m"])
     with pytest.raises(ValueError, match="V: acceso"):
         build(nodes=nodes, max_snap_distance_m=5)
+
+
+def long_two_way_street():
+    # 826 m sin intersecciones intermedias, como South Wagner Road en Ann Arbor.
+    graph = nx.MultiDiGraph(crs="EPSG:4326")
+    graph.add_node(1, x=-83.0, y=42.0)
+    graph.add_node(2, x=-82.99, y=42.0)
+    graph.add_edge(1, 2, length=826.0, osmid=7)
+    graph.add_edge(2, 1, length=826.0, osmid=7)
+    return graph
+
+
+def test_service_beside_long_street_is_projected_without_changing_its_length():
+    nodes = [
+        Node(node_id="B", node_type="base", latitude=42.0, longitude=-83.0),
+        Node(node_id="V", node_type="visit", latitude=42.0001, longitude=-82.995),
+    ]
+    instance = build(long_two_way_street(), nodes)
+    snap = instance.provenance["network"]["service_access"][1]
+    assert snap["access_kind"] == "street_projection"
+    assert snap["junction_node_id"] == "access:V"
+    assert 11 < snap["access_distance_m"] < 12
+    assert len(snap["split_source_ids"]) == 2
+    road = [a for a in instance.arcs if not a.source_id.startswith("assumed_access:")]
+    assert {(a.from_node_id, a.to_node_id) for a in road} == {
+        ("osm:1", "access:V"), ("access:V", "osm:2"), ("osm:2", "access:V"), ("access:V", "osm:1"),
+    }
+    assert sum(a.distance_m for a in road) == pytest.approx(2 * 826)
+    assert sum(a.energy_kwh for a in road) == pytest.approx(2 * 0.826 * 0.2)
+    piece = next(a for a in road if a.from_node_id == "osm:1")
+    assert piece.distance_m == pytest.approx(413, rel=1e-3)
+    assert piece.geometry[-1] == pytest.approx((42.0, -82.995))
+    assert instance.provenance["network"]["round_trip_unreachable_service_ids"] == []
+    assert instance.provenance["network"]["snapping"].startswith("nearest_junction_or_street")
+    # La intersección dentro del límite conserva el acceso anterior.
+    assert "access_kind" not in instance.provenance["network"]["service_access"][0]
+
+
+def test_services_projected_to_same_street_point_share_access_without_null_arcs():
+    nodes = [
+        Node(node_id="B", node_type="base", latitude=42.0, longitude=-83.0),
+        Node(node_id="V", node_type="visit", latitude=42.0001, longitude=-82.995),
+        Node(node_id="V2", node_type="visit", latitude=42.0001, longitude=-82.995),
+    ]
+    instance = build(long_two_way_street(), nodes)
+    access = instance.provenance["network"]["service_access"]
+    assert access[1]["junction_node_id"] == access[2]["junction_node_id"] == "access:V"
+    assert access[2]["split_source_ids"] == []
+    road = [a for a in instance.arcs if not a.source_id.startswith("assumed_access:")]
+    assert len(road) == 4 and all(a.distance_m > 0 for a in road)
+
+
+def test_service_far_from_every_street_still_rejected():
+    nodes = [
+        Node(node_id="B", node_type="base", latitude=42.0, longitude=-83.0),
+        Node(node_id="V", node_type="visit", latitude=42.01, longitude=-82.995),
+    ]
+    with pytest.raises(ServiceAccessError, match="V: acceso de 11") as error:
+        build(long_two_way_street(), nodes)
+    assert error.value.node_id == "V" and error.value.limit_m == 100
 
 
 def test_service_ids_cannot_collide_with_generated_junction_ids():

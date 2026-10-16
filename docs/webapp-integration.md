@@ -92,7 +92,11 @@ por las rutas, no cientos de miles de intersecciones sin visitar. El mapa y la l
 permanecen en el resultado nativo para auditoría. No se inventan
 líneas si falta geometría. Los accesos a calles son supuestos explícitos del
 preparador nativo; la validación del modelo no demuestra accesos reales o
-ausencia de cierres actuales.
+ausencia de cierres actuales. Cada servicio se conecta a su intersección más
+cercana si está dentro de 100 m; si no, al punto más cercano de la calle, que se
+subdivide en ambos sentidos sin cambiar su longitud (`access_kind:
+street_projection` en `service_access`). Así se prepara V16 de evaluation, junto a
+un tramo de 441 m de South Wagner Road sin intersecciones intermedias.
 
 ## Qué controla GPT
 
