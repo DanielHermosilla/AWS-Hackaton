@@ -1,9 +1,10 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: >
   ZMD Mobility - Web completa (webapp + solver + IA + login) en UN contenedor
-  ECS Fargate. Crea las tablas DynamoDB de usuarios/sesiones, el cluster, la
-  task y el servicio. La imagen debe estar previamente en ECR. IP publica
-  directa (sin ALB) para minimizar piezas; el API Gateway apunta a esa IP.
+  ECS Fargate. Usa las tablas DynamoDB de usuarios/sesiones YA EXISTENTES
+  (no las crea) y levanta el cluster, la task y el servicio. La imagen debe
+  estar previamente en ECR. IP publica directa (sin ALB); el API Gateway apunta
+  a esa IP.
 
 Parameters:
   ImageUri:
@@ -19,36 +20,16 @@ Parameters:
     Type: String
     Default: amazon.nova-lite-v1:0
     Description: Modelo de Bedrock para el asistente IA.
+  UsersTableName:
+    Type: String
+    Default: zmd_users
+    Description: Nombre de la tabla de usuarios ya existente.
+  SessionsTableName:
+    Type: String
+    Default: zmd_sessions
+    Description: Nombre de la tabla de sesiones ya existente.
 
 Resources:
-  # ── Base de datos de cuentas ──────────────────────────────────────────────
-  UsersTable:
-    Type: AWS::DynamoDB::Table
-    Properties:
-      TableName: zmd_users
-      BillingMode: PAY_PER_REQUEST
-      AttributeDefinitions:
-        - AttributeName: email
-          AttributeType: S
-      KeySchema:
-        - AttributeName: email
-          KeyType: HASH
-
-  SessionsTable:
-    Type: AWS::DynamoDB::Table
-    Properties:
-      TableName: zmd_sessions
-      BillingMode: PAY_PER_REQUEST
-      AttributeDefinitions:
-        - AttributeName: token_hash
-          AttributeType: S
-      KeySchema:
-        - AttributeName: token_hash
-          KeyType: HASH
-      TimeToLiveSpecification:
-        AttributeName: expires_at
-        Enabled: true
-
   # ── Red ───────────────────────────────────────────────────────────────────
   SecurityGroup:
     Type: AWS::EC2::SecurityGroup
@@ -88,7 +69,7 @@ Resources:
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
-              # Acceso a las dos tablas de cuentas.
+              # Acceso a las dos tablas de cuentas (existentes).
               - Effect: Allow
                 Action:
                   - dynamodb:GetItem
@@ -96,8 +77,8 @@ Resources:
                   - dynamodb:DeleteItem
                   - dynamodb:Query
                 Resource:
-                  - !GetAtt UsersTable.Arn
-                  - !GetAtt SessionsTable.Arn
+                  - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${UsersTableName}"
+                  - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${SessionsTableName}"
               # Bedrock para el asistente IA (amplio; restringir en produccion).
               - Effect: Allow
                 Action: [bedrock:InvokeModel, bedrock:InvokeModelWithResponseStream, bedrock:Converse, bedrock:ConverseStream]
@@ -141,6 +122,10 @@ Resources:
               Value: !Ref BedrockModelId
             - Name: AWS_DEFAULT_REGION
               Value: !Ref AWS::Region
+            - Name: DDB_USERS_TABLE
+              Value: !Ref UsersTableName
+            - Name: DDB_SESSIONS_TABLE
+              Value: !Ref SessionsTableName
           HealthCheck:
             Command:
               - CMD-SHELL
