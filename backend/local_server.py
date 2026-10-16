@@ -15,7 +15,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path, PurePosixPath
 from urllib.parse import parse_qs, unquote, urlsplit
 
-from . import service
+from . import assist_service, service
 
 MAX_BODY_BYTES = 64 * 1024 * 1024
 MAX_CONNECTION_BYTES = 16 * 1024
@@ -199,6 +199,9 @@ class Handler(BaseHTTPRequestHandler):
             else:
                 self._send(200, data)
             return
+        if parts.path == "/assist/schema" and not parts.query:
+            self._send(200, assist_service.schema())
+            return
         self._static(parts.path)
 
     def _static(self, raw_path):
@@ -233,6 +236,7 @@ class Handler(BaseHTTPRequestHandler):
         endpoints = {
             "/solve", "/prepare", "/history/upload", "/history/analyze", "/history/remove",
             "/bedrock/session", "/bedrock/disconnect", "/scenarios/hackathon",
+            "/assist/chat",
         }
         if self.path not in endpoints:
             self._error(404, "not_found", "Recurso no encontrado.")
@@ -262,7 +266,8 @@ class Handler(BaseHTTPRequestHandler):
         from .history_store import MAX_HISTORY_BYTES
 
         limit = MAX_HISTORY_BYTES if upload else (
-            MAX_BODY_BYTES if self.path in {"/prepare", "/solve"} else MAX_CONNECTION_BYTES
+            MAX_BODY_BYTES if self.path in {"/prepare", "/solve", "/assist/chat"}
+            else MAX_CONNECTION_BYTES
         )
         if length > limit:
             message = (
@@ -289,6 +294,21 @@ class Handler(BaseHTTPRequestHandler):
                     else "Se agotó la espera del cuerpo JSON.",
                 )
                 return
+        # El chat toma el candado del solver solo mientras calcula (dentro de
+        # assist_service); los turnos de conversacion no deben responder 409.
+        if self.path == "/assist/chat":
+            try:
+                self._send(200, assist_service.chat(
+                    payload, solve_lock=self.server.solve_lock,
+                    runtime=self.server.runtime, runs=self.server.runs,
+                ))
+            except service.SolveRequestError as exc:
+                self._error(400, "invalid_request", str(exc))
+            except service.ProviderError as exc:
+                self._error(exc.status, exc.code, str(exc))
+            except Exception:
+                self._error(502, "provider_error", "No se pudo completar el turno del asistente.")
+            return
         # Connection changes have their own session lock. Disconnect remains
         # available during a solve and invalidates future remote calls.
         connection_action = self.path in {"/bedrock/session", "/bedrock/disconnect"}

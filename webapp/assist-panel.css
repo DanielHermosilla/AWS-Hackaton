@@ -1,0 +1,132 @@
+/* Asistente de flota. Estilos autonomos con prefijo .assist-. El boton vive en
+   la barra de acciones (junto a "Cargar y calcular") y hereda su estilo; el
+   panel se abre como lateral bajo la cabecera para no tapar controles del mapa. */
+
+.assist-toggle[aria-expanded="true"] { outline: 2px solid #0b7d6b; outline-offset: 1px; }
+
+/* Solo si no existe la barra de acciones. */
+.assist-toggle-flotante {
+  position: fixed;
+  right: 24px;
+  top: 88px;
+  z-index: 1200;
+  padding: 8px 14px;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  border-radius: 10px;
+  background: var(--surface, #fff);
+  font: inherit;
+  cursor: pointer;
+}
+
+.assist-panel {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 1200;
+  width: min(380px, calc(100vw - 32px));
+  display: flex;
+  flex-direction: column;
+  background: var(--surface, #fff);
+  color: var(--on-surface, #1a1a1a);
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 14px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.22);
+  overflow: hidden;
+}
+.assist-panel[hidden] { display: none; }
+
+.assist-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+.assist-close {
+  border: none;
+  background: transparent;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  color: inherit;
+}
+
+.assist-log {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.assist-msg {
+  max-width: 88%;
+  padding: 8px 11px;
+  border-radius: 12px;
+  font-size: 14px;
+  line-height: 1.4;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.assist-user { align-self: flex-end; background: #0b7d6b; color: #fff; }
+.assist-bot { align-self: flex-start; background: rgba(0, 0, 0, 0.06); }
+.assist-meta {
+  display: block;
+  margin-top: 4px;
+  font-size: 11px;
+  opacity: 0.6;
+}
+.assist-chip-wrap { background: transparent; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.assist-chip {
+  padding: 8px 12px;
+  border: 1px dashed #0b7d6b;
+  border-radius: 10px;
+  background: rgba(11, 125, 107, 0.06);
+  color: #0b7d6b;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.assist-chip:hover { background: rgba(11, 125, 107, 0.12); }
+
+.assist-form {
+  display: flex;
+  gap: 6px;
+  padding: 10px 12px;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+.assist-clip {
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  border-radius: 10px;
+  background: transparent;
+  padding: 0 10px;
+  font-size: 16px;
+  cursor: pointer;
+}
+.assist-input {
+  flex: 1;
+  min-width: 0;
+  padding: 9px 11px;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  border-radius: 10px;
+  font: inherit;
+}
+.assist-send {
+  border: none;
+  border-radius: 10px;
+  padding: 0 14px;
+  background: #0b7d6b;
+  color: #fff;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.assist-send:disabled, .assist-clip:disabled { opacity: 0.5; cursor: not-allowed; }
+.assist-note {
+  margin: 0;
+  padding: 0 14px 10px;
+  font-size: 11px;
+  color: #8a8a8a;
+}

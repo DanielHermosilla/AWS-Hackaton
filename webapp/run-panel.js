@@ -12,7 +12,7 @@ export function initRunPanel() {
   const strip = document.createElement('section');
   strip.className = 'run-strip';
   strip.setAttribute('aria-label', 'Ejecución del plan');
-  strip.innerHTML = `<div class="run-summary"><strong id="run-source">Planifica el caso de la hackatón</strong><span id="run-description">Revisa las ubicaciones, ajusta el escenario y calcula sus rutas.</span></div>
+  strip.innerHTML = `<div class="run-summary"><strong id="run-source">Ejemplo de diseño</strong><span id="run-description">Calcula una instancia con el motor para obtener un plan.</span></div>
     <div class="run-actions"><button id="open-run" type="button">Cargar y calcular</button><button id="run-download" type="button" hidden>Ver resultados</button></div>`;
   document.getElementById('app-shell').after(strip);
   const dialog = document.createElement('dialog');
@@ -136,7 +136,7 @@ export function initRunPanel() {
       $('run-description').textContent = 'Este ejemplo es ilustrativo. Carga el caso de la hackatón para calcular.';
     } else if (saved) {
       $('run-source').textContent = 'Sin resultado del motor';
-      $('run-description').textContent = 'Revisa el mapa y calcula las rutas del escenario.';
+      $('run-description').textContent = 'Carga una instancia o vuelve al ejemplo de diseño.';
     }
     strip.dataset.stale = String(!!saved?.stale);
     $('run-download').hidden = !rawResponse;
@@ -144,6 +144,12 @@ export function initRunPanel() {
     if (saved && !saved.runId && saved.mode !== 'example') {
       const main = document.querySelector('main');
       main.dataset.runPending = 'true';
+      if (!main.querySelector('.run-pending-placeholder')) {
+        const empty = document.createElement('section');
+        empty.className = 'load-error run-pending-placeholder';
+        empty.innerHTML = '<h1>Sin resultado del motor</h1><p>Revisa tu instancia en «Cargar y calcular». Aquí aparecerán las rutas cuando termine la ejecución.</p>';
+        main.append(empty);
+      }
     }
     notify();
   }
@@ -386,6 +392,11 @@ export function initRunPanel() {
     dialogOpener = trigger;
     showView(view);
     if (!dialog.open) dialog.showModal();
+    // Preload the hackathon locations only when the user opens the calculation
+    // dialog, so the page's design view is left untouched until then.
+    if (view === 'config' && !input && !saved && !readingInstance && !scenarioLoading) {
+      useHackathon().catch(error => message(error.message, true));
+    }
     (view === 'results' ? $('result-details').querySelector('summary') : input?.instance ? $('run-seconds') : input ? $('run-capacity') : $('use-hackathon')).focus({preventScroll: true});
   }
   $('open-run').addEventListener('click', () => open($('open-run')));

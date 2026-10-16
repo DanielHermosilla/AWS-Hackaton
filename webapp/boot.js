@@ -36,23 +36,7 @@ try {
   runPanel.setData(data);
   const { initPlanSummary } = await import('./plan-summary.js');
   planSummary = initPlanSummary(data);
-  if (page === 'plan' && data.DATA_SOURCE === 'pending') {
-    // A Plan opened before the first run is the same editable map as Inicio.
-    main.replaceChildren();
-    main.className = 'home-main';
-    main.style.overflow = 'auto';
-  } else {
-    await import(page === 'plan' ? './plan.js' : './home.js');
-  }
-  if ((page === 'home' && !['synthetic', 'local'].includes(data.DATA_SOURCE))
-      || (page === 'plan' && data.DATA_SOURCE === 'pending')) {
-    const css = document.createElement('link');
-    css.rel = 'stylesheet';
-    css.href = new URL('./scenario-workspace.css', import.meta.url).href;
-    document.head.append(css);
-    const {initScenarioWorkspace} = await import('./scenario-workspace.js');
-    initScenarioWorkspace(main, runPanel, {hasResult: !!data.RUN_INFO});
-  }
+  await import(page === 'plan' ? './plan.js' : './home.js');
 } catch (error) {
   console.error('No se pudo cargar la página:', error);
   runPanel?.fail(error);
