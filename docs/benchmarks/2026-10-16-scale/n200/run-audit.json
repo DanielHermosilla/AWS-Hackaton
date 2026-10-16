@@ -1,0 +1,284 @@
+[
+  {
+    "source_result_path": "artifacts/benchmark-standard-vs-llm-n200/comparison/runs/dispatch-n200-instance2001-standard-seed0/result.json",
+    "source_result_sha256": "d2a8df053d237be3b0b9a47bfb9631e17788bd5c5bd1da9745e2e3a04dc7e20d",
+    "policy": "standard",
+    "run_id": "cbe600e0a1ea477cacc7eb3af2567fac",
+    "created_at_utc": "2026-10-16T14:17:25.028157+00:00",
+    "instance_sha256": "9c1e1c52abc96300089c45a2774e4fa15b57d91a4f68985511623bcad9dbdaf9",
+    "physical_sha256": "112b3ab378b0ba25165199d7f498c5790562716c7dc3dd5cd5756ed1099c1c51",
+    "parameters": {
+      "vehicle_count": 2,
+      "battery_capacity_kwh": 24.0,
+      "reserve_kwh": 2.4,
+      "initial_soc": 0.6,
+      "movement_limit": 20,
+      "vehicle_connector_types": [
+        "J1772",
+        "CHAdeMO"
+      ]
+    },
+    "solver_config": {
+      "solver": "scip-routes",
+      "time_limit_seconds": 600.0,
+      "relative_gap": 0.0,
+      "energy_relative_gap": 0.005,
+      "threads": 1,
+      "seed": 0,
+      "tee": true
+    },
+    "status": "feasible",
+    "phases": [
+      {
+        "name": "deliveries",
+        "sense": "maximize",
+        "status": "optimal",
+        "termination_condition": "witness_and_cardinality_bound",
+        "has_solution": true,
+        "proven_optimal": true,
+        "incumbent": 200.0,
+        "best_bound": 200.0,
+        "absolute_gap": 0.0,
+        "relative_gap": 0.0,
+        "runtime_seconds": 141.3475467919925,
+        "message": "",
+        "warm_start": "not_requested",
+        "incumbent_source": "provided_incumbent"
+      },
+      {
+        "name": "energy",
+        "sense": "minimize",
+        "status": "feasible",
+        "termination_condition": "timelimit",
+        "has_solution": true,
+        "proven_optimal": false,
+        "incumbent": 60.640646636406004,
+        "best_bound": 35.07918811750528,
+        "absolute_gap": 25.56145851890072,
+        "relative_gap": 0.42152351494805357,
+        "runtime_seconds": 458.6687152090017,
+        "message": "",
+        "warm_start": "not_requested",
+        "incumbent_source": "solver"
+      }
+    ],
+    "validation": {
+      "feasible": true,
+      "violations": [],
+      "checks": {
+        "fleet": true,
+        "topology": true,
+        "deliveries": true,
+        "battery": true,
+        "charging": true,
+        "energy": true,
+        "time": true,
+        "expanded_roads": true
+      }
+    },
+    "road_validation": {
+      "feasible": true,
+      "violations": [],
+      "checks": {
+        "fleet": true,
+        "topology": true,
+        "deliveries": true,
+        "battery": true,
+        "charging": true,
+        "energy": true,
+        "time": true
+      },
+      "road_movement_counts": {
+        "vehicle_1": 108,
+        "vehicle_2": 108
+      },
+      "original_road_movement_limit": 20,
+      "within_original_movement_limit": false,
+      "scope": "Arcos, entregas, batería y opciones operacionales; H vial original separado."
+    },
+    "native_kpis": {
+      "feasible": true,
+      "total_deliveries": 200,
+      "served_deliveries": 200,
+      "net_battery_energy_kwh": 60.640646636406004,
+      "charged_to_battery_kwh": 36.640646636406,
+      "distance_km": 141.11053552011992,
+      "charging_stops": 7,
+      "minimum_battery_kwh": 2.399999999999991,
+      "grid_energy_kwh": 36.640646636406,
+      "operational_duration_seconds": 18401.82929548051,
+      "time_saved_seconds": null,
+      "co2e_saved_kg": null,
+      "unavailable_reasons": {
+        "time_saved_seconds": "No se proporcionó una referencia comparable.",
+        "co2e_saved_kg": "Faltan referencia y factores de emisión documentados."
+      },
+      "route_duration_seconds": {
+        "vehicle_1": 18401.82929548051,
+        "vehicle_2": 17026.948128984215
+      },
+      "total_vehicle_time_seconds": 35428.77742446473,
+      "operational_duration_definition": "Tiempo hasta el último retorno (máximo por vehículo), con salida común en t=0."
+    },
+    "tuning": {
+      "requested_policy": "standard",
+      "active_policy": "standard",
+      "status": "disabled",
+      "model_id": "us.openai.gpt-5.6-luna",
+      "calls": 0,
+      "applied_decisions": 0,
+      "decisions_changing_algorithm": 0,
+      "runtime_seconds": 0,
+      "completed_inference_seconds": 0,
+      "inference_inflight": false
+    },
+    "runtime_seconds": {
+      "resolution_including_model": 600.0170956670045,
+      "validation": 0.06250954201095738,
+      "initial_solution_validation": 4.1996827349066734e-08,
+      "total": 600.1755566659995,
+      "llm": 0
+    }
+  },
+  {
+    "source_result_path": "artifacts/benchmark-standard-vs-llm-n200/comparison/runs/dispatch-n200-instance2001-adaptive-seed0/result.json",
+    "source_result_sha256": "a905395b7bb93b628e9345bb72e1698582331446b6eecec9c0365d4078e13904",
+    "policy": "adaptive",
+    "run_id": "51520c13e81f4a94816c6c2ebc935a3a",
+    "created_at_utc": "2026-10-16T14:07:20.347701+00:00",
+    "instance_sha256": "9c1e1c52abc96300089c45a2774e4fa15b57d91a4f68985511623bcad9dbdaf9",
+    "physical_sha256": "112b3ab378b0ba25165199d7f498c5790562716c7dc3dd5cd5756ed1099c1c51",
+    "parameters": {
+      "vehicle_count": 2,
+      "battery_capacity_kwh": 24.0,
+      "reserve_kwh": 2.4,
+      "initial_soc": 0.6,
+      "movement_limit": 20,
+      "vehicle_connector_types": [
+        "J1772",
+        "CHAdeMO"
+      ]
+    },
+    "solver_config": {
+      "solver": "scip-routes",
+      "time_limit_seconds": 600.0,
+      "relative_gap": 0.0,
+      "energy_relative_gap": 0.005,
+      "threads": 1,
+      "seed": 0,
+      "tee": true
+    },
+    "status": "feasible",
+    "phases": [
+      {
+        "name": "deliveries",
+        "sense": "maximize",
+        "status": "optimal",
+        "termination_condition": "witness_and_cardinality_bound",
+        "has_solution": true,
+        "proven_optimal": true,
+        "incumbent": 200.0,
+        "best_bound": 200.0,
+        "absolute_gap": 0.0,
+        "relative_gap": 0.0,
+        "runtime_seconds": 252.4757002910046,
+        "message": "",
+        "warm_start": "not_requested",
+        "incumbent_source": "provided_incumbent"
+      },
+      {
+        "name": "energy",
+        "sense": "minimize",
+        "status": "feasible",
+        "termination_condition": "pricing_incomplete",
+        "has_solution": true,
+        "proven_optimal": false,
+        "incumbent": 59.22744614276034,
+        "best_bound": 44.283382085259184,
+        "absolute_gap": 14.944064057501159,
+        "relative_gap": 0.2523165361795334,
+        "runtime_seconds": 347.54547287500463,
+        "message": "Pricing incompleto; cota válida de la relajación energética sin recursos.",
+        "warm_start": "not_requested",
+        "incumbent_source": "solver"
+      }
+    ],
+    "validation": {
+      "feasible": true,
+      "violations": [],
+      "checks": {
+        "fleet": true,
+        "topology": true,
+        "deliveries": true,
+        "battery": true,
+        "charging": true,
+        "energy": true,
+        "time": true,
+        "expanded_roads": true
+      }
+    },
+    "road_validation": {
+      "feasible": true,
+      "violations": [],
+      "checks": {
+        "fleet": true,
+        "topology": true,
+        "deliveries": true,
+        "battery": true,
+        "charging": true,
+        "energy": true,
+        "time": true
+      },
+      "road_movement_counts": {
+        "vehicle_1": 108,
+        "vehicle_2": 108
+      },
+      "original_road_movement_limit": 20,
+      "within_original_movement_limit": false,
+      "scope": "Arcos, entregas, batería y opciones operacionales; H vial original separado."
+    },
+    "native_kpis": {
+      "feasible": true,
+      "total_deliveries": 200,
+      "served_deliveries": 200,
+      "net_battery_energy_kwh": 59.22744614276034,
+      "charged_to_battery_kwh": 35.22744614276036,
+      "distance_km": 131.1661354102129,
+      "charging_stops": 6,
+      "minimum_battery_kwh": 2.399999999999991,
+      "grid_energy_kwh": 35.22744614276036,
+      "operational_duration_seconds": 18147.37416383974,
+      "time_saved_seconds": null,
+      "co2e_saved_kg": null,
+      "unavailable_reasons": {
+        "time_saved_seconds": "No se proporcionó una referencia comparable.",
+        "co2e_saved_kg": "Faltan referencia y factores de emisión documentados."
+      },
+      "route_duration_seconds": {
+        "vehicle_1": 18147.37416383974,
+        "vehicle_2": 17187.696382870607
+      },
+      "total_vehicle_time_seconds": 35335.07054671035,
+      "operational_duration_definition": "Tiempo hasta el último retorno (máximo por vehículo), con salida común en t=0."
+    },
+    "tuning": {
+      "requested_policy": "adaptive",
+      "active_policy": "adaptive",
+      "status": "adaptive",
+      "model_id": "us.openai.gpt-5.6-luna",
+      "calls": 4,
+      "applied_decisions": 4,
+      "decisions_changing_algorithm": 4,
+      "runtime_seconds": 17.081231874995865,
+      "completed_inference_seconds": 17.081231874995865,
+      "inference_inflight": false
+    },
+    "runtime_seconds": {
+      "resolution_including_model": 600.0227167080011,
+      "validation": 0.06211366699426435,
+      "initial_solution_validation": 1.66997779160738e-07,
+      "total": 600.1757171659992,
+      "llm": 17.081231874995865
+    }
+  }
+]

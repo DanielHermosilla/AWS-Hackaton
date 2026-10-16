@@ -1,0 +1,2 @@
+case_id,family,solver_seed,budget_seconds,reference,candidate,delivery_delta,battery_energy_saved_kwh,energy_saved_percent,electricity_saved_kwh,vehicle_electricity_co2_saved_kg,energy_bill_saved,money_saved_after_llm,full_service_speedup,certified_gap_speedup,reason
+dispatch-n800-instance2001,dispatch,0,600.0,standard,adaptive,134,,,,,,,,,Clientes atendidos distintos o no auditables: ahorro energético no comparable.

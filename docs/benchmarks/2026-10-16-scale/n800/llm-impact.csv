@@ -1,0 +1,2 @@
+family,reference,candidate,pairs,comparable_energy_pairs,energy_wins,energy_losses,energy_ties,energy_saved_mean_by_instance_kwh,energy_saved_bootstrap_95_by_instance_kwh,bootstrap_scope,mean_delivery_delta,mean_energy_saved_percent,mean_vehicle_electricity_co2_saved_kg,mean_energy_bill_saved,mean_money_saved_after_llm
+dispatch,standard,adaptive,1,0,0,0,0,,,Exploratorio dentro de esta familia dirigida; no demuestra generalización.,134,,,,

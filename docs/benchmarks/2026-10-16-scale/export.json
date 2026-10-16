@@ -1,0 +1,167 @@
+{
+  "schema_version": "1.0",
+  "exported_at_utc": "2026-10-16T14:48:04.199160+00:00",
+  "publication_base_commit": "9e56193eee7ae7f5c8a376d7e1300e878244246d",
+  "scope": "Six completed standard/adaptive runs only; no benchmark executed during export.",
+  "transformation": "Copied files remove only the original checkout prefix and normalize CSV line endings to LF without changing values. Audit files project original results without recomputing metrics.",
+  "files": [
+    {
+      "source_path": "artifacts/benchmark-standard-vs-llm-n200/presentation/kpis.csv",
+      "source_sha256": "d86115ba532c0bf8f349951b92368ab30ff05e09c30c79a07c7dba11d404bb8d",
+      "published_path": "n200/kpis.csv",
+      "published_sha256": "20d7f28f9352f7f93546b20728588908632131f9f3377279991bab1e77da7ab5"
+    },
+    {
+      "source_path": "artifacts/benchmark-standard-vs-llm-n200/presentation/paired-impact.csv",
+      "source_sha256": "647c8ce3f0c6727fb26edc4b6c69512b24067b8c3dfb25d82393bda911fdf66f",
+      "published_path": "n200/paired-impact.csv",
+      "published_sha256": "dc88ed1f201d6c650960555c8f6c33b70c534ae47d02f16d2e0cea3455d40c28"
+    },
+    {
+      "source_path": "artifacts/benchmark-standard-vs-llm-n200/presentation/llm-impact.csv",
+      "source_sha256": "9cae05fbbeb9189f1791f7b0e4328a964a9fb84396507d8e20b0e5ac8dbb2cb3",
+      "published_path": "n200/llm-impact.csv",
+      "published_sha256": "6b374406c780bfe8437e15b79da5bc7f51d9eb20234b74f2ea85c98353563c4e"
+    },
+    {
+      "source_path": "artifacts/benchmark-standard-vs-llm-n200/comparison/manifest.json",
+      "source_sha256": "41c55da45b9a40d1a5ef6731b9a621f0f69ccfd066df2714ca2ae6c6396204eb",
+      "published_path": "n200/manifest.json",
+      "published_sha256": "41c55da45b9a40d1a5ef6731b9a621f0f69ccfd066df2714ca2ae6c6396204eb"
+    },
+    {
+      "source_path": "artifacts/benchmark-standard-vs-llm-n200/presentation-plan.json",
+      "source_sha256": "caf1be6f279ade3d85287ce2c9761bece19c31297df600ffae5c74116b999da0",
+      "published_path": "n200/presentation-plan.json",
+      "published_sha256": "caf1be6f279ade3d85287ce2c9761bece19c31297df600ffae5c74116b999da0"
+    },
+    {
+      "source_path": "artifacts/benchmark-standard-vs-llm-n200/presentation/provenance.json",
+      "source_sha256": "3892d15ba5ae371bbc630a5bf6d8516eaf6ca6504b64daf85e6e3df125174de7",
+      "published_path": "n200/source-provenance.json",
+      "published_sha256": "d030f2f077c46e2ed133fc177de7c14b65dbc26bdb34e6c9c3a644a640aee41a"
+    },
+    {
+      "source_path": "artifacts/benchmark-standard-vs-llm-n200/presentation/factors.json",
+      "source_sha256": "20cbad453d836a7e2dcaa53c3d260fc73923b5755eedeb93b9678ce4c653c2cc",
+      "published_path": "factors.json",
+      "published_sha256": "20cbad453d836a7e2dcaa53c3d260fc73923b5755eedeb93b9678ce4c653c2cc"
+    },
+    {
+      "source_path": "config/presentation-impact.json",
+      "source_sha256": "f2a9d04af51fc5db268680577316a328d00c289350395c949555d7e74f3a0c0f",
+      "published_path": "factors-source.json",
+      "published_sha256": "f2a9d04af51fc5db268680577316a328d00c289350395c949555d7e74f3a0c0f"
+    },
+    {
+      "source_path": "artifacts/benchmark-standard-vs-llm/presentation/kpis.csv",
+      "source_sha256": "008361ef1d73594b17f1b6c8cf9204beb6e3940957a68bd1893b26d22c77a455",
+      "published_path": "n400/kpis.csv",
+      "published_sha256": "523c330c8bbf6ff14cee6341bfbd86967088a107235a20afefc59e13445a9f37"
+    },
+    {
+      "source_path": "artifacts/benchmark-standard-vs-llm/presentation/paired-impact.csv",
+      "source_sha256": "a820240ff3ea9b7e54928652c27c620ff10eb9d0c8aa0872f82dfa72ce6c4cc7",
+      "published_path": "n400/paired-impact.csv",
+      "published_sha256": "d2e1e4bfc0edef8ba9e503535dbac399c1e784d68ee2f6734434f0456bf0947a"
+    },
+    {
+      "source_path": "artifacts/benchmark-standard-vs-llm/presentation/llm-impact.csv",
+      "source_sha256": "c4d76e161ad18218016e3f6214307126abdafe2dcb317a1cf68ef0bf21ea6c39",
+      "published_path": "n400/llm-impact.csv",
+      "published_sha256": "82756081d252efa75a60727c0ff3f75adc9acbf35150a11b8f3b2ccef10f25b4"
+    },
+    {
+      "source_path": "artifacts/benchmark-standard-vs-llm/comparison/manifest.json",
+      "source_sha256": "71af93e267257f7ef2649b4d7ed5fca8be77b861074ba83e82bbb4d2cd10c4ba",
+      "published_path": "n400/manifest.json",
+      "published_sha256": "71af93e267257f7ef2649b4d7ed5fca8be77b861074ba83e82bbb4d2cd10c4ba"
+    },
+    {
+      "source_path": "artifacts/benchmark-standard-vs-llm/presentation-plan.json",
+      "source_sha256": "88669a0d678d91a1dbe3ca8c99727936f57528b724bfed6d9e48fc5b5c1b5637",
+      "published_path": "n400/presentation-plan.json",
+      "published_sha256": "88669a0d678d91a1dbe3ca8c99727936f57528b724bfed6d9e48fc5b5c1b5637"
+    },
+    {
+      "source_path": "artifacts/benchmark-standard-vs-llm/presentation/provenance.json",
+      "source_sha256": "aa35739d02fdaac9f1212181d54323d0eabf79822dd52c6462dd0cc7ed1d9487",
+      "published_path": "n400/source-provenance.json",
+      "published_sha256": "b633e526786ebe7eec89862021d27a75253e24f07f7bcf047f7ca2685050c582"
+    },
+    {
+      "source_path": "artifacts/benchmark-standard-vs-llm-n800/presentation/kpis.csv",
+      "source_sha256": "30f63207afa796523f421f08bb0f1754e415ff1ee1c6587ecde3f60cf2d87ff2",
+      "published_path": "n800/kpis.csv",
+      "published_sha256": "549c0f37f381c091fe2544206c0071286674635b678fb996a6b13ea0ff252948"
+    },
+    {
+      "source_path": "artifacts/benchmark-standard-vs-llm-n800/presentation/paired-impact.csv",
+      "source_sha256": "cb4031ea39dfdbfd5fbace827a0c841c5501ccd935e776c73b2206cf9cf137a4",
+      "published_path": "n800/paired-impact.csv",
+      "published_sha256": "eacb0ece799bc7ef9ae5cae16890e94b5fdde3836a72a34a699b5ec1b7b2a703"
+    },
+    {
+      "source_path": "artifacts/benchmark-standard-vs-llm-n800/presentation/llm-impact.csv",
+      "source_sha256": "813345f6167080666aa3e9cac9ce07627f0551d8ae7cd7588e6e0b124ffbd52d",
+      "published_path": "n800/llm-impact.csv",
+      "published_sha256": "7fb726b95afbb03bb6dcf48d6f360356ce0a280f7d04da5c2381f7cbcb54c711"
+    },
+    {
+      "source_path": "artifacts/benchmark-standard-vs-llm-n800/comparison/manifest.json",
+      "source_sha256": "0996bc17e42f15a3303ee6c37ede188a20ba151ee131a4080e8467092e80814e",
+      "published_path": "n800/manifest.json",
+      "published_sha256": "0996bc17e42f15a3303ee6c37ede188a20ba151ee131a4080e8467092e80814e"
+    },
+    {
+      "source_path": "artifacts/benchmark-standard-vs-llm-n800/presentation-plan.json",
+      "source_sha256": "1d8fa94cdc03ac16f5d544f5b27191f57b6b91db280ebc3a2f89a6cf73a7d170",
+      "published_path": "n800/presentation-plan.json",
+      "published_sha256": "1d8fa94cdc03ac16f5d544f5b27191f57b6b91db280ebc3a2f89a6cf73a7d170"
+    },
+    {
+      "source_path": "artifacts/benchmark-standard-vs-llm-n800/presentation/provenance.json",
+      "source_sha256": "74be35a4aaf8c0f981187113ca2896b555cfbb083d7acded5b0de7e93e63b82e",
+      "published_path": "n800/source-provenance.json",
+      "published_sha256": "ad85ec8cbe9c327aa95c564a2224489722c4543772ad18105cb506b94b791179"
+    }
+  ],
+  "verified_originals": {
+    "artifacts/benchmark-standard-vs-llm-n200/comparison/runs/dispatch-n200-instance2001-standard-seed0/execution.json": "2b238a6790165fe990c50e2d0a11c871e198d5cc427a9af982720ea66f603296",
+    "artifacts/benchmark-standard-vs-llm-n200/comparison/runs/dispatch-n200-instance2001-standard-seed0/result.json": "d2a8df053d237be3b0b9a47bfb9631e17788bd5c5bd1da9745e2e3a04dc7e20d",
+    "artifacts/benchmark-standard-vs-llm-n200/comparison/runs/dispatch-n200-instance2001-adaptive-seed0/execution.json": "70ca6fb9f0ba21d2c0e9168928a8ebe662d71ae2b28d89d9c737175471381984",
+    "artifacts/benchmark-standard-vs-llm-n200/comparison/runs/dispatch-n200-instance2001-adaptive-seed0/result.json": "a905395b7bb93b628e9345bb72e1698582331446b6eecec9c0365d4078e13904",
+    "artifacts/benchmark-standard-vs-llm-n200/presentation/kpis.csv": "d86115ba532c0bf8f349951b92368ab30ff05e09c30c79a07c7dba11d404bb8d",
+    "artifacts/benchmark-standard-vs-llm-n200/presentation/paired-impact.csv": "647c8ce3f0c6727fb26edc4b6c69512b24067b8c3dfb25d82393bda911fdf66f",
+    "artifacts/benchmark-standard-vs-llm-n200/presentation/llm-impact.csv": "9cae05fbbeb9189f1791f7b0e4328a964a9fb84396507d8e20b0e5ac8dbb2cb3",
+    "artifacts/benchmark-standard-vs-llm-n200/comparison/manifest.json": "41c55da45b9a40d1a5ef6731b9a621f0f69ccfd066df2714ca2ae6c6396204eb",
+    "artifacts/benchmark-standard-vs-llm-n200/presentation-plan.json": "caf1be6f279ade3d85287ce2c9761bece19c31297df600ffae5c74116b999da0",
+    "artifacts/benchmark-standard-vs-llm-n200/presentation/provenance.json": "3892d15ba5ae371bbc630a5bf6d8516eaf6ca6504b64daf85e6e3df125174de7",
+    "artifacts/benchmark-standard-vs-llm-n200/presentation/factors.json": "20cbad453d836a7e2dcaa53c3d260fc73923b5755eedeb93b9678ce4c653c2cc",
+    "config/presentation-impact.json": "f2a9d04af51fc5db268680577316a328d00c289350395c949555d7e74f3a0c0f",
+    "artifacts/benchmark-standard-vs-llm/comparison/runs/dispatch-n400-instance2001-standard-seed0/execution.json": "2adf761ead8b589371e46719a3bf99a25f90e16451f829e2755d2fd9c8867bd1",
+    "artifacts/benchmark-standard-vs-llm/comparison/runs/dispatch-n400-instance2001-standard-seed0/result.json": "b591e4b67f746e5c060328582204acbff589e1c8b57a8ee4926e29070d83d870",
+    "artifacts/benchmark-standard-vs-llm/comparison/runs/dispatch-n400-instance2001-adaptive-seed0/execution.json": "4f64c9011fba5d9e5479b0afb1557d6c31afc58cc4cc4d86bab587a30283bd9b",
+    "artifacts/benchmark-standard-vs-llm/comparison/runs/dispatch-n400-instance2001-adaptive-seed0/result.json": "739a5161db3eed92d6b2b6c496503ea100be4116c8764eeb3a0585a7b535b1b9",
+    "artifacts/benchmark-standard-vs-llm/presentation/kpis.csv": "008361ef1d73594b17f1b6c8cf9204beb6e3940957a68bd1893b26d22c77a455",
+    "artifacts/benchmark-standard-vs-llm/presentation/paired-impact.csv": "a820240ff3ea9b7e54928652c27c620ff10eb9d0c8aa0872f82dfa72ce6c4cc7",
+    "artifacts/benchmark-standard-vs-llm/presentation/llm-impact.csv": "c4d76e161ad18218016e3f6214307126abdafe2dcb317a1cf68ef0bf21ea6c39",
+    "artifacts/benchmark-standard-vs-llm/comparison/manifest.json": "71af93e267257f7ef2649b4d7ed5fca8be77b861074ba83e82bbb4d2cd10c4ba",
+    "artifacts/benchmark-standard-vs-llm/presentation-plan.json": "88669a0d678d91a1dbe3ca8c99727936f57528b724bfed6d9e48fc5b5c1b5637",
+    "artifacts/benchmark-standard-vs-llm/presentation/provenance.json": "aa35739d02fdaac9f1212181d54323d0eabf79822dd52c6462dd0cc7ed1d9487",
+    "artifacts/benchmark-standard-vs-llm-n800/comparison/runs/dispatch-n800-instance2001-standard-seed0/execution.json": "7a237207d78b897573e6f5962230128abab90261d1b1add13d6a6481fb40f32a",
+    "artifacts/benchmark-standard-vs-llm-n800/comparison/runs/dispatch-n800-instance2001-standard-seed0/result.json": "5940e9d6856184a3742d2d99a27022f647428418a1c23bafb8405c12b527b021",
+    "artifacts/benchmark-standard-vs-llm-n800/comparison/runs/dispatch-n800-instance2001-adaptive-seed0/execution.json": "e191bf7385e09d48bd25eb049907af317f64680500c8bf2d4bf840d1ee058780",
+    "artifacts/benchmark-standard-vs-llm-n800/comparison/runs/dispatch-n800-instance2001-adaptive-seed0/result.json": "e23f50263c804bf7286287b670b46a4ea186019030b1526fccbf8af8b7a4bb88",
+    "artifacts/benchmark-standard-vs-llm-n800/presentation/kpis.csv": "30f63207afa796523f421f08bb0f1754e415ff1ee1c6587ecde3f60cf2d87ff2",
+    "artifacts/benchmark-standard-vs-llm-n800/presentation/paired-impact.csv": "cb4031ea39dfdbfd5fbace827a0c841c5501ccd935e776c73b2206cf9cf137a4",
+    "artifacts/benchmark-standard-vs-llm-n800/presentation/llm-impact.csv": "813345f6167080666aa3e9cac9ce07627f0551d8ae7cd7588e6e0b124ffbd52d",
+    "artifacts/benchmark-standard-vs-llm-n800/comparison/manifest.json": "0996bc17e42f15a3303ee6c37ede188a20ba151ee131a4080e8467092e80814e",
+    "artifacts/benchmark-standard-vs-llm-n800/presentation-plan.json": "1d8fa94cdc03ac16f5d544f5b27191f57b6b91db280ebc3a2f89a6cf73a7d170",
+    "artifacts/benchmark-standard-vs-llm-n800/presentation/provenance.json": "74be35a4aaf8c0f981187113ca2896b555cfbb083d7acded5b0de7e93e63b82e",
+    "artifacts/benchmark-standard-vs-llm-n200/comparison/summary.json": "c0b6562a1830c0a00db6d6e5a92e7b6ba04435d5eae16f0f9042788286836492",
+    "artifacts/benchmark-standard-vs-llm/comparison/summary.json": "46a63f3330d2a362d3900ee1d72bb6e70e16cc6fa2d27e5ac5090224c2747e66",
+    "artifacts/benchmark-standard-vs-llm-n800/comparison/summary.json": "ac473aa23c4447909d7c16df190cdbef004a204dd529bdc917b7b2bec06f46cc"
+  },
+  "validated_runs": 6
+}

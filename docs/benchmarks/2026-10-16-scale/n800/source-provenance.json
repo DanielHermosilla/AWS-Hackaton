@@ -1,0 +1,7 @@
+{
+  "campaign": "artifacts/benchmark-standard-vs-llm-n800/comparison",
+  "campaign_manifest_sha256": "0996bc17e42f15a3303ee6c37ede188a20ba151ee131a4080e8467092e80814e",
+  "factors_sha256": "f2a9d04af51fc5db268680577316a328d00c289350395c949555d7e74f3a0c0f",
+  "source_summary_sha256": "ac473aa23c4447909d7c16df190cdbef004a204dd529bdc917b7b2bec06f46cc",
+  "report_includes_all_completed_runs": true
+}

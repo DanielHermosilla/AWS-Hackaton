@@ -1,0 +1,7 @@
+{
+  "campaign": "artifacts/benchmark-standard-vs-llm-n200/comparison",
+  "campaign_manifest_sha256": "41c55da45b9a40d1a5ef6731b9a621f0f69ccfd066df2714ca2ae6c6396204eb",
+  "factors_sha256": "f2a9d04af51fc5db268680577316a328d00c289350395c949555d7e74f3a0c0f",
+  "source_summary_sha256": "c0b6562a1830c0a00db6d6e5a92e7b6ba04435d5eae16f0f9042788286836492",
+  "report_includes_all_completed_runs": true
+}

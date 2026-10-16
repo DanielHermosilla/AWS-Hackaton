@@ -1,0 +1,38 @@
+{
+  "geography": "Escenario Michigan/RFCM aplicado a rutas sintéticas; no son viajes observados",
+  "currency": "USD",
+  "electricity_price_per_kwh": 0.1646,
+  "diesel_price_per_litre": 1.6534528757096512,
+  "diesel_litres_per_100km": 8.0,
+  "diesel_kg_co2_per_litre": 2.689271493005951,
+  "grid_generation_kg_co2_per_kwh": 0.44026446539228997,
+  "grid_loss_fraction": 0.0,
+  "charging_efficiency": 0.9,
+  "equivalent_route_days_per_year": null,
+  "usd_to_currency": 1.0,
+  "bedrock_prices_per_million_tokens_usd": {
+    "us.openai.gpt-5.6-luna": {
+      "input": 0.22,
+      "output": 1.32,
+      "max_input_tokens": 272000,
+      "cache_read": 0.022,
+      "cache_write": 0.275
+    }
+  },
+  "sources": {
+    "electricity": "EIA Electric Power Monthly, tabla 5.6.A, Michigan comercial, julio 2026: 16.46 centavos USD/kWh. Promedio estatal, no tarifa de carga rápida. https://www.eia.gov/electricity/monthly/epm_table_grapher.php?t=table_5_06_a",
+    "diesel_price": "EIA, Midwest PADD2, 12 octubre 2026: 6.259 USD/galón estadounidense, dividido por 3.785411784 L/galón. https://www.eia.gov/petroleum/gasdiesel/",
+    "diesel_co2": "EPA, 10180 gramos CO2/galón estadounidense, dividido por 3.785411784 L/galón. https://www.epa.gov/greenvehicles/greenhouse-gas-emissions-typical-passenger-vehicle",
+    "grid_co2": "EPA eGRID2023 Rev2, RFCM: 970.617 lb CO2/MWh × 0.45359237 / 1000. Factor medio de generación, no marginal ni CO2e. https://www.epa.gov/egrid/summary-data",
+    "bedrock": "AWS GPT-5.6 Luna, Standard Geo CRIS, contexto <=272K: USD 0.22 entrada, 1.32 salida, 0.022 lectura cache y 0.275 escritura cache de 30 minutos, por millón de tokens. https://docs.aws.amazon.com/bedrock/latest/userguide/model-card-openai-gpt-56-luna.html",
+    "checked_date": "2026-10-16"
+  },
+  "assumptions": [
+    "Consumo diésel de 8 L/100 km ilustrativo, no medido; mismo recorrido y entregas que cada EV.",
+    "Eficiencia de recarga de 90% ilustrativa. Se repone todo el consumo, incluida batería inicial.",
+    "Pérdidas de transmisión/distribución fijadas en 0: aproximación a nivel de generación; editable.",
+    "No incluye fabricación, mantenimiento, inversión, salarios, impuestos adicionales ni energía/emisiones de computación.",
+    "Un ahorro negativo es un aumento. No recortar pérdidas a cero.",
+    "Factores monetarios y ambientales no se envían al LLM ni alteran el objetivo del solver."
+  ]
+}

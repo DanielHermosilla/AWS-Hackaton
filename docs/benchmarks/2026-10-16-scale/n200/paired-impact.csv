@@ -1,0 +1,2 @@
+case_id,family,solver_seed,budget_seconds,reference,candidate,delivery_delta,battery_energy_saved_kwh,energy_saved_percent,electricity_saved_kwh,vehicle_electricity_co2_saved_kg,energy_bill_saved,money_saved_after_llm,full_service_speedup,certified_gap_speedup,reason
+dispatch-n200-instance2001,dispatch,0,600.0,standard,adaptive,0,1.413200493645661,2.330450897265395,1.570222770717401,0.6913132886966968,0.2584586680600842,0.2077147330600842,0.764804892248834,,Mismos clientes; ahorro firmado. Negativo significa empeoramiento.

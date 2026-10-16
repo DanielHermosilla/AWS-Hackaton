@@ -1,5 +1,9 @@
 # Resultados del benchmark nocturno — 16 de octubre de 2026
 
+**Resultados posteriores:** [standard frente a LLM con 200, 400 y 800 clientes,
+600 segundos por corrida](benchmarks/2026-10-16-scale/README.md). Son seis
+corridas nuevas, publicadas por separado de la campaña nocturna descrita aquí.
+
 La campaña documenta **436 corridas**, incluidos pilotos y **4 fallos**. No son instancias independientes ni pruebas unitarias. Las versiones y presupuestos se analizan por separado. Todo se ejecutó con `caffeinate`, sobre main `94a4e1d` y cambios experimentales en `codex/benchmark-presentation`.
 
 ## Instancias oficiales

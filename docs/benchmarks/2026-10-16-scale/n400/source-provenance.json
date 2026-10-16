@@ -1,0 +1,7 @@
+{
+  "campaign": "artifacts/benchmark-standard-vs-llm/comparison",
+  "campaign_manifest_sha256": "71af93e267257f7ef2649b4d7ed5fca8be77b861074ba83e82bbb4d2cd10c4ba",
+  "factors_sha256": "f2a9d04af51fc5db268680577316a328d00c289350395c949555d7e74f3a0c0f",
+  "source_summary_sha256": "46a63f3330d2a362d3900ee1d72bb6e70e16cc6fa2d27e5ac5090224c2747e66",
+  "report_includes_all_completed_runs": true
+}
