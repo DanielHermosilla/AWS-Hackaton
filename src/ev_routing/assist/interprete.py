@@ -45,15 +45,16 @@ class Interpretacion:
     explicar: bool = False
     saludo: bool = False
     ver_config: bool = False
-    # Caso de la hackaton pedido: {"dataset", "clientes"?, "cargadores"?, "semilla"?}
+    # Caso precargado pedido: {"caso": "CASE"|"CASE-evaluacion", "clientes"?, ...}
     caso: dict[str, Any] | None = None
 
 
 def _caso(t: str) -> dict[str, Any] | None:
     if re.search(r"\bevaluac|\bevaluation\b", t):
-        caso: dict[str, Any] = {"dataset": "evaluation"}
-    elif re.search(r"\bcompeten|\bcompetic|\bcompetition\b|\bhackat|\bcaso oficial\b|\bdatos oficiales\b", t):
-        caso = {"dataset": "competition"}
+        caso: dict[str, Any] = {"caso": "CASE-evaluacion"}
+    elif re.search(r"\bcase\b|\bcompeten|\bcompetic|\bcompetition\b|\bhackat|\bcaso oficial\b|"
+                   r"\bdatos oficiales\b", t):
+        caso = {"caso": "CASE"}
     else:
         return None
     if re.search(r"\bsimul", t):

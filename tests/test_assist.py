@@ -211,7 +211,7 @@ def test_turno_local_calcular_sin_datos_y_luego_con_datos():
         "[Adjunte nodos.csv.] Calcula ahora con lo que te pedi.")
     assert r2.resolvio and not ses.pendiente_calcular
     assert recibido["vehiculos"] == 3 and recibido["soc_inicial"] == 0.6  # estandar
-    assert "2 entregas" in r2.respuesta
+    assert "2 de 3 entregas" in r2.respuesta
 
 
 # --- turno con LLM (cliente falso): herramientas e historial en la sesion ----
@@ -262,10 +262,11 @@ def test_turno_llm_cae_a_local_si_bedrock_falla():
 
 # --- caso de la hackaton como fuente de datos (sin archivo) -------------------
 @pytest.mark.parametrize("texto, caso", [
-    ("Puedes correr sobre los datos de competencia?", {"dataset": "competition"}),
-    ("usa el caso de evaluación", {"dataset": "evaluation"}),
+    ("Puedes correr sobre los datos de competencia?", {"caso": "CASE"}),
+    ("usa el caso de evaluación", {"caso": "CASE-evaluacion"}),
     ("simula 50 clientes y 10 cargadores con la hackatón",
-     {"dataset": "competition", "clientes": 50, "cargadores": 10}),
+     {"caso": "CASE", "clientes": 50, "cargadores": 10}),
+    ("corre el caso CASE", {"caso": "CASE"}),
     ("que sean 3 autos", None),
 ])
 def test_interprete_detecta_caso(texto, caso):
@@ -282,23 +283,23 @@ def test_turno_local_usa_caso_y_calcula_sin_pedir_archivo():
 
     def cargar_caso(entrada):
         pedidos.append(entrada)
-        ses.cargar_datos(lambda cfg: RESULTADO, descripcion="caso de la hackaton · competencia")
-        return "caso de la hackaton · competencia"
+        ses.cargar_datos(lambda cfg: RESULTADO, descripcion="caso CASE")
+        return "caso CASE"
 
     ses.cargar_caso = cargar_caso
     r = Asistente(ses, confirmar_importantes=False).turno(
         "Puedes correr sobre los datos de competencia?")
-    assert pedidos == [{"dataset": "competition"}]
+    assert pedidos == [{"caso": "CASE"}]
     assert r.resolvio and not r.necesita_datos
-    assert "competencia" in r.respuesta and "2 entregas" in r.respuesta
+    assert "caso CASE" in r.respuesta and "2 de 3 entregas" in r.respuesta
 
 
 def test_herramienta_caso_solo_si_esta_disponible():
     from ev_routing.assist.tools import tool_specs
 
     nombres = lambda specs: {t["toolSpec"]["name"] for t in specs["tools"]}  # noqa: E731
-    assert "usar_caso_hackaton" not in nombres(tool_specs())
-    assert "usar_caso_hackaton" in nombres(tool_specs(casos=True))
+    assert "usar_caso" not in nombres(tool_specs())
+    assert "usar_caso" in nombres(tool_specs(casos=True))
 
 
 # --- tiempos, certificado por fase e indicadores ------------------------------

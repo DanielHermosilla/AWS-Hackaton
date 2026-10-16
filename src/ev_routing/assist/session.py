@@ -72,6 +72,25 @@ def describir_config(cfg: dict[str, Any], omitir: frozenset[str] = frozenset()) 
     return ", ".join(partes)
 
 
+_ETIQUETAS: dict[str, Callable[[Any], str]] = {
+    "vehiculos": lambda v: f"{v} vehículo{'' if v == 1 else 's'}",
+    "soc_inicial": lambda v: f"salida al {round(v * 100)} %",
+    "capacidad_kwh": lambda v: f"batería de {v:g} kWh",
+    "reserva_kwh": lambda v: f"reserva de {v:g} kWh",
+    "consumo_kwh_km": lambda v: f"consumo de {v:g} kWh/km",
+    "tiempo_limite_s": lambda v: f"{v:g} s de cálculo",
+    "busqueda": lambda v: {"adaptive": "búsqueda con GPT", "standard": "búsqueda sin GPT",
+                           "deterministic": "búsqueda determinista"}.get(v, str(v)),
+    "red": lambda v: "calles reales" if v == "road" else "red geodésica",
+}
+
+
+def describir_cambios(cambios: dict[str, Any]) -> str:
+    """Texto corto solo con lo que cambio (p. ej. "3 vehículos, salida al 70 %")."""
+    return ", ".join(_ETIQUETAS[k](v) if k in _ETIQUETAS else f"{k}={v}"
+                     for k, v in cambios.items())
+
+
 @dataclass
 class Sesion:
     instancia_base: Any = None

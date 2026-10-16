@@ -137,7 +137,7 @@ def test_caso_de_competencia_sin_archivo():
         pytest.skip("faltan los CSV locales de la hackaton en data/")
     runs = _Runs()
     r = assist_service.chat(
-        {"message": "corre sobre los datos de competencia con red geodesica y sin gpt"}, runs=runs)
-    assert r["datos"].startswith("caso de la hackaton · competencia"), r["respuesta"]
+        {"message": "corre el caso CASE con red geodesica y sin gpt"}, runs=runs)
+    assert r["datos"].startswith("caso CASE ("), r["respuesta"]
     assert r["resolvio"] and r["run_id"] in runs.datos, r["respuesta"]
     assert r["resumen"]["destinos"] == 20

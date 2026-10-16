@@ -74,7 +74,7 @@ async function initAssistPanel() {
   const entrada = el('input', 'assist-input');
   entrada.type = 'text';
   entrada.autocomplete = 'off';
-  entrada.placeholder = 'Escribe… (ej: calcula con 3 autos al 70 %)';
+  entrada.placeholder = 'Ej: corre el caso CASE con 3 autos';
   entrada.setAttribute('aria-label', 'Mensaje para el asistente');
   const enviar = el('button', 'assist-send', 'Enviar');
   enviar.type = 'submit';
@@ -107,10 +107,10 @@ async function initAssistPanel() {
     const adjuntar = el('button', 'assist-chip', '📎 Adjuntar archivo de nodos');
     adjuntar.type = 'button';
     adjuntar.addEventListener('click', () => archivo.click());
-    const caso = el('button', 'assist-chip', 'Usar caso de competencia');
+    const caso = el('button', 'assist-chip', 'Usar el caso CASE');
     caso.type = 'button';
     caso.addEventListener('click', () => {
-      const texto = 'Usa el caso de competencia de la hackatón y calcula';
+      const texto = 'Corre el caso CASE';
       decir('user', texto);
       turno({ message: texto });
     });
@@ -143,8 +143,8 @@ async function initAssistPanel() {
   function saludar() {
     const hayPlan = Boolean(readExecution()?.runId);
     decir('bot', hayPlan
-      ? 'Hola. Veo un plan en pantalla: puedo recalcularlo con otros ajustes ("que sean 3 autos", "al 70 %") o explicártelo.'
-      : 'Hola, soy el asistente de flota. Armo planes de reparto y los ajusto cuando me lo pidas. Puedo usar el caso de la hackatón (competencia o evaluación) o tu propio archivo de nodos con el clip; lo demás lo tomo del estándar del escenario.');
+      ? '¡Hola! Ya hay un plan en pantalla: puedo recalcularlo («que sean 3 autos») o explicártelo.'
+      : '¡Hola! Soy tu asistente de flota. Escribe «corre el caso CASE» o adjunta tu archivo con el clip y armo el plan.');
   }
 
   // --- conversacion ---

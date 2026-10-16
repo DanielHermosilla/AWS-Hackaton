@@ -183,17 +183,20 @@ def _cargar_archivo(web: _SesionWeb, fuente: Any, nombre: str, **entorno) -> Non
 
 
 def _cargar_caso(web: _SesionWeb, entrada: dict, *, runtime, runs, lock) -> str:
-    """Carga el caso oficial de la hackaton como datos de la sesion.
+    """Carga un caso precargado (``tools.CASOS``: CASE o CASE-evaluacion) como datos.
 
     Mismo origen que la UI (``scenarios.hackathon_scenario`` / ``simulate_hackathon``)
     y, si esta disponible, el historico electrico de ejemplo (eVED) para la
     energia por calle. Devuelve la descripcion de los datos cargados.
     """
+    from ev_routing.assist.tools import CASOS, resolver_caso
+
     from .scenarios import hackathon_scenario, simulate_hackathon
 
     if not isinstance(entrada, dict):
-        raise AssistRequestError("Indica el dataset del caso de la hackaton.")
-    dataset = entrada.get("dataset") or "competition"
+        raise AssistRequestError("Indica el caso a usar (CASE o CASE-evaluacion).")
+    clave = resolver_caso(entrada)  # acepta {"caso": "CASE"} o el legado {"dataset"}
+    dataset = CASOS[clave]["dataset"]
     escenario = hackathon_scenario(dataset)
     base = escenario["nodes"]
     destinos = sum(1 for n in base if n.get("node_type") == "visit")
@@ -221,9 +224,9 @@ def _cargar_caso(web: _SesionWeb, entrada: dict, *, runtime, runs, lock) -> str:
     if perfil is not None:
         extra["energy_profile_id"] = perfil["profile_id"]
     nodos = escenario["nodes"]
-    etiqueta = "evaluacion" if dataset == "evaluation" else "competencia"
-    descripcion = f"caso de la hackaton · {etiqueta}{' simulado' if simulacion else ''} ({_resumen_nodos(nodos)}"
-    descripcion += ", con historico electrico eVED)" if perfil else ")"
+    nombre = CASOS[clave]["nombre"] + (" simulado" if simulacion else "")
+    descripcion = f"{nombre} ({_resumen_nodos(nodos)}"
+    descripcion += ", con consumo histórico real)" if perfil else ")"
     datos = {"nodes": nodos, "operations": None, "connectors": None, "extra": extra}
     web.sesion.cargar_datos(
         _hacer_resolutor(web, datos, runtime=runtime, runs=runs, lock=lock),

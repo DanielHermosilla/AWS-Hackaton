@@ -131,11 +131,32 @@ def valores_estandar() -> dict[str, Any]:
     return {clave: spec.estandar for clave, spec in PARAMETROS.items()}
 
 
+# --- casos precargados ----------------------------------------------------------
+# Nombre visible para el usuario -> dataset interno de backend/scenarios.py.
+# "CASE" es el nombre del caso de la hackaton; asi se puede pedir
+# "corre el caso CASE". Los nombres internos siguen aceptandose por compatibilidad.
+CASOS: dict[str, dict[str, str]] = {
+    "CASE": {"dataset": "competition", "nombre": "caso CASE"},
+    "CASE-evaluacion": {"dataset": "evaluation", "nombre": "caso CASE de evaluación"},
+}
+_ALIAS_CASO = {"competition": "CASE", "evaluation": "CASE-evaluacion",
+               "case": "CASE", "case-evaluacion": "CASE-evaluacion"}
+
+
+def resolver_caso(entrada: dict) -> str:
+    """Clave de ``CASOS`` pedida en ``entrada`` ({"caso"} o el legado {"dataset"})."""
+    valor = str(entrada.get("caso") or entrada.get("dataset") or "CASE").strip()
+    clave = valor if valor in CASOS else _ALIAS_CASO.get(valor.lower())
+    if clave is None:
+        raise ErrorParametro(f"Caso desconocido: {valor}. Disponibles: {', '.join(CASOS)}.")
+    return clave
+
+
 def tool_specs(*, casos: bool = False) -> dict:
     """toolConfig de Bedrock. Ninguna herramienta produce rutas por si misma.
 
-    ``casos``: incluir ``usar_caso_hackaton`` (solo si quien expone el chat puede
-    cargar los datasets de la hackaton, p. ej. el servidor web).
+    ``casos``: incluir ``usar_caso`` (solo si quien expone el chat puede cargar los
+    casos precargados de ``CASOS``, p. ej. el servidor web).
     """
     vacio = {"json": {"type": "object", "properties": {}}}
     descripcion_claves = "; ".join(
@@ -181,22 +202,22 @@ def tool_specs(*, casos: bool = False) -> dict:
     ]
     if casos:
         herramientas.append({"toolSpec": {
-            "name": "usar_caso_hackaton",
+            "name": "usar_caso",
             "description": (
-                "Carga como datos de la sesion el caso oficial de la hackaton (Ann Arbor), "
-                "sin pedir archivo: dataset 'competition' (competencia) o 'evaluation' "
-                "(evaluacion), con el historico electrico eVED si esta disponible. "
-                "Opcional: simular otra cantidad de clientes/cargadores."
+                "Carga como datos el caso precargado, sin pedir archivo: 'CASE' (el caso de "
+                "la hackaton en Ann Arbor) o 'CASE-evaluacion' (su variante de evaluacion), "
+                "con consumo historico real si esta disponible. Opcional: simular otra "
+                "cantidad de clientes/cargadores."
             ),
             "inputSchema": {"json": {
                 "type": "object",
                 "properties": {
-                    "dataset": {"type": "string", "enum": ["competition", "evaluation"]},
+                    "caso": {"type": "string", "enum": list(CASOS)},
                     "clientes": {"type": "integer", "minimum": 1, "maximum": 199},
                     "cargadores": {"type": "integer", "minimum": 0, "maximum": 198},
                     "semilla": {"type": "integer", "minimum": 0},
                 },
-                "required": ["dataset"],
+                "required": ["caso"],
             }},
         }})
     return {"tools": herramientas}

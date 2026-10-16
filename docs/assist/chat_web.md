@@ -55,5 +55,5 @@ el formulario para quien prefiere conversar:
 
 ## Pendiente / ideas
 
-- Ofrecer el caso de la hackatón (`/scenarios/hackathon`) como fuente sin archivo.
+- Casos precargados con nombre amigable en `tools.CASOS`: «corre el caso CASE» (dataset competition) o «CASE-evaluacion» (evaluation); los nombres internos y la herramienta `usar_caso_hackaton` siguen aceptándose por compatibilidad.
 - Explicación por ruta (eje C) junto al mapa, no solo en el chat.
