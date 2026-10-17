@@ -1,0 +1,7 @@
+# Dependencias del gateway de login (se instalan ADEMÁS del paquete ev_routing
+# y sus dependencias, que trae el pyproject.toml de la raíz).
+fastapi>=0.110,<1
+uvicorn[standard]>=0.29,<1
+httpx>=0.27,<1
+bcrypt==4.2.1
+boto3>=1.40,<2

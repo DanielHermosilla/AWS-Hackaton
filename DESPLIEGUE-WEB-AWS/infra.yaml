@@ -1,0 +1,368 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  ZMD Mobility - Web completa (webapp + solver + IA + login) en UN contenedor
+  ECS Fargate, detras de un Application Load Balancer interno y un API Gateway
+  HTTP API con VPC Link. Resultado: UNA URL HTTPS estable (no cambia al
+  reiniciar la tarea), TLS extremo a extremo hasta el ALB y la tarea sin IP
+  publica. Crea tambien las tablas DynamoDB de cuentas y sesiones.
+
+  Piezas: DynamoDB (users/sessions) + ECS Fargate (1 tarea) + ALB interno +
+  VPC Link + API Gateway HTTP API ($default). La imagen debe estar en ECR.
+
+Parameters:
+  ImageUri:
+    Type: String
+    Description: URI de la imagen en ECR (p.ej. 111122223333.dkr.ecr.us-east-1.amazonaws.com/zmd-web:latest)
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+    Description: VPC donde viven el ALB y la tarea Fargate.
+  PrivateSubnetIds:
+    Type: List<AWS::EC2::Subnet::Id>
+    Description: >
+      Dos o mas subredes (ideal privadas con NAT; valen las por defecto con
+      salida a Internet) en AZs distintas para el ALB y la tarea.
+  BedrockModelId:
+    Type: String
+    Default: amazon.nova-lite-v1:0
+    Description: Modelo de Bedrock para el asistente IA (la policy se acota a el).
+  GatewaySharedSecret:
+    Type: String
+    NoEcho: true
+    Default: ""
+    Description: >
+      Secreto compartido gateway->backend. Si se deja vacio, el stack genera uno
+      aleatorio automaticamente (recomendado). Nunca se imprime (NoEcho).
+  DesiredCount:
+    Type: Number
+    Default: 1
+    MinValue: 1
+    Description: Numero de tareas. 1 para la hackaton (el estado del solver es en memoria).
+
+Conditions:
+  GenerarSecreto: !Equals [!Ref GatewaySharedSecret, ""]
+
+Resources:
+  # ── Secreto compartido (auto-generado si no se pasa) ───────────────────────
+  SharedSecret:
+    Type: AWS::SecretsManager::Secret
+    Condition: GenerarSecreto
+    Properties:
+      Name: !Sub "${AWS::StackName}-gateway-secret"
+      Description: Secreto compartido gateway->backend de ZMD Mobility.
+      GenerateSecretString:
+        PasswordLength: 48
+        ExcludePunctuation: true
+
+  # ── Base de datos de cuentas ──────────────────────────────────────────────
+  UsersTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: zmd_users
+      BillingMode: PAY_PER_REQUEST
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      SSESpecification:
+        SSEEnabled: true
+      AttributeDefinitions:
+        - AttributeName: email
+          AttributeType: S
+      KeySchema:
+        - AttributeName: email
+          KeyType: HASH
+
+  SessionsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: zmd_sessions
+      BillingMode: PAY_PER_REQUEST
+      SSESpecification:
+        SSEEnabled: true
+      AttributeDefinitions:
+        - AttributeName: token_hash
+          AttributeType: S
+      KeySchema:
+        - AttributeName: token_hash
+          KeyType: HASH
+      TimeToLiveSpecification:
+        AttributeName: expires_at
+        Enabled: true
+
+  # ── Seguridad de red ───────────────────────────────────────────────────────
+  # El ALB solo acepta trafico del VPC Link del API Gateway (no de Internet).
+  AlbSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: ALB interno de ZMD; entra solo desde el VPC Link del API Gateway
+      VpcId: !Ref VpcId
+
+  VpcLinkSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: VPC Link del API Gateway hacia el ALB de ZMD
+      VpcId: !Ref VpcId
+
+  # La tarea solo acepta el puerto 8080 desde el ALB.
+  TaskSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Tarea Fargate de ZMD; entra solo desde el ALB
+      VpcId: !Ref VpcId
+
+  AlbIngressFromVpcLink:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref AlbSecurityGroup
+      IpProtocol: tcp
+      FromPort: 80
+      ToPort: 80
+      SourceSecurityGroupId: !Ref VpcLinkSecurityGroup
+
+  TaskIngressFromAlb:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref TaskSecurityGroup
+      IpProtocol: tcp
+      FromPort: 8080
+      ToPort: 8080
+      SourceSecurityGroupId: !Ref AlbSecurityGroup
+
+  # ── Application Load Balancer (interno) ────────────────────────────────────
+  LoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: !Sub "${AWS::StackName}-alb"
+      Type: application
+      Scheme: internal
+      Subnets: !Ref PrivateSubnetIds
+      SecurityGroups: [!Ref AlbSecurityGroup]
+
+  TargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: !Sub "${AWS::StackName}-tg"
+      VpcId: !Ref VpcId
+      Port: 8080
+      Protocol: HTTP
+      TargetType: ip
+      HealthCheckPath: /salud-gateway
+      HealthCheckIntervalSeconds: 30
+      HealthCheckTimeoutSeconds: 5
+      HealthyThresholdCount: 2
+      UnhealthyThresholdCount: 3
+      Matcher:
+        HttpCode: "200"
+      TargetGroupAttributes:
+        - Key: deregistration_delay.timeout_seconds
+          Value: "20"
+
+  Listener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref LoadBalancer
+      Port: 80
+      Protocol: HTTP
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref TargetGroup
+
+  # ── Roles ───────────────────────────────────────────────────────────────────
+  TaskExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: { Service: ecs-tasks.amazonaws.com }
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+
+  # Permiso para leer el secreto auto-generado (solo cuando el stack lo crea).
+  ExecutionRoleSecretPolicy:
+    Type: AWS::IAM::Policy
+    Condition: GenerarSecreto
+    Properties:
+      PolicyName: leer-secreto-gateway
+      Roles: [!Ref TaskExecutionRole]
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action: secretsmanager:GetSecretValue
+            Resource: !Ref SharedSecret
+
+  TaskRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: { Service: ecs-tasks.amazonaws.com }
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: ddb-y-bedrock
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              # Acceso a las dos tablas de cuentas (solo por clave; sin Query [#14]).
+              - Effect: Allow
+                Action:
+                  - dynamodb:GetItem
+                  - dynamodb:PutItem
+                  - dynamodb:DeleteItem
+                Resource:
+                  - !GetAtt UsersTable.Arn
+                  - !GetAtt SessionsTable.Arn
+              # Bedrock para el asistente IA, acotado al modelo configurado [#2].
+              - Effect: Allow
+                Action: [bedrock:InvokeModel, bedrock:InvokeModelWithResponseStream, bedrock:Converse, bedrock:ConverseStream]
+                Resource:
+                  - !Sub "arn:aws:bedrock:${AWS::Region}::foundation-model/${BedrockModelId}"
+                  - !Sub "arn:aws:bedrock:${AWS::Region}:${AWS::AccountId}:inference-profile/${BedrockModelId}"
+
+  LogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/ecs/${AWS::StackName}"
+      RetentionInDays: 7
+
+  Cluster:
+    Type: AWS::ECS::Cluster
+    Properties:
+      ClusterName: !Sub "${AWS::StackName}-cluster"
+      ClusterSettings:
+        - Name: containerInsights
+          Value: enabled
+
+  TaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: !Ref AWS::StackName
+      # El solver (SCIP) + el grafo vial + Bedrock piden memoria holgada.
+      Cpu: "4096"       # 4 vCPU
+      Memory: "16384"   # 16 GB
+      NetworkMode: awsvpc
+      RequiresCompatibilities: [FARGATE]
+      ExecutionRoleArn: !GetAtt TaskExecutionRole.Arn
+      TaskRoleArn: !GetAtt TaskRole.Arn
+      ContainerDefinitions:
+        - Name: web
+          Image: !Ref ImageUri
+          PortMappings:
+            - ContainerPort: 8080
+          Environment:
+            - Name: PORT
+              Value: "8080"
+            - Name: BACKEND_PORT
+              Value: "8000"
+            - Name: COOKIE_SECURE
+              Value: "1"
+            - Name: BEDROCK_MODEL_ID
+              Value: !Ref BedrockModelId
+            - Name: AWS_DEFAULT_REGION
+              Value: !Ref AWS::Region
+            # El secreto llega como texto directo (si se paso) o por Secrets
+            # Manager (si se auto-genero). Solo una de las dos ramas aplica.
+            - !If
+              - GenerarSecreto
+              - !Ref "AWS::NoValue"
+              - Name: GATEWAY_SHARED_SECRET
+                Value: !Ref GatewaySharedSecret
+          Secrets:
+            - !If
+              - GenerarSecreto
+              - Name: GATEWAY_SHARED_SECRET
+                ValueFrom: !Ref SharedSecret
+              - !Ref "AWS::NoValue"
+          HealthCheck:
+            Command:
+              - CMD-SHELL
+              - python -c "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8080/salud-gateway',timeout=5).status==200 else 1)"
+            Interval: 30
+            Timeout: 5
+            Retries: 3
+            StartPeriod: 120
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref LogGroup
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: web
+
+  Service:
+    Type: AWS::ECS::Service
+    DependsOn: Listener
+    Properties:
+      ServiceName: !Sub "${AWS::StackName}-svc"
+      Cluster: !Ref Cluster
+      LaunchType: FARGATE
+      DesiredCount: !Ref DesiredCount
+      TaskDefinition: !Ref TaskDefinition
+      HealthCheckGracePeriodSeconds: 180
+      DeploymentConfiguration:
+        MinimumHealthyPercent: 100
+        MaximumPercent: 200
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: ENABLED   # necesario para sacar la imagen de ECR sin NAT
+          Subnets: !Ref PrivateSubnetIds
+          SecurityGroups: [!Ref TaskSecurityGroup]
+      LoadBalancers:
+        - ContainerName: web
+          ContainerPort: 8080
+          TargetGroupArn: !Ref TargetGroup
+
+  # ── API Gateway HTTP API + VPC Link (URL HTTPS estable) ────────────────────
+  HttpApi:
+    Type: AWS::ApiGatewayV2::Api
+    Properties:
+      Name: !Sub "${AWS::StackName}-api"
+      ProtocolType: HTTP
+
+  VpcLink:
+    Type: AWS::ApiGatewayV2::VpcLink
+    Properties:
+      Name: !Sub "${AWS::StackName}-vpclink"
+      SubnetIds: !Ref PrivateSubnetIds
+      SecurityGroupIds: [!Ref VpcLinkSecurityGroup]
+
+  Integration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref HttpApi
+      IntegrationType: HTTP_PROXY
+      IntegrationMethod: ANY
+      ConnectionType: VPC_LINK
+      ConnectionId: !Ref VpcLink
+      IntegrationUri: !Ref Listener
+      PayloadFormatVersion: "1.0"
+
+  RouteDefault:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref HttpApi
+      RouteKey: "$default"
+      Target: !Sub "integrations/${Integration}"
+
+  Stage:
+    Type: AWS::ApiGatewayV2::Stage
+    Properties:
+      ApiId: !Ref HttpApi
+      StageName: "$default"
+      AutoDeploy: true
+
+Outputs:
+  URL:
+    Description: URL HTTPS estable de la web (no cambia al reiniciar la tarea).
+    Value: !Sub "${HttpApi.ApiEndpoint}/login.html"
+  ApiEndpoint:
+    Description: Endpoint base del API Gateway HTTP API.
+    Value: !GetAtt HttpApi.ApiEndpoint
+  ClusterName:
+    Value: !Ref Cluster
+  ServiceName:
+    Value: !Sub "${AWS::StackName}-svc"
+  LogGroup:
+    Value: !Ref LogGroup

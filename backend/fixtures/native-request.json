@@ -1,0 +1,52 @@
+{
+  "api_version": "3.0",
+  "instance": {
+    "schema_version": "1.0",
+    "name": "Prueba sintética de integración nativa",
+    "nodes": [
+      {
+        "node_id": "Centro|#fin",
+        "node_type": "base"
+      },
+      {
+        "node_id": "Visita|ñ",
+        "node_type": "visit"
+      },
+      {
+        "node_id": "pendiente",
+        "node_type": "visit"
+      }
+    ],
+    "arcs": [
+      {
+        "from_node_id": "Centro|#fin",
+        "to_node_id": "Visita|ñ",
+        "energy_kwh": 1,
+        "distance_m": 500
+      },
+      {
+        "from_node_id": "Visita|ñ",
+        "to_node_id": "Centro|#fin",
+        "energy_kwh": 1,
+        "distance_m": 700
+      }
+    ],
+    "parameters": {
+      "vehicle_count": 2,
+      "battery_capacity_kwh": 10,
+      "reserve_kwh": 1,
+      "initial_soc": 0.6,
+      "movement_limit": 2
+    },
+    "provenance": {
+      "kind": "synthetic_test",
+      "source": "Daniel 6242035 test_pipeline_cli example",
+      "assumptions": [
+        "Arcos y energía sintéticos; sin coordenadas ni red real."
+      ]
+    }
+  },
+  "solver": {
+    "time_limit_seconds": 3
+  }
+}
